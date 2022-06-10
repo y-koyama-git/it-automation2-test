@@ -1,0 +1,523 @@
+openapi: 3.0.3
+info:
+  title: ITA Version2.0 API
+  description: ITAv2.0用API
+  version: 1.0.0
+servers:
+- url: /
+tags:
+- name: Info
+  description: メニュー情報の取得
+- name: Filter
+  description: レコードの取得
+- name: Maintenance
+  description: レコードの操作（登録/更新/廃止/復活/物理削除）
+- name: MaintenanceAll
+  description: レコードの一括操作（登録/更新/廃止/復活/物理削除）
+paths:
+  /api/menu/{workspace}/{menu}/info/:
+    get:
+      tags:
+      - Info
+      description: メニューの情報を取得する
+      operationId: get_info
+      parameters:
+      - name: workspace
+        in: path
+        description: ワークスペース名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: menu
+        in: path
+        description: メニュー名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                properties:
+                  COLINFO:
+                    $ref: '#/components/schemas/COLINFO'
+                  MENUINFO:
+                    $ref: '#/components/schemas/MENUINFO'
+                items:
+                  type: string
+                x-content-type: application/json
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      x-openapi-router-controller: controllers.info_controller
+  /api/menu/{workspace}/{menu}/info/menuinfo/:
+    get:
+      tags:
+      - Info
+      description: メニューの基本情報を取得する
+      operationId: get_info_menu
+      parameters:
+      - name: workspace
+        in: path
+        description: ワークスペース名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: menu
+        in: path
+        description: メニュー名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                properties:
+                  MENUINFO:
+                    $ref: '#/components/schemas/MENUINFO'
+                items:
+                  type: string
+                x-content-type: application/json
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      x-openapi-router-controller: controllers.info_controller
+  /api/menu/{workspace}/{menu}/info/columninfo/:
+    get:
+      tags:
+      - Info
+      description: メニューの項目情報を取得する
+      operationId: get_info_columun
+      parameters:
+      - name: workspace
+        in: path
+        description: ワークスペース名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: menu
+        in: path
+        description: メニュー名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                properties:
+                  COLINFO:
+                    $ref: '#/components/schemas/COLINFO'
+                items:
+                  type: string
+                x-content-type: application/json
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      x-openapi-router-controller: controllers.info_controller
+  /api/menu/{workspace}/{menu}/info/list/{list_name}/:
+    get:
+      tags:
+      - Info
+      description: 項目のプルダウン用のリストを取得する
+      operationId: get_info_list
+      parameters:
+      - name: workspace
+        in: path
+        description: ワークスペース名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: menu
+        in: path
+        description: メニュー名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: list_name
+        in: path
+        description: REST用項目名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                properties: {}
+                items:
+                  type: string
+                x-content-type: application/json
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      x-openapi-router-controller: controllers.info_controller
+  /api/menu/{workspace}/{menu}/filter/:
+    get:
+      tags:
+      - Filter
+      description: レコードを全件取得する
+      operationId: get_filter
+      parameters:
+      - name: workspace
+        in: path
+        description: ワークスペース名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: menu
+        in: path
+        description: メニュー名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200'
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      x-openapi-router-controller: controllers.filter_controller
+    post:
+      tags:
+      - Filter
+      description: 検索条件を指定し、レコードを取得する
+      operationId: post_filter
+      parameters:
+      - name: workspace
+        in: path
+        description: ワークスペース名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: menu
+        in: path
+        description: メニュー名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: 検索条件を設定
+        required: true
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200'
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      x-openapi-router-controller: controllers.filter_controller
+  /api/menu/{workspace}/{menu}/maintenance/:
+    post:
+      tags:
+      - Maintenance
+      description: レコードを登録する
+      operationId: maintenance_register
+      parameters:
+      - name: workspace
+        in: path
+        description: ワークスペース名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: menu
+        in: path
+        description: メニュー名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: 登録する値を設定
+        required: true
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_1'
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      x-openapi-router-controller: controllers.maintenance_controller
+  /api/menu/{workspace}/{menu}/maintenance/{uuid}:
+    delete:
+      tags:
+      - Maintenance
+      description: レコードを物理削除
+      operationId: maintenance_discard
+      parameters:
+      - name: workspace
+        in: path
+        description: ワークスペース名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: menu
+        in: path
+        description: メニュー名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: uuid
+        in: path
+        description: 対象のUUID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_1'
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      x-openapi-router-controller: controllers.maintenance_controller
+    patch:
+      tags:
+      - Maintenance
+      description: レコードを更新/廃止/復活する
+      operationId: maintenance_update
+      parameters:
+      - name: workspace
+        in: path
+        description: ワークスペース名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: menu
+        in: path
+        description: メニュー名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: uuid
+        in: path
+        description: 対象のUUID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: 更新する値を設定。廃止/復活は廃止フラグを更新することで実施。
+        required: true
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_1'
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      x-openapi-router-controller: controllers.maintenance_controller
+  /api/menu/{workspace}/{menu}/maintenance/all/:
+    post:
+      tags:
+      - MaintenanceAll
+      description: レコードを一括で登録/更新/廃止/復活する
+      operationId: maintenance_all
+      parameters:
+      - name: workspace
+        in: path
+        description: ワークスペース名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: menu
+        in: path
+        description: メニュー名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: 登録/更新/廃止/復活するidとレコードの値を設定
+        required: true
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_1'
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      x-openapi-router-controller: controllers.maintenance_all_controller
+components:
+  schemas:
+    TABLE:
+      type: object
+      properties:
+        PAGE_NO:
+          type: integer
+        TD:
+          type: object
+        TD_IHP:
+          type: object
+        UNIQUE_VAL:
+          type: object
+      example:
+        TD: {}
+        TD_IHP: {}
+        PAGE_NO: 0
+        UNIQUE_VAL: {}
+    COLINFO:
+      type: object
+      additionalProperties:
+        type: object
+        properties:
+          auto_input:
+            type: integer
+          colid:
+            type: integer
+          colname:
+            type: string
+          coltype:
+            type: string
+            enum:
+            - TextColumn
+            - NumColumn
+            - DateTimeColumn
+          description:
+            type: string
+          filter:
+            type: object
+          hide_item:
+            type: string
+          input_item:
+            type: integer
+          pulldown_info:
+            type: object
+          pulldown_list:
+            type: object
+          validate:
+            type: object
+          view_item:
+            type: integer
+      description: keyにはカラム番号が入る
+    MENUINFO:
+      type: object
+      properties:
+        pageinfo:
+          type: string
+        pagetype:
+          type: string
+        webrowconfirm:
+          type: integer
+        webrowlimit:
+          type: integer
+    inline_response_200:
+      type: object
+      properties:
+        TABLE:
+          $ref: '#/components/schemas/TABLE'
+      example:
+        TABLE:
+          TD: {}
+          TD_IHP: {}
+          PAGE_NO: 0
+          UNIQUE_VAL: {}
+    inline_response_200_1:
+      type: object
+      properties:
+        status:
+          type: string
+      example:
+        status: status
+
