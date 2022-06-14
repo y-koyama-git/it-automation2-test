@@ -36,6 +36,7 @@ RUN dnf install -y \
     pyyaml \
     pytz \
     markdown \
+    pymysql \
 &&  pip3.9 install \
     connexion[swagger-ui] \
 &&  groupadd $GROUPNAME \
@@ -72,6 +73,7 @@ COPY ./ita_root/ita_api_organization/config/httpd.conf/wsgi.conf /etc/httpd/conf
 
 COPY ./ita_root/ita_api_organization/ $APP_PATH/
 COPY ./ita_root/common_library/ $APP_PATH/common_library/
+COPY ./ita_root/messages/ $APP_PATH/messages/
 
 CMD ["sudo","-E","httpd","-D","FOREGROUND"]
 
@@ -88,5 +90,6 @@ COPY ./ita_root/ita_api_organization/httpd.conf/wsgi.conf /etc/httpd/conf.d/wsgi
 
 COPY ./ita_root/ita_api_organization/ $APP_PATH/
 COPY ./ita_root/common_library/ $APP_PATH/common_library/
+COPY ./ita_root/messages/ $APP_PATH/messages/
 
 CMD ["httpd","-D","FOREGROUND"]
