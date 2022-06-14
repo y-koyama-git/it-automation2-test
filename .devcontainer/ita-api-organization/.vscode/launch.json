@@ -68,6 +68,10 @@
                 "localRoot": "${workspaceFolder}/ita_root/common_library",
                 "remoteRoot": "/exastro/common_library"
               },
+              {
+                "localRoot": "${workspaceFolder}/ita_root/messages",
+                "remoteRoot": "/exastro/messages"
+              },
         ]
     },
   ]

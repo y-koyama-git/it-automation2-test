@@ -8,8 +8,10 @@ services:
     volumes:
       - ..:/workspace:cached
       - ../ita_root/common_library:/workspace/ita_root/ita_api_organization/common_library:cached
+      - ../ita_root/messages:/workspace/ita_root/ita_api_organization/messages:cached
       - ../ita_root/ita_api_organization:/exastro:cached
       - ../ita_root/common_library:/exastro/common_library:cached
+      - ../ita_root/messages:/exastro/messages:cached
       - ../ita_root/ita_api_organization/config/httpd.conf/httpd.conf:/etc/httpd/conf/httpd.conf:cached
       - ../ita_root/ita_api_organization/config/httpd.conf/wsgi.conf:/etc/httpd/conf.d/wsgi.conf:cached
       - ~/.netrc:/home/app_user/.netrc
