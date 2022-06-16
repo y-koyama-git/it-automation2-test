@@ -6,20 +6,20 @@ info:
 servers:
 - url: /
 tags:
-- name: Info
+- name: Menu Info
   description: メニュー情報の取得
-- name: Filter
+- name: Menu Filter
   description: レコードの取得
-- name: Maintenance
+- name: Menu Maintenance
   description: レコードの操作（登録/更新/廃止/復活/物理削除）
-- name: MaintenanceAll
+- name: Menu MaintenanceAll
   description: レコードの一括操作（登録/更新/廃止/復活/物理削除）
 paths:
   /api/menu/{workspace}/{menu}/info/:
     get:
       tags:
-      - Info
-      description: メニューの情報を取得する
+      - Menu Info
+      description: メニューの基本情報および項目情報を取得する
       operationId: get_info
       parameters:
       - name: workspace
@@ -46,10 +46,10 @@ paths:
               schema:
                 type: array
                 properties:
-                  COLINFO:
-                    $ref: '#/components/schemas/COLINFO'
-                  MENUINFO:
-                    $ref: '#/components/schemas/MENUINFO'
+                  COLUMN_INFO:
+                    $ref: '#/components/schemas/COLUMN_INFO'
+                  BASIC_INFO:
+                    $ref: '#/components/schemas/BASIC_INFO'
                 items:
                   type: string
                 x-content-type: application/json
@@ -57,13 +57,13 @@ paths:
           description: Bad Request
         "500":
           description: Internal Server Error
-      x-openapi-router-controller: controllers.info_controller
-  /api/menu/{workspace}/{menu}/info/menuinfo/:
+      x-openapi-router-controller: controllers.menu_info_controller
+  /api/menu/{workspace}/{menu}/info/column/:
     get:
       tags:
-      - Info
-      description: メニューの基本情報を取得する
-      operationId: get_info_menu
+      - Menu Info
+      description: レコード操作に必要な項目情報を取得する
+      operationId: get_column_info
       parameters:
       - name: workspace
         in: path
@@ -88,9 +88,7 @@ paths:
             application/json:
               schema:
                 type: array
-                properties:
-                  MENUINFO:
-                    $ref: '#/components/schemas/MENUINFO'
+                properties: {}
                 items:
                   type: string
                 x-content-type: application/json
@@ -98,13 +96,13 @@ paths:
           description: Bad Request
         "500":
           description: Internal Server Error
-      x-openapi-router-controller: controllers.info_controller
-  /api/menu/{workspace}/{menu}/info/columninfo/:
+      x-openapi-router-controller: controllers.menu_info_controller
+  /api/menu/{workspace}/{menu}/info/pulldown/{restname}/:
     get:
       tags:
-      - Info
-      description: メニューの項目情報を取得する
-      operationId: get_info_columun
+      - Menu Info
+      description: 項目のプルダウン選択用の一覧を取得する
+      operationId: get_info_pulldown_list
       parameters:
       - name: workspace
         in: path
@@ -122,48 +120,7 @@ paths:
         explode: false
         schema:
           type: string
-      responses:
-        "200":
-          description: Success
-          content:
-            application/json:
-              schema:
-                type: array
-                properties:
-                  COLINFO:
-                    $ref: '#/components/schemas/COLINFO'
-                items:
-                  type: string
-                x-content-type: application/json
-        "400":
-          description: Bad Request
-        "500":
-          description: Internal Server Error
-      x-openapi-router-controller: controllers.info_controller
-  /api/menu/{workspace}/{menu}/info/list/{list_name}/:
-    get:
-      tags:
-      - Info
-      description: 項目のプルダウン用のリストを取得する
-      operationId: get_info_list
-      parameters:
-      - name: workspace
-        in: path
-        description: ワークスペース名
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-      - name: menu
-        in: path
-        description: メニュー名
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-      - name: list_name
+      - name: restname
         in: path
         description: REST用項目名
         required: true
@@ -186,11 +143,11 @@ paths:
           description: Bad Request
         "500":
           description: Internal Server Error
-      x-openapi-router-controller: controllers.info_controller
+      x-openapi-router-controller: controllers.menu_info_controller
   /api/menu/{workspace}/{menu}/filter/:
     get:
       tags:
-      - Filter
+      - Menu Filter
       description: レコードを全件取得する
       operationId: get_filter
       parameters:
@@ -221,10 +178,10 @@ paths:
           description: Bad Request
         "500":
           description: Internal Server Error
-      x-openapi-router-controller: controllers.filter_controller
+      x-openapi-router-controller: controllers.menu_filter_controller
     post:
       tags:
-      - Filter
+      - Menu Filter
       description: 検索条件を指定し、レコードを取得する
       operationId: post_filter
       parameters:
@@ -262,11 +219,11 @@ paths:
           description: Bad Request
         "500":
           description: Internal Server Error
-      x-openapi-router-controller: controllers.filter_controller
+      x-openapi-router-controller: controllers.menu_filter_controller
   /api/menu/{workspace}/{menu}/maintenance/:
     post:
       tags:
-      - Maintenance
+      - Menu Maintenance
       description: レコードを登録する
       operationId: maintenance_register
       parameters:
@@ -304,11 +261,11 @@ paths:
           description: Bad Request
         "500":
           description: Internal Server Error
-      x-openapi-router-controller: controllers.maintenance_controller
+      x-openapi-router-controller: controllers.menu_maintenance_controller
   /api/menu/{workspace}/{menu}/maintenance/{uuid}:
     delete:
       tags:
-      - Maintenance
+      - Menu Maintenance
       description: レコードを物理削除
       operationId: maintenance_discard
       parameters:
@@ -347,10 +304,10 @@ paths:
           description: Bad Request
         "500":
           description: Internal Server Error
-      x-openapi-router-controller: controllers.maintenance_controller
+      x-openapi-router-controller: controllers.menu_maintenance_controller
     patch:
       tags:
-      - Maintenance
+      - Menu Maintenance
       description: レコードを更新/廃止/復活する
       operationId: maintenance_update
       parameters:
@@ -396,11 +353,11 @@ paths:
           description: Bad Request
         "500":
           description: Internal Server Error
-      x-openapi-router-controller: controllers.maintenance_controller
+      x-openapi-router-controller: controllers.menu_maintenance_controller
   /api/menu/{workspace}/{menu}/maintenance/all/:
     post:
       tags:
-      - MaintenanceAll
+      - Menu MaintenanceAll
       description: レコードを一括で登録/更新/廃止/復活する
       operationId: maintenance_all
       parameters:
@@ -438,7 +395,7 @@ paths:
           description: Bad Request
         "500":
           description: Internal Server Error
-      x-openapi-router-controller: controllers.maintenance_all_controller
+      x-openapi-router-controller: controllers.menu_maintenance_all_controller
 components:
   schemas:
     TABLE:
@@ -457,51 +414,132 @@ components:
         TD_IHP: {}
         PAGE_NO: 0
         UNIQUE_VAL: {}
-    COLINFO:
+    COLUMN_INFO:
       type: object
       additionalProperties:
         type: object
         properties:
-          auto_input:
-            type: integer
-          colid:
-            type: integer
-          colname:
+          column_id:
             type: string
-          coltype:
+            description: 項目ID
+          column_name:
             type: string
-            enum:
-            - TextColumn
-            - NumColumn
-            - DateTimeColumn
+            description: 表示用項目名
+          column_name_rest:
+            type: string
+            description: REST用項目名
+          column_group:
+            type: string
+            description: カラムグループ名
+          column_type:
+            type: integer
+            description: カラムタイプ
+          column_disp_seq:
+            type: integer
+            description: 表示順
           description:
             type: string
-          filter:
-            type: object
-          hide_item:
+            description: 項目説明
+          ref_table_name:
             type: string
+            description: ID連携テーブル名
+          ref_pkey_name:
+            type: string
+            description: ID連携テーブルPK
+          ref_col_name:
+            type: string
+            description: ID連携項目名
+          ref_sort_conditions:
+            type: string
+            description: ID連携ソート条件
+          ref_multi_lang:
+            type: string
+            description: ID連携多言語対応有無
+          col_name:
+            type: string
+            description: データベース上のカラム名
+          save_type:
+            type: string
+            description: データベース上の保存形式
+          auto_input:
+            type: integer
+            description: 自動入力フラグ
           input_item:
             type: integer
+            description: 入力対象フラグ
+          view_item:
+            type: string
+            description: 出力対象フラグ
+          unique_item:
+            type: integer
+            description: 必須入力フラグ
+          required_item:
+            type: integer
+            description: 一意制約フラグ
+          initial_value:
+            type: string
+            description: 入力欄初期値
+          validate_option:
+            type: object
+            description: バリデーション値
+          before_validate_register:
+            type: object
+            description: 個別バリデーション(前)
+          after_validate_register:
+            type: object
+            description: 個別バリデーション(後)
+          filter_type:
+            type: object
+            description: 検索タイプ
           pulldown_info:
             type: object
-          pulldown_list:
-            type: object
-          validate:
-            type: object
-          view_item:
-            type: integer
-      description: keyにはカラム番号が入る
-    MENUINFO:
+            description: プルダウン選択情報
+      description: column_name_restがkeyになる
+    BASIC_INFO:
       type: object
       properties:
-        pageinfo:
+        menu_info:
           type: string
-        pagetype:
+          description: メニューの説明
+        menu_name:
           type: string
-        webrowconfirm:
+          description: メニューの名称
+        sheet_type:
+          type: string
+          description: メニューのシートタイプ
+        table_name:
+          type: string
+          description: テーブル名
+        view_name:
+          type: string
+          description: ビュー名
+        inherit:
+          type: boolean
+          description: 継承フラグ
+        vertical:
+          type: boolean
+          description: 縦型フラグ
+        login_necessity:
+          type: boolean
+          description: 認証有無
+        auto_filter_flg:
+          type: boolean
+          description: オートフィルタフラグ
+        initial_filter_flg:
+          type: boolean
+          description: 初回フィルタフラグ
+        web_print_limit:
           type: integer
-        webrowlimit:
+          description: Web表示最大行数
+        web_print_confirm:
           type: integer
+          description: Web表示前確認行数
+        xls_print_limit:
+          type: integer
+          description: Excel出力最大行数
+        sort_key:
+          type: string
+          description: ソートキー
     inline_response_200:
       type: object
       properties:

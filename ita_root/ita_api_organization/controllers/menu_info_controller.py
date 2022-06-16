@@ -18,10 +18,25 @@ import six
 # from swagger_server import util
 
 
+def get_column_info(workspace, menu):  # noqa: E501
+    """get_column_info
+
+    レコード操作に必要な項目情報を取得する # noqa: E501
+
+    :param workspace: ワークスペース名
+    :type workspace: str
+    :param menu: メニュー名
+    :type menu: str
+
+    :rtype: List[str]
+    """
+    return 'do some magic!'
+
+
 def get_info(workspace, menu):  # noqa: E501
     """get_info
 
-    メニューの情報を取得する # noqa: E501
+    メニューの基本情報および項目情報を取得する # noqa: E501
 
     :param workspace: ワークスペース名
     :type workspace: str
@@ -33,47 +48,17 @@ def get_info(workspace, menu):  # noqa: E501
     return 'do some magic!'
 
 
-def get_info_columun(workspace, menu):  # noqa: E501
-    """get_info_columun
+def get_info_pulldown_list(workspace, menu, restname):  # noqa: E501
+    """get_info_pulldown_list
 
-    メニューの項目情報を取得する # noqa: E501
-
-    :param workspace: ワークスペース名
-    :type workspace: str
-    :param menu: メニュー名
-    :type menu: str
-
-    :rtype: List[str]
-    """
-    return 'do some magic!'
-
-
-def get_info_list(workspace, menu, list_name):  # noqa: E501
-    """get_info_list
-
-    項目のプルダウン用のリストを取得する # noqa: E501
+    項目のプルダウン選択用の一覧を取得する # noqa: E501
 
     :param workspace: ワークスペース名
     :type workspace: str
     :param menu: メニュー名
     :type menu: str
-    :param list_name: REST用項目名
-    :type list_name: str
-
-    :rtype: List[str]
-    """
-    return 'do some magic!'
-
-
-def get_info_menu(workspace, menu):  # noqa: E501
-    """get_info_menu
-
-    メニューの基本情報を取得する # noqa: E501
-
-    :param workspace: ワークスペース名
-    :type workspace: str
-    :param menu: メニュー名
-    :type menu: str
+    :param restname: REST用項目名
+    :type restname: str
 
     :rtype: List[str]
     """

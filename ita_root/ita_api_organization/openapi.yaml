@@ -1,0 +1,506 @@
+openapi: 3.0.3
+info:
+  description: ITAv2.0用API
+  version: 1.0.0
+  title: ITA Version2.0 API
+tags:
+
+  - name: Menu Info
+    description: メニュー情報の取得
+  - name: Menu Filter
+    description: レコードの取得
+  - name: Menu Maintenance
+    description: レコードの操作（登録/更新/廃止/復活/物理削除）
+  - name: Menu MaintenanceAll
+    description: レコードの一括操作（登録/更新/廃止/復活/物理削除）
+paths:
+  /api/menu/{workspace}/{menu}/info/:
+    get:
+      tags:
+        - Menu Info
+      description: メニューの基本情報および項目情報を取得する
+      operationId: getInfo
+      parameters:
+        - name: workspace
+          in: path
+          description: ワークスペース名
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                items:
+                  type: string
+                properties:
+                  COLUMN_INFO:
+                    $ref: '#/components/schemas/COLUMN_INFO'
+                  BASIC_INFO:
+                    $ref: '#/components/schemas/BASIC_INFO'
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+  
+  /api/menu/{workspace}/{menu}/info/column/:
+    get:
+      tags:
+        - Menu Info
+      description: レコード操作に必要な項目情報を取得する
+      operationId: getColumnInfo
+      parameters:
+        - name: workspace
+          in: path
+          description: ワークスペース名
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                items:
+                  type: string
+                properties:
+                  {}
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+  
+  /api/menu/{workspace}/{menu}/info/pulldown/{restname}/:
+    get:
+      tags:
+        - Menu Info
+      description: 項目のプルダウン選択用の一覧を取得する
+      operationId: getInfoPulldownList
+      parameters:
+        - name: workspace
+          in: path
+          description: ワークスペース名
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+        - name: restname
+          in: path
+          description: REST用項目名
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                items:
+                  type: string
+                properties: 
+                  {}
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+          
+  /api/menu/{workspace}/{menu}/filter/:
+    get:
+      tags:
+        - Menu Filter
+      description: レコードを全件取得する
+      operationId: getFilter
+      parameters:
+        - name: workspace
+          in: path
+          description: ワークスペース名
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  TABLE:
+                    $ref: '#/components/schemas/TABLE'
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      tags:
+        - Menu Filter
+      description: 検索条件を指定し、レコードを取得する
+      operationId: postFilter
+      parameters:
+        - name: workspace
+          in: path
+          description: ワークスペース名
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              description: 検索条件を設定
+              type: object
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  TABLE:
+                    $ref: '#/components/schemas/TABLE'
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+  
+  /api/menu/{workspace}/{menu}/maintenance/:
+    post:
+      tags:
+        - Menu Maintenance
+      description: レコードを登録する
+      operationId: maintenanceRegister
+      parameters:
+        - name: workspace
+          in: path
+          description: ワークスペース名
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              description: 登録する値を設定
+              type: object
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+  
+  /api/menu/{workspace}/{menu}/maintenance/{uuid}:
+    patch:
+      tags:
+        - Menu Maintenance
+      description: レコードを更新/廃止/復活する
+      operationId: maintenanceUpdate
+      parameters:
+        - name: workspace
+          in: path
+          description: ワークスペース名
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+        - name: uuid
+          in: path
+          description: 対象のUUID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              description: 更新する値を設定。廃止/復活は廃止フラグを更新することで実施。
+              type: object
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    delete:
+      tags:
+        - Menu Maintenance
+      description: レコードを物理削除
+      operationId: maintenanceDiscard
+      parameters:
+        - name: workspace
+          in: path
+          description: ワークスペース名
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+        - name: uuid
+          in: path
+          description: 対象のUUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+  /api/menu/{workspace}/{menu}/maintenance/all/:
+    post:
+      tags:
+        - Menu MaintenanceAll
+      description: レコードを一括で登録/更新/廃止/復活する
+      operationId: maintenanceAll
+      parameters:
+        - name: workspace
+          in: path
+          description: ワークスペース名
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              description: 登録/更新/廃止/復活するidとレコードの値を設定
+              type: object
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+components:
+  schemas:
+    TABLE:
+      type: object
+      properties:
+        PAGE_NO:
+          type: integer
+        TD:
+          type: object
+        TD_IHP:
+          type: object
+        UNIQUE_VAL:
+          type: object
+    COLUMN_INFO:
+      description: column_name_restがkeyになる
+      additionalProperties:
+        type: object
+        properties:
+          column_id:
+            description: 項目ID
+            type: string
+          column_name:
+            description: 表示用項目名
+            type: string
+          column_name_rest:
+            description: REST用項目名
+            type: string
+          column_group:
+            description: カラムグループ名
+            type: string
+          column_type:
+            description: カラムタイプ
+            type: integer
+          column_disp_seq:
+            description: 表示順
+            type: integer
+          description:
+            description: 項目説明
+            type: string
+          ref_table_name:
+            description: ID連携テーブル名
+            type: string
+          ref_pkey_name:
+            description: ID連携テーブルPK
+            type: string
+          ref_col_name:
+            description: ID連携項目名
+            type: string
+          ref_sort_conditions:
+            description: ID連携ソート条件
+            type: string
+          ref_multi_lang:
+            description: ID連携多言語対応有無
+            type: string
+          col_name:
+            description: データベース上のカラム名
+            type: string
+          save_type:
+            description: データベース上の保存形式
+            type: string
+          auto_input:
+            description: 自動入力フラグ
+            type: integer
+          input_item:
+            description: 入力対象フラグ
+            type: integer
+          view_item:
+            description: 出力対象フラグ
+            type: string
+          unique_item:
+            description: 必須入力フラグ
+            type: integer
+          required_item:
+            description: 一意制約フラグ
+            type: integer
+          initial_value:
+            description: 入力欄初期値
+            type: string
+          validate_option:
+            description: バリデーション値
+            type: object
+          before_validate_register:
+            description: 個別バリデーション(前)
+            type: object
+          after_validate_register:
+            description: 個別バリデーション(後)
+            type: object
+          filter_type:
+            description: 検索タイプ
+            type: object
+          pulldown_info:
+            description: プルダウン選択情報
+            type: object
+    BASIC_INFO:
+      type: object
+      properties:
+        menu_info:
+          description: メニューの説明
+          type: string
+        menu_name:
+          description: メニューの名称
+          type: string
+        sheet_type:
+          description: メニューのシートタイプ
+          type: string
+        table_name:
+          description: テーブル名
+          type: string
+        view_name:
+          description: ビュー名
+          type: string
+        inherit:
+          description: 継承フラグ
+          type: boolean
+        vertical:
+          description: 縦型フラグ
+          type: boolean
+        login_necessity:
+          description: 認証有無
+          type: boolean
+        auto_filter_flg:
+          description: オートフィルタフラグ
+          type: boolean
+        initial_filter_flg:
+          description: 初回フィルタフラグ
+          type: boolean
+        web_print_limit:
+          description: Web表示最大行数
+          type: integer
+        web_print_confirm:
+          description: Web表示前確認行数
+          type: integer
+        xls_print_limit:
+          description: Excel出力最大行数
+          type: integer
+        sort_key:
+          description: ソートキー
+          type: string
