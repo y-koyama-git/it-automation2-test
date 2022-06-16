@@ -72,7 +72,7 @@ COPY ./ita_root/ita_api_organization/config/httpd.conf/httpd.conf /etc/httpd/con
 COPY ./ita_root/ita_api_organization/config/httpd.conf/wsgi.conf /etc/httpd/conf.d/wsgi.conf
 
 COPY ./ita_root/ita_api_organization/ $APP_PATH/
-COPY ./ita_root/common_lib/ $APP_PATH/common_lib/
+COPY ./ita_root/common_libs/ $APP_PATH/common_libs/
 COPY ./ita_root/messages/ $APP_PATH/messages/
 
 CMD ["sudo","-E","httpd","-D","FOREGROUND"]
@@ -89,7 +89,7 @@ COPY ./ita_root/ita_api_organization/httpd.conf/httpd.conf /etc/httpd/conf/httpd
 COPY ./ita_root/ita_api_organization/httpd.conf/wsgi.conf /etc/httpd/conf.d/wsgi.conf
 
 COPY ./ita_root/ita_api_organization/ $APP_PATH/
-COPY ./ita_root/common_lib/ $APP_PATH/common_lib/
+COPY ./ita_root/common_libs/ $APP_PATH/common_libs/
 COPY ./ita_root/messages/ $APP_PATH/messages/
 
 CMD ["httpd","-D","FOREGROUND"]
