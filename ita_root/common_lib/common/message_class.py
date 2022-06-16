@@ -15,6 +15,7 @@ import os
 import json
 import glob
 
+
 class MessageTemplate:
     """
     constructor
@@ -41,7 +42,6 @@ class MessageTemplate:
             # ファイル読み込み失敗時の処理
             print(ret)
 
-
     """
     メッセージファイル格納ディレクトリ配下の.jsonファイルを全て読み込み、
     self.messages(dict)に保存する。
@@ -67,7 +67,6 @@ class MessageTemplate:
         except Exception as e:
 
             return e
-
 
     """
     引数に指定したメッセージIDのメッセージ文字列を返却する。
@@ -104,5 +103,3 @@ class MessageTemplate:
 
         except Exception as e:
             return 'Message Error : {}'.format(e)
-
-
