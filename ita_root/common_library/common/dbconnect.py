@@ -17,6 +17,7 @@ database connection agent module
 """
 
 import pymysql.cursors  # https://pymysql.readthedocs.io/en/latable_name/
+import os
 import uuid
 import datetime
 
@@ -27,7 +28,7 @@ class DBConnectAgent:
     """
 
     _db_con = None  # database connection
-    __db = "ita_db"  # prefix of database name
+    __db = os.environ.get('DB_DATADBASE')
     __is_transaction = False  # state of transaction
     __COLUMN_NAME_TIMESTAMP = 'LAST_UPDATE_TIMESTAMP'
 
@@ -38,13 +39,14 @@ class DBConnectAgent:
         Arguments:
             workspace_name: workspace name
         """
-        self.__host = "192.168.141.53"
-        self.__db_user = "root"
-        self.__db_passwd = "root"
+        self.__host = os.environ.get('DB_HOST')
+        self.__port = int(os.environ.get('DB_PORT'))
+        self.__db_user = os.environ.get('DB_USER')
+        self.__db_passwd = os.environ.get('DB_PASSWORD')
 
-        # decide database name
+        # decide database name, prefix+workspace_name
         self.__workspace_name = workspace_name
-        self.__db += "_workspace_{}".format(workspace_name)
+        # self.__db += "_workspace_{}".format(workspace_name)
         # print(self.__db)
 
         # connect database
@@ -69,6 +71,7 @@ class DBConnectAgent:
         try:
             self._db_con = pymysql.connect(
                 host=self.__host,
+                port=self.__port,
                 user=self.__db_user,
                 passwd=self.__db_passwd,
                 database=self.__db,
