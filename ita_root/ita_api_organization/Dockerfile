@@ -28,6 +28,7 @@ RUN dnf install -y \
     langpacks-en \
     wget \
     unzip \
+&&  pip3.9 install --upgrade pip setuptools \
 &&  pip3.9 install \
     Flask \
     connexion \
@@ -37,6 +38,7 @@ RUN dnf install -y \
     pytz \
     markdown \
     pymysql \
+    python-dotenv \
 &&  pip3.9 install \
     connexion[swagger-ui] \
 &&  groupadd $GROUPNAME \
