@@ -1,3 +1,3 @@
 from .logger import app
-from .dbconnect import DBConnectAgent
+from .dbconnect import DBConnectOrg, DBConnectWs
 from .message_class import MessageTemplate

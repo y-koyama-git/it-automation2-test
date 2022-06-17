@@ -22,15 +22,23 @@ import uuid
 import datetime
 
 
-class DBConnectAgent:
+class DBConnectWs:
     """
-    database connection agnet class for mariadb
+    database connection agnet class for workspace-db on mariadb
     """
+    # info for connection
+    # _db = ""
+    # _host = ""
+    # _port = ""
+    # _db_user = ""
+    # _db_passwd = ""
+    
+    __workspace_name = ""
 
     _db_con = None  # database connection
-    __db = os.environ.get('DB_DATADBASE')
-    __is_transaction = False  # state of transaction
-    __COLUMN_NAME_TIMESTAMP = 'LAST_UPDATE_TIMESTAMP'
+
+    _is_transaction = False  # state of transaction
+    _COLUMN_NAME_TIMESTAMP = 'LAST_UPDATE_TIMESTAMP'
 
     def __init__(self, workspace_name):
         """
@@ -39,15 +47,22 @@ class DBConnectAgent:
         Arguments:
             workspace_name: workspace name
         """
-        self.__host = os.environ.get('DB_HOST')
-        self.__port = int(os.environ.get('DB_PORT'))
-        self.__db_user = os.environ.get('DB_USER')
-        self.__db_passwd = os.environ.get('DB_PASSWORD')
-
         # decide database name, prefix+workspace_name
         self.__workspace_name = workspace_name
-        # self.__db += "_workspace_{}".format(workspace_name)
-        # print(self.__db)
+        self._db = "WSDB_" + self.__workspace_name.upper()
+
+        # get db-connect-infomation from organization-db
+        db_org = DBConnectOrg()
+        connect_info = db_org.table_select("T_COMN_WORKSPACE_DB_INFO", "WHERE `DB_DATADBASE` = %s", [self._db])
+        if len(connect_info) == 0:
+            msg = "Dabase Connect Error db_name={} : Database is not found".format(self._db)
+            raise Exception(msg)
+
+        connect_info = connect_info[0]
+        self._host = connect_info['DB_HOST']
+        self._port = connect_info['DB_PORT']
+        self._db_user = connect_info['DB_USER']
+        self._db_passwd = connect_info['DB_PASSWORD']
 
         # connect database
         self.db_connect()
@@ -70,16 +85,16 @@ class DBConnectAgent:
 
         try:
             self._db_con = pymysql.connect(
-                host=self.__host,
-                port=self.__port,
-                user=self.__db_user,
-                passwd=self.__db_passwd,
-                database=self.__db,
+                host=self._host,
+                port=self._port,
+                user=self._db_user,
+                passwd=self._db_passwd,
+                database=self._db,
                 charset='utf8',
                 cursorclass=pymysql.cursors.DictCursor
             )
         except pymysql.Error as e:
-            msg = "Dabase Connect Error db_name={} : {}".format(self.__db, e)
+            msg = "Dabase Connect Error db_name={} : {}".format(self._db, e)
             raise Exception(msg)
 
         return True
@@ -92,7 +107,7 @@ class DBConnectAgent:
             self._db_con.close()
 
         self._db_con = None
-        self.__is_transaction = False
+        self._is_transaction = False
 
     def db_transaction_start(self):
         """
@@ -102,17 +117,17 @@ class DBConnectAgent:
             is success:(bool) 
         """
         res = False
-        if self._db_con.open is True and self.__is_transaction is False:
+        if self._db_con.open is True and self._is_transaction is False:
             try:
                 self._db_con.begin()
                 res = True
             except pymysql.Error as e:
-                msg = "SQL Error : db_name={}: {}".format(self.__db, e)
+                msg = "SQL Error : db_name={}: {}".format(self._db, e)
                 res = False
                 raise Exception(msg)
 
             if res is True:
-                self.__is_transaction = True
+                self._is_transaction = True
 
         return res
 
@@ -141,17 +156,17 @@ class DBConnectAgent:
             is success:(bool) 
         """
         res = False
-        if self._db_con.open is True and self.__is_transaction is True:
+        if self._db_con.open is True and self._is_transaction is True:
             try:
                 self._db_con.commit()
                 res = True
             except pymysql.Error as e:
-                msg = "SQL Error : db_name={}: {}".format(self.__db, e)
+                msg = "SQL Error : db_name={}: {}".format(self._db, e)
                 res = False
                 raise Exception(msg)
 
             if res is True:
-                self.__is_transaction = False
+                self._is_transaction = False
 
         return res
 
@@ -163,16 +178,16 @@ class DBConnectAgent:
             is success:(bool) 
         """
         res = False
-        if self._db_con.open is True and self.__is_transaction is True:
+        if self._db_con.open is True and self._is_transaction is True:
             try:
                 self._db_con.rollback()
                 res = True
             except pymysql.Error as e:
-                msg = "SQL Error : db_name={}: {}".format(self.__db, e)
+                msg = "SQL Error : db_name={}: {}".format(self._db, e)
                 res = False
                 raise Exception(msg)
             if res is True:
-                self.__is_transaction = False
+                self._is_transaction = False
         return res
 
     def sql_execute(self, sql, bind_value_list=[]):
@@ -190,7 +205,7 @@ class DBConnectAgent:
         try:
             db_cursor.execute(sql, tuple(bind_value_list))
         except pymysql.Error as e:
-            msg = "SQL Error : db_name={}, sql='{}', bind_value={} : {}".format(self.__db, sql, bind_value_list, e)
+            msg = "SQL Error : db_name={}, sql='{}', bind_value={} : {}".format(self._db, sql, bind_value_list, e)
             raise Exception(msg)
 
         data_list = list(db_cursor.fetchall())  # counter plan for 0 data
@@ -278,8 +293,8 @@ class DBConnectAgent:
         for data in data_list:
             # auto set
             timestamp = str(datetime.datetime.now())
-            data[primary_key_name] = str(self.__uuid_create())
-            data[self.__COLUMN_NAME_TIMESTAMP] = timestamp
+            data[primary_key_name] = str(self._uuid_create())
+            data[self._COLUMN_NAME_TIMESTAMP] = timestamp
 
             # make sql statement
             column_list = list(data.keys())
@@ -299,7 +314,7 @@ class DBConnectAgent:
                 continue
             # insert history table
             history_table_name = table_name + "_JNL"
-            add_data = self.__make_history_table_data("INSERT", timestamp)
+            add_data = self._make_history_table_data("INSERT", timestamp)
             # make history data
             history_data = dict(data, **add_data)
 
@@ -339,7 +354,7 @@ class DBConnectAgent:
         for data in data_list:
             # auto set
             timestamp = str(datetime.datetime.now())
-            data[self.__COLUMN_NAME_TIMESTAMP] = timestamp
+            data[self._COLUMN_NAME_TIMESTAMP] = timestamp
 
             # make sql statement
             prepared_list = list(map(lambda k: "`" + k + "`=%s", data.keys()))
@@ -359,7 +374,7 @@ class DBConnectAgent:
                 continue
             # insert history table
             history_table_name = table_name + "_JNL"
-            add_data = self.__make_history_table_data("UPDATE", timestamp)
+            add_data = self._make_history_table_data("UPDATE", timestamp)
 
             # re-get all column data
             data = self.table_select(table_name, "WHERE `{}` = '{}'".format(primary_key_name, primary_key_value))
@@ -404,13 +419,13 @@ class DBConnectAgent:
         res = self.sql_execute(sql, table_name_list)
         return res
 
-    def __uuid_create(self):
+    def _uuid_create(self):
         """
         make uuid of version4
         """
         return uuid.uuid4()
 
-    def __make_history_table_data(self, action_class, timestamp):
+    def _make_history_table_data(self, action_class, timestamp):
         """
         make addtinal data for history JNL table
 
@@ -421,10 +436,41 @@ class DBConnectAgent:
             addtinal data for history JNL table: tupple
         """
         return {
-            'JOURNAL_SEQ_NO': str(self.__uuid_create()),
+            'JOURNAL_SEQ_NO': str(self._uuid_create()),
             'JOURNAL_REG_DATETIME': timestamp,
             'JOURNAL_ACTION_CLASS': action_class
         }
+
+
+class DBConnectOrg(DBConnectWs):
+    """
+    database connection agnet class for organization-db on mariadb
+    """
+
+    def __init__(self):
+        """
+        constructor
+        """
+        self._db = os.environ.get('DB_DATADBASE')
+        self._host = os.environ.get('DB_HOST')
+        self._port = int(os.environ.get('DB_PORT'))
+        self._db_user = os.environ.get('DB_USER')
+        self._db_passwd = os.environ.get('DB_PASSWORD')
+
+        # connect database
+        self.db_connect()
+
+    def __del__(self):
+        """
+        destructor
+        """
+        self.db_disconnect()
+
+    def table_insert(self, table_name, data_list, primary_key_name, is_register_history=False):
+        return super().table_insert(table_name, data_list, primary_key_name, is_register_history)
+
+    def table_update(self, table_name, data_list, primary_key_name, is_register_history=False):
+        return super().table_update(table_name, data_list, primary_key_name, is_register_history)
 
 
 if __name__ == '__main__':
