@@ -11,7 +11,7 @@ services:
         - https_proxy=${HTTPS_PROXY}
     environment:
       - LISTEN_PORT=8000
-      - PYTHONPATH=/workspace/ita_root/ita_api_organization
+      - PYTHONPATH=/exastro/
       - DB_HOST=ita-mariadb
       - DB_PORT=3306
       - DB_DATADBASE=ITA_DB
