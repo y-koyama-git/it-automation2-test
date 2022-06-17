@@ -15,61 +15,58 @@
 import connexion
 import six
 
-# from swagger_server.models.inline_response2001 import InlineResponse2001  # noqa: E501
-# from swagger_server import util
 
-
-def maintenance_discard(workspace, menu, uuid):  # noqa: E501
+def maintenance_discard(workspace_id, menu, uuid):  # noqa: E501
     """maintenance_discard
 
     レコードを物理削除 # noqa: E501
 
-    :param workspace: ワークスペース名
-    :type workspace: str
+    :param workspace_id: ワークスペース名
+    :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
     :param uuid: 対象のUUID
     :type uuid: str
 
-    :rtype: InlineResponse2001
+    :rtype: InlineResponse200
     """
     return 'do some magic!'
 
 
-def maintenance_register(body, workspace, menu):  # noqa: E501
+def maintenance_register(body, workspace_id, menu):  # noqa: E501
     """maintenance_register
 
     レコードを登録する # noqa: E501
 
     :param body: 
     :type body: dict | bytes
-    :param workspace: ワークスペース名
-    :type workspace: str
+    :param workspace_id: ワークスペース名
+    :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
 
-    :rtype: InlineResponse2001
+    :rtype: InlineResponse200
     """
     if connexion.request.is_json:
         body = object.from_dict(connexion.request.get_json())  # noqa: E501
     return 'do some magic!'
 
 
-def maintenance_update(body, workspace, menu, uuid):  # noqa: E501
+def maintenance_update(body, workspace_id, menu, uuid):  # noqa: E501
     """maintenance_update
 
     レコードを更新/廃止/復活する # noqa: E501
 
     :param body: 
     :type body: dict | bytes
-    :param workspace: ワークスペース名
-    :type workspace: str
+    :param workspace_id: ワークスペース名
+    :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
     :param uuid: 対象のUUID
     :type uuid: str
 
-    :rtype: InlineResponse2001
+    :rtype: InlineResponse200
     """
     if connexion.request.is_json:
         body = object.from_dict(connexion.request.get_json())  # noqa: E501
