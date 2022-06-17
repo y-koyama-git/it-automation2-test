@@ -16,6 +16,16 @@ import os
 import connexion
 # import controllers
 
+
+from dotenv import load_dotenv  # python-dotenv
+from common_libs.common.logger import app_log_init
+
+# load environ variables
+load_dotenv(override=True)
+
+# create app log instance
+app_log_init()
+
 app = connexion.FlaskApp(__name__, specification_dir='./swagger/')
 app.add_api('swagger.yaml')
 
