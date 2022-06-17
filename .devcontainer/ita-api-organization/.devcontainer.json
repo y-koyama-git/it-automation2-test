@@ -59,8 +59,8 @@
 		"ryu1kn.partial-diff",
 		"pkief.material-icon-theme",
 		"rangav.vscode-thunder-client",
-		"mtxr.sqltools",
-		"mtxr.sqltools-driver-mysql",
+		// "mtxr.sqltools",
+		// "mtxr.sqltools-driver-mysql",
 		"mitchdenny.ecdc",
 	],
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.

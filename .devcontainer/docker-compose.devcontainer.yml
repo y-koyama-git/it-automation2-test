@@ -36,3 +36,15 @@ services:
     volumes:
       - ../ita_root/ita_web_server/contents/:/var/www/html/:cached
       - ../ita_root/ita_web_server/config/httpd.conf/httpd.conf:/etc/httpd/conf/httpd.conf:cached
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    depends_on:
+      - ita-mariadb
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOSTS=ita-mariadb
+    ports:
+      - "8080:80"
+    volumes:
+      - ../.volumes/phpmyadmin/sessions:/sessions
