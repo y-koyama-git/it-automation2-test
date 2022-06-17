@@ -15,64 +15,48 @@ import connexion
 import six
 
 
-
-def get_basic_info(workspace, menu):  # noqa: E501
-    """get_basic_info
-
-    メニューの基本情報を取得する # noqa: E501
-
-    :param workspace: ワークスペース名
-    :type workspace: str
-    :param menu: メニュー名
-    :type menu: str
-
-    :rtype: List[str]
-    """
-    return 'do some magic!'
-
-
-def get_column_info(workspace, menu):  # noqa: E501
+def get_column_info(workspace_id, menu):  # noqa: E501
     """get_column_info
 
     メニューの項目情報を取得する # noqa: E501
 
-    :param workspace: ワークスペース名
-    :type workspace: str
+    :param workspace_id: ワークスペース名
+    :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
 
-    :rtype: List[str]
+    :rtype: InlineResponse200
     """
     return 'do some magic!'
 
 
-def get_info(workspace, menu):  # noqa: E501
+def get_info(workspace_id, menu):  # noqa: E501
     """get_info
 
     メニューの基本情報および項目情報を取得する # noqa: E501
 
-    :param workspace: ワークスペース名
-    :type workspace: str
+    :param workspace_id: ワークスペース名
+    :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
 
-    :rtype: List[str]
+    :rtype: InlineResponse2001
     """
     return 'do some magic!'
 
 
-def get_info_pulldown_list(workspace, menu, restname):  # noqa: E501
+def get_info_pulldown_list(workspace_id, menu, restname):  # noqa: E501
     """get_info_pulldown_list
 
     項目のプルダウン選択用の一覧を取得する # noqa: E501
 
-    :param workspace: ワークスペース名
-    :type workspace: str
+    :param workspace_id: ワークスペース名
+    :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
     :param restname: REST用項目名
     :type restname: str
 
-    :rtype: List[str]
+    :rtype: InlineResponse200
     """
     return 'do some magic!'

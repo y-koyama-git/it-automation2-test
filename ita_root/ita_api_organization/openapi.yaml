@@ -16,7 +16,7 @@ tags:
   - name: Menu MaintenanceAll
     description: レコードの一括操作（登録/更新/廃止/復活/物理削除）
 paths:
-  /api/workspaces/{workspace_id}/:
+  /api/workspaces/{workspace_id}/ita/:
     get:
       tags:
         - Workspace Create
@@ -36,23 +36,30 @@ paths:
             application/json:
               schema:
                 type: object
-                items:
-                  type: string
-                properties: 
-                  {}
-        '400':
-          description: Bad Request
+                properties:
+                  status:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
         '500':
           description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
 
-  /api/menu/{workspace}/{menu}/info/:
+  /api/workspaces/{workspace_id}/ita/menu/{menu}/info/:
     get:
       tags:
         - Menu Info
       description: メニューの基本情報および項目情報を取得する
       operationId: getInfo
       parameters:
-        - name: workspace
+        - name: workspace_id
           in: path
           description: ワークスペース名
           required: true
@@ -71,62 +78,40 @@ paths:
             application/json:
               schema:
                 type: object
-                items:
-                  type: string
                 properties:
-                  COLUMN_INFO:
-                    $ref: '#/components/schemas/COLUMN_INFO'
-                  BASIC_INFO:
-                    $ref: '#/components/schemas/BASIC_INFO'
-        '400':
-          description: Bad Request
-        '500':
-          description: Internal Server Error
-          
-  /api/menu/{workspace}/{menu}/info/basic/:
-    get:
-      tags:
-        - Menu Info
-      description: メニューの基本情報を取得する
-      operationId: getBasicInfo
-      parameters:
-        - name: workspace
-          in: path
-          description: ワークスペース名
-          required: true
-          schema:
-            type: string
-        - name: menu
-          in: path
-          description: メニュー名
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Success
+                  result:
+                    type: string
+                    example: 001-002
+                  data:
+                    type: object
+                    properties:
+                      COLUMN_INFO:
+                        $ref: '#/components/schemas/COLUMN_INFO'
+                      MENU_INFO:
+                        $ref: '#/components/schemas/MENU_INFO'
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
           content:
             application/json:
               schema:
-                type: object
-                items:
-                  type: string
-                properties:
-                  BASIC_INFO:
-                    $ref: '#/components/schemas/BASIC_INFO'
-        '400':
-          description: Bad Request
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
         '500':
           description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
   
-  /api/menu/{workspace}/{menu}/info/column/:
+  /api/workspaces/{workspace_id}/ita/menu/{menu}/info/column/:
     get:
       tags:
         - Menu Info
       description: メニューの項目情報を取得する
       operationId: getColumnInfo
       parameters:
-        - name: workspace
+        - name: workspace_id
           in: path
           description: ワークスペース名
           required: true
@@ -145,24 +130,30 @@ paths:
             application/json:
               schema:
                 type: object
-                items:
-                  type: string
                 properties:
-                  COLUMN_INFO:
-                    $ref: '#/components/schemas/COLUMN_INFO'
-        '400':
-          description: Bad Request
+                  status:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
         '500':
           description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
   
-  /api/menu/{workspace}/{menu}/info/pulldown/{restname}/:
+  /api/workspaces/{workspace_id}/ita/menu/{menu}/info/pulldown/{restname}/:
     get:
       tags:
         - Menu Info
       description: 項目のプルダウン選択用の一覧を取得する
       operationId: getInfoPulldownList
       parameters:
-        - name: workspace
+        - name: workspace_id
           in: path
           description: ワークスペース名
           required: true
@@ -187,23 +178,30 @@ paths:
             application/json:
               schema:
                 type: object
-                items:
-                  type: string
-                properties: 
-                  {}
-        '400':
-          description: Bad Request
+                properties:
+                  status:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
         '500':
           description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
           
-  /api/menu/{workspace}/{menu}/filter/:
+  /api/workspaces/{workspace_id}/ita/menu/{menu}/filter/:
     get:
       tags:
         - Menu Filter
       description: レコードを全件取得する
       operationId: getFilter
       parameters:
-        - name: workspace
+        - name: workspace_id
           in: path
           description: ワークスペース名
           required: true
@@ -225,17 +223,25 @@ paths:
                 properties:
                   TABLE:
                     $ref: '#/components/schemas/TABLE'
-        '400':
-          description: Bad Request
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
         '500':
           description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
     post:
       tags:
         - Menu Filter
       description: 検索条件を指定し、レコードを取得する
       operationId: postFilter
       parameters:
-        - name: workspace
+        - name: workspace_id
           in: path
           description: ワークスペース名
           required: true
@@ -262,21 +268,29 @@ paths:
               schema:
                 type: object
                 properties:
-                  TABLE:
-                    $ref: '#/components/schemas/TABLE'
-        '400':
-          description: Bad Request
+                  status:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
         '500':
           description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
   
-  /api/menu/{workspace}/{menu}/maintenance/:
+  /api/workspaces/{workspace_id}/ita/menu/{menu}/maintenance/:
     post:
       tags:
         - Menu Maintenance
       description: レコードを登録する
       operationId: maintenanceRegister
       parameters:
-        - name: workspace
+        - name: workspace_id
           in: path
           description: ワークスペース名
           required: true
@@ -305,19 +319,27 @@ paths:
                 properties:
                   status:
                     type: string
-        '400':
-          description: Bad Request
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
         '500':
           description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
   
-  /api/menu/{workspace}/{menu}/maintenance/{uuid}:
+  /api/workspaces/{workspace_id}/ita/menu/{menu}/maintenance/{uuid}:
     patch:
       tags:
         - Menu Maintenance
       description: レコードを更新/廃止/復活する
       operationId: maintenanceUpdate
       parameters:
-        - name: workspace
+        - name: workspace_id
           in: path
           description: ワークスペース名
           required: true
@@ -352,17 +374,25 @@ paths:
                 properties:
                   status:
                     type: string
-        '400':
-          description: Bad Request
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
         '500':
           description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
     delete:
       tags:
         - Menu Maintenance
       description: レコードを物理削除
       operationId: maintenanceDiscard
       parameters:
-        - name: workspace
+        - name: workspace_id
           in: path
           description: ワークスペース名
           required: true
@@ -390,18 +420,26 @@ paths:
                 properties:
                   status:
                     type: string
-        '400':
-          description: Bad Request
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
         '500':
           description: Internal Server Error
-  /api/menu/{workspace}/{menu}/maintenance/all/:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+  /api/workspaces/{workspace_id}/ita/menu/{menu}/maintenance/all/:
     post:
       tags:
         - Menu MaintenanceAll
       description: レコードを一括で登録/更新/廃止/復活する
       operationId: maintenanceAll
       parameters:
-        - name: workspace
+        - name: workspace_id
           in: path
           description: ワークスペース名
           required: true
@@ -430,10 +468,18 @@ paths:
                 properties:
                   status:
                     type: string
-        '400':
-          description: Bad Request
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
         '500':
           description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
 components:
   schemas:
     TABLE:
@@ -527,7 +573,7 @@ components:
           pulldown_info:
             description: プルダウン選択情報
             type: object
-    BASIC_INFO:
+    MENU_INFO:
       type: object
       properties:
         menu_info:
@@ -571,4 +617,12 @@ components:
           type: integer
         sort_key:
           description: ソートキー
+          type: string
+    ERROR_TEMPLATE:
+      type: object
+      properties:
+        result:
+          type: string
+          example: 001-002
+        message:
           type: string

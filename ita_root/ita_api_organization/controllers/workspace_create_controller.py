@@ -24,6 +24,6 @@ def workspace_create(workspace_id):  # noqa: E501
     :param workspace_id: ワークスペース名
     :type workspace_id: str
 
-    :rtype: List[str]
+    :rtype: InlineResponse200
     """
-    return 'do some magic!' + workspace_id
+    return 'do some magic!'

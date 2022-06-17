@@ -15,34 +15,31 @@
 import connexion
 import six
 
-# from swagger_server.models.inline_response200 import InlineResponse200  # noqa: E501
-# from swagger_server import util
 
-
-def get_filter(workspace, menu):  # noqa: E501
+def get_filter(workspace_id, menu):  # noqa: E501
     """get_filter
 
     レコードを全件取得する # noqa: E501
 
-    :param workspace: ワークスペース名
-    :type workspace: str
+    :param workspace_id: ワークスペース名
+    :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
 
-    :rtype: InlineResponse200
+    :rtype: InlineResponse2002
     """
     return 'do some magic!'
 
 
-def post_filter(body, workspace, menu):  # noqa: E501
+def post_filter(body, workspace_id, menu):  # noqa: E501
     """post_filter
 
     検索条件を指定し、レコードを取得する # noqa: E501
 
     :param body: 
     :type body: dict | bytes
-    :param workspace: ワークスペース名
-    :type workspace: str
+    :param workspace_id: ワークスペース名
+    :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
 
