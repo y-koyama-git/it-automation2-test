@@ -11,17 +11,30 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
-
 import connexion
 import six
 
-# from swagger_server import util
+
+
+def get_basic_info(workspace, menu):  # noqa: E501
+    """get_basic_info
+
+    メニューの基本情報を取得する # noqa: E501
+
+    :param workspace: ワークスペース名
+    :type workspace: str
+    :param menu: メニュー名
+    :type menu: str
+
+    :rtype: List[str]
+    """
+    return 'do some magic!'
 
 
 def get_column_info(workspace, menu):  # noqa: E501
     """get_column_info
 
-    レコード操作に必要な項目情報を取得する # noqa: E501
+    メニューの項目情報を取得する # noqa: E501
 
     :param workspace: ワークスペース名
     :type workspace: str
