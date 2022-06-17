@@ -182,6 +182,7 @@ CREATE TABLE T_COMN_MENU_COLUMN_LINK
     REF_COL_NAME                    VARCHAR(64),                                -- ID連携項目名
     REF_SORT_CONDITIONS             TEXT,                                       -- ID連携ソート条件
     REF_MULTI_LANG                  VARCHAR(2),                                 -- ID連携多言語対応有無
+    SENSITIVE_COL_NAME              VARCHAR(64),                                -- Sensitive設定用カラム名
     COL_NAME                        VARCHAR(64),                                -- カラム名
     SAVE_TYPE                       VARCHAR(64),                                -- DB上の保存形式
     AUTO_INPUT                      VARCHAR(2),                                 -- 自動入力フラグ
@@ -220,6 +221,7 @@ CREATE TABLE T_COMN_MENU_COLUMN_LINK_JNL
     REF_COL_NAME                    VARCHAR(64),                                -- ID連携項目名
     REF_SORT_CONDITIONS             TEXT,                                       -- ID連携ソート条件
     REF_MULTI_LANG                  VARCHAR(2),                                 -- ID連携多言語対応有無
+    SENSITIVE_COL_NAME              VARCHAR(64),                                -- Sensitive設定用カラム名
     COL_NAME                        VARCHAR(64),                                -- カラム名
     SAVE_TYPE                       VARCHAR(64),                                -- DB上の保存形式
     AUTO_INPUT                      VARCHAR(2),                                 -- 自動入力フラグ
