@@ -29,8 +29,8 @@ class AppLog:
     application logging class
     """
 
-    # logging namespace ex."sassAppLogger" or "myAppLogger"
-    __name__ = "sassAppLogger"
+    # logging namespace ex."stdAppLogger" or "fileAppLogger"
+    __name__ = "stdAppLogger"
 
     # Instance of logging-Library（get from logging.getLogger）
     __logger_obj = None
@@ -61,15 +61,15 @@ class AppLog:
         Returns:
             
         """
-        self.__name__ = "myAppLogger" if isMyapp is True else "sassAppLogger"
+        self.__name__ = "fileAppLogger" if isMyapp is True else "stdAppLogger"
 
         if isMyapp is False:  # container-app(Saas)
-            del dictConfig['loggers']["myAppLogger"]
-            if "myfile" not in list(dictConfig['loggers']["sassAppLogger"]["handlers"]):
+            del dictConfig['loggers']["fileAppLogger"]
+            if "myfile" not in list(dictConfig['loggers']["stdAppLogger"]["handlers"]):
                 del dictConfig['handlers']["myfile"]
         else:  # no-container-app
-            del dictConfig['loggers']["sassAppLogger"]
-            if "myfile" not in list(dictConfig['loggers']["myAppLogger"]["handlers"]):
+            del dictConfig['loggers']["stdAppLogger"]
+            if "myfile" not in list(dictConfig['loggers']["fileAppLogger"]["handlers"]):
                 del dictConfig['handlers']["myfile"]
             # merge user settings
             dictConfig = self.__user_setting(dictConfig)
