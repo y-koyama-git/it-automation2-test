@@ -9,10 +9,7 @@
         "ERR":{
             "0000000001":"[sample]システムエラー",
             "0000000002":"[sample]失敗しました",
-            "0000000003":"[sample]{}の処理に失敗しました",
-            "0000001010":"『メニュー管理』に対象のメニューが存在しません",
-            "0000001020":"『メニュー-テーブル紐付管理』に対象のメニューが存在しません",
-            "0000001030":"『メニュー-カラム紐付管理』に対象のメニューが存在しません"
+            "0000000003":"[sample]{}の処理に失敗しました"
         }
     },
     "en":{
@@ -26,10 +23,7 @@
             "0000000001":"[sample]System Error",
             "0000000002":"[sample]Failed",
             "0000000003":"[sample]Failed to {}",
-            "0000000004":"[sample]SQL error : {}",
-            "0000001010":"The target menu does not exist in \"Menu list\"",
-            "0000001020":"The target menu does not exist in \"Menu Table list\"",
-            "0000001030":"The target menu does not exist in \"Menu Column list\""
+            "0000000004":"[sample]SQL error : {}"
         }
     }
 }

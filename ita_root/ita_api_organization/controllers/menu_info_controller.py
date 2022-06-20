@@ -11,8 +11,10 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
-import connexion
-import six
+
+from common_libs.common import *  # noqa: F403
+from libs import menu_info
+from flask import jsonify
 
 
 def get_column_info(workspace_id, menu):  # noqa: E501
@@ -27,7 +29,29 @@ def get_column_info(workspace_id, menu):  # noqa: E501
 
     :rtype: InlineResponse200
     """
-    return 'do some magic!'
+    try:
+        # DB接続
+        objdbca = DBConnectWs(workspace_id)  # noqa: F405
+        
+        # メニューのカラム情報を取得
+        # ####メモ：langは取得方法検討中
+        result_data = menu_info.collect_menu_column_info(objdbca, menu, 'ja')
+        result = {
+            "result": result_data[0],
+            "data": result_data[1],
+            "message": result_data[2]
+        }
+        
+        return jsonify(result), 200
+    
+    except Exception as result:
+        # ####メモ：Exceptionクラス作成後、resultをそのままreturnしたい。
+        print(result)
+        result_dummy = {
+            "result": "StatusCode",
+            "message": "aaa bbb ccc"
+        }, 500
+        return result_dummy
 
 
 def get_info(workspace_id, menu):  # noqa: E501
@@ -42,7 +66,31 @@ def get_info(workspace_id, menu):  # noqa: E501
 
     :rtype: InlineResponse2001
     """
-    return 'do some magic!'
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+    
+    # ####メモ：処理内で想定外エラーがあったら500で返したい。
+    
+    try:
+        # メニューの基本情報および項目情報の取得
+        # ####メモ：langは取得方法検討中
+        result_data = menu_info.collect_menu_info(objdbca, menu, 'ja')
+        result = {
+            "result": result_data[0],
+            "data": result_data[1],
+            "message": result_data[2]
+        }
+        
+        return jsonify(result), 200
+
+    except Exception as result:
+        # ####メモ：Exceptionクラス作成後、resultをそのままreturnしたい。
+        print(result)
+        result_dummy = {
+            "result": "StatusCode",
+            "message": "aaa bbb ccc"
+        }, 500
+        return result_dummy
 
 
 def get_info_pulldown_list(workspace_id, menu, restname):  # noqa: E501
