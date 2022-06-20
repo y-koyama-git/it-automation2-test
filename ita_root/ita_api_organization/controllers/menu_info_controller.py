@@ -66,12 +66,10 @@ def get_info(workspace_id, menu):  # noqa: E501
 
     :rtype: InlineResponse2001
     """
-    # DB接続
-    objdbca = DBConnectWs(workspace_id)  # noqa: F405
-    
-    # ####メモ：処理内で想定外エラーがあったら500で返したい。
-    
     try:
+        # DB接続
+        objdbca = DBConnectWs(workspace_id)  # noqa: F405
+        
         # メニューの基本情報および項目情報の取得
         # ####メモ：langは取得方法検討中
         result_data = menu_info.collect_menu_info(objdbca, menu, 'ja')
