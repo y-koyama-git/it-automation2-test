@@ -17,7 +17,7 @@ tags:
     description: レコードの一括操作（登録/更新/廃止/復活/物理削除）
 paths:
   /api/workspaces/{workspace_id}/ita/:
-    get:
+    post:
       tags:
         - Workspace Create
       description: ワークスペースを作成する
@@ -29,6 +29,13 @@ paths:
           required: true
           schema:
             type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              description: ロールID情報
+              type: object
       responses:
         '200':
           description: Success
