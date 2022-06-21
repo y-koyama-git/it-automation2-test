@@ -15,6 +15,13 @@
 import connexion
 import six
 
+from common_libs.common import *  # noqa: F403
+from flask import jsonify
+
+import sys
+sys.path.append('../../')
+from common_libs.loadtable.load_table import loadTable
+
 
 def get_filter(workspace_id, menu):  # noqa: E501
     """get_filter
@@ -28,7 +35,30 @@ def get_filter(workspace_id, menu):  # noqa: E501
 
     :rtype: InlineResponse2002
     """
-    return 'do some magic!'
+    try:
+        # DB接続
+        objdbca = DBConnectWs(workspace_id)  # noqa: F405
+        
+        # メニューのカラム情報を取得
+        objmenu = loadTable(objdbca, menu)
+        result_data = objmenu.rest_filter({})
+
+        #### result_code,msg未対応
+        result = {
+            "result": "result_code", #result_data[0],
+            "data": result_data, #result_data[1],
+            "message": "msg" #result_data[2]
+        }
+        return jsonify(result), 200
+
+    except Exception as result:
+        # ####メモ：Exceptionクラス作成後、resultをそのままreturnしたい。
+        print(result)
+        result_dummy = {
+            "result": "StatusCode",
+            "message": "aaa bbb ccc"
+        }, 500
+        return result_dummy
 
 
 def post_filter(body, workspace_id, menu):  # noqa: E501
@@ -36,7 +66,7 @@ def post_filter(body, workspace_id, menu):  # noqa: E501
 
     検索条件を指定し、レコードを取得する # noqa: E501
 
-    :param body: 
+    :param body:
     :type body: dict | bytes
     :param workspace_id: ワークスペース名
     :type workspace_id: str
@@ -45,6 +75,34 @@ def post_filter(body, workspace_id, menu):  # noqa: E501
 
     :rtype: InlineResponse200
     """
-    if connexion.request.is_json:
-        body = object.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
+
+    try:
+        # DB接続
+        objdbca = DBConnectWs(workspace_id)  # noqa: F405
+
+        filter_parameter = {}
+        if connexion.request.is_json:
+            body = dict(connexion.request.get_json())
+            filter_parameter = body
+                
+        # メニューのカラム情報を取得
+        objmenu = loadTable(objdbca, menu)
+        result_data = objmenu.rest_filter(filter_parameter)
+
+        #### result_code,msg未対応
+        result = {
+            "result": "result_code", #result_data[0],
+            "data": result_data, #result_data[1],
+            "message": "msg" #result_data[2]
+        }
+        return jsonify(result), 200
+
+    except Exception as result:
+        # ####メモ：Exceptionクラス作成後、resultをそのままreturnしたい。
+        print(result)
+        result_dummy = {
+            "result": "StatusCode",
+            "message": "aaa bbb ccc"
+        }, 500
+        return result_dummy
+

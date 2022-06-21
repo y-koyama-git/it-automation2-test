@@ -216,7 +216,11 @@ class Column():
         validate_option = {}
         tmp_validate_option = self.get_objcol().get('VALIDATE_OPTION')
         if tmp_validate_option is not None:
-            validate_option = json.loads(tmp_validate_option)
+            try:
+                validate_option = json.loads(tmp_validate_option)
+            except json.JSONDecodeError as e:
+                validate_option = {}
+
         return validate_option
 
     def get_call_before_valid_info(self):
@@ -301,12 +305,12 @@ class Column():
 
         # 標準バリデーションレコード操作前
         result_1 = self.before_iud_validate_check(val, option)
-        if result_1 is not True:
+        if result_1[0] is not True:
             return result_1
 
         # 個別バリデーションレコード操作前
         result_2 = self.before_iud_menu_action(val, option)
-        if result_2 is not True:
+        if result_2[0] is not True:
             return result_2
 
         return retBool,
@@ -356,7 +360,7 @@ class Column():
 
             # バリデーション一意 DBアクセス
             result_2 = self.get_uniqued()
-            if result_2 == 1:
+            if result_2 == '1':
                 result_2 = self.is_valid_unique(val)
                 if result_2[0] is not True:
                     return result_2
@@ -371,7 +375,7 @@ class Column():
     # [maintenance] カラム個別処理 レコード操作前
     def before_iud_menu_action(self, val='', option={}):
         """
-           カラム個別処理  レコード操作前
+            カラム個別処理  レコード操作前
             ARGS:
                 val:値
                 option:個別バリデーション,個別処理
@@ -396,7 +400,7 @@ class Column():
     # [maintenance] カラムクラスの個別処理 レコード操作後
     def after_iud_common_action(self, val='', option={}):
         """
-           カラムクラス毎の個別処理 レコード操作後
+            カラムクラス毎の個別処理 レコード操作後
             ARGS:
                 val:値
                 option:オプション
@@ -412,7 +416,7 @@ class Column():
     # [maintenance] カラム個別処理 レコード操作後
     def after_iud_menu_action(self, val='', option={}):
         """
-           カラム個別処理  レコード操作後
+            カラム個別処理  レコード操作後
             ARGS:
                 val:値
                 option:個別処理
@@ -474,7 +478,7 @@ class Column():
             result = self.objdbca.table_count(self.table_name, where_str, bind_value_list)
             if result != 0:
                 retBool = False
-                msg = '一意制約'
+                msg = '{}:一意制約'.format(self.col_name)
                 return retBool, msg
         return retBool,
 
