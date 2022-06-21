@@ -66,7 +66,7 @@ paths:
       tags:
       - Menu Info
       description: メニューの基本情報および項目情報を取得する
-      operationId: get_info
+      operationId: get_menu_info
       parameters:
       - name: workspace_id
         in: path
@@ -108,8 +108,8 @@ paths:
     get:
       tags:
       - Menu Info
-      description: メニューの項目情報を取得する
-      operationId: get_column_info
+      description: メニューの項目一覧(REST用項目名)を取得する
+      operationId: get_column_list
       parameters:
       - name: workspace_id
         in: path
@@ -133,7 +133,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200'
+                $ref: '#/components/schemas/inline_response_200_2'
         "401":
           description: Unauthorized
           content:
@@ -152,7 +152,7 @@ paths:
       tags:
       - Menu Info
       description: 項目のプルダウン選択用の一覧を取得する
-      operationId: get_info_pulldown_list
+      operationId: get_pulldown_list
       parameters:
       - name: workspace_id
         in: path
@@ -227,7 +227,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_2'
+                $ref: '#/components/schemas/inline_response_200_3'
         "401":
           description: Unauthorized
           content:
@@ -527,7 +527,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_2'
+                $ref: '#/components/schemas/inline_response_200_3'
         "401":
           description: Unauthorized
           content:
@@ -619,7 +619,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_2'
+                $ref: '#/components/schemas/inline_response_200_3'
         "401":
           description: Unauthorized
           content:
@@ -665,7 +665,10 @@ components:
           column_name_rest:
             type: string
             description: REST用項目名
-          column_group:
+          column_group_id:
+            type: string
+            description: カラムグループID
+          column_group_name:
             type: string
             description: カラムグループ名
           column_type:
@@ -743,6 +746,8 @@ components:
           col_name: col_name
           view_item: view_item
           filter_type: {}
+          column_group_id: column_group_id
+          column_group_name: column_group_name
           ref_table_name: ref_table_name
           column_name: column_name
           column_name_rest: column_name_rest
@@ -756,7 +761,6 @@ components:
           after_validate_register: {}
           column_type: 0
           ref_sort_conditions: ref_sort_conditions
-          column_group: column_group
       description: column_name_restがkeyになる
     MENU_INFO:
       type: object
@@ -859,6 +863,8 @@ components:
               col_name: col_name
               view_item: view_item
               filter_type: {}
+              column_group_id: column_group_id
+              column_group_name: column_group_name
               ref_table_name: ref_table_name
               column_name: column_name
               column_name_rest: column_name_rest
@@ -872,7 +878,6 @@ components:
               after_validate_register: {}
               column_type: 0
               ref_sort_conditions: ref_sort_conditions
-              column_group: column_group
           MENU_INFO:
             sheet_type: sheet_type
             web_print_limit: 7
@@ -890,6 +895,28 @@ components:
             web_print_confirm: 9
         message: message
     inline_response_200_2:
+      type: object
+      properties:
+        result:
+          type: string
+          example: 001-002
+        data:
+          type: array
+          example:
+          - column1
+          - column2
+          - column3
+          items: {}
+        message:
+          type: string
+      example:
+        result: 001-002
+        data:
+        - column1
+        - column2
+        - column3
+        message: message
+    inline_response_200_3:
       type: object
       properties:
         TABLE:
@@ -921,6 +948,8 @@ components:
             col_name: col_name
             view_item: view_item
             filter_type: {}
+            column_group_id: column_group_id
+            column_group_name: column_group_name
             ref_table_name: ref_table_name
             column_name: column_name
             column_name_rest: column_name_rest
@@ -934,7 +963,6 @@ components:
             after_validate_register: {}
             column_type: 0
             ref_sort_conditions: ref_sort_conditions
-            column_group: column_group
         MENU_INFO:
           sheet_type: sheet_type
           web_print_limit: 7

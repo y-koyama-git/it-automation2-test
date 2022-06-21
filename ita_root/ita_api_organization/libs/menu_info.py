@@ -15,7 +15,7 @@
 from common_libs.common import *  # noqa: F403
 
 
-def collect_menu_info(dbconnect_class, menu, lang):
+def collect_menu_info(objdbca, menu, lang):
     """
     関数の説明
     """
@@ -24,6 +24,8 @@ def collect_menu_info(dbconnect_class, menu, lang):
         t_common_menu = 'T_COMN_MENU'
         t_common_menu_table_link = 'T_COMN_MENU_TABLE_LINK'
         t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
+        t_common_column_class = 'T_COMN_COLUMN_CLASS'
+        t_common_column_group = 'T_COMN_COLUMN_GROUP'
         
         # メッセージクラス呼び出し
         objmsg = MessageTemplate('ja')  # noqa: F405
@@ -36,7 +38,7 @@ def collect_menu_info(dbconnect_class, menu, lang):
             raise Exception(msg, 'statusCode')
         
         # 『メニュー管理』テーブルから対象のデータを取得
-        ret = dbconnect_class.table_select(t_common_menu, 'WHERE MENU_NAME_REST = %s AND DISUSE_FLAG = %s', [menu, 0])
+        ret = objdbca.table_select(t_common_menu, 'WHERE MENU_NAME_REST = %s AND DISUSE_FLAG = %s', [menu, 0])
         if not ret:
             msg = objmsg.get_message('MENU_API_ERR_0000001010')  # 『メニュー管理』に対象のメニューが存在しません
             return 'statusCode', {}, msg
@@ -52,7 +54,7 @@ def collect_menu_info(dbconnect_class, menu, lang):
         sort_key = ret[0].get('SORT_KEY')
         
         # 『メニュー-テーブル紐付管理』テーブルから対象のデータを取得
-        ret = dbconnect_class.table_select(t_common_menu_table_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
+        ret = objdbca.table_select(t_common_menu_table_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
         if not ret:
             msg = objmsg.get_message('MENU_API_ERR_0000001020')  # 『メニュー-テーブル紐付管理』に対象のメニューが存在しません
             return 'statusCode', {}, msg
@@ -81,21 +83,61 @@ def collect_menu_info(dbconnect_class, menu, lang):
             'sort_key': sort_key
         }
         
+        # 『カラムクラスマスタ』テーブルからcolumn_typeの一覧を取得
+        ret = objdbca.table_select(t_common_column_class, 'WHERE DISUSE_FLAG = %s', [0])
+        if not ret:
+            # msg = objmsg.get_message('MENU_API_ERR_0000001030')  # 『カラムクラスマスタ』にデータが存在しません
+            msg = "『カラムクラスマスタ』にデータが存在しません"
+            return 'statusCode', {}, msg
+        
+        column_class_master = {}
+        for recode in ret:
+            column_class_master[recode.get('COLUMN_CLASS_ID')] = recode.get('COLUMN_CLASS_NAME')
+        
+        # 『カラムグループ管理』テーブルからカラムグループ一覧を取得
+        ret = objdbca.table_select(t_common_column_group, 'WHERE DISUSE_FLAG = %s', [0])
+        column_group_list = {}
+        if ret:
+            for recode in ret:
+                print(recode)
+                col_group_name = 'COL_GROUP_NAME_' + lang.upper()
+                column_group_list[recode.get('COL_GROUP_ID')] = recode.get(col_group_name)
+            
         # 『メニュー-カラム紐付管理』テーブルから対象のデータを取得
-        ret = dbconnect_class.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s order by COLUMN_DISP_SEQ ASC', [menu_id])
+        ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
         if not ret:
             msg = objmsg.get_message('MENU_API_ERR_0000001030')  # 『メニュー-カラム紐付管理』に対象のメニューが存在しません
             return 'statusCode', {}, msg
-
+        
         # ####メモ：〇〇マスタとかに紐づくもの（例えばcolumn_type）は、とりあえずIDを入れている。最終的にはマスタから参照した文字列を挿入予定。
         column_info_data = {}
         for recode in ret:
+            # json形式のレコードは改行を削除
+            validate_option = recode.get('VALIDATE_OPTION')
+            if type(validate_option) is str:
+                validate_option = validate_option.replace('\n', '')
+                
+            before_validate_register = recode.get('BEFORE_VALIDATE_REGISTER')
+            if type(before_validate_register) is str:
+                before_validate_register = before_validate_register.replace('\n', '')
+                
+            after_validate_register = recode.get('AFTER_VALIDATE_REGISTER')
+            if type(after_validate_register) is str:
+                after_validate_register = after_validate_register.replace('\n', '')
+            
+            # カラムグループIDがあればカラムグループ名を取得
+            column_group_id = recode.get('COL_GROUP_ID')
+            column_group_name = ''
+            if column_group_id:
+                column_group_name = column_group_list.get(column_group_id)
+            
             detail = {
                 'column_id': recode.get('COLUMN_DEFINITION_ID'),
                 'column_name': recode.get('COLUMN_NAME_' + lang.upper()),
                 'column_name_rest': recode.get('COLUMN_NAME_REST'),
-                'column_group': recode.get('COL_GROUP_ID'),
-                'column_type': recode.get('COLUMN_CLASS'),
+                'column_group_id': column_group_id,
+                'column_group_name': column_group_name,
+                'column_type': column_class_master[recode.get('COLUMN_CLASS')],
                 'column_disp_seq': recode.get('COLUMN_DISP_SEQ'),
                 'description': recode.get('DESCRIPTION_' + lang.upper()),
                 'ref_table_name': recode.get('REF_TABLE_NAME'),
@@ -111,9 +153,9 @@ def collect_menu_info(dbconnect_class, menu, lang):
                 'unique_item': recode.get('UNIQUE_ITEM'),
                 'required_item': recode.get('REQUIRED_ITEM'),
                 'initial_value': recode.get('INITIAL_VALUE'),
-                'validate_option': recode.get('VALIDATE_OPTION'),
-                'before_validate_register': recode.get('BEFORE_VALIDATE_REGISTER'),
-                'after_validate_register': recode.get('AFTER_VALIDATE_REGISTER'),
+                'validate_option': validate_option,
+                'before_validate_register': before_validate_register,
+                'after_validate_register': after_validate_register,
                 'filter_type': {},  # 未実装
                 'pulldown_info': {}  # 未実装
             }
@@ -130,7 +172,7 @@ def collect_menu_info(dbconnect_class, menu, lang):
         raise
 
 
-def collect_menu_column_info(dbconnect_class, menu, lang):
+def collect_menu_column_info(objdbca, menu, lang):
     """
     関数の説明
     """
@@ -138,7 +180,6 @@ def collect_menu_column_info(dbconnect_class, menu, lang):
         # 変数定義
         t_common_menu = 'T_COMN_MENU'
         t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
-        column_info = {}
         
         # メッセージクラス呼び出し
         objmsg = MessageTemplate('ja')  # noqa: F405
@@ -151,7 +192,7 @@ def collect_menu_column_info(dbconnect_class, menu, lang):
             raise Exception(msg, 'statusCode')
         
         # 『メニュー管理』テーブルから対象のデータを取得
-        ret = dbconnect_class.table_select(t_common_menu, 'WHERE MENU_NAME_REST = %s AND DISUSE_FLAG = %s', [menu, 0])
+        ret = objdbca.table_select(t_common_menu, 'WHERE MENU_NAME_REST = %s AND DISUSE_FLAG = %s', [menu, 0])
         if not ret:
             msg = objmsg.get_message('MENU_API_ERR_0000001010')  # 『メニュー管理』に対象のメニューが存在しません
             return 'statusCode', {}, msg
@@ -159,44 +200,17 @@ def collect_menu_column_info(dbconnect_class, menu, lang):
         menu_id = ret[0].get('MENU_ID')  # 対象メニューを特定するためのUUID
         
         # 『メニュー-カラム紐付管理』テーブルから対象のデータを取得
-        ret = dbconnect_class.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s order by COLUMN_DISP_SEQ ASC', [menu_id])
+        ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s order by COLUMN_DISP_SEQ ASC', [menu_id])
         if not ret:
             msg = objmsg.get_message('MENU_API_ERR_0000001030')  # 『メニュー-カラム紐付管理』に対象のメニューが存在しません
             return 'statusCode', {}, msg
         
-        # ####メモ：返却値整理中。暫定的にmenu_infoのカラム情報と同じものを入れている。
+        column_list = []
         for recode in ret:
-            detail = {
-                'column_id': recode.get('COLUMN_DEFINITION_ID'),
-                'column_name': recode.get('COLUMN_NAME_' + lang.upper()),
-                'column_name_rest': recode.get('COLUMN_NAME_REST'),
-                'column_group': recode.get('COL_GROUP_ID'),
-                'column_type': recode.get('COLUMN_CLASS'),
-                'column_disp_seq': recode.get('COLUMN_DISP_SEQ'),
-                'description': recode.get('DESCRIPTION_' + lang.upper()),
-                'ref_table_name': recode.get('REF_TABLE_NAME'),
-                'ref_pkey_name': recode.get('REF_PKEY_NAME'),
-                'ref_col_name': recode.get('REF_COL_NAME'),
-                'ref_sort_conditions': recode.get('REF_SORT_CONDITIONS'),
-                'ref_multi_lang': recode.get('REF_MULTI_LANG'),
-                'col_name': recode.get('COL_NAME'),
-                'save_type': recode.get('SAVE_TYPE'),
-                'auto_input': recode.get('AUTO_INPUT'),
-                'input_item': recode.get('INPUT_ITEM'),
-                'view_item': recode.get('VIEW_ITEM'),
-                'unique_item': recode.get('UNIQUE_ITEM'),
-                'required_item': recode.get('REQUIRED_ITEM'),
-                'initial_value': recode.get('INITIAL_VALUE'),
-                'validate_option': {},  # 未実装
-                'before_validate_register': {},  # 未実装
-                'after_validate_register': {},  # 未実装
-                'filter_type': {},  # 未実装
-                'pulldown_info': {}  # 未実装
-            }
-
-            column_info[recode.get('COLUMN_NAME_REST')] = detail
-
-        return 'statusCode', column_info, msg
+            column_list.append(recode.get('COLUMN_NAME_REST'))
+        
+        result_data = column_list
+        return 'statusCode', result_data, msg
     
     except Exception:
         raise
