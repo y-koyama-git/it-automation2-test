@@ -40,7 +40,7 @@ class loadTable():
 
     """
 
-    def __init__(self, menu_id=''):
+    def __init__(self, objdbca='', menu_id=''):
         # コンストラクタ
         # メニューID
         self.menu_id = menu_id
@@ -55,7 +55,8 @@ class loadTable():
         }
 
         # DB接続
-        self.objdbca = DBConnectAgent('')
+        # self.objdbca = DBConnectAgent('default')
+        self.objdbca = objdbca
 
         # メニュー関連情報
         self.objtable = {}
@@ -185,9 +186,9 @@ class loadTable():
 
         result = {
             'MENUINFO': menu_info,
-            'CONSTRAINT': {},
+            # 'CONSTRAINT': {},
             'COLINFO': cols_info,
-            'LIST': {}
+            # 'LIST': {}
         }
 
         return result
@@ -449,6 +450,9 @@ class loadTable():
         result = {}
         #  登録/更新/廃止/復活 処理
 
+        if cmd_type is None:
+            cmd_type = parameters.get('maintenance_type')
+
         # トランザクション開始
         self.objdbca.db_transaction_start()
 
@@ -457,11 +461,13 @@ class loadTable():
         if locktable_list is not None:
             result = self.objdbca.table_lock(locktable_list)
         else:
-            print(" no table_lock list ")
+            result = self.objdbca.table_lock(list(self.get_table_name()))
+            print(" no table_lock list  self.objdbca.table_lock(list(self.get_table_name()))")
             # return "{}".format(" no table_lock list ")
 
         # maintenance呼び出し
         result = self.exec_maintenance(parameters, cmd_type)
+        # print({"exec_maintenance": result})
         if result[0] is True:
             # コミット  トランザクション終了
             self.objdbca.db_transaction_end(True)
@@ -492,6 +498,7 @@ class loadTable():
         if locktable_list is not None:
             result = self.objdbca.table_lock(locktable_list)
         else:
+            result = self.objdbca.table_lock(list(self.get_table_name()))
             print(" no table_lock list ")
             # return "{}".format(" no table_lock list ")
 
@@ -533,6 +540,10 @@ class loadTable():
         entry_parameter = parameters.get('parameter')
         entry_file = parameters.get('file')
 
+        if cmd_type != 'Register':
+            if "last_update_date_time" not in entry_parameter:
+                print("追い越し判定予定")
+            
         for rest_key, rest_val in entry_parameter.items():
             if rest_key in self.restkey_list:
                 option = {}
@@ -549,6 +560,7 @@ class loadTable():
                 exec1 = objcolumn.before_iud_action(rest_val, option)
                 if exec1[0] is not True:
                     self.set_message(exec1[1], "ERROR")
+
             else:
                 retBool = False
                 msg = "不正なキー"
@@ -614,6 +626,9 @@ class loadTable():
         print(result)
         if result is False:
             self.set_message(result, "ERROR")
+        else:
+            tmp_result = self.convert_colname_restkey(result[0])
+            result = tmp_result
 
         # レコード操作前エラー確認
         if self.get_message_count("ERROR"):
@@ -638,7 +653,7 @@ class loadTable():
             retBool = False
             return retBool, self.get_message("ERROR")
 
-        return retBool,
+        return retBool, result
 
     # [output]:検索結果のファイル出力
     def rest_export(self, data, mode):
@@ -736,10 +751,12 @@ if __name__ == '__main__':
             "file": {}
         }
         return parameter
-
+    workspace_id = "default"
+    objdbca = DBConnectAgent(workspace_id)
     menu_id = "10201"
-    objmenu = loadTable(menu_id)
-
+    objmenu = loadTable(objdbca, menu_id)
+    # pprint.pprint(objmenu.get_objtable())
+    # exit()
     result = {}
     print("=={}===================================".format("rest_info"))
     # result = objmenu.rest_info()
@@ -764,17 +781,17 @@ if __name__ == '__main__':
     # pprint.pprint(filter_parameter)
     # pprint.pprint(result)
 
-    objmenu = loadTable(menu_id)
+    objmenu = loadTable(objdbca, menu_id)
     parameters = get_parameter()
     mode = 'Register'  # 種別
     # parameters['parameter']['operationName'] = 'OP:2024-12-07'
     print("=={}:{}===================================".format("rest_maintenance", mode))
     pprint.pprint(parameters)
-    # result = objmenu.rest_maintenance(parameters, mode)
+    result = objmenu.rest_maintenance(parameters, mode)
     pprint.pprint(result)
-    # exit()
+    exit()
 
-    objmenu = loadTable(menu_id)
+    objmenu = loadTable(objdbca, menu_id)
     operationId = '5416a947-7f59-469e-a0bf-773b36db1effaaaaaa'
     parameters = get_parameter()
     mode = 'Update'  # 種別
@@ -786,7 +803,7 @@ if __name__ == '__main__':
     pprint.pprint(result)
     # exit()
 
-    objmenu = loadTable(menu_id)
+    objmenu = loadTable(objdbca, menu_id)
     parameters = get_parameter()
     mode = 'Discard'  # 種別
     parameters = {'parameter': {'operation_id': operationId, 'scheduled_date_for_execution': '2128-08-24 12:00:00.000000'}}
@@ -795,7 +812,7 @@ if __name__ == '__main__':
     # result = objmenu.rest_maintenance(parameters, mode)
     pprint.pprint(result)
 
-    objmenu = loadTable(menu_id)
+    objmenu = loadTable(objdbca, menu_id)
     parameters = get_parameter()
     mode = 'Restore'  # 種別
     parameters = {'parameter': {'operation_id': operationId, 'scheduled_date_for_execution': '2128-08-24 12:00:00.000000'}}
@@ -804,10 +821,10 @@ if __name__ == '__main__':
     # result = objmenu.rest_maintenance(parameters, mode)
     pprint.pprint(result)
 
-    objmenu = loadTable(menu_id)
+    objmenu = loadTable(objdbca, menu_id)
     parameters = []
-    for i in range(1,random.randint(3,5)):
-        parameters.append({"Register":get_parameter()})
+    for i in range(1, random.randint(3, 5)):
+        parameters.append({"Register": get_parameter()})
         
     operationId = 'b9cc9bba-98aa-436d-8c94-d06d8cfd2ec2'
     for i in range(1, random.randint(3, 5)):
