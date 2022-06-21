@@ -40,19 +40,23 @@ def workspace_create(body, workspace_id):  # noqa: E501
         body = dict(connexion.request.get_json())  # noqa: E501
 
     try:
-        org_root_db = DBConnectOrgRoot()  # noqa: F405
+        organization_id = os.environ.get('ORGANIZATION_ID')
+
+        org_root_db = DBConnectOrgRoot(organization_id)  # noqa: F405
         db_name = org_root_db.get_wsdb_name(workspace_id)
         # print(db_name)
 
         # create workspace-databse
         org_root_db.database_create(db_name)
         # create workspace-user and grant user privileges
-        user_name, user_password = org_root_db.user_create_ws(db_name)
+        user_name, user_password = org_root_db.userinfo_generate_ws(db_name)
+        org_root_db.user_create(user_name, user_password, db_name)
         # print(user_name, user_password)
         org_root_db.db_disconnect()
 
         # register workspace-db connect infomation
-        org_db = DBConnectOrg()  # noqa: F405
+        org_db = DBConnectOrg(organization_id)  # noqa: F405
+
         try:
             data = {
                 'DB_HOST': os.environ.get('DB_HOST'),
@@ -80,7 +84,7 @@ def workspace_create(body, workspace_id):  # noqa: E501
         # create table of workspace-db
         ws_db.sqlfile_execute("sql/workspace.sql")
         # insert initial data of workspace-db
-        role_id = str(body['role_id'])
+        role_id = body['role_id']
         with open("sql/workspace_master.sql", "r", encoding='utf-8-sig') as f:
             sql_list = f.read().split(";\n")
             for sql in sql_list:
