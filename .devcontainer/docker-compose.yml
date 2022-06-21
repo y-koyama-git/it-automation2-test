@@ -17,6 +17,7 @@ services:
       - DB_DATADBASE=ITA_DB
       - DB_USER=ITA_USER
       - DB_PASSWORD=password
+      - DB_ROOT_PASSWORD=password
   ita-web-server:
     build:
       dockerfile: ./ita_root/ita_web_server/Dockerfile
