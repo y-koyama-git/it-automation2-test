@@ -15,6 +15,8 @@ tags:
     description: レコードの操作（登録/更新/廃止/復活/物理削除）
   - name: Menu MaintenanceAll
     description: レコードの一括操作（登録/更新/廃止/復活/物理削除）
+  - name: Menu Excel
+    description: Excelの取得・操作
 paths:
   /api/workspaces/{workspace_id}/ita/:
     post:
@@ -487,6 +489,138 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/workspaces/{workspace_id}/ita/menu/{menu}/excel/:
+    get:
+      tags:
+        - Menu Excel
+      description: レコードを全件取得する
+      operationId: getExcelFilter
+      parameters:
+        - name: workspace_id
+          in: path
+          description: ワークスペース名
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  TABLE:
+                    $ref: '#/components/schemas/TABLE'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+    post:
+      tags:
+        - Menu Excel
+      description: 検索条件を指定し、レコードを取得する
+      operationId: postExcelFilter
+      parameters:
+        - name: workspace_id
+          in: path
+          description: ワークスペース名
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              description: 検索条件を設定
+              type: object
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+  /api/workspaces/{workspace_id}/ita/menu/{menu}/excel/maintenance:
+    post:
+      tags:
+        - Menu Excel
+      description: Excelでレコードを登録/更新/廃止/復活する
+      operationId: postExcelMaintenance
+      parameters:
+        - name: workspace_id
+          in: path
+          description: ワークスペース名
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  TABLE:
+                    $ref: '#/components/schemas/TABLE'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+
 components:
   schemas:
     TABLE:
