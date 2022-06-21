@@ -17,10 +17,6 @@ database connection agnet class for organization-db on mariadb
 
 import pymysql.cursors  # https://pymysql.readthedocs.io/en/latable_name/
 import os
-
-# for generate password
-import secrets
-import string
 import re
 
 from .dbconnect_common import DBConnectCommon
@@ -31,16 +27,17 @@ class DBConnectOrg(DBConnectCommon):
     database connection agnet class for organization-db on mariadb
     """
 
-    def __init__(self):
+    def __init__(self, organization_id=""):
         """
         constructor
         """
         if self._db_con is not None and self._db_con.open is True:
             return True
 
-        # decide database name, prefix+organization_id
-        organization_id = os.environ.get('ORGANIZATION_ID')
+        if organization_id == "":
+            organization_id = os.environ.get('ORGANIZATION_ID')
 
+        # decide database name, prefix+organization_id
         common_db = DBConnectCommon()
         self._db = common_db.get_orgdb_name(organization_id)
 
@@ -73,6 +70,7 @@ class DBConnectOrg(DBConnectCommon):
         Returns:
             database name for workspace: str
         """
+
         return "WSDB_" + workspace_id.upper()
 
     def get_wsdb_connect_info(self, db_name):
@@ -99,16 +97,17 @@ class DBConnectOrgRoot(DBConnectOrg):
     database connection agnet class for organization-db on mariadb
     """
 
-    def __init__(self):
+    def __init__(self, organization_id=""):
         """
         constructor
         """
         if self._db_con is not None and self._db_con.open is True:
             return True
 
-        # decide database name, prefix+organization_id
-        organization_id = os.environ.get('ORGANIZATION_ID')
+        if organization_id == "":
+            organization_id = os.environ.get('ORGANIZATION_ID')
 
+        # decide database name, prefix+organization_id
         common_db = DBConnectCommon()
         self._db = common_db.get_orgdb_name(organization_id)
 
@@ -173,38 +172,35 @@ class DBConnectOrgRoot(DBConnectOrg):
         sql = "DROP DATABASE IF EXISTS `{}`".format(db_name)
         self.sql_execute(sql)
 
-    def user_create_ws(self, db_name):
+    def userinfo_generate_ws(self, db_name):
         """
         create user for workspace
         
         Arguments:
             db_name: database name
         Returns:
-            user_name and db_name: tuple
+            user_name and user_password: tuple
         """
         user_name = re.sub(r'^WSDB_', 'WSUSER_', db_name)
-        return self.user_create(user_name, db_name)
+        user_password = self.password_generate()
+        return user_name, user_password
 
-    def user_create(self, user_name, db_name):
+    def user_create(self, user_name, user_password, db_name):
         """
         create user
         
         Arguments:
             user_name: user name
+            user_password: user_password
             db_name: database name
-        Returns:
-            user_name and db_name: tuple
         """
         self.user_drop(user_name)
 
-        user_password = self._password_generate()
         sql = "CREATE USER IF NOT EXISTS '{user_name}'@'%' IDENTIFIED BY '{user_password}'".format(user_name=user_name, user_password=user_password)
         self.sql_execute(sql)
 
         sql = "GRANT ALL PRIVILEGES ON `{db_name}`.* TO '{user_name}'@'%' WITH GRANT OPTION".format(user_name=user_name, db_name=db_name)
         self.sql_execute(sql)
-
-        return user_name, user_password
 
     def user_drop(self, user_name):
         """
@@ -212,26 +208,3 @@ class DBConnectOrgRoot(DBConnectOrg):
         """
         sql = "DROP USER IF EXISTS '{}'@'%'".format(user_name)
         self.sql_execute(sql)
-
-    def _password_generate(self, escape=True):
-        """
-        generate password
-        
-        Arguments:
-            escape or not: bool
-        Returns:
-            password string: str
-        """
-        length = 16
-        # string.ascii_letters - alfabet lower and upper
-        # string.digits - number
-        # string.punctuation - symbol  !"#$%&'()*+,-./:;<=>?@[\]^_`{|}~
-        mysql_available_symbol = "!#%&()*+,-./;<=>?@[]^_{|}~"
-        pass_chars = string.ascii_letters + string.digits + mysql_available_symbol
-
-        password = ''.join(secrets.choice(pass_chars) for x in range(length))
-
-        if escape is True:
-            password = re.sub(r'([{})/g'.format(mysql_available_symbol), r'\$1', password)
-
-        return password

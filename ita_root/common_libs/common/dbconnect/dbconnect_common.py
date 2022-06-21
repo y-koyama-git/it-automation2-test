@@ -20,6 +20,10 @@ import datetime
 import os
 import re
 
+# for generate password
+import secrets
+import string
+
 
 class DBConnectCommon:
     """
@@ -473,6 +477,42 @@ class DBConnectCommon:
             'JOURNAL_ACTION_CLASS': action_class
         }
 
+    def userinfo_generate_org(self, db_name):
+        """
+        create user for workspace
+        
+        Arguments:
+            db_name: database name
+        Returns:
+            user_name and user_password: tuple
+        """
+        user_name = re.sub(r'^ORG_', 'ORGUSER_', db_name)
+        user_password = self.password_generate()
+        return user_name, user_password
+
+    def password_generate(self, escape=True):
+        """
+        generate password
+        
+        Arguments:
+            escape or not: bool
+        Returns:
+            password string: str
+        """
+        length = 16
+        # string.ascii_letters - alfabet lower and upper
+        # string.digits - number
+        # string.punctuation - symbol  !"#$%&'()*+,-./:;<=>?@[\]^_`{|}~
+        mysql_available_symbol = "!#%&()*+,-./;<=>?@[]^_{|}~"
+        pass_chars = string.ascii_letters + string.digits + mysql_available_symbol
+
+        password = ''.join(secrets.choice(pass_chars) for x in range(length))
+
+        if escape is True:
+            password = re.sub(r'([{})/g'.format(mysql_available_symbol), r'\$1', password)
+
+        return password
+
     def get_orgdb_name(self, organization_id):
         """
         get database name for organization
@@ -482,7 +522,7 @@ class DBConnectCommon:
         Returns:
             database name for organization: str
         """
-        return "ORGDB_" + organization_id.upper()
+        return "ORG_" + organization_id.upper()
 
     def get_orgdb_connect_info(self, db_name):
         """
