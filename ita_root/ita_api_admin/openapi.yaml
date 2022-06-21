@@ -1,0 +1,64 @@
+openapi: 3.0.3
+info:
+  description: ITAv2.0 organization用API
+  version: 1.0.0
+  title: ITA Version2.0 organization API
+tags:
+
+  - name: Organization Create
+    description: Organization作成
+paths:
+  /api/organization/{organization_id}/ita/:
+    post:
+      tags:
+        - Organization Create
+      description: Organizationを作成する
+      operationId: organizationCreate
+      parameters:
+        - name: organization_id
+          in: path
+          description: Organization名
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              description: ロールID情報
+              type: object
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+
+components:
+  schemas:
+    ERROR_TEMPLATE:
+      type: object
+      properties:
+        result:
+          type: string
+          example: 001-002
+        message:
+          type: string
