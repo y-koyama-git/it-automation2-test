@@ -17,8 +17,8 @@ workspace_create
 """
 import connexion
 
-from common_libs.common import *  # noqa: F403
-from common_libs.common.dbconnect import DBConnectOrgRoot
+from common_libs.common import logger
+from common_libs.common.dbconnect import *  # noqa: F403
 
 import os
 import re
@@ -40,7 +40,7 @@ def workspace_create(body, workspace_id):  # noqa: E501
         body = dict(connexion.request.get_json())  # noqa: E501
 
     try:
-        org_root_db = DBConnectOrgRoot()
+        org_root_db = DBConnectOrgRoot()  # noqa: F405
         db_name = org_root_db.get_wsdb_name(workspace_id)
         # print(db_name)
 

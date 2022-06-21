@@ -12,53 +12,36 @@
 # limitations under the License.
 #
 """
-database connection agent module
+database connection agnet module for ita-common-db on mariadb
 """
-
 import pymysql.cursors  # https://pymysql.readthedocs.io/en/latable_name/
-import os
 import uuid
 import datetime
-# for generate password
-import secrets
-import string
+import os
 import re
 
 
-class DBConnectWs:
+class DBConnectCommon:
     """
-    database connection agnet class for workspace-db on mariadb
+    database connection agnet class for ita-common-db on mariadb
     """
-
-    _workspace_id = ""
-
     _db_con = None  # database connection
 
     _is_transaction = False  # state of transaction
     _COLUMN_NAME_TIMESTAMP = 'LAST_UPDATE_TIMESTAMP'
 
-    def __init__(self, workspace_id):
+    def __init__(self):
         """
         constructor
-
-        Arguments:
-            workspace_id: workspace id
         """
-        # decide database name, prefix+workspace_id
-        self._workspace_id = workspace_id
-        self._db = self.get_wsdb_name(workspace_id)
+        if self._db_con is not None and self._db_con.open is True:
+            return True
 
-        # get db-connect-infomation from organization-db
-        org_db = DBConnectOrg()
-        connect_info = org_db.get_wsdb_connect_info(self._db)
-        if connect_info is False:
-            msg = "Dabase Connect Error db_name={} : Database is not found".format(self._db)
-            raise Exception(msg)
-
-        self._host = connect_info['DB_HOST']
-        self._port = connect_info['DB_PORT']
-        self._db_user = connect_info['DB_USER']
-        self._db_passwd = connect_info['DB_PASSWORD']
+        self._db = os.environ.get('DB_DATADBASE')
+        self._host = os.environ.get('DB_HOST')
+        self._port = int(os.environ.get('DB_PORT'))
+        self._db_user = os.environ.get('DB_USER')
+        self._db_passwd = os.environ.get('DB_PASSWORD')
 
         # connect database
         self.db_connect()
@@ -290,7 +273,7 @@ class DBConnectWs:
             for res in data.values():
                 return res
 
-    def table_insert(self, table_name, data_list, primary_key_name, is_register_history=True):
+    def table_insert(self, table_name, data_list, primary_key_name, is_register_history=False):
         """
         insert table
 
@@ -353,7 +336,7 @@ class DBConnectWs:
 
         return data_list if is_last_res is True else is_last_res
 
-    def table_update(self, table_name, data_list, primary_key_name, is_register_history=True):
+    def table_update(self, table_name, data_list, primary_key_name, is_register_history=False):
         """
         update table
 
@@ -465,17 +448,6 @@ class DBConnectWs:
         """
         return list(map(lambda s: self.prepared_val_escape(s), str_list))
 
-    def get_wsdb_name(self, workspace_id):
-        """
-        get database name for workspace
-        
-        Arguments:
-            workspace_id: workspace_id
-        Returns:
-            database name for workspace: str
-        """
-        return "WSDB_" + workspace_id.upper()
-
     def _uuid_create(self):
         """
         make uuid of version4
@@ -501,180 +473,31 @@ class DBConnectWs:
             'JOURNAL_ACTION_CLASS': action_class
         }
 
-
-class DBConnectOrg(DBConnectWs):
-    """
-    database connection agnet class for organization-db on mariadb
-    """
-
-    def __init__(self):
+    def get_orgdb_name(self, organization_id):
         """
-        constructor
+        get database name for organization
+        
+        Arguments:
+            organization_id: organization_id
+        Returns:
+            database name for organization: str
         """
-        self._db = os.environ.get('DB_DATADBASE')
-        self._host = os.environ.get('DB_HOST')
-        self._port = int(os.environ.get('DB_PORT'))
-        self._db_user = os.environ.get('DB_USER')
-        self._db_passwd = os.environ.get('DB_PASSWORD')
+        return "ORGDB_" + organization_id.upper()
 
-        # connect database
-        self.db_connect()
-
-    def __del__(self):
+    def get_orgdb_connect_info(self, db_name):
         """
-        destructor
-        """
-        self.db_disconnect()
-
-    def table_insert(self, table_name, data_list, primary_key_name, is_register_history=False):
-        return super().table_insert(table_name, data_list, primary_key_name, is_register_history)
-
-    def table_update(self, table_name, data_list, primary_key_name, is_register_history=False):
-        return super().table_update(table_name, data_list, primary_key_name, is_register_history)
-
-    def get_wsdb_connect_info(self, db_name):
-        """
-        get database connect infomation for workspace
+        get database connect infomation for organization
         
         Arguments:
             db_name: database name
         Returns:
-            database connect infomation for workspace: dict
+            database connect infomation for organization: dict
             or
             get failure: (bool)False
         """
-        data_list = self.table_select("T_COMN_WORKSPACE_DB_INFO", "WHERE `DB_DATADBASE` = %s", [db_name])
+        data_list = self.table_select("T_COMN_ORGANIZATION_DB_INFO", "WHERE `DB_DATADBASE` = %s", [db_name])
 
         if len(data_list) == 0:
             return False
 
         return data_list[0]
-
-
-class DBConnectOrgRoot(DBConnectOrg):
-    """
-    database connection agnet class for organization-db on mariadb
-    """
-
-    def __init__(self):
-        """
-        constructor
-        """
-        self._db = "None"
-        self._host = os.environ.get('DB_HOST')
-        self._port = int(os.environ.get('DB_PORT'))
-        self._db_user = 'root'
-        self._db_passwd = os.environ.get('DB_ROOT_PASSWORD')
-
-        # connect database
-        self.db_connect()
-
-    def __del__(self):
-        """
-        destructor
-        """
-        self.db_disconnect()
-
-    def db_connect(self):
-        """
-        connect database
-
-        Returns:
-            is success:(bool)
-        """
-        if self._db_con is not None and self._db_con.open is True:
-            return True
-
-        try:
-            self._db_con = pymysql.connect(
-                host=self._host,
-                port=self._port,
-                user=self._db_user,
-                passwd=self._db_passwd,
-                charset='utf8',
-                cursorclass=pymysql.cursors.DictCursor
-            )
-        except pymysql.Error as e:
-            msg = "Dabase Connect Error: {}".format(e)
-            raise Exception(msg)
-
-        return True
-
-    def database_create(self, db_name):
-        """
-        create database
-        """
-        self.database_drop(db_name)
-
-        sql = "CREATE DATABASE `{}` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci".format(db_name)
-        self.sql_execute(sql)
-
-    def database_drop(self, db_name):
-        """
-        drop database
-        """
-        sql = "DROP DATABASE IF EXISTS `{}`".format(db_name)
-        self.sql_execute(sql)
-
-    def user_create_ws(self, db_name):
-        """
-        create user for workspace
-        
-        Arguments:
-            db_name: database name
-        Returns:
-            user_name and db_name: tuple
-        """
-        user_name = re.sub(r'^WSDB_', 'WSUSER_', db_name)
-        return self.user_create(user_name, db_name)
-
-    def user_create(self, user_name, db_name):
-        """
-        create user
-        
-        Arguments:
-            user_name: user name
-            db_name: database name
-        Returns:
-            user_name and db_name: tuple
-        """
-        self.user_drop(user_name)
-
-        user_password = self._password_generate()
-        sql = "CREATE USER IF NOT EXISTS '{user_name}'@'%' IDENTIFIED BY '{user_password}'".format(user_name=user_name, user_password=user_password)
-        self.sql_execute(sql)
-
-        sql = "GRANT ALL PRIVILEGES ON `{db_name}`.* TO '{user_name}'@'%'".format(user_name=user_name, db_name=db_name)
-        self.sql_execute(sql)
-
-        return user_name, user_password
-
-    def user_drop(self, user_name):
-        """
-        drop user
-        """
-        sql = "DROP USER IF EXISTS '{}'@'%'".format(user_name)
-        self.sql_execute(sql)
-
-    def _password_generate(self, escape=True):
-        """
-        generate password
-        
-        Arguments:
-            escape or not: bool
-        Returns:
-            password string: str
-        """
-        length = 16
-        # string.ascii_letters - alfabet lower and upper
-        # string.digits - number
-        # string.punctuation - symbol  !"#$%&'()*+,-./:;<=>?@[\]^_`{|}~
-        mysql_available_symbol = "!#%&()*+,-./;<=>?@[]^_{|}~"
-        pass_chars = string.ascii_letters + string.digits + mysql_available_symbol
-
-        password = ''.join(secrets.choice(pass_chars) for x in range(length))
-
-        if escape is True:
-            password = re.sub(r'([{})/g'.format(mysql_available_symbol), r'\$1', password)
-
-        return password
