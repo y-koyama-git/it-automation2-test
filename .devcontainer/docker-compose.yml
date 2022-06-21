@@ -18,6 +18,7 @@ services:
       - DB_USER=ITA_USER
       - DB_PASSWORD=password
       - DB_ROOT_PASSWORD=password
+      - ORGANIZATION_ID=comA
   ita-web-server:
     build:
       dockerfile: ./ita_root/ita_web_server/Dockerfile
