@@ -17,10 +17,10 @@ from libs import menu_info
 from flask import jsonify
 
 
-def get_column_info(workspace_id, menu):  # noqa: E501
-    """get_column_info
+def get_column_list(workspace_id, menu):  # noqa: E501
+    """get_column_list
 
-    メニューの項目情報を取得する # noqa: E501
+    メニューの項目一覧(REST用項目名)を取得する # noqa: E501
 
     :param workspace_id: ワークスペース名
     :type workspace_id: str
@@ -54,8 +54,8 @@ def get_column_info(workspace_id, menu):  # noqa: E501
         return result_dummy
 
 
-def get_info(workspace_id, menu):  # noqa: E501
-    """get_info
+def get_menu_info(workspace_id, menu):  # noqa: E501
+    """get_menu_info
 
     メニューの基本情報および項目情報を取得する # noqa: E501
 
@@ -91,8 +91,8 @@ def get_info(workspace_id, menu):  # noqa: E501
         return result_dummy
 
 
-def get_info_pulldown_list(workspace_id, menu, restname):  # noqa: E501
-    """get_info_pulldown_list
+def get_pulldown_list(workspace_id, menu, restname):  # noqa: E501
+    """get_pulldown_list
 
     項目のプルダウン選択用の一覧を取得する # noqa: E501
 
