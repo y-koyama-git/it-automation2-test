@@ -19,6 +19,25 @@ services:
       - DB_PASSWORD=password
       - DB_ROOT_PASSWORD=password
       - ORGANIZATION_ID=comA
+  ita-api-admin:
+    build:
+      dockerfile: ./ita_root/ita_api_admin/Dockerfile
+      context: ../.
+      args:
+        - HTTP_PROXY=${HTTP_PROXY}
+        - http_proxy=${HTTP_PROXY}
+        - HTTPS_PROXY=${HTTPS_PROXY}
+        - https_proxy=${HTTPS_PROXY}
+    environment:
+      - LISTEN_PORT=8000
+      - PYTHONPATH=/exastro/
+      - DB_HOST=ita-mariadb
+      - DB_PORT=3306
+      - DB_DATADBASE=ITA_DB
+      - DB_USER=ITA_USER
+      - DB_PASSWORD=password
+      - DB_ROOT_PASSWORD=password
+      - ORGANIZATION_ID=comA
   ita-web-server:
     build:
       dockerfile: ./ita_root/ita_web_server/Dockerfile
