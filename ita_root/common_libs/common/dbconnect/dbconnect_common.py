@@ -486,7 +486,7 @@ class DBConnectCommon:
         Returns:
             user_name and user_password: tuple
         """
-        user_name = re.sub(r'^ORG_', 'ORGUSER_', db_name)
+        user_name = db_name
         user_password = self.password_generate()
         return user_name, user_password
 

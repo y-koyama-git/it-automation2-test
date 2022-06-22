@@ -41,6 +41,8 @@ def workspace_create(body, workspace_id):  # noqa: E501
 
     try:
         organization_id = os.environ.get('ORGANIZATION_ID')
+        if organization_id is None:
+            raise Exception("Organization-Id is not found in request header")
 
         org_root_db = DBConnectOrgRoot(organization_id)  # noqa: F405
         db_name = org_root_db.get_wsdb_name(workspace_id)
