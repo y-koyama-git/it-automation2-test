@@ -180,7 +180,7 @@ class DBConnectCommon:
         Arguments:
             file_name: sql file path
         """
-        with open(file_name, "r", encoding='utf-8-sig') as f:
+        with open(file_name, "r") as f:
             sql_list = f.read().split(";\n")
             for sql in sql_list:
                 if re.fullmatch(r'[\s\n\r]*', sql) is None:
@@ -477,7 +477,7 @@ class DBConnectCommon:
             'JOURNAL_ACTION_CLASS': action_class
         }
 
-    def userinfo_generate_org(self, db_name):
+    def userinfo_generate(self, db_name):
         """
         create user for workspace
         
@@ -535,9 +535,11 @@ class DBConnectCommon:
             or
             get failure: (bool)False
         """
-        data_list = self.table_select("T_COMN_ORGANIZATION_DB_INFO", "WHERE `DB_DATADBASE` = %s", [db_name])
+        if os.environ.get("ORGDB_DATADBASE") is None:
+            data_list = self.table_select("T_COMN_ORGANIZATION_DB_INFO", "WHERE `DB_DATADBASE` = %s", [db_name])
 
-        if len(data_list) == 0:
-            return False
+            if len(data_list) == 0:
+                return False
 
-        return data_list[0]
+            return data_list[0]
+

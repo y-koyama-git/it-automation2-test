@@ -25,7 +25,7 @@ class DBConnectWs(DBConnectCommon):
 
     _workspace_id = ""
 
-    def __init__(self, workspace_id):
+    def __init__(self, workspace_id, organization_id=None):
         """
         constructor
 
@@ -35,7 +35,7 @@ class DBConnectWs(DBConnectCommon):
         # decide database name, prefix+workspace_id
         self._workspace_id = workspace_id
 
-        org_db = DBConnectOrg()
+        org_db = DBConnectOrg(organization_id)
         self._db = org_db.get_wsdb_name(workspace_id)
 
         # get db-connect-infomation from organization-db
