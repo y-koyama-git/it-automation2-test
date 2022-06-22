@@ -1,6 +1,6 @@
--- ITA_DB OrganizationDB管理テーブル
-DROP TABLE IF EXISTS `ITA_DB`.`T_COMN_ORGANIZATION_DB_INFO`;
-CREATE TABLE IF NOT EXISTS `ITA_DB`.`T_COMN_ORGANIZATION_DB_INFO`
+-- ORGANIZATION用DB WorkspaceDB管理テーブル
+DROP TABLE IF EXISTS `T_COMN_ORGANIZATION_DB_INFO`;
+CREATE TABLE IF NOT EXISTS `T_COMN_WORKSPACE_DB_INFO`
 (
     PRIMARY_KEY                     VARCHAR(40),                                -- 主キー
     DB_HOST                         VARCHAR(255),                               -- ホスト
@@ -8,7 +8,6 @@ CREATE TABLE IF NOT EXISTS `ITA_DB`.`T_COMN_ORGANIZATION_DB_INFO`
     DB_DATADBASE                    VARCHAR(255),                               -- DB名
     DB_USER                         VARCHAR(255),                               -- ユーザ
     DB_PASSWORD                     VARCHAR(255),                               -- パスワード
-    DB_ROOT_PASSWORD                VARCHAR(255),                               -- rootパスワード
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1)  ,                               -- 廃止フラグ
     LAST_UPDATE_TIMESTAMP           DATETIME(6),                                -- 最終更新日時

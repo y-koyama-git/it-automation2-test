@@ -17,7 +17,6 @@ database connection agnet class for organization-db on mariadb
 
 import pymysql.cursors  # https://pymysql.readthedocs.io/en/latable_name/
 import os
-import re
 
 from .dbconnect_common import DBConnectCommon
 
@@ -36,6 +35,7 @@ class DBConnectOrg(DBConnectCommon):
 
         if organization_id == "":
             organization_id = os.environ.get('ORGANIZATION_ID')
+        self._organization_id = organization_id
 
         # decide database name, prefix+organization_id
         common_db = DBConnectCommon()
@@ -71,7 +71,7 @@ class DBConnectOrg(DBConnectCommon):
             database name for workspace: str
         """
 
-        return "WSDB_" + workspace_id.upper()
+        return "WS_" + self._organization_id.upper() + "_" + workspace_id.upper()
 
     def get_wsdb_connect_info(self, db_name):
         """
@@ -106,6 +106,7 @@ class DBConnectOrgRoot(DBConnectOrg):
 
         if organization_id == "":
             organization_id = os.environ.get('ORGANIZATION_ID')
+        self._organization_id = organization_id
 
         # decide database name, prefix+organization_id
         common_db = DBConnectCommon()
@@ -181,7 +182,7 @@ class DBConnectOrgRoot(DBConnectOrg):
         Returns:
             user_name and user_password: tuple
         """
-        user_name = re.sub(r'^WSDB_', 'WSUSER_', db_name)
+        user_name = db_name
         user_password = self.password_generate()
         return user_name, user_password
 
