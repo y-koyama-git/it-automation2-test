@@ -35,7 +35,7 @@ def get_column_list(workspace_id, menu):  # noqa: E501
         
         # メニューのカラム情報を取得
         # ####メモ：langは取得方法検討中
-        result_data = menu_info.collect_menu_column_info(objdbca, menu, 'ja')
+        result_data = menu_info.collect_menu_column_list(objdbca, menu, 'ja')
         result = {
             "result": result_data[0],
             "data": result_data[1],
@@ -91,7 +91,7 @@ def get_menu_info(workspace_id, menu):  # noqa: E501
         return result_dummy
 
 
-def get_pulldown_list(workspace_id, menu, restname):  # noqa: E501
+def get_pulldown_list(workspace_id, menu, column):  # noqa: E501
     """get_pulldown_list
 
     項目のプルダウン選択用の一覧を取得する # noqa: E501
@@ -100,9 +100,31 @@ def get_pulldown_list(workspace_id, menu, restname):  # noqa: E501
     :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
-    :param restname: REST用項目名
-    :type restname: str
+    :param column: REST用項目名
+    :type column: str
 
     :rtype: InlineResponse200
     """
-    return 'do some magic!'
+    try:
+        # DB接続
+        objdbca = DBConnectWs(workspace_id)  # noqa: F405
+        
+        # 項目のプルダウン一覧の取得
+        # ####メモ：langは取得方法検討中
+        result_data = menu_info.collect_pulldown_list(objdbca, menu, column, 'ja')
+        result = {
+            "result": result_data[0],
+            "data": result_data[1],
+            "message": result_data[2]
+        }
+        
+        return jsonify(result), 200
+        
+    except Exception as result:
+        # ####メモ：Exceptionクラス作成後、resultをそのままreturnしたい。
+        print(result)
+        result_dummy = {
+            "result": "StatusCode",
+            "message": "aaa bbb ccc"
+        }, 500
+        return result_dummy
