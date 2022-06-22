@@ -31,14 +31,12 @@ def organization_create(body, organization_id):  # noqa: E501
 
     :rtype: InlineResponse200
     """
-    # if connexion.request.is_json:
-    #     body = dict(connexion.request.get_json())  # noqa: E501
 
     try:
         # register organization-db connect infomation
         common_db = DBConnectCommon()  # noqa: F405
         db_name = common_db.get_orgdb_name(organization_id)
-        user_name, user_password = common_db.userinfo_generate_org(db_name)
+        user_name, user_password = common_db.userinfo_generate(db_name)
 
         try:
             data = {
@@ -79,5 +77,6 @@ def organization_create(body, organization_id):  # noqa: E501
 
     except Exception as e:
         logger.app.error(e)  # noqa: F405
+        return 'error'
 
-    return 'do some magic!'
+    return 'success'

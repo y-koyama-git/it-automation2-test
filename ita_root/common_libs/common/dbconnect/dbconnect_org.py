@@ -26,14 +26,14 @@ class DBConnectOrg(DBConnectCommon):
     database connection agnet class for organization-db on mariadb
     """
 
-    def __init__(self, organization_id=""):
+    def __init__(self, organization_id=None):
         """
         constructor
         """
         if self._db_con is not None and self._db_con.open is True:
             return True
 
-        if organization_id == "":
+        if organization_id is None:
             organization_id = os.environ.get('ORGANIZATION_ID')
         self._organization_id = organization_id
 
@@ -97,14 +97,14 @@ class DBConnectOrgRoot(DBConnectOrg):
     database connection agnet class for organization-db on mariadb
     """
 
-    def __init__(self, organization_id=""):
+    def __init__(self, organization_id=None):
         """
         constructor
         """
         if self._db_con is not None and self._db_con.open is True:
             return True
 
-        if organization_id == "":
+        if organization_id is None:
             organization_id = os.environ.get('ORGANIZATION_ID')
         self._organization_id = organization_id
 
@@ -172,19 +172,6 @@ class DBConnectOrgRoot(DBConnectOrg):
         """
         sql = "DROP DATABASE IF EXISTS `{}`".format(db_name)
         self.sql_execute(sql)
-
-    def userinfo_generate_ws(self, db_name):
-        """
-        create user for workspace
-        
-        Arguments:
-            db_name: database name
-        Returns:
-            user_name and user_password: tuple
-        """
-        user_name = db_name
-        user_password = self.password_generate()
-        return user_name, user_password
 
     def user_create(self, user_name, user_password, db_name):
         """

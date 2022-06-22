@@ -16,6 +16,7 @@ controller
 workspace_create
 """
 import connexion
+from flask import request
 
 from common_libs.common import logger
 from common_libs.common.dbconnect import *  # noqa: F403
@@ -36,11 +37,10 @@ def workspace_create(body, workspace_id):  # noqa: E501
 
     :rtype: InlineResponse200
     """
-    if connexion.request.is_json:
-        body = dict(connexion.request.get_json())  # noqa: E501
+
 
     try:
-        organization_id = os.environ.get('ORGANIZATION_ID')
+        organization_id = request.headers.get('Organization-Id')
         if organization_id is None:
             raise Exception("Organization-Id is not found in request header")
 
@@ -51,7 +51,7 @@ def workspace_create(body, workspace_id):  # noqa: E501
         # create workspace-databse
         org_root_db.database_create(db_name)
         # create workspace-user and grant user privileges
-        user_name, user_password = org_root_db.userinfo_generate_ws(db_name)
+        user_name, user_password = org_root_db.userinfo_generate(db_name)
         org_root_db.user_create(user_name, user_password, db_name)
         # print(user_name, user_password)
         org_root_db.db_disconnect()
@@ -67,6 +67,7 @@ def workspace_create(body, workspace_id):  # noqa: E501
                 'DB_PASSWORD': user_password,
                 'DB_DATADBASE': db_name,
             }
+
             org_db.db_transaction_start()
             connect_info = org_db.get_wsdb_connect_info(db_name)
 
@@ -82,12 +83,15 @@ def workspace_create(body, workspace_id):  # noqa: E501
             raise Exception(e)
 
         # connect workspace-db
-        ws_db = DBConnectWs(workspace_id)  # noqa: F405
+        ws_db = DBConnectWs(workspace_id, organization_id)  # noqa: F405
         # create table of workspace-db
         ws_db.sqlfile_execute("sql/workspace.sql")
         # insert initial data of workspace-db
-        role_id = body['role_id']
-        with open("sql/workspace_master.sql", "r", encoding='utf-8-sig') as f:
+        role_id = str(body['role_id'])
+        if role_id == "":
+            raise Exception("role_id is not found in request body")
+
+        with open("sql/workspace_master.sql", "r") as f:
             sql_list = f.read().split(";\n")
             for sql in sql_list:
                 sql.replace('__ROLE_ID__', role_id)
@@ -96,5 +100,6 @@ def workspace_create(body, workspace_id):  # noqa: E501
 
     except Exception as e:
         logger.app.error(e)  # noqa: F405
+        return 'error'
 
-    return 'do some magic!'
+    return 'success'

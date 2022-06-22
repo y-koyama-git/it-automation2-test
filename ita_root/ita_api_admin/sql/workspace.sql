@@ -1,4 +1,4 @@
-﻿-- メニューグループ管理
+-- メニューグループ管理
 CREATE TABLE T_COMN_MENU_GROUP
 (
     MENU_GROUP_ID                   VARCHAR(40),                                -- メニューグループID
