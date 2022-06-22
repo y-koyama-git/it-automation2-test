@@ -103,7 +103,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.menu_info_controller
-  /api/workspaces/{workspace_id}/ita/menu/{menu}/info/pulldown/{restname}/:
+  /api/workspaces/{workspace_id}/ita/menu/{menu}/info/pulldown/{column}/:
     get:
       tags:
       - Menu Info
@@ -126,7 +126,7 @@ paths:
         explode: false
         schema:
           type: string
-      - name: restname
+      - name: column
         in: path
         description: REST用項目名
         required: true
@@ -232,7 +232,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_2'
+                $ref: '#/components/schemas/inline_response_200_4'
         "401":
           description: Unauthorized
           content:
@@ -282,7 +282,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_2'
+                $ref: '#/components/schemas/inline_response_200_4'
         "401":
           description: Unauthorized
           content:
@@ -333,7 +333,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_2'
+                $ref: '#/components/schemas/inline_response_200_4'
         "401":
           description: Unauthorized
           content:
@@ -390,7 +390,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_2'
+                $ref: '#/components/schemas/inline_response_200_4'
         "401":
           description: Unauthorized
           content:
@@ -440,7 +440,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_2'
+                $ref: '#/components/schemas/inline_response_200_4'
         "401":
           description: Unauthorized
           content:
@@ -532,7 +532,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_2'
+                $ref: '#/components/schemas/inline_response_200_4'
         "401":
           description: Unauthorized
           content:
@@ -684,38 +684,30 @@ components:
           after_validate_register:
             type: object
             description: 個別バリデーション(後)
-          filter_type:
-            type: object
-            description: 検索タイプ
-          pulldown_info:
-            type: object
-            description: プルダウン選択情報
         example:
           initial_value: initial_value
           column_disp_seq: 6
           required_item: 2
+          ref_table_name: ref_table_name
           save_type: save_type
+          column_name: column_name
           unique_item: 5
           description: description
           input_item: 5
           before_validate_register: {}
           col_name: col_name
-          view_item: view_item
-          filter_type: {}
-          column_group_id: column_group_id
-          column_group_name: column_group_name
-          ref_table_name: ref_table_name
-          column_name: column_name
           column_name_rest: column_name_rest
           column_id: column_id
           ref_multi_lang: ref_multi_lang
           validate_option: {}
           ref_pkey_name: ref_pkey_name
           auto_input: 1
+          view_item: view_item
           ref_col_name: ref_col_name
-          pulldown_info: {}
+          column_group_id: column_group_id
           after_validate_register: {}
           column_type: 0
+          column_group_name: column_group_name
           ref_sort_conditions: ref_sort_conditions
       description: column_name_restがkeyになる
     MENU_INFO:
@@ -724,6 +716,9 @@ components:
         menu_info:
           type: string
           description: メニューの説明
+        menu_group_name:
+          type: string
+          description: メニューグループの名称
         menu_name:
           type: string
           description: メニューの名称
@@ -774,6 +769,7 @@ components:
         menu_info: menu_info
         menu_name: menu_name
         inherit: true
+        menu_group_name: menu_group_name
         auto_filter_flg: true
         view_name: view_name
         login_necessity: true
@@ -804,28 +800,26 @@ components:
               initial_value: initial_value
               column_disp_seq: 6
               required_item: 2
+              ref_table_name: ref_table_name
               save_type: save_type
+              column_name: column_name
               unique_item: 5
               description: description
               input_item: 5
               before_validate_register: {}
               col_name: col_name
-              view_item: view_item
-              filter_type: {}
-              column_group_id: column_group_id
-              column_group_name: column_group_name
-              ref_table_name: ref_table_name
-              column_name: column_name
               column_name_rest: column_name_rest
               column_id: column_id
               ref_multi_lang: ref_multi_lang
               validate_option: {}
               ref_pkey_name: ref_pkey_name
               auto_input: 1
+              view_item: view_item
               ref_col_name: ref_col_name
-              pulldown_info: {}
+              column_group_id: column_group_id
               after_validate_register: {}
               column_type: 0
+              column_group_name: column_group_name
               ref_sort_conditions: ref_sort_conditions
           MENU_INFO:
             sheet_type: sheet_type
@@ -838,6 +832,7 @@ components:
             menu_info: menu_info
             menu_name: menu_name
             inherit: true
+            menu_group_name: menu_group_name
             auto_filter_flg: true
             view_name: view_name
             login_necessity: true
@@ -868,10 +863,25 @@ components:
     inline_response_200_2:
       type: object
       properties:
-        status:
+        result:
+          type: string
+          example: 001-002
+        data:
+          type: array
+          example:
+            id1: name1
+            id2: name2
+            id3: name3
+          items: {}
+        message:
           type: string
       example:
-        status: status
+        result: 001-002
+        data:
+          id1: name1
+          id2: name2
+          id3: name3
+        message: message
     inline_response_200_3:
       type: object
       properties:
@@ -883,6 +893,13 @@ components:
           TD_IHP: {}
           PAGE_NO: 0
           UNIQUE_VAL: {}
+    inline_response_200_4:
+      type: object
+      properties:
+        status:
+          type: string
+      example:
+        status: status
     inline_response_200_data:
       type: object
       properties:
@@ -896,28 +913,26 @@ components:
             initial_value: initial_value
             column_disp_seq: 6
             required_item: 2
+            ref_table_name: ref_table_name
             save_type: save_type
+            column_name: column_name
             unique_item: 5
             description: description
             input_item: 5
             before_validate_register: {}
             col_name: col_name
-            view_item: view_item
-            filter_type: {}
-            column_group_id: column_group_id
-            column_group_name: column_group_name
-            ref_table_name: ref_table_name
-            column_name: column_name
             column_name_rest: column_name_rest
             column_id: column_id
             ref_multi_lang: ref_multi_lang
             validate_option: {}
             ref_pkey_name: ref_pkey_name
             auto_input: 1
+            view_item: view_item
             ref_col_name: ref_col_name
-            pulldown_info: {}
+            column_group_id: column_group_id
             after_validate_register: {}
             column_type: 0
+            column_group_name: column_group_name
             ref_sort_conditions: ref_sort_conditions
         MENU_INFO:
           sheet_type: sheet_type
@@ -930,6 +945,7 @@ components:
           menu_info: menu_info
           menu_name: menu_name
           inherit: true
+          menu_group_name: menu_group_name
           auto_filter_flg: true
           view_name: view_name
           login_necessity: true

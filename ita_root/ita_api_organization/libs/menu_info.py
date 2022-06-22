@@ -26,6 +26,7 @@ def collect_menu_info(objdbca, menu, lang):
         t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
         t_common_column_class = 'T_COMN_COLUMN_CLASS'
         t_common_column_group = 'T_COMN_COLUMN_GROUP'
+        t_common_menu_group = 'T_COMN_MENU_GROUP'
         
         # メッセージクラス呼び出し
         objmsg = MessageTemplate('ja')  # noqa: F405
@@ -43,7 +44,8 @@ def collect_menu_info(objdbca, menu, lang):
             msg = objmsg.get_message('MENU_API_ERR_0000001010')  # 『メニュー管理』に対象のメニューが存在しません
             return 'statusCode', {}, msg
         
-        menu_id = ret[0].get('MENU_ID')  # 対象メニューを特定するためのUUID
+        menu_id = ret[0].get('MENU_ID')  # 対象メニューを特定するためのID
+        menu_group_id = ret[0].get('MENU_GROUP_ID')  # 対象メニューグループを特定するためのID
         menu_name = ret[0].get('MENU_NAME_' + lang.upper())
         login_necessity = ret[0].get('LOGIN_NECESSITY')
         auto_filter_flg = ret[0].get('AUTOFILTER_FLG')
@@ -66,8 +68,18 @@ def collect_menu_info(objdbca, menu, lang):
         inherit = ret[0].get('INHERIT')
         vertical = ret[0].get('VERTICAL')
         
+        # 『メニューグループ管理』テーブルから対象のデータを取得
+        ret = objdbca.table_select(t_common_menu_group, 'WHERE MENU_GROUP_ID = %s AND DISUSE_FLAG = %s', [menu_group_id, 0])
+        if not ret:
+            msg = objmsg.get_message('MENU_API_ERR_0000001020')  # 『メニューグループ管理』に対象のメニューグループが存在しません
+            return 'statusCode', {}, msg
+        
+        # ####メモ：最終的にはPARENT_MENU_GROUP_IDがある場合の考慮をする必要あり。
+        menu_group_name = ret[0].get('MENU_GROUP_NAME_' + lang.upper())
+        
         menu_info_data = {
             'menu_info': menu_info,
+            'menu_group_name': menu_group_name,
             'menu_name': menu_name,
             'sheet_type': sheet_type,
             'table_name': table_name,
@@ -99,7 +111,6 @@ def collect_menu_info(objdbca, menu, lang):
         column_group_list = {}
         if ret:
             for recode in ret:
-                print(recode)
                 col_group_name = 'COL_GROUP_NAME_' + lang.upper()
                 column_group_list[recode.get('COL_GROUP_ID')] = recode.get(col_group_name)
             
@@ -155,9 +166,7 @@ def collect_menu_info(objdbca, menu, lang):
                 'initial_value': recode.get('INITIAL_VALUE'),
                 'validate_option': validate_option,
                 'before_validate_register': before_validate_register,
-                'after_validate_register': after_validate_register,
-                'filter_type': {},  # 未実装
-                'pulldown_info': {}  # 未実装
+                'after_validate_register': after_validate_register
             }
             
             column_info_data[recode.get('COLUMN_NAME_REST')] = detail
@@ -172,7 +181,7 @@ def collect_menu_info(objdbca, menu, lang):
         raise
 
 
-def collect_menu_column_info(objdbca, menu, lang):
+def collect_menu_column_list(objdbca, menu, lang):
     """
     関数の説明
     """
@@ -197,7 +206,7 @@ def collect_menu_column_info(objdbca, menu, lang):
             msg = objmsg.get_message('MENU_API_ERR_0000001010')  # 『メニュー管理』に対象のメニューが存在しません
             return 'statusCode', {}, msg
         
-        menu_id = ret[0].get('MENU_ID')  # 対象メニューを特定するためのUUID
+        menu_id = ret[0].get('MENU_ID')  # 対象メニューを特定するためのID
         
         # 『メニュー-カラム紐付管理』テーブルから対象のデータを取得
         ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s order by COLUMN_DISP_SEQ ASC', [menu_id])
@@ -212,5 +221,65 @@ def collect_menu_column_info(objdbca, menu, lang):
         result_data = column_list
         return 'statusCode', result_data, msg
     
+    except Exception:
+        raise
+
+
+def collect_pulldown_list(objdbca, menu, column, lang):
+    """
+    関数の説明
+    """
+    try:
+        # 変数定義
+        t_common_menu = 'T_COMN_MENU'
+        t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
+        
+        # メッセージクラス呼び出し
+        objmsg = MessageTemplate('ja')  # noqa: F405
+        msg = ''
+        
+        # ####メモ：ユーザが対象のメニューの情報を取得可能かどうかのロールチェック処理が必要
+        role_check = True
+        if not role_check:
+            # ####メモ：401を意図的に返したいので最終的に自作Exceptionクラスに渡す。引数のルールは別途決める必要あり。
+            raise Exception(msg, 'statusCode')
+        
+        # 『メニュー管理』テーブルから対象のデータを取得
+        ret = objdbca.table_select(t_common_menu, 'WHERE MENU_NAME_REST = %s AND DISUSE_FLAG = %s', [menu, 0])
+        if not ret:
+            msg = objmsg.get_message('MENU_API_ERR_0000001010')  # 『メニュー管理』に対象のメニューが存在しません
+            return 'statusCode', {}, msg
+        menu_id = ret[0].get('MENU_ID')  # 対象メニューを特定するためのID
+        
+        # 『メニュー-カラム紐付管理』テーブルから対象の項目のデータを取得
+        ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND COLUMN_NAME_REST = %s AND DISUSE_FLAG = %s', [menu_id, column, 0])  # noqa: E501
+        if not ret:
+            msg = objmsg.get_message('MENU_API_ERR_0000001050')  # 『メニュー-カラム紐付管理』に対象の項目が存在しません
+            return 'statusCode', {}, msg
+        
+        column_class_id = str(ret[0].get('COLUMN_CLASS'))
+        id_column_list = ["7", "11", "18"]  # id 7(IDColumn), id 11(LinkIDColumn), id 18(AppIDColumn)
+        id_column_check = column_class_id in id_column_list
+        if not id_column_check:
+            msg = objmsg.get_message('MENU_API_ERR_0000001060')  # 対象のカラムのカラムクラスが[IDColumn, LinkIDColumn, AppIDColumn]のいずれかである必要があります。
+            return 'statusCode', {}, msg
+        
+        ref_table_name = ret[0].get('REF_TABLE_NAME')
+        ref_pkey_name = ret[0].get('REF_PKEY_NAME')
+        if ret[0].get('REF_MULTI_LANG'):
+            ref_col_name = ret[0].get('REF_COL_NAME') + "_" + lang.upper()
+        else:
+            ref_col_name = ret[0].get('REF_COL_NAME')
+        # ####メモ：現状、ソートコンディションを考慮していない。
+        # ref_sort_conditions = ret[0].get('REF_SORT_CONDITIONS')
+        
+        ret = objdbca.table_select(ref_table_name, 'WHERE DISUSE_FLAG = %s', [0])
+        pulldown_list = {}
+        for recode in ret:
+            pulldown_list[recode.get(ref_pkey_name)] = recode.get(ref_col_name)
+        
+        result_data = pulldown_list
+        return 'statusCode', result_data, msg
+        
     except Exception:
         raise
