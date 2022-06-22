@@ -118,7 +118,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
   
-  /api/workspaces/{workspace_id}/ita/menu/{menu}/info/pulldown/{restname}/:
+  /api/workspaces/{workspace_id}/ita/menu/{menu}/info/pulldown/{column}/:
     get:
       tags:
         - Menu Info
@@ -137,7 +137,7 @@ paths:
           required: true
           schema:
             type: string
-        - name: restname
+        - name: column
           in: path
           description: REST用項目名
           required: true
@@ -151,7 +151,14 @@ paths:
               schema:
                 type: object
                 properties:
-                  status:
+                  result:
+                    type: string
+                    example: 001-002
+                  data:
+                    type: object
+                    items: {}
+                    example: {"id1": "name1", "id2": "name2", "id3": "name3"}
+                  message:
                     type: string
         '401':
           description: Unauthorized
@@ -674,17 +681,14 @@ components:
           after_validate_register:
             description: 個別バリデーション(後)
             type: object
-          filter_type:
-            description: 検索タイプ
-            type: object
-          pulldown_info:
-            description: プルダウン選択情報
-            type: object
     MENU_INFO:
       type: object
       properties:
         menu_info:
           description: メニューの説明
+          type: string
+        menu_group_name:
+          description: メニューグループの名称
           type: string
         menu_name:
           description: メニューの名称
