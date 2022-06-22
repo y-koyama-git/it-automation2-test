@@ -6,8 +6,6 @@ info:
 servers:
 - url: /
 tags:
-- name: Workspace Create
-  description: ワークスペース作成
 - name: Menu Info
   description: メニュー情報の取得
 - name: Menu Filter
@@ -19,48 +17,6 @@ tags:
 - name: Menu Excel
   description: Excelの取得・操作
 paths:
-  /api/workspaces/{workspace_id}/ita/:
-    post:
-      tags:
-      - Workspace Create
-      description: ワークスペースを作成する
-      operationId: workspace_create
-      parameters:
-      - name: workspace_id
-        in: path
-        description: ワークスペース名
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              description: ロールID情報
-        required: true
-      responses:
-        "200":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/inline_response_200'
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ERROR_TEMPLATE'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ERROR_TEMPLATE'
-      x-openapi-router-controller: controllers.workspace_create_controller
   /api/workspaces/{workspace_id}/ita/menu/{menu}/info/:
     get:
       tags:
@@ -90,7 +46,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_1'
+                $ref: '#/components/schemas/inline_response_200'
         "401":
           description: Unauthorized
           content:
@@ -133,7 +89,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_2'
+                $ref: '#/components/schemas/inline_response_200_1'
         "401":
           description: Unauthorized
           content:
@@ -184,7 +140,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200'
+                $ref: '#/components/schemas/inline_response_200_2'
         "401":
           description: Unauthorized
           content:
@@ -276,7 +232,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200'
+                $ref: '#/components/schemas/inline_response_200_2'
         "401":
           description: Unauthorized
           content:
@@ -326,7 +282,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200'
+                $ref: '#/components/schemas/inline_response_200_2'
         "401":
           description: Unauthorized
           content:
@@ -377,7 +333,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200'
+                $ref: '#/components/schemas/inline_response_200_2'
         "401":
           description: Unauthorized
           content:
@@ -434,7 +390,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200'
+                $ref: '#/components/schemas/inline_response_200_2'
         "401":
           description: Unauthorized
           content:
@@ -484,7 +440,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200'
+                $ref: '#/components/schemas/inline_response_200_2'
         "401":
           description: Unauthorized
           content:
@@ -576,7 +532,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200'
+                $ref: '#/components/schemas/inline_response_200_2'
         "401":
           description: Unauthorized
           content:
@@ -833,18 +789,11 @@ components:
     inline_response_200:
       type: object
       properties:
-        status:
-          type: string
-      example:
-        status: status
-    inline_response_200_1:
-      type: object
-      properties:
         result:
           type: string
           example: 001-002
         data:
-          $ref: '#/components/schemas/inline_response_200_1_data'
+          $ref: '#/components/schemas/inline_response_200_data'
         message:
           type: string
       example:
@@ -894,7 +843,7 @@ components:
             login_necessity: true
             web_print_confirm: 9
         message: message
-    inline_response_200_2:
+    inline_response_200_1:
       type: object
       properties:
         result:
@@ -916,6 +865,13 @@ components:
         - column2
         - column3
         message: message
+    inline_response_200_2:
+      type: object
+      properties:
+        status:
+          type: string
+      example:
+        status: status
     inline_response_200_3:
       type: object
       properties:
@@ -927,7 +883,7 @@ components:
           TD_IHP: {}
           PAGE_NO: 0
           UNIQUE_VAL: {}
-    inline_response_200_1_data:
+    inline_response_200_data:
       type: object
       properties:
         COLUMN_INFO:
