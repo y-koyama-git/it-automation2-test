@@ -5,8 +5,6 @@ info:
   title: ITA Version2.0 API
 tags:
 
-  - name: Workspace Create
-    description: ワークスペース作成
   - name: Menu Info
     description: メニュー情報の取得
   - name: Menu Filter
@@ -18,48 +16,6 @@ tags:
   - name: Menu Excel
     description: Excelの取得・操作
 paths:
-  /api/workspaces/{workspace_id}/ita/:
-    post:
-      tags:
-        - Workspace Create
-      description: ワークスペースを作成する
-      operationId: workspaceCreate
-      parameters:
-        - name: workspace_id
-          in: path
-          description: ワークスペース名
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              description: ロールID情報
-              type: object
-      responses:
-        '200':
-          description: Success
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ERROR_TEMPLATE'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ERROR_TEMPLATE'
 
   /api/workspaces/{workspace_id}/ita/menu/{menu}/info/:
     get:
