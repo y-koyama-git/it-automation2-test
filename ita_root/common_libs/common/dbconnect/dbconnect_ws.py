@@ -45,7 +45,7 @@ class DBConnectWs(DBConnectCommon):
             raise Exception(msg)
 
         self._host = connect_info['DB_HOST']
-        self._port = connect_info['DB_PORT']
+        self._port = int(connect_info['DB_PORT'])
         self._db_user = connect_info['DB_USER']
         self._db_passwd = connect_info['DB_PASSWORD']
 

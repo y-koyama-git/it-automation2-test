@@ -208,6 +208,7 @@ class DBConnectCommon:
 
         try:
             db_cursor.execute(sql, bind_value_list)
+            # print("SQL:{}".format(sql))
         except pymysql.Error as e:
             msg = "SQL Error : db_name={}, sql='{}', bind_value={} : {}".format(self._db, sql, bind_value_list, e)
             raise Exception(msg)
@@ -535,11 +536,20 @@ class DBConnectCommon:
             or
             get failure: (bool)False
         """
-        if os.environ.get("ORGDB_DATADBASE") is None:
-            data_list = self.table_select("T_COMN_ORGANIZATION_DB_INFO", "WHERE `DB_DATADBASE` = %s", [db_name])
+        org_db_name = os.environ.get("ORGDB_DATADBASE")
+        if org_db_name is None or org_db_name != db_name:
+            data_list = self.table_select("T_COMN_ORGANIZATION_DB_INFO", "WHERE `DB_DATADBASE`=%s and IFNULL(`DISUSE_FLAG`, 0)=0", [db_name])
 
             if len(data_list) == 0:
                 return False
 
             return data_list[0]
 
+        return {
+            "DB_HOST": os.environ.get("ORGDB_HOST"),
+            "DB_PORT": os.environ.get("ORGDB_PORT"),
+            "DB_USER": os.environ.get("ORGDB_USER"),
+            "DB_PASSWORD": os.environ.get("ORGDB_PASSWORD"),
+            "DB_ROOT_PASSWORD": os.environ.get("ORGDB_ROOT_PASSWORD"),
+            "DB_DATADBASE": os.environ.get("ORGDB_DATADBASE")
+        }

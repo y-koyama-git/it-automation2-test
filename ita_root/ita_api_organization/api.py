@@ -15,28 +15,17 @@
 import os
 import connexion
 
-from flask import request
-
 from dotenv import load_dotenv  # python-dotenv
-from common_libs.common.logger import app_log_init
+from libs.api_common import before_request_handler
 
+
+# load environ variables
+load_dotenv(override=True)
 
 flask_app = connexion.FlaskApp(__name__, specification_dir='./swagger/')
 flask_app.add_api('swagger.yaml')
 
-
-def before_request():
-    # load environ variables
-    load_dotenv(override=True)
-
-    # create app log instance
-    app_log_init()
-
-    organization_id = request.headers.get("Organization-Id")
-    os.environ['ORGANIZATION_ID'] = organization_id
-
-
-flask_app.app.before_request(before_request)
+flask_app.app.before_request(before_request_handler)
 
 
 if __name__ == '__main__':

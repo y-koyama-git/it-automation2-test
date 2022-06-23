@@ -15,7 +15,7 @@
 controller
 workspace_create
 """
-import connexion
+# import connexion
 from flask import request
 
 from common_libs.common import logger
@@ -38,21 +38,20 @@ def workspace_create(body, workspace_id):  # noqa: E501
     :rtype: InlineResponse200
     """
 
-
     try:
         organization_id = request.headers.get('Organization-Id')
         if organization_id is None:
             raise Exception("Organization-Id is not found in request header")
 
         org_root_db = DBConnectOrgRoot(organization_id)  # noqa: F405
-        db_name = org_root_db.get_wsdb_name(workspace_id)
+        ws_db_name = org_root_db.get_wsdb_name(workspace_id)
         # print(db_name)
 
         # create workspace-databse
-        org_root_db.database_create(db_name)
+        org_root_db.database_create(ws_db_name)
         # create workspace-user and grant user privileges
-        user_name, user_password = org_root_db.userinfo_generate(db_name)
-        org_root_db.user_create(user_name, user_password, db_name)
+        user_name, user_password = org_root_db.userinfo_generate(ws_db_name)
+        org_root_db.user_create(user_name, user_password, ws_db_name)
         # print(user_name, user_password)
         org_root_db.db_disconnect()
 
@@ -65,11 +64,11 @@ def workspace_create(body, workspace_id):  # noqa: E501
                 'DB_PORT': int(os.environ.get('DB_PORT')),
                 'DB_USER': user_name,
                 'DB_PASSWORD': user_password,
-                'DB_DATADBASE': db_name,
+                'DB_DATADBASE': ws_db_name,
             }
 
             org_db.db_transaction_start()
-            connect_info = org_db.get_wsdb_connect_info(db_name)
+            connect_info = org_db.get_wsdb_connect_info(ws_db_name)
 
             if connect_info is False:
                 org_db.table_insert("T_COMN_WORKSPACE_DB_INFO", data, "PRIMARY_KEY")

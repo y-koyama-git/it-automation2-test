@@ -48,7 +48,7 @@ class DBConnectOrg(DBConnectCommon):
             raise Exception(msg)
 
         self._host = connect_info['DB_HOST']
-        self._port = connect_info['DB_PORT']
+        self._port = int(connect_info['DB_PORT'])
         self._db_user = connect_info['DB_USER']
         self._db_passwd = connect_info['DB_PASSWORD']
 
@@ -84,12 +84,23 @@ class DBConnectOrg(DBConnectCommon):
             or
             get failure: (bool)False
         """
-        data_list = self.table_select("T_COMN_WORKSPACE_DB_INFO", "WHERE `DB_DATADBASE` = %s", [db_name])
+        ws_db_name = os.environ.get("WSDB_DATADBASE")
+        if ws_db_name is None or ws_db_name != db_name:
+            data_list = self.table_select("T_COMN_WORKSPACE_DB_INFO", "WHERE `DB_DATADBASE`=%s and IFNULL(`DISUSE_FLAG`, 0)=0", [db_name])
 
-        if len(data_list) == 0:
-            return False
+            if len(data_list) == 0:
+                return False
 
-        return data_list[0]
+            return data_list[0]
+
+        return {
+            "DB_HOST": os.environ.get("WSDB_HOST"),
+            "DB_PORT": os.environ.get("WSDB_PORT"),
+            "DB_USER": os.environ.get("WSDB_USER"),
+            "DB_PASSWORD": os.environ.get("WSDB_PASSWORD"),
+            "DB_ROOT_PASSWORD": os.environ.get("WSDB_ROOT_PASSWORD"),
+            "DB_DATADBASE": os.environ.get("WSDB_DATADBASE")
+        }
 
 
 class DBConnectOrgRoot(DBConnectOrg):
