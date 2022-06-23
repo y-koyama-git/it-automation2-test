@@ -2,9 +2,9 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,8 +20,6 @@ import logging
 import logging.config
 import yaml
 import os
-
-app = None
 
 
 class AppLog:
@@ -71,8 +69,6 @@ class AppLog:
             del dictConfig['loggers']["stdAppLogger"]
             if "myfile" not in list(dictConfig['loggers']["fileAppLogger"]["handlers"]):
                 del dictConfig['handlers']["myfile"]
-            # merge user settings
-            dictConfig = self.__user_setting(dictConfig)
 
         # set config
         self._config = dictConfig
@@ -81,17 +77,28 @@ class AppLog:
         self.__logger_obj = logging.getLogger(self.__name__)
         self.__logger_obj.debug("create AppLog instance [{}]".format(self.__name__))
 
-    def __user_setting(self, dictConfig={}):
+    def set_user_setting(self, wsdb_instance):
         """
-        merge user-settings to logging dict-config
+        set user-setting
 
         Arguments:
-            dictConfig: (dict) logging dict-config
-        Returns:
-            dictConfig: (dict) logging dict-config
+            wsdb_instance: class(DBConnectWs) instance
         """
-        dictConfig['loggers'][self.__name__]['level'] = "INFO"
-        return dictConfig
+        data_list = wsdb_instance.table_select('T_COMN_SYSTEM_CONFIG', 'WHERE `CONFIG_ID`=%s AND IFNULL(`CONFIG_ID`, 0)=0', ['LOG_LEVEL'])
+        if len(data_list) == 1:
+            log_level = data_list[0]['VALUE']
+            self.setLevel(log_level)
+            self.debug("LOG-LVEL:{} is set".format(log_level))
+
+    def setLevel(self, level):
+        """
+        set user-setting log level
+
+        Arguments:
+            level: (str) "ERROR" | "INFO" | "DEBUG"
+        """
+        self.__logger_obj.setLevel(level)
+        self._config['loggers'][self.__name__]['level'] = level
 
     def critical(self, message):
         """
@@ -100,7 +107,16 @@ class AppLog:
         Arguments:
             message: message for output
         """
-        self.__logger_obj.critical(message)
+        self.__logger_obj.critical(self.env_message() + str(message))
+
+    def exception(self, message):
+        """
+        output exception log
+
+        Arguments:
+            message: message for output
+        """
+        self.__logger_obj.exception(self.env_message() + str(message))
 
     def error(self, message):
         """
@@ -109,7 +125,7 @@ class AppLog:
         Arguments:
             message: message for output
         """
-        self.__logger_obj.error(message)
+        self.__logger_obj.error(self.env_message() + str(message))
 
     def warning(self, message):
         """
@@ -118,7 +134,7 @@ class AppLog:
         Arguments:
             message: message for output
         """
-        self.__logger_obj.warning(message)
+        self.__logger_obj.warning(self.env_message() + str(message))
 
     def info(self, message):
         """
@@ -127,7 +143,7 @@ class AppLog:
         Arguments:
             message: message for output
         """
-        self.__logger_obj.info(message)
+        self.__logger_obj.info(self.env_message() + str(message))
 
     def debug(self, message):
         """
@@ -136,13 +152,24 @@ class AppLog:
         Arguments:
             message: message for output
         """
-        self.__logger_obj.debug(message)
+        self.__logger_obj.debug(self.env_message() + str(message))
 
+    def env_message(self):
+        """
+        make environ info message
 
-def app_log_init():
-    """
-    make logger instance
-    """
-    global app
+        Arguments:
+            msg: (str)
+        """
+        msg = ""
+        organization_id = os.environ.get('ORGANIZATION_ID')
+        if organization_id is None:
+            return msg
+        msg += "[ORGANIZATION_ID:{}]".format(organization_id)
+        
+        workspace_id = os.environ.get('WORKSPACE_ID')
+        if workspace_id is None:
+            return msg + " "
+        msg += "[WORKSPACE_ID:{}]".format(workspace_id)
 
-    app = AppLog()
+        return msg + " "

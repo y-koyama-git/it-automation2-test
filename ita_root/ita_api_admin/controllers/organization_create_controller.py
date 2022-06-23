@@ -35,8 +35,8 @@ def organization_create(body, organization_id):  # noqa: E501
     try:
         # register organization-db connect infomation
         common_db = DBConnectCommon()  # noqa: F405
-        db_name = common_db.get_orgdb_name(organization_id)
-        user_name, user_password = common_db.userinfo_generate(db_name)
+        org_db_name = common_db.get_orgdb_name(organization_id)
+        user_name, user_password = common_db.userinfo_generate(org_db_name)
 
         try:
             data = {
@@ -44,11 +44,11 @@ def organization_create(body, organization_id):  # noqa: E501
                 'DB_PORT': int(os.environ.get('DB_PORT')),
                 'DB_USER': user_name,
                 'DB_PASSWORD': user_password,
-                'DB_DATADBASE': db_name,
+                'DB_DATADBASE': org_db_name,
                 'DB_ROOT_PASSWORD': os.environ.get('DB_ROOT_PASSWORD'),
             }
             common_db.db_transaction_start()
-            connect_info = common_db.get_orgdb_connect_info(db_name)
+            connect_info = common_db.get_orgdb_connect_info(org_db_name)
 
             if connect_info is False:
                 common_db.table_insert("T_COMN_ORGANIZATION_DB_INFO", data, "PRIMARY_KEY")
@@ -64,9 +64,9 @@ def organization_create(body, organization_id):  # noqa: E501
         org_root_db = DBConnectOrgRoot(organization_id)  # noqa: F405
 
         # create workspace-databse
-        org_root_db.database_create(db_name)
+        org_root_db.database_create(org_db_name)
         # create workspace-user and grant user privileges
-        org_root_db.user_create(user_name, user_password, db_name)
+        org_root_db.user_create(user_name, user_password, org_db_name)
         # print(user_name, user_password)
         org_root_db.db_disconnect()
 
