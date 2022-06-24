@@ -3,6 +3,7 @@ import os
 import re
 
 from common_libs.common.dbconnect import *  # noqa: F403
+# from common_libs.common.exception import AppException
 from common_libs.common.logger import AppLog
 from common_libs.common.message_class import MessageTemplate
 
@@ -26,6 +27,7 @@ def before_request_handler():
 
         # set language for message class
         g.appmsg.set_lang(language)
+        g.applogger.debug("LANGUAGE is set for {}".format(language))
 
         # request-header check(Organization-Id)
         organization_id = request.headers.get("Organization-Id")
@@ -73,9 +75,11 @@ def before_request_handler():
             ws_db = DBConnectWs(workspace_id)  # noqa: F405
             g.applogger.debug("DB:{} can be connected".format(ws_db_name))
 
-            # set user setting log-level
-            g.applogger.set_user_setting(ws_db)
+            # set log-level for user setting
+            log_level = g.applogger.set_user_setting(ws_db)
+            g.applogger.debug("LOG-LEVEL is set for {}".format(log_level))
 
     except Exception as e:
         g.applogger.error(e)
+
         return str(e), 400

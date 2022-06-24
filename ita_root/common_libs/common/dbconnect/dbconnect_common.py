@@ -208,15 +208,27 @@ class DBConnectCommon:
 
         try:
             db_cursor.execute(sql, bind_value_list)
-            # print("SQL:{}".format(sql))
+            self.__sql_debug(db_cursor)
         except pymysql.Error as e:
-            msg = "SQL Error : db_name={}, sql='{}', bind_value={} : {}".format(self._db, sql, bind_value_list, e)
+            msg = "SQL Error : db_name={}, sql='{}' : {}".format(self._db, db_cursor._last_executed, e)
             raise Exception(msg)
 
         data_list = list(db_cursor.fetchall())  # counter plan for 0 data
         db_cursor.close()
 
         return data_list
+
+    def __sql_debug(self, db_cursor):
+        """
+        print last_execute_sql
+
+        Arguments:
+            db_cursor: db cursor
+        """
+        if(os.environ.get("DEBUUG_SQL") != "1"):
+            return
+
+        print(db_cursor._last_executed)
 
     def table_columns_get(self, table_name):
         """
