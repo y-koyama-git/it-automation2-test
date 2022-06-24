@@ -287,7 +287,12 @@ paths:
           application/json:
             schema:
               description: 登録する値を設定
-              type: object
+              properties:
+                parameter:
+                  $ref: '#/components/schemas/MAINTENANCE_PARAMETER_P'
+                file:
+                  $ref: '#/components/schemas/MAINTENANCE_PARAMETER_F'
+
       responses:
         '200':
           description: Success
@@ -436,7 +441,10 @@ paths:
           application/json:
             schema:
               description: 登録/更新/廃止/復活するidとレコードの値を設定
-              type: object
+              type: array
+              items: {
+                $ref: '#/components/schemas/MAINTENANCE_PARAMETERS',
+              }
       responses:
         '200':
           description: Success
@@ -737,3 +745,31 @@ components:
           example: 001-002
         message:
           type: string
+    MAINTENANCE_PARAMETER_P:
+      type: object
+      properties:
+        rest_key_name:
+          type: string
+    MAINTENANCE_PARAMETER_F:
+      type: object
+      properties:
+        rest_key_name:
+          type: string
+          example: base64 encode file
+    MAINTENANCE_PARAMETERS:
+      type: object
+      properties:
+        parameter:
+          type: object
+          properties:
+            rest_key_name:
+              type: string
+        file:
+          type: object
+          properties:
+            rest_key_name:
+              type: string
+              example: base64 encode file
+        type:
+          type: string
+          example: Register/Update

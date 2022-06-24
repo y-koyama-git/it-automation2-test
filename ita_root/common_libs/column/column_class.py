@@ -218,7 +218,7 @@ class Column():
         if tmp_validate_option is not None:
             try:
                 validate_option = json.loads(tmp_validate_option)
-            except json.JSONDecodeError as e:
+            except json.JSONDecodeError:
                 validate_option = {}
 
         return validate_option
@@ -354,19 +354,19 @@ class Column():
 
         if cmd_type != "Discard":
             # バリデーション必須
-            result_1 = self.is_valid_required(val)
+            result_1 = self.is_valid_required(val, option)
             if result_1[0] is not True:
                 return result_1
 
             # バリデーション一意 DBアクセス
             result_2 = self.get_uniqued()
             if result_2 == '1':
-                result_2 = self.is_valid_unique(val)
+                result_2 = self.is_valid_unique(val, option)
                 if result_2[0] is not True:
                     return result_2
 
             # カラムクラス毎のバリデーション
-            result_3 = self.is_valid(val, option={})
+            result_3 = self.is_valid(val, option)
             if result_3[0] is not True:
                 return result_3
 
@@ -457,7 +457,7 @@ class Column():
         return result
 
     # [maintenance] 一意バリデーション呼び出し
-    def is_valid_unique(self, val=''):
+    def is_valid_unique(self, val='', option={}):
         """
             一意バリデーション実施
             ARGS:
@@ -475,6 +475,12 @@ class Column():
         if self.col_name not in primary_key_list:
             where_str = " where `{}` = %s ".format(self.col_name)
             bind_value_list = [val]
+
+            if 'target_uuid' in option:
+                if option.get('target_uuid') is not None:
+                    where_str = where_str + " and `{}` <> %s ".format(primary_key_list[0])
+                    bind_value_list.append(option.get('target_uuid'))
+
             result = self.objdbca.table_count(self.table_name, where_str, bind_value_list)
             if result != 0:
                 retBool = False
@@ -483,7 +489,7 @@ class Column():
         return retBool,
 
     # [maintenance] 必須バリデーション
-    def is_valid_required(self, val=''):
+    def is_valid_required(self, val='', option={}):
         """
             一意バリデーション実施
             ARGS:

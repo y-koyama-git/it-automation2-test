@@ -18,8 +18,7 @@ import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
 
-#import column_class
-from column_class import Column 
+from column_class import Column
 
 """
 カラムクラス個別処理(NumColumn)
@@ -28,7 +27,8 @@ class NumColumn(Column) :
     """
     数値系クラス共通処理
     """
-    def __init__(self,objdbca,objtable,rest_key_name):
+
+    def __init__(self, objdbca, objtable, rest_key_name, cmd_type):
         # カラムクラス名
         self.class_name = self.__class__.__name__
         # メッセージ
@@ -62,7 +62,9 @@ class NumColumn(Column) :
 
         self.objdbca = objdbca
 
-    def check_basic_valid(self,val,option={}):
+        self.cmd_type = cmd_type
+        
+    def check_basic_valid(self, val, option={}):
         """
             バリデーション処理
             ARGS:
@@ -96,7 +98,7 @@ class NumColumn(Column) :
                 retBool = True
             else:
                 retBool = False
-                msg = "範囲外({}<{}<{})".format(min_num , val , max_num)
+                msg = "範囲外({}<{}<{})".format(min_num, val, max_num)
                 return retBool, msg
 
         elif min_num is not None:
@@ -105,7 +107,7 @@ class NumColumn(Column) :
                 retBool = True
             else:
                 retBool = False
-                msg = "最小値以下({}<{})".format(min_num , val)
+                msg = "最小値以下({}<{})".format(min_num, val)
                 return retBool, msg
         elif max_num is not None:
             # 最大値閾値あり
@@ -113,8 +115,7 @@ class NumColumn(Column) :
                 retBool = True
             else:
                 retBool = False
-                msg = "最大値以上({}<{})".format(val , max_num)
+                msg = "最大値以上({}<{})".format(val, max_num)
                 return retBool, msg
 
         return retBool,
-

@@ -273,8 +273,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              description: 登録する値を設定
+              $ref: '#/components/schemas/menu_maintenance_body'
         required: true
       responses:
         "200":
@@ -431,8 +430,10 @@ paths:
         content:
           application/json:
             schema:
-              type: object
+              type: array
               description: 登録/更新/廃止/復活するidとレコードの値を設定
+              items:
+                $ref: '#/components/schemas/MAINTENANCE_PARAMETERS'
         required: true
       responses:
         "200":
@@ -782,6 +783,27 @@ components:
           example: 001-002
         message:
           type: string
+    MAINTENANCE_PARAMETER_P:
+      type: object
+      properties:
+        rest_key_name:
+          type: string
+    MAINTENANCE_PARAMETER_F:
+      type: object
+      properties:
+        rest_key_name:
+          type: string
+          example: base64 encode file
+    MAINTENANCE_PARAMETERS:
+      type: object
+      properties:
+        parameter:
+          $ref: '#/components/schemas/MAINTENANCE_PARAMETERS_parameter'
+        file:
+          $ref: '#/components/schemas/MAINTENANCE_PARAMETERS_file'
+        type:
+          type: string
+          example: Register/Update
     inline_response_200:
       type: object
       properties:
@@ -900,6 +922,26 @@ components:
           type: string
       example:
         status: status
+    menu_maintenance_body:
+      properties:
+        parameter:
+          $ref: '#/components/schemas/MAINTENANCE_PARAMETER_P'
+        file:
+          $ref: '#/components/schemas/MAINTENANCE_PARAMETER_F'
+      description: 登録する値を設定
+    MAINTENANCE_PARAMETERS_parameter:
+      type: object
+      properties:
+        rest_key_name:
+          type: string
+      example: null
+    MAINTENANCE_PARAMETERS_file:
+      type: object
+      properties:
+        rest_key_name:
+          type: string
+          example: base64 encode file
+      example: null
     inline_response_200_data:
       type: object
       properties:
