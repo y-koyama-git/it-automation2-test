@@ -28,8 +28,9 @@ def collect_menu_info(objdbca, menu, lang):
         t_common_column_group = 'T_COMN_COLUMN_GROUP'
         t_common_menu_group = 'T_COMN_MENU_GROUP'
         
-        # メッセージクラス呼び出し
-        objmsg = MessageTemplate('ja')  # noqa: F405
+        # メッセージクラス呼び出し (####メモ：before_request_handlerで一律インスタンス化するため、ここの記載はあとで消す)
+        objmsg = MessageTemplate()  # noqa: F405
+        objmsg.set_lang('ja')
         msg = ''
         
         # ####メモ：ユーザが対象のメニューの情報を取得可能かどうかのロールチェック処理が必要
@@ -41,7 +42,8 @@ def collect_menu_info(objdbca, menu, lang):
         # 『メニュー管理』テーブルから対象のデータを取得
         ret = objdbca.table_select(t_common_menu, 'WHERE MENU_NAME_REST = %s AND DISUSE_FLAG = %s', [menu, 0])
         if not ret:
-            msg = objmsg.get_message('MENU_API_ERR_0000001010')  # 『メニュー管理』に対象のメニューが存在しません
+            # msg = objmsg.get_message('MENU_API_ERR_0000001010')  # 『メニュー管理』に対象のメニューが存在しません
+            msg = objmsg.get_message('2000001')
             return 'statusCode', {}, msg
         
         menu_id = ret[0].get('MENU_ID')  # 対象メニューを特定するためのID
@@ -58,7 +60,8 @@ def collect_menu_info(objdbca, menu, lang):
         # 『メニュー-テーブル紐付管理』テーブルから対象のデータを取得
         ret = objdbca.table_select(t_common_menu_table_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
         if not ret:
-            msg = objmsg.get_message('MENU_API_ERR_0000001020')  # 『メニュー-テーブル紐付管理』に対象のメニューが存在しません
+            # msg = objmsg.get_message('MENU_API_ERR_0000001020')  # 『メニュー-テーブル紐付管理』に対象のメニューが存在しません
+            msg = objmsg.get_message('2000001')
             return 'statusCode', {}, msg
         
         menu_info = ret[0].get('MENU_INFO_' + lang.upper())
@@ -71,7 +74,8 @@ def collect_menu_info(objdbca, menu, lang):
         # 『メニューグループ管理』テーブルから対象のデータを取得
         ret = objdbca.table_select(t_common_menu_group, 'WHERE MENU_GROUP_ID = %s AND DISUSE_FLAG = %s', [menu_group_id, 0])
         if not ret:
-            msg = objmsg.get_message('MENU_API_ERR_0000001020')  # 『メニューグループ管理』に対象のメニューグループが存在しません
+            # msg = objmsg.get_message('MENU_API_ERR_0000001020')  # 『メニューグループ管理』に対象のメニューグループが存在しません
+            msg = objmsg.get_message('2000001')
             return 'statusCode', {}, msg
         
         # ####メモ：最終的にはPARENT_MENU_GROUP_IDがある場合の考慮をする必要あり。
@@ -99,7 +103,7 @@ def collect_menu_info(objdbca, menu, lang):
         ret = objdbca.table_select(t_common_column_class, 'WHERE DISUSE_FLAG = %s', [0])
         if not ret:
             # msg = objmsg.get_message('MENU_API_ERR_0000001030')  # 『カラムクラスマスタ』にデータが存在しません
-            msg = "『カラムクラスマスタ』にデータが存在しません"
+            msg = objmsg.get_message('2000001')
             return 'statusCode', {}, msg
         
         column_class_master = {}
@@ -117,7 +121,8 @@ def collect_menu_info(objdbca, menu, lang):
         # 『メニュー-カラム紐付管理』テーブルから対象のデータを取得
         ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
         if not ret:
-            msg = objmsg.get_message('MENU_API_ERR_0000001030')  # 『メニュー-カラム紐付管理』に対象のメニューが存在しません
+            # msg = objmsg.get_message('MENU_API_ERR_0000001030')  # 『メニュー-カラム紐付管理』に対象のメニューが存在しません
+            msg = objmsg.get_message('2000001')
             return 'statusCode', {}, msg
         
         # ####メモ：〇〇マスタとかに紐づくもの（例えばcolumn_type）は、とりあえずIDを入れている。最終的にはマスタから参照した文字列を挿入予定。
@@ -203,7 +208,8 @@ def collect_menu_column_list(objdbca, menu, lang):
         # 『メニュー管理』テーブルから対象のデータを取得
         ret = objdbca.table_select(t_common_menu, 'WHERE MENU_NAME_REST = %s AND DISUSE_FLAG = %s', [menu, 0])
         if not ret:
-            msg = objmsg.get_message('MENU_API_ERR_0000001010')  # 『メニュー管理』に対象のメニューが存在しません
+            # msg = objmsg.get_message('MENU_API_ERR_0000001010')  # 『メニュー管理』に対象のメニューが存在しません
+            msg = objmsg.get_message('2000001')
             return 'statusCode', {}, msg
         
         menu_id = ret[0].get('MENU_ID')  # 対象メニューを特定するためのID
@@ -211,7 +217,8 @@ def collect_menu_column_list(objdbca, menu, lang):
         # 『メニュー-カラム紐付管理』テーブルから対象のデータを取得
         ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s order by COLUMN_DISP_SEQ ASC', [menu_id])
         if not ret:
-            msg = objmsg.get_message('MENU_API_ERR_0000001030')  # 『メニュー-カラム紐付管理』に対象のメニューが存在しません
+            # msg = objmsg.get_message('MENU_API_ERR_0000001030')  # 『メニュー-カラム紐付管理』に対象のメニューが存在しません
+            msg = objmsg.get_message('2000001')
             return 'statusCode', {}, msg
         
         column_list = []
@@ -247,21 +254,24 @@ def collect_pulldown_list(objdbca, menu, column, lang):
         # 『メニュー管理』テーブルから対象のデータを取得
         ret = objdbca.table_select(t_common_menu, 'WHERE MENU_NAME_REST = %s AND DISUSE_FLAG = %s', [menu, 0])
         if not ret:
-            msg = objmsg.get_message('MENU_API_ERR_0000001010')  # 『メニュー管理』に対象のメニューが存在しません
+            # msg = objmsg.get_message('MENU_API_ERR_0000001010')  # 『メニュー管理』に対象のメニューが存在しません
+            msg = objmsg.get_message('2000001')
             return 'statusCode', {}, msg
         menu_id = ret[0].get('MENU_ID')  # 対象メニューを特定するためのID
         
         # 『メニュー-カラム紐付管理』テーブルから対象の項目のデータを取得
         ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND COLUMN_NAME_REST = %s AND DISUSE_FLAG = %s', [menu_id, column, 0])  # noqa: E501
         if not ret:
-            msg = objmsg.get_message('MENU_API_ERR_0000001050')  # 『メニュー-カラム紐付管理』に対象の項目が存在しません
+            # msg = objmsg.get_message('MENU_API_ERR_0000001050')  # 『メニュー-カラム紐付管理』に対象の項目が存在しません
+            msg = objmsg.get_message('2000001')
             return 'statusCode', {}, msg
         
         column_class_id = str(ret[0].get('COLUMN_CLASS'))
         id_column_list = ["7", "11", "18"]  # id 7(IDColumn), id 11(LinkIDColumn), id 18(AppIDColumn)
         id_column_check = column_class_id in id_column_list
         if not id_column_check:
-            msg = objmsg.get_message('MENU_API_ERR_0000001060')  # 対象のカラムのカラムクラスが[IDColumn, LinkIDColumn, AppIDColumn]のいずれかである必要があります。
+            # msg = objmsg.get_message('MENU_API_ERR_0000001060')  # 対象のカラムのカラムクラスが[IDColumn, LinkIDColumn, AppIDColumn]のいずれかである必要があります。
+            msg = objmsg.get_message('2000001')
             return 'statusCode', {}, msg
         
         ref_table_name = ret[0].get('REF_TABLE_NAME')
