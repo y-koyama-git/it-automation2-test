@@ -9,6 +9,7 @@ def before_request_handler():
         # create app log instance - ita-api-adminはworkspaceが作られていないので、DBでログレベル設定は行わない
         g.applogger = AppLog()
 
+        # request-header check(base)
         user_id = request.headers.get("User-Id")
         role_id = request.headers.get("Role-Id")
         language = request.headers.get("Language")

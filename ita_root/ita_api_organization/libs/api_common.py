@@ -11,6 +11,17 @@ def before_request_handler():
         # create app log instance
         g.applogger = AppLog()
 
+        # request-header check(base)
+        user_id = request.headers.get("User-Id")
+        role_id = request.headers.get("Role-Id")
+        language = request.headers.get("Language")
+        if user_id is None or role_id is None or language is None:
+            raise Exception("request-header paramater(User-Id and Role-Id and Language) is required")
+
+        os.environ['USER_ID'] = user_id
+        os.environ['ROLE_ID'] = role_id
+        os.environ['LANGUAGE'] = language
+
         # request-header check(Organization-Id)
         organization_id = request.headers.get("Organization-Id")
         if organization_id is None:
@@ -59,17 +70,6 @@ def before_request_handler():
 
             # set user setting log-level
             g.applogger.set_user_setting(ws_db)
-
-        # request-header check(base)
-        user_id = request.headers.get("User-Id")
-        role_id = request.headers.get("Role-Id")
-        language = request.headers.get("Language")
-        if user_id is None or role_id is None or language is None:
-            raise Exception("request-header paramater(User-Id and Role-Id and Language) is required")
-
-        os.environ['USER_ID'] = user_id
-        os.environ['ROLE_ID'] = role_id
-        os.environ['LANGUAGE'] = language
 
         # languageを元にメッセージファイルを読み込む
         
