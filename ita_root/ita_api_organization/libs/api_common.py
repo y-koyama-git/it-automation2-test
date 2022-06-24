@@ -4,12 +4,14 @@ import re
 
 from common_libs.common.dbconnect import *  # noqa: F403
 from common_libs.common.logger import AppLog
+from common_libs.common.message_class import MessageTemplate
 
 
 def before_request_handler():
     try:
-        # create app log instance
+        # create app log instance and message class instance
         g.applogger = AppLog()
+        g.appMsg = MessageTemplate()
 
         # request-header check(base)
         user_id = request.headers.get("User-Id")
@@ -21,6 +23,9 @@ def before_request_handler():
         os.environ['USER_ID'] = user_id
         os.environ['ROLE_ID'] = role_id
         os.environ['LANGUAGE'] = language
+
+        # set language for message class
+        g.appMsg.set_lang(language)
 
         # request-header check(Organization-Id)
         organization_id = request.headers.get("Organization-Id")
@@ -71,8 +76,6 @@ def before_request_handler():
             # set user setting log-level
             g.applogger.set_user_setting(ws_db)
 
-        # languageを元にメッセージファイルを読み込む
-        
     except Exception as e:
         g.applogger.error(e)
         return str(e), 400

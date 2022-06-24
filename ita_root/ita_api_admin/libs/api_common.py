@@ -2,12 +2,14 @@ from flask import request, g
 import os
 
 from common_libs.common.logger import AppLog
+from common_libs.common.message_class import MessageTemplate
 
 
 def before_request_handler():
     try:
-        # create app log instance - ita-api-adminはworkspaceが作られていないので、DBでログレベル設定は行わない
+        # create app log instance and message class instance
         g.applogger = AppLog()
+        g.appMsg = MessageTemplate()
 
         # request-header check(base)
         user_id = request.headers.get("User-Id")
@@ -20,7 +22,8 @@ def before_request_handler():
         os.environ['ROLE_ID'] = role_id
         os.environ['LANGUAGE'] = language
 
-        # languageを元にメッセージファイルを読み込む
+        # set language for message class
+        g.appMsg.set_lang(language)
 
     except Exception as e:
         g.applogger.error(e)
