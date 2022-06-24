@@ -9,7 +9,7 @@ def before_request_handler():
     try:
         # create app log instance and message class instance
         g.applogger = AppLog()
-        g.appMsg = MessageTemplate()
+        g.appmsg = MessageTemplate()
 
         # request-header check(base)
         user_id = request.headers.get("User-Id")
