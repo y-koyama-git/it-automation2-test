@@ -11,7 +11,7 @@ def before_request_handler():
     try:
         # create app log instance and message class instance
         g.applogger = AppLog()
-        g.appMsg = MessageTemplate()
+        g.appmsg = MessageTemplate()
 
         # request-header check(base)
         user_id = request.headers.get("User-Id")
@@ -25,7 +25,7 @@ def before_request_handler():
         os.environ['LANGUAGE'] = language
 
         # set language for message class
-        g.appMsg.set_lang(language)
+        g.appmsg.set_lang(language)
 
         # request-header check(Organization-Id)
         organization_id = request.headers.get("Organization-Id")
