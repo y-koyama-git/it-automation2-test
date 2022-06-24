@@ -33,7 +33,6 @@ def rest_maintenance_all(objdbca, menu, parameters, lang):
     try:
         
         # メッセージクラス呼び出し
-        objmsg = MessageTemplate('ja')  # noqa: F405
         msg = ''
         
         # ####メモ：ユーザが対象のメニューの情報を取得可能かどうかのロールチェック処理が必要
