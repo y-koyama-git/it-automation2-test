@@ -75,7 +75,7 @@ class MessageTemplate:
     set language
     
     Arguments:
-        lang: (str) "ja" | "en" 
+        lang: (str) "ja" | "en"
     """
     def set_lang(self, lang):
         self.lang = lang

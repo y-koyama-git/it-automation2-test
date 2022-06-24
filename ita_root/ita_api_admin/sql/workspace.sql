@@ -128,6 +128,10 @@ CREATE TABLE T_COMN_MENU_TABLE_LINK
     SHEET_TYPE                      VARCHAR(2),                                 -- シートタイプ
     INHERIT                         VARCHAR(2),                                 -- 継承フラグ
     VERTICAL                        VARCHAR(2),                                 -- 縦型フラグ
+    ROW_INSERT_FLAG                 VARCHAR(2),                                 -- 登録許可フラグ
+    ROW_UPDATE_FLAG                 VARCHAR(2),                                 -- 更新許可フラグ
+    ROW_DISUSE_FLAG                 VARCHAR(2),                                 -- 廃止許可フラグ
+    ROW_REUSE_FLAG                  VARCHAR(2),                                 -- 復活許可フラグ
     LOCK_TABLE                      TEXT,                                       -- ロック対象テーブル
     UNIQUE_CONSTRAINT               TEXT,                                       -- 組み合わせ一意制約
     BEFORE_VALIDATE_REGISTER        TEXT,                                       -- 個別バリデーション前
@@ -153,6 +157,10 @@ CREATE TABLE T_COMN_MENU_TABLE_LINK_JNL
     SHEET_TYPE                      VARCHAR(2),                                 -- シートタイプ
     INHERIT                         VARCHAR(2),                                 -- 継承フラグ
     VERTICAL                        VARCHAR(2),                                 -- 縦型フラグ
+    ROW_INSERT_FLAG                 VARCHAR(2),                                 -- 登録許可フラグ
+    ROW_UPDATE_FLAG                 VARCHAR(2),                                 -- 更新許可フラグ
+    ROW_DISUSE_FLAG                 VARCHAR(2),                                 -- 廃止許可フラグ
+    ROW_REUSE_FLAG                  VARCHAR(2),                                 -- 復活許可フラグ
     LOCK_TABLE                      TEXT,                                       -- ロック対象テーブル
     UNIQUE_CONSTRAINT               TEXT,                                       -- 組み合わせ一意制約
     BEFORE_VALIDATE_REGISTER        TEXT,                                       -- 個別バリデーション前

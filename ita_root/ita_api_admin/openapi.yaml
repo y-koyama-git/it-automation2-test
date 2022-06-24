@@ -23,13 +23,6 @@ paths:
           required: true
           schema:
             type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              description: ロールID情報
-              type: object
       responses:
         '200':
           description: Success
