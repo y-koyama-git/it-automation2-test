@@ -14,7 +14,7 @@
 
 # import connexion
 
-from common_libs.common import logger
+from flask import g
 from common_libs.common.dbconnect import *  # noqa: F403
 import os
 
@@ -76,7 +76,7 @@ def organization_create(body, organization_id):  # noqa: E501
         org_db.sqlfile_execute("sql/organization.sql")
 
     except Exception as e:
-        logger.app.error(e)  # noqa: F405
+        g.applogger.error(e)
         return 'error'
 
     return 'success'

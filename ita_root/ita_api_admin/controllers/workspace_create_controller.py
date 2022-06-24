@@ -16,9 +16,8 @@ controller
 workspace_create
 """
 # import connexion
-from flask import request
+from flask import request, g
 
-from common_libs.common import logger
 from common_libs.common.dbconnect import *  # noqa: F403
 
 import os
@@ -98,7 +97,7 @@ def workspace_create(body, workspace_id):  # noqa: E501
                     ws_db.sql_execute(sql)
 
     except Exception as e:
-        logger.app.error(e)  # noqa: F405
+        g.applogger.error(e)
         return 'error'
 
     return 'success'
