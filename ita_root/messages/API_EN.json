@@ -1,0 +1,14 @@
+{
+    "0000000": "Success",
+    "0000001": "[sample]Success",
+    "2000001": "[sample]Validation Error 1",
+    "2000002": "[sample]Validation Error 2",
+    "2000003": "[sample]Validation Error 3",
+    "4000001": "[sample]Request Error 1",
+    "4000002": "[sample]Request Error 2",
+    "4000003": "[sample]Request Error 3",
+    "4010001": "[sample]Authentication Error 1",
+    "4010002": "[sample]Authentication Error 2",
+    "9990001": "[sample]System Error 1",
+    "9990002": "[sample]Ssystem Error 2"
+}
