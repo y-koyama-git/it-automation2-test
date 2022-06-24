@@ -18,12 +18,7 @@ import datetime
 import textwrap
 import random
 
-import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-
-from column.num_column_class import NumColumn
-from column.text_column_class import TextColumn
-from common.dbconnect import DBConnectWs as DBConnectAgent
+from common_libs.column import *
 
 
 class loadTable():
@@ -277,15 +272,22 @@ class loadTable():
                 obj
         """
         # objcol = self.get_objcol(rest_key)
-        col_class_name = self.get_col_class_name(rest_key)
+        # col_class_name = self.get_col_class_name(rest_key)
         # col_name = self.get_col_name(rest_key)
+        #if col_class_name not in sys.modules:
+        #    col_class_name = 'TextColumn'
+        #eval_class_str = "{}(self.objdbca,self.objtable,rest_key,cmd_type)".format(col_class_name)
+        #print(eval_class_str)
+        #objcolumn = eval(eval_class_str)
         
-        if col_class_name not in sys.modules:
+        col_class_name = self.get_col_class_name(rest_key)
+        try:
+            eval_class_str = "{}(self.objdbca,self.objtable,rest_key,cmd_type)".format(col_class_name)
+            objcolumn = eval(eval_class_str)
+        except:
             col_class_name = 'TextColumn'
-
-        eval_class_str = "{}(self.objdbca,self.objtable,rest_key,cmd_type)".format(col_class_name)
-
-        objcolumn = eval(eval_class_str)
+            eval_class_str = "{}(self.objdbca,self.objtable,rest_key,cmd_type)".format(col_class_name)
+            objcolumn = eval(eval_class_str)
         return objcolumn
 
     def get_locktable(self):
@@ -760,4 +762,3 @@ class loadTable():
 
         # print({"result":result})
         return rest_parameter, rest_file
-

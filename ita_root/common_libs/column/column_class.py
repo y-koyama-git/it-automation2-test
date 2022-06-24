@@ -217,7 +217,10 @@ class Column():
         tmp_validate_option = self.get_objcol().get('VALIDATE_OPTION')
         if tmp_validate_option is not None:
             try:
-                validate_option = json.loads(tmp_validate_option)
+                if isinstance(tmp_validate_option, dict) is False:
+                    validate_option = json.loads(tmp_validate_option)
+                else:
+                    validate_option = tmp_validate_option
             except json.JSONDecodeError:
                 validate_option = {}
 
@@ -484,7 +487,7 @@ class Column():
             result = self.objdbca.table_count(self.table_name, where_str, bind_value_list)
             if result != 0:
                 retBool = False
-                msg = '{}:一意制約'.format(self.col_name)
+                msg = '{}:一意制約'.format(self.rest_key_name)
                 return retBool, msg
         return retBool,
 
