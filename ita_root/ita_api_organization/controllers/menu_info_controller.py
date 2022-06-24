@@ -34,8 +34,7 @@ def get_column_list(workspace_id, menu):  # noqa: E501
         objdbca = DBConnectWs(workspace_id)  # noqa: F405
         
         # メニューのカラム情報を取得
-        # ####メモ：langは取得方法検討中
-        result_data = menu_info.collect_menu_column_list(objdbca, menu, 'ja')
+        result_data = menu_info.collect_menu_column_list(objdbca, menu)
         result = {
             "result": result_data[0],
             "data": result_data[1],
@@ -71,8 +70,7 @@ def get_menu_info(workspace_id, menu):  # noqa: E501
         objdbca = DBConnectWs(workspace_id)  # noqa: F405
         
         # メニューの基本情報および項目情報の取得
-        # ####メモ：langは取得方法検討中
-        result_data = menu_info.collect_menu_info(objdbca, menu, 'ja')
+        result_data = menu_info.collect_menu_info(objdbca, menu)
         result = {
             "result": result_data[0],
             "data": result_data[1],
@@ -110,8 +108,7 @@ def get_pulldown_list(workspace_id, menu, column):  # noqa: E501
         objdbca = DBConnectWs(workspace_id)  # noqa: F405
         
         # 項目のプルダウン一覧の取得
-        # ####メモ：langは取得方法検討中
-        result_data = menu_info.collect_pulldown_list(objdbca, menu, column, 'ja')
+        result_data = menu_info.collect_pulldown_list(objdbca, menu, column)
         result = {
             "result": result_data[0],
             "data": result_data[1],
