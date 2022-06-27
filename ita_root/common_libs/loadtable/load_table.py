@@ -698,7 +698,7 @@ class loadTable():
             # print({"error": self.get_message_count("ERROR")})
             if self.get_message_count("ERROR") == 0:
                 # コミット
-                self.objdbca.db_transaction_end(False)
+                self.objdbca.db_transaction_end(True)
                 tmp_data = result_data
             elif self.get_message_count("ERROR") > 0:
                 # ロールバック トランザクション終了
