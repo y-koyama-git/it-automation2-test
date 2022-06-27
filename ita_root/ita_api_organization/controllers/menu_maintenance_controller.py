@@ -106,9 +106,9 @@ def maintenance_register(body, workspace_id, menu):  # noqa: E501
         result_data = menu_maintenance.rest_maintenance(objdbca, menu, parameter, target_uuid, 'ja')
         #### result_code,msg未対応
         result = {
-            "result": "result_code", #result_data[0],
-            "data": result_data, #result_data[1],
-            "message": "msg" #result_data[2]
+            "result": result_data.get('result'), #result_data[0],
+            "data": result_data.get('data'), #result_data[1],
+            "message": result_data.get('message')  #result_data[2]
         }
         return jsonify(result), 200
     
@@ -182,9 +182,9 @@ def maintenance_update(body, workspace_id, menu, uuid):  # noqa: E501
         result_data = menu_maintenance.rest_maintenance(objdbca, menu, parameter, target_uuid, 'ja')
         #### result_code,msg未対応
         result = {
-            "result": "result_code", #result_data[0],
-            "data": result_data, #result_data[1],
-            "message": "msg" #result_data[2]
+            "result": result_data.get('result'), #result_data[0],
+            "data": result_data.get('data'), #result_data[1],
+            "message": result_data.get('message')  #result_data[2]
         }
         return jsonify(result), 200
     

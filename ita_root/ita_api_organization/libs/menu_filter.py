@@ -44,7 +44,7 @@ def rest_filter(objdbca, menu, filter_parameter, lang):
         objmenu = load_table.loadTable(objdbca, menu, lang)
         result_data = objmenu.rest_filter(filter_parameter)
 
-        return 'statusCode', result_data, msg
+        return result_data
     
     except Exception:
         raise

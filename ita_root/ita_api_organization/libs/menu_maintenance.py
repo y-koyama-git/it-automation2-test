@@ -44,7 +44,7 @@ def rest_maintenance(objdbca, menu, parameter, target_uuid, lang):
         objmenu = load_table.loadTable(objdbca, menu, lang)
         result_data = objmenu.rest_maintenance(parameter, target_uuid)
 
-        return 'statusCode', result_data, msg
+        return result_data
     
     except Exception:
         raise
