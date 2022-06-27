@@ -19,6 +19,7 @@ import pymysql.cursors  # https://pymysql.readthedocs.io/en/latable_name/
 import os
 
 from .dbconnect_common import DBConnectCommon
+from common_libs.common.exception import AppException
 
 
 class DBConnectOrg(DBConnectCommon):
@@ -44,8 +45,7 @@ class DBConnectOrg(DBConnectCommon):
         # get db-connect-infomation from organization-db
         connect_info = common_db.get_orgdb_connect_info(self._db)
         if connect_info is False:
-            msg = "Dabase Connect Error db_name={} : Database is not found".format(self._db)
-            raise Exception(msg)
+            raise AppException("9990001", [self._db])
 
         self._host = connect_info['DB_HOST']
         self._port = int(connect_info['DB_PORT'])
@@ -126,8 +126,7 @@ class DBConnectOrgRoot(DBConnectOrg):
         # get db-connect-infomation from ita-common-db
         connect_info = common_db.get_orgdb_connect_info(self._db)
         if connect_info is False:
-            msg = "Dabase Connect Error db_name={} : Database is not found".format(self._db)
-            raise Exception(msg)
+            raise AppException("9990001", [self._db])
 
         self._host = connect_info['DB_HOST']
         self._port = int(connect_info['DB_PORT'])
@@ -163,8 +162,7 @@ class DBConnectOrgRoot(DBConnectOrg):
                 cursorclass=pymysql.cursors.DictCursor
             )
         except pymysql.Error as e:
-            msg = "Dabase Connect Error db_name={} : {}".format(self._db, e)
-            raise Exception(msg)
+            raise AppException("9990002", [self._db, e])
 
         return True
 

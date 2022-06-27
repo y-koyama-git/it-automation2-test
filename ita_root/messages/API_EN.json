@@ -11,6 +11,7 @@
     "4000003": "[sample]Request Error 3",
     "4010001": "You do not have access privileges to the target menu. (menu: {})",
     "4010002": "[sample]Authentication Error 2",
-    "9990001": "[sample]System Error 1",
-    "9990002": "[sample]Ssystem Error 2"
+    "9990001": "[Database Error] Database({}) connect infomation is not found",
+    "9990002": "[Database Error] Database({}) : {}",
+    "9990003": "[Database Error] Database({}) SQL:{}, {}"
 }
