@@ -74,9 +74,9 @@ def get_filter(workspace_id, menu):  # noqa: E501
         result_data = menu_filter.rest_filter(objdbca, menu, filter_parameter, 'ja')
         #### result_code,msg未対応
         result = {
-            "result": "result_code", #result_data[0],
-            "data": result_data, #result_data[1],
-            "message": "msg" #result_data[2]
+            "result": result_data.get('result'), #result_data[0],
+            "data": result_data.get('data'), #result_data[1],
+            "message": result_data.get('msg')  #result_data[2]
         }
         return jsonify(result), 200
     
@@ -150,9 +150,9 @@ def post_filter(body, workspace_id, menu):  # noqa: E501
         result_data = menu_filter.rest_filter(objdbca, menu, filter_parameter, 'ja')
         #### result_code,msg未対応
         result = {
-            "result": "result_code", #result_data[0],
-            "data": result_data, #result_data[1],
-            "message": "msg" #result_data[2]
+            "result": result_data.get('result'), #result_data[0],
+            "data": result_data.get('data'), #result_data[1],
+            "message": result_data.get('msg')  #result_data[2]
         }
         return jsonify(result), 200
     

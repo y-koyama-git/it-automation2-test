@@ -479,10 +479,10 @@ class Column():
             where_str = " where `{}` = %s ".format(self.col_name)
             bind_value_list = [val]
 
-            if 'target_uuid' in option:
-                if option.get('target_uuid') is not None:
+            if 'uuid' in option:
+                if option.get('uuid') is not None:
                     where_str = where_str + " and `{}` <> %s ".format(primary_key_list[0])
-                    bind_value_list.append(option.get('target_uuid'))
+                    bind_value_list.append(option.get('uuid'))
 
             result = self.objdbca.table_count(self.table_name, where_str, bind_value_list)
             if result != 0:
