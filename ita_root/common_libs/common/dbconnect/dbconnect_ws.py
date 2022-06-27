@@ -16,6 +16,7 @@ database connection agent module for workspace-db on mariadb
 """
 from .dbconnect_common import DBConnectCommon
 from .dbconnect_org import DBConnectOrg
+from common_libs.common.exception import AppException
 
 
 class DBConnectWs(DBConnectCommon):
@@ -41,8 +42,7 @@ class DBConnectWs(DBConnectCommon):
         # get db-connect-infomation from organization-db
         connect_info = org_db.get_wsdb_connect_info(self._db)
         if connect_info is False:
-            msg = "Dabase Connect Error db_name={} : Database is not found".format(self._db)
-            raise Exception(msg)
+            raise AppException("9990001", [self._db])
 
         self._host = connect_info['DB_HOST']
         self._port = int(connect_info['DB_PORT'])
