@@ -95,13 +95,13 @@ class MessageTemplate:
         try:
             # ####メモ：現状、メッセージファイルはAPI返却値用の考慮しかない。
             #     　　　ログ用のメッセージファイルをどうするか決まったら改めて修正する必要がある。
-            ret_msg = self.messages.get(self.lang, {}).get(message_id, {})
+            ret_msg = self.messages.get(self.lang, {}).get(str(message_id))
             
-            if format_strings:
+            if ret_msg and format_strings:
                 ret_msg = ret_msg.format(*format_strings)
             
             if not ret_msg:
-                ret_msg = "Message id is not found.(Called-ID[{}])".format(message_id)
+                ret_msg = "Message id is not found.(Called-ID[{}])".format(str(message_id))
             
             return ret_msg
 
