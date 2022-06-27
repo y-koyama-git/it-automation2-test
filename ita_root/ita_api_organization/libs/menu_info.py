@@ -19,7 +19,12 @@ from flask import g
 
 def collect_menu_info(objdbca, menu):
     """
-    関数の説明
+        メニュー情報の取得
+        ARGS:
+            objdbca:DB接クラス  DBConnectWs()
+            menu: メニュー string
+        RETRUN:
+            statusCode, {}, msg
     """
     try:
         # テーブル名
@@ -39,7 +44,8 @@ def collect_menu_info(objdbca, menu):
         role_check = True
         if not role_check:
             # ####メモ：401を意図的に返したいので最終的に自作Exceptionクラスに渡す。引数のルールは別途決める必要あり。
-            status_code = '401XXXX'
+            status_code = '4010001'
+            msg = g.appmsg.get_message(status_code, [menu])
             raise Exception(msg, status_code)
         
         # 『メニュー管理』テーブルから対象のデータを取得
@@ -185,7 +191,12 @@ def collect_menu_info(objdbca, menu):
 
 def collect_menu_column_list(objdbca, menu):
     """
-    関数の説明
+        メニューのカラム一覧の取得
+        ARGS:
+            objdbca:DB接クラス  DBConnectWs()
+            menu: メニュー string
+        RETRUN:
+            statusCode, {}, msg
     """
     try:
         # 変数定義
@@ -198,7 +209,8 @@ def collect_menu_column_list(objdbca, menu):
         role_check = True
         if not role_check:
             # ####メモ：401を意図的に返したいので最終的に自作Exceptionクラスに渡す。引数のルールは別途決める必要あり。
-            status_code = '401XXXX'
+            status_code = '4010001'
+            msg = g.appmsg.get_message(status_code, [menu])
             raise Exception(msg, status_code)
         
         # 『メニュー管理』テーブルから対象のデータを取得
@@ -230,7 +242,13 @@ def collect_menu_column_list(objdbca, menu):
 
 def collect_pulldown_list(objdbca, menu, column):
     """
-    関数の説明
+        IDカラム(IDColumn, LinkIDColumn, AppIDColumn)のプルダウン選択用一覧の取得
+        ARGS:
+            objdbca:DB接クラス  DBConnectWs()
+            menu: メニュー string
+            column: カラム string
+        RETRUN:
+            statusCode, {}, msg
     """
     try:
         # 変数定義
@@ -245,7 +263,8 @@ def collect_pulldown_list(objdbca, menu, column):
         role_check = True
         if not role_check:
             # ####メモ：401を意図的に返したいので最終的に自作Exceptionクラスに渡す。引数のルールは別途決める必要あり。
-            status_code = '401XXXX'
+            status_code = '4010001'
+            msg = g.appmsg.get_message(status_code, [menu])
             raise Exception(msg, status_code)
         
         # 『カラムクラスマスタ』テーブルからcolumn_typeの一覧を取得
