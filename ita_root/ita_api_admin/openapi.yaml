@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
-  description: ITAv2.0 organization用API
+  description: ITAv2.0 admin用API
   version: 1.0.0
-  title: ITA Version2.0 organization API
+  title: ITA Version2.0 admin API
 tags:
 
   - name: Organization Create
@@ -10,7 +10,7 @@ tags:
   - name: Workspace Create
     description: Workspace作成
 paths:
-  /api/organization/{organization_id}/ita/:
+  /api/organizations/{organization_id}/ita/:
     post:
       tags:
         - Organization Create
@@ -19,7 +19,7 @@ paths:
       parameters:
         - name: organization_id
           in: path
-          description: Organization名
+          description: OrganizationID
           required: true
           schema:
             type: string
@@ -46,16 +46,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
 
-  /api/workspaces/{workspace_id}/ita/:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/:
     post:
       tags:
         - Workspace Create
-      description: ワークスペースを作成する
+      description: Workspaceを作成する
       operationId: workspaceCreate
       parameters:
+        - name: organization_id
+          in: path
+          description: organizationID
+          required: true
+          schema:
+            type: string
         - name: workspace_id
           in: path
-          description: ワークスペース名
+          description: WorkspaceID
           required: true
           schema:
             type: string
