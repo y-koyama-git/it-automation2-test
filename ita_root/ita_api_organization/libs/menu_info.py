@@ -37,22 +37,22 @@ def collect_menu_info(objdbca, menu):
         
         # 変数定義
         lang = os.environ['LANGUAGE']
-        status_code = '2000000'  # 成功
+        status_code = '200-00000'  # 成功
         msg = ''
         
         # ####メモ：ユーザが対象のメニューの情報を取得可能かどうかのロールチェック処理が必要
         role_check = True
         if not role_check:
             # ####メモ：401を意図的に返したいので最終的に自作Exceptionクラスに渡す。引数のルールは別途決める必要あり。
-            status_code = '4010001'
-            msg = g.appmsg.get_message(status_code, [menu])
+            status_code = '401-00001'
+            msg = g.appmsg.get_api_message(status_code, [menu])
             raise Exception(msg, status_code)
         
         # 『メニュー管理』テーブルから対象のデータを取得
         ret = objdbca.table_select(t_common_menu, 'WHERE MENU_NAME_REST = %s AND DISUSE_FLAG = %s', [menu, 0])
         if not ret:
-            status_code = '2000001'
-            msg = g.appmsg.get_message(status_code, [menu])
+            status_code = '200-00001'
+            msg = g.appmsg.get_api_message(status_code, [menu])
             return status_code, {}, msg
         
         menu_id = ret[0].get('MENU_ID')  # 対象メニューを特定するためのID
@@ -69,8 +69,8 @@ def collect_menu_info(objdbca, menu):
         # 『メニュー-テーブル紐付管理』テーブルから対象のデータを取得
         ret = objdbca.table_select(t_common_menu_table_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
         if not ret:
-            status_code = '2000002'
-            msg = g.appmsg.get_message(status_code, [menu])
+            status_code = '200-00002'
+            msg = g.appmsg.get_api_message(status_code, [menu])
             return status_code, {}, msg
         
         menu_info = ret[0].get('MENU_INFO_' + lang.upper())
@@ -83,8 +83,8 @@ def collect_menu_info(objdbca, menu):
         # 『メニューグループ管理』テーブルから対象のデータを取得
         ret = objdbca.table_select(t_common_menu_group, 'WHERE MENU_GROUP_ID = %s AND DISUSE_FLAG = %s', [menu_group_id, 0])
         if not ret:
-            status_code = '2000003'
-            msg = g.appmsg.get_message(status_code, [menu])
+            status_code = '200-00003'
+            msg = g.appmsg.get_api_message(status_code, [menu])
             return status_code, {}, msg
         
         # ####メモ：最終的にはPARENT_MENU_GROUP_IDがある場合の考慮をする必要あり。
@@ -125,8 +125,8 @@ def collect_menu_info(objdbca, menu):
         # 『メニュー-カラム紐付管理』テーブルから対象のデータを取得
         ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
         if not ret:
-            status_code = '2000004'
-            msg = g.appmsg.get_message(status_code, [menu])
+            status_code = '200-00004'
+            msg = g.appmsg.get_api_message(status_code, [menu])
             return status_code, {}, msg
         
         column_info_data = {}
@@ -202,22 +202,22 @@ def collect_menu_column_list(objdbca, menu):
         # 変数定義
         t_common_menu = 'T_COMN_MENU'
         t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
-        status_code = '2000000'  # 成功
+        status_code = '200-00000'  # 成功
         msg = ''
         
         # ####メモ：ユーザが対象のメニューの情報を取得可能かどうかのロールチェック処理が必要
         role_check = True
         if not role_check:
             # ####メモ：401を意図的に返したいので最終的に自作Exceptionクラスに渡す。引数のルールは別途決める必要あり。
-            status_code = '4010001'
-            msg = g.appmsg.get_message(status_code, [menu])
+            status_code = '401-00001'
+            msg = g.appmsg.get_api_message(status_code, [menu])
             raise Exception(msg, status_code)
         
         # 『メニュー管理』テーブルから対象のデータを取得
         ret = objdbca.table_select(t_common_menu, 'WHERE MENU_NAME_REST = %s AND DISUSE_FLAG = %s', [menu, 0])
         if not ret:
-            status_code = '2000001'
-            msg = g.appmsg.get_message(status_code, [menu])
+            status_code = '200-00001'
+            msg = g.appmsg.get_api_message(status_code, [menu])
             return status_code, {}, msg
         
         menu_id = ret[0].get('MENU_ID')  # 対象メニューを特定するためのID
@@ -225,8 +225,8 @@ def collect_menu_column_list(objdbca, menu):
         # 『メニュー-カラム紐付管理』テーブルから対象のデータを取得
         ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s order by COLUMN_DISP_SEQ ASC', [menu_id])
         if not ret:
-            status_code = '2000004'
-            msg = g.appmsg.get_message(status_code, [menu])
+            status_code = '200-00004'
+            msg = g.appmsg.get_api_message(status_code, [menu])
             return status_code, {}, msg
         
         column_list = []
@@ -256,15 +256,15 @@ def collect_pulldown_list(objdbca, menu, column):
         t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
         t_common_column_class = 'T_COMN_COLUMN_CLASS'
         lang = os.environ['LANGUAGE']
-        status_code = '2000000'  # 成功
+        status_code = '200-00000'  # 成功
         msg = ''
         
         # ####メモ：ユーザが対象のメニューの情報を取得可能かどうかのロールチェック処理が必要
         role_check = True
         if not role_check:
             # ####メモ：401を意図的に返したいので最終的に自作Exceptionクラスに渡す。引数のルールは別途決める必要あり。
-            status_code = '4010001'
-            msg = g.appmsg.get_message(status_code, [menu])
+            status_code = '401-00001'
+            msg = g.appmsg.get_api_message(status_code, [menu])
             raise Exception(msg, status_code)
         
         # 『カラムクラスマスタ』テーブルからcolumn_typeの一覧を取得
@@ -276,24 +276,24 @@ def collect_pulldown_list(objdbca, menu, column):
         # 『メニュー管理』テーブルから対象のデータを取得
         ret = objdbca.table_select(t_common_menu, 'WHERE MENU_NAME_REST = %s AND DISUSE_FLAG = %s', [menu, 0])
         if not ret:
-            status_code = '2000001'
-            msg = g.appmsg.get_message(status_code, [menu])
+            status_code = '200-00001'
+            msg = g.appmsg.get_api_message(status_code, [menu])
             return status_code, {}, msg
         menu_id = ret[0].get('MENU_ID')  # 対象メニューを特定するためのID
         
         # 『メニュー-カラム紐付管理』テーブルから対象の項目のデータを取得
         ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND COLUMN_NAME_REST = %s AND DISUSE_FLAG = %s', [menu_id, column, 0])  # noqa: E501
         if not ret:
-            status_code = '2000004'
-            msg = g.appmsg.get_message(status_code, [menu])
+            status_code = '200-00004'
+            msg = g.appmsg.get_api_message(status_code, [menu])
             return status_code, {}, msg
         
         column_class_id = str(ret[0].get('COLUMN_CLASS'))
         id_column_list = ["7", "11", "18"]  # id 7(IDColumn), id 11(LinkIDColumn), id 18(AppIDColumn)
         id_column_check = column_class_id in id_column_list
         if not id_column_check:
-            status_code = '2000005'
-            msg = g.appmsg.get_message(status_code, [column, column_class_master.get(column_class_id)])
+            status_code = '200-00005'
+            msg = g.appmsg.get_api_message(status_code, [column, column_class_master.get(column_class_id)])
             return status_code, {}, msg
         
         ref_table_name = ret[0].get('REF_TABLE_NAME')
