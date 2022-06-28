@@ -19,10 +19,11 @@ import uuid
 import datetime
 import os
 import re
-
 # for generate password
 import secrets
 import string
+
+from common_libs.common.exception import AppException
 
 
 class DBConnectCommon:
@@ -77,8 +78,7 @@ class DBConnectCommon:
                 cursorclass=pymysql.cursors.DictCursor
             )
         except pymysql.Error as e:
-            msg = "Dabase Connect Error db_name={} : {}".format(self._db, e)
-            raise Exception(msg)
+            raise AppException("9990002", [self._db, e])
 
         return True
 
@@ -105,9 +105,7 @@ class DBConnectCommon:
                 self._db_con.begin()
                 res = True
             except pymysql.Error as e:
-                msg = "SQL Error : db_name={}: {}".format(self._db, e)
-                res = False
-                raise Exception(msg)
+                raise AppException("9990003", [self._db, "BEGIN", e])
 
             if res is True:
                 self._is_transaction = True
@@ -144,9 +142,7 @@ class DBConnectCommon:
                 self._db_con.commit()
                 res = True
             except pymysql.Error as e:
-                msg = "SQL Error : db_name={}: {}".format(self._db, e)
-                res = False
-                raise Exception(msg)
+                raise AppException("9990003", [self._db, "COMMIT", e])
 
             if res is True:
                 self._is_transaction = False
@@ -166,9 +162,8 @@ class DBConnectCommon:
                 self._db_con.rollback()
                 res = True
             except pymysql.Error as e:
-                msg = "SQL Error : db_name={}: {}".format(self._db, e)
-                res = False
-                raise Exception(msg)
+                raise AppException("9990003", [self._db, "ROLLBACK", e])
+
             if res is True:
                 self._is_transaction = False
         return res
@@ -210,8 +205,7 @@ class DBConnectCommon:
             db_cursor.execute(sql, bind_value_list)
             self.__sql_debug(db_cursor)
         except pymysql.Error as e:
-            msg = "SQL Error : db_name={}, sql='{}' : {}".format(self._db, db_cursor._last_executed, e)
-            raise Exception(msg)
+            raise AppException("9990003", [self._db, db_cursor._last_executed, e])
 
         data_list = list(db_cursor.fetchall())  # counter plan for 0 data
         db_cursor.close()
