@@ -24,14 +24,16 @@ import os
 import re
 
 
-def workspace_create(body, workspace_id):  # noqa: E501
+def workspace_create(body, organization_id, workspace_id):  # noqa: E501
     """workspace_create
 
-    ワークスペースを作成する # noqa: E501
+    Workspaceを作成する # noqa: E501
 
-    :param body:
+    :param body: 
     :type body: dict | bytes
-    :param workspace_id: ワークスペース名
+    :param organization_id: organizationID
+    :type organization_id: str
+    :param workspace_id: WorkspaceID
     :type workspace_id: str
 
     :rtype: InlineResponse200

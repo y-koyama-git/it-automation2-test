@@ -19,14 +19,12 @@ from common_libs.common.dbconnect import *  # noqa: F403
 import os
 
 
-def organization_create(body, organization_id):  # noqa: E501
+def organization_create(organization_id):  # noqa: E501
     """organization_create
 
     Organizationを作成する # noqa: E501
 
-    :param body:
-    :type body: dict | bytes
-    :param organization_id: Organization名
+    :param organization_id: OrganizationID
     :type organization_id: str
 
     :rtype: InlineResponse200
