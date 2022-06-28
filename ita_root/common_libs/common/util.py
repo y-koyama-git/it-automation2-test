@@ -2,9 +2,9 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,85 +21,93 @@ import codecs
 from pathlib import Path
 
 
-class UtilClass:
+def ky_encrypt(lcstr):
     """
+    Encode a string
 
-    共通関数 class
+    Arguments:
+        lcstr: Encoding target value
+    Returns:
+        Encoded string
     """
+    # BASE64でエンコード
+    tmp_str = base64.b64encode(lcstr.encode())
+    # rot13でエンコード
+    return codecs.encode(tmp_str.decode(), "rot_13")
 
-    def ky_encrypt(lcStr):
-        """
-        Encode a string
 
-        Arguments:
-            lcStr: Encoding target value
-        Returns:
-            Encoded string
-        """
+def ky_decrypt(lcstr):
+    """
+    Decode a string
+
+    Arguments:
+        lcstr: Decoding target value
+    Returns:
+        Decoded string
+    """
+    # rot13でデコード
+    tmp_str = codecs.decode(lcstr, "rot_13")
+    # base64でデコード
+    return base64.b64decode(tmp_str.encode()).decode()
+
+
+def ky_file_encrypt(self, src_file, dest_file):
+    """
+    Encode a file
+
+    Arguments:
+        src_file: Encoding target file
+        dest_file: Encoded file
+    Returns:
+        is success:(bool)
+    """
+    try:
+        # ファイルオープン
+        fsrc = open(src_file)
         
-        return codecs.encode(base64.b64encode(lcStr.encode()), "rot_13")
-
-    def ky_decrypt(lcStr):
-        """
-        Decode a string
-
-        Arguments:
-            lcStr: Decoding target value
-        Returns:
-            Decoded string
-        """
-        tmp_lcstr = base64.b64decode(codecs.decode(lcStr, "rot_13").encode())
-
-        # String型に変換してreturn
-        return tmp_lcstr.decode()
+        # ファイル読み込み
+        lcstr = Path(src_file).read_text(encoding="utf-8")
+        
+        # エンコード関数呼び出し
+        enc_data = self.ky_encrypt(lcstr)
+        
+        # ファイル書き込み
+        Path(dest_file).write_text(enc_data, encoding="utf-8")
+    except Exception:
+        return False
+    finally:
+        # ファイルクローズ
+        fsrc.close()
     
-    def ky_file_encrypt(self, src_file, dest_file):
-        """
-        Encode a file
+    return True
 
-        Arguments:
-            src_file: Encoding target file
-            dest_file: Encoded file
-        Returns:
-            is success:(bool)
-        """
-        try:
-            fsrc = open(src_file)
-            text = Path(src_file).read_text(encoding="utf-8")
-            
-            # エンコード関数呼び出し
-            enc_data = self.ky_encrypt(self, text)
-            Path(src_file).write_text(enc_data, encoding="utf-8")
-        except Exception:
-            return False
-        finally:
-            fsrc.close()
+
+def ky_file_decrypt(self, src_file, dest_file):
+    """
+    Decode a file
+
+    Arguments:
+        src_file: Decoding target file
+        dest_file: Decoded file
+    Returns:
+        is success:(bool)
+    """
+    try:
+        # ファイルオープン
+        fsrc = open(src_file)
         
-        return True
-
-    def ky_file_decrypt(self, src_file, dest_file):
-        """
-        Decode a file
-
-        Arguments:
-            src_file: Decoding target file
-            dest_file: Decoded file
-        Returns:
-            is success:(bool)
-        """
-        try:
-            fsrc = open(src_file)
-            text = Path(src_file).read_text(encoding="utf-8")
-            
-            # デコード関数呼び出し
-            enc_data = self.ky_decrypt(self, text)
-            Path(src_file).write_text(enc_data, encoding="utf-8")
-        except Exception:
-            return False
-        finally:
-            fsrc.close()
+        # ファイル読み込み
+        lcstr = Path(src_file).read_text(encoding="utf-8")
         
-        return True
-
-        if __name__ == "__main__":
-            self.ky_encrypt("aaa")
+        # デコード関数呼び出し
+        enc_data = self.ky_decrypt(lcstr)
+        
+        # ファイル書き込み
+        Path(dest_file).write_text(enc_data, encoding="utf-8")
+    except Exception:
+        return False
+    finally:
+        # ファイルクローズ
+        fsrc.close()
+    
+    return True
