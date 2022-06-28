@@ -17,16 +17,22 @@ tags:
     description: Excelの取得・操作
 paths:
 
-  /api/workspaces/{workspace_id}/ita/menu/{menu}/info/:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/info/:
     get:
       tags:
         - Menu Info
       description: メニューの基本情報および項目情報を取得する
       operationId: getMenuInfo
       parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
         - name: workspace_id
           in: path
-          description: ワークスペース名
+          description: WorkspaceID
           required: true
           schema:
             type: string
@@ -69,16 +75,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
   
-  /api/workspaces/{workspace_id}/ita/menu/{menu}/info/column/:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/info/column/:
     get:
       tags:
         - Menu Info
       description: メニューの項目一覧(REST用項目名)を取得する
       operationId: getColumnList
       parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
         - name: workspace_id
           in: path
-          description: ワークスペース名
+          description: WorkspaceID
           required: true
           schema:
             type: string
@@ -118,16 +130,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
   
-  /api/workspaces/{workspace_id}/ita/menu/{menu}/info/pulldown/{column}/:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/info/pulldown/{column}/:
     get:
       tags:
         - Menu Info
       description: 項目のプルダウン選択用の一覧を取得する
       operationId: getPulldownList
       parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
         - name: workspace_id
           in: path
-          description: ワークスペース名
+          description: WorkspaceID
           required: true
           schema:
             type: string
@@ -173,16 +191,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
           
-  /api/workspaces/{workspace_id}/ita/menu/{menu}/filter/:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/filter/:
     get:
       tags:
         - Menu Filter
       description: レコードを全件取得する
       operationId: getFilter
       parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
         - name: workspace_id
           in: path
-          description: ワークスペース名
+          description: WorkspaceID
           required: true
           schema:
             type: string
@@ -220,9 +244,15 @@ paths:
       description: 検索条件を指定し、レコードを取得する
       operationId: postFilter
       parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
         - name: workspace_id
           in: path
-          description: ワークスペース名
+          description: WorkspaceID
           required: true
           schema:
             type: string
@@ -262,16 +292,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
   
-  /api/workspaces/{workspace_id}/ita/menu/{menu}/maintenance/:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/maintenance/:
     post:
       tags:
         - Menu Maintenance
       description: レコードを登録する
       operationId: maintenanceRegister
       parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
         - name: workspace_id
           in: path
-          description: ワークスペース名
+          description: WorkspaceID
           required: true
           schema:
             type: string
@@ -316,16 +352,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
   
-  /api/workspaces/{workspace_id}/ita/menu/{menu}/maintenance/{uuid}:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/maintenance/{uuid}:
     patch:
       tags:
         - Menu Maintenance
       description: レコードを更新/廃止/復活する
       operationId: maintenanceUpdate
       parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
         - name: workspace_id
           in: path
-          description: ワークスペース名
+          description: WorkspaceID
           required: true
           schema:
             type: string
@@ -376,9 +418,15 @@ paths:
       description: レコードを物理削除
       operationId: maintenanceDiscard
       parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
         - name: workspace_id
           in: path
-          description: ワークスペース名
+          description: WorkspaceID
           required: true
           schema:
             type: string
@@ -416,16 +464,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
-  /api/workspaces/{workspace_id}/ita/menu/{menu}/maintenance/all/:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/maintenance/all/:
     post:
       tags:
         - Menu MaintenanceAll
       description: レコードを一括で登録/更新/廃止/復活する
       operationId: maintenanceAll
       parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
         - name: workspace_id
           in: path
-          description: ワークスペース名
+          description: WorkspaceID
           required: true
           schema:
             type: string
@@ -468,16 +522,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
 
-  /api/workspaces/{workspace_id}/ita/menu/{menu}/excel/:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/excel/:
     get:
       tags:
         - Menu Excel
       description: レコードを全件取得する
       operationId: getExcelFilter
       parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
         - name: workspace_id
           in: path
-          description: ワークスペース名
+          description: WorkspaceID
           required: true
           schema:
             type: string
@@ -515,9 +575,15 @@ paths:
       description: 検索条件を指定し、レコードを取得する
       operationId: postExcelFilter
       parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
         - name: workspace_id
           in: path
-          description: ワークスペース名
+          description: WorkspaceID
           required: true
           schema:
             type: string
@@ -556,16 +622,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
-  /api/workspaces/{workspace_id}/ita/menu/{menu}/excel/maintenance:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/excel/maintenance:
     post:
       tags:
         - Menu Excel
       description: Excelでレコードを登録/更新/廃止/復活する
       operationId: postExcelMaintenance
       parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
         - name: workspace_id
           in: path
-          description: ワークスペース名
+          description: WorkspaceID
           required: true
           schema:
             type: string

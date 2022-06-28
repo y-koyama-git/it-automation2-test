@@ -17,17 +17,19 @@ from libs import menu_info
 from flask import jsonify
 
 
-def get_column_list(workspace_id, menu):  # noqa: E501
+def get_column_list(organization_id, workspace_id, menu):  # noqa: E501
     """get_column_list
 
     メニューの項目一覧(REST用項目名)を取得する # noqa: E501
 
-    :param workspace_id: ワークスペース名
+    :param organization_id: OrganizationID
+    :type organization_id: str
+    :param workspace_id: WorkspaceID
     :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
 
-    :rtype: InlineResponse200
+    :rtype: InlineResponse2001
     """
     try:
         # DB接続
@@ -53,17 +55,19 @@ def get_column_list(workspace_id, menu):  # noqa: E501
         return result_dummy
 
 
-def get_menu_info(workspace_id, menu):  # noqa: E501
+def get_menu_info(organization_id, workspace_id, menu):  # noqa: E501
     """get_menu_info
 
     メニューの基本情報および項目情報を取得する # noqa: E501
 
-    :param workspace_id: ワークスペース名
+    :param organization_id: OrganizationID
+    :type organization_id: str
+    :param workspace_id: WorkspaceID
     :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
 
-    :rtype: InlineResponse2001
+    :rtype: InlineResponse200
     """
     try:
         # DB接続
@@ -89,19 +93,21 @@ def get_menu_info(workspace_id, menu):  # noqa: E501
         return result_dummy
 
 
-def get_pulldown_list(workspace_id, menu, column):  # noqa: E501
+def get_pulldown_list(organization_id, workspace_id, menu, column):  # noqa: E501
     """get_pulldown_list
 
     項目のプルダウン選択用の一覧を取得する # noqa: E501
 
-    :param workspace_id: ワークスペース名
+    :param organization_id: OrganizationID
+    :type organization_id: str
+    :param workspace_id: WorkspaceID
     :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
     :param column: REST用項目名
     :type column: str
 
-    :rtype: InlineResponse200
+    :rtype: InlineResponse2002
     """
     try:
         # DB接続

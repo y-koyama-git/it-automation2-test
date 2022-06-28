@@ -17,50 +17,56 @@ import six
 
 
 
-def get_excel_filter(workspace_id, menu):  # noqa: E501
+def get_excel_filter(organization_id, workspace_id, menu):  # noqa: E501
     """get_excel_filter
 
     レコードを全件取得する # noqa: E501
 
-    :param workspace_id: ワークスペース名
+    :param organization_id: OrganizationID
+    :type organization_id: str
+    :param workspace_id: WorkspaceID
     :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
 
-    :rtype: InlineResponse2002
+    :rtype: InlineResponse2003
     """
     return 'do some magic!'
 
 
-def post_excel_filter(body, workspace_id, menu):  # noqa: E501
+def post_excel_filter(body, organization_id, workspace_id, menu):  # noqa: E501
     """post_excel_filter
 
     検索条件を指定し、レコードを取得する # noqa: E501
 
     :param body: 
     :type body: dict | bytes
-    :param workspace_id: ワークスペース名
+    :param organization_id: OrganizationID
+    :type organization_id: str
+    :param workspace_id: WorkspaceID
     :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
 
-    :rtype: InlineResponse200
+    :rtype: InlineResponse2004
     """
     if connexion.request.is_json:
         body = object.from_dict(connexion.request.get_json())  # noqa: E501
     return 'do some magic!'
 
 
-def post_excel_maintenance(workspace_id, menu):  # noqa: E501
+def post_excel_maintenance(organization_id, workspace_id, menu):  # noqa: E501
     """post_excel_maintenance
 
     Excelでレコードを登録/更新/廃止/復活する # noqa: E501
 
-    :param workspace_id: ワークスペース名
+    :param organization_id: OrganizationID
+    :type organization_id: str
+    :param workspace_id: WorkspaceID
     :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
 
-    :rtype: InlineResponse2002
+    :rtype: InlineResponse2003
     """
     return 'do some magic!'

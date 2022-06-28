@@ -24,17 +24,19 @@ sys.path.append('../../')
 from common_libs.loadtable.load_table import loadTable
 
 
-def get_filter(workspace_id, menu):  # noqa: E501
+def get_filter(organization_id, workspace_id, menu):  # noqa: E501
     """get_filter
 
     レコードを全件取得する # noqa: E501
 
-    :param workspace_id: ワークスペース名
+    :param organization_id: OrganizationID
+    :type organization_id: str
+    :param workspace_id: WorkspaceID
     :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
 
-    :rtype: InlineResponse2002
+    :rtype: InlineResponse2003
     """
 
     """
@@ -90,19 +92,21 @@ def get_filter(workspace_id, menu):  # noqa: E501
         return result_dummy
     
 
-def post_filter(body, workspace_id, menu):  # noqa: E501
+def post_filter(body, organization_id, workspace_id, menu):  # noqa: E501
     """post_filter
 
     検索条件を指定し、レコードを取得する # noqa: E501
 
-    :param body:
+    :param body: 
     :type body: dict | bytes
-    :param workspace_id: ワークスペース名
+    :param organization_id: OrganizationID
+    :type organization_id: str
+    :param workspace_id: WorkspaceID
     :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
 
-    :rtype: InlineResponse200
+    :rtype: InlineResponse2004
     """
     """
     try:
