@@ -35,7 +35,7 @@ class MessageTemplate:
             self.path = os.getenv('ITA_MESSAGES_DIR')
         
         # define variable
-        self.messages = {}
+        self.messages = {'log': {}, 'api': {}}
         
         # read message files
         ret = self.__read_message_files()
@@ -62,12 +62,17 @@ class MessageTemplate:
                 
                 # set messages in dict
                 file_name = os.path.splitext(os.path.basename(file))[0]
-                s_file_name = file_name.split('_')
-                msg_lang = s_file_name[1].lower()
-                self.messages[msg_lang] = file_json
+                file_type = file_name[:3].lower()
+                if(file_type == 'log'):
+                    file_type = file_name[:3].lower()
+                    self.messages['log'] = file_json
+                else:
+                    s_file_name = file_name.split('_')
+                    msg_lang = s_file_name[1].lower()
+                    self.messages['api'][msg_lang] = file_json
             
             return True
-
+        
         except Exception as e:
             return e
 
@@ -81,7 +86,7 @@ class MessageTemplate:
         self.lang = lang
 
     """
-    引数に指定したメッセージIDのメッセージ文字列を返却する。
+    引数に指定したメッセージIDのAPI返却値用文字列を返却する。
 
     Arguments:
         message_id (str): メッセージID。[機能識別文字]_[タイプ識別文字]_[ID] で構成。
@@ -91,19 +96,35 @@ class MessageTemplate:
         message (str): メッセージ文字列
 
     """
-    def get_message(self, message_id, format_strings=[]):
-        try:
-            # ####メモ：現状、メッセージファイルはAPI返却値用の考慮しかない。
-            #     　　　ログ用のメッセージファイルをどうするか決まったら改めて修正する必要がある。
-            ret_msg = self.messages.get(self.lang, {}).get(str(message_id))
-            
-            if ret_msg and format_strings:
-                ret_msg = ret_msg.format(*format_strings)
-            
-            if not ret_msg:
-                ret_msg = "Message id is not found.(Called-ID[{}])".format(str(message_id))
-            
-            return ret_msg
+    def get_api_message(self, message_id, format_strings=[]):
+        ret_msg = self.messages.get('api', {}).get(self.lang, {}).get(str(message_id))
+        
+        if ret_msg and format_strings:
+            ret_msg = ret_msg.format(*format_strings)
+        
+        if not ret_msg:
+            ret_msg = "Message id is not found.(Called-ID[{}])".format(str(message_id))
+        
+        return ret_msg
 
-        except Exception as e:
-            return 'Message Error : {}'.format(e)
+    """
+    引数に指定したメッセージIDのLOG用文字列を返却する。
+
+    Arguments:
+        message_id (str): メッセージID。[機能識別文字]_[タイプ識別文字]_[ID] で構成。
+        format_strings (list): list型でメッセージの{}に埋め込む文字列を指定する。複数ある場合は{}の左から順番に埋め込まれる。
+
+    Returns:
+        message (str): メッセージ文字列
+
+    """
+    def get_log_message(self, message_id, format_strings=[]):
+        ret_msg = self.messages.get('log', {}).get(str(message_id))
+        
+        if ret_msg and format_strings:
+            ret_msg = ret_msg.format(*format_strings)
+        
+        if not ret_msg:
+            ret_msg = "Message id is not found.(Called-ID[{}])".format(str(message_id))
+        
+        return ret_msg
