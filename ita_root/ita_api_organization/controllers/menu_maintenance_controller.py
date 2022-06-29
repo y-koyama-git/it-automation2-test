@@ -24,25 +24,6 @@ sys.path.append('../../')
 from common_libs.loadtable.load_table import loadTable
 
 
-def maintenance_discard(organization_id, workspace_id, menu, uuid):  # noqa: E501
-    """maintenance_discard
-
-    レコードを物理削除 # noqa: E501
-
-    :param organization_id: OrganizationID
-    :type organization_id: str
-    :param workspace_id: WorkspaceID
-    :type workspace_id: str
-    :param menu: メニュー名
-    :type menu: str
-    :param uuid: 対象のUUID
-    :type uuid: str
-
-    :rtype: InlineResponse2004
-    """
-    return 'do some magic!'
-
-
 def maintenance_register(body, organization_id, workspace_id, menu):  # noqa: E501
     """maintenance_register
 
