@@ -25,7 +25,8 @@ class FileUploadColumn(Column):
     """
     ファイル系クラス共通処理
     """
-    def __init__(self, objdbca, objtable, rest_key_name):
+    def __init__(self, objdbca, objtable, rest_key_name, cmd_type):
+
         # カラムクラス名
         self.class_name = self.__class__.__name__
         # メッセージ
@@ -58,6 +59,8 @@ class FileUploadColumn(Column):
         self.db_qm = "'"
 
         self.objdbca = objdbca
+        
+        self.cmd_type = cmd_type
 
     def check_basic_valid(self, val, option={}):
         """
@@ -76,7 +79,7 @@ class FileUploadColumn(Column):
         # ファイル名正規表現　カンマとダブルクォートとタブとスラッシュと改行以外の文字
         preg_match = r"^[^,\"\t\/\r\n]*$"
         # デコード値
-        decode_option = base64.b64decode(option.encode())
+        decode_option = base64.b64decode(option["file_data"].encode())
         # 禁止拡張子
         forbidden_extension_arry = self.objdbca.table_select("T_COMN_SYSTEM_CONFIG", "WHERE CONFIG_ID = %s", bind_value_list=['FORBIDDEN_UPLOAD'])
         
@@ -136,7 +139,7 @@ class FileUploadColumn(Column):
             
         return retBool,
 
-    def after_iud_common_action(self, val='', option={}):
+    def after_iud_common_action(self, val, option={}):
         """
            カラムクラス毎の個別処理 レコード操作後
             ARGS:
@@ -146,13 +149,20 @@ class FileUploadColumn(Column):
                 True / エラーメッセージ
         """
         retBool = True
-        decode_option = base64.b64decode(option.encode())
-        print(val)
-        print(decode_option)
+        decode = base64.b64decode(option["file_data"].encode())
+        decode_option = decode.decode()
+        uuid = option["uuid"]
 
         # カラムクラス毎の個別処理
-        # 谷本メモ:failを配置する処理
-        # with open(os.path.join("/workspace/.volumes/ita-mariadb/data", val), "w") as f:
-        #     f.write(decode_option)
+        dir_path = "/workspace/ita_root/test/menu_id/" + uuid
+        if not os.path.isdir(dir_path):
+            os.makedirs(dir_path)
+            
+        try:
+            with open(os.path.join(dir_path, val), "x") as f:
+                f.write(str(decode_option))
+        except FileExistsError as msg:
+            retBool = False
+            return retBool, msg
 
         return retBool,
