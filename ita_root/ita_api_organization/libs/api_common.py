@@ -14,9 +14,8 @@
 """
 api common function module
 """
-from flask import jsonify, request, g
+from flask import request, g
 import os
-import re
 import traceback
 
 from common_libs.common.dbconnect import *  # noqa: F403
@@ -47,7 +46,7 @@ def make_response(data=None, msg="", result_code="000-00000", status_code=200):
     if not data:
         return res_body, status_code
     
-    res_body["data"] = jsonify(data)
+    res_body["data"] = data
     return res_body, status_code
 
 
@@ -72,16 +71,27 @@ def app_exception_response(name, e):
             is_arg = True
 
     # catch - raise AppException("xxx-xxxxx", log_format, msg_format), and get message
-    result_code, log_format, msg_format = args
-    msg = g.appmsg.get_api_message(result_code, msg_format)
+    if len(args) == 3:
+        result_code, log_msg_args, api_msg_args = args
+    elif len(args) == 2:
+        result_code, log_msg_args = args
+        api_msg_args = []
+    else:
+        result_code = args
+        api_msg_args = []
+        log_msg_args = []
+
+    log_msg = g.appmsg.get_log_message(result_code, log_msg_args)
+    api_msg = g.appmsg.get_api_message(result_code, api_msg_args)
     
     # get http status code
     status_code = int(result_code[0:3])
     if 500 <= status_code:
         status_code = 500
 
-    res = make_response(None, msg, result_code, status_code)
-    g.applogger.error("[{}][error] response: {}".format(name, res))
+    res = make_response(None, api_msg, result_code, status_code)
+    g.applogger.error("[api-error] {}".format(log_msg))
+    g.applogger.debug("[{}][error] response: {}".format(name, res))
     return res
 
 
@@ -139,31 +149,31 @@ def before_request_handler():
         user_id = request.headers.get("User-Id")
         roles = request.headers.get("Roles")
         if user_id is None or roles is None:
-            raise AppException("400-00001", ["User-Id and Roles"])
+            raise AppException("400-00001", ["User-Id and Roles"], ["User-Id and Roles"])
 
         os.environ['USER_ID'] = user_id
         os.environ['Roles'] = roles
-        
-        language = request.headers.get("Language")
-        if language:
-            # set language for message class
-            os.environ['LANGUAGE'] = language
-            g.appmsg.set_lang(language)
-            g.applogger.debug("LANGUAGE is set for {}".format(language))
 
-        # request-header check(Organization-Id)
-        organization_id = request.headers.get("Organization-Id")
-        if organization_id is None:
-            raise AppException("400-00001", ["Organization-Id"])
+        # set language
+        language = request.headers.get("Language")
+        if not language:
+            language = os.environ.get("DEFAULT_LANGUAGE")
+        os.environ['LANGUAGE'] = language
+
+        g.appmsg.set_lang(language)
+        g.applogger.debug("LANGUAGE is set for {}".format(language))
+
+        # get organization_id
+        organization_id = request.path.split("/")[2]
         os.environ['ORGANIZATION_ID'] = organization_id
 
         # initialize setting organization-db connect_info and connect check
         common_db = DBConnectCommon()  # noqa: F405
         g.applogger.debug("ITA_DB is connected")
-        org_db_name = common_db.get_orgdb_name(organization_id)
-        orgdb_connect_info = common_db.get_orgdb_connect_info(org_db_name)
+        orgdb_connect_info = common_db.get_orgdb_connect_info(organization_id)
+        common_db.db_disconnect()
         if orgdb_connect_info is False:
-            raise AppException("999-00001", [org_db_name])
+            raise AppException("999-00001", ["ORGANIZATION_ID=" + organization_id])
 
         os.environ["ORGDB_HOST"] = orgdb_connect_info["DB_HOST"]
         os.environ["ORGDB_PORT"] = str(orgdb_connect_info["DB_PORT"])
@@ -171,35 +181,33 @@ def before_request_handler():
         os.environ["ORGDB_PASSWORD"] = orgdb_connect_info["DB_PASSWORD"]
         os.environ["ORGDB_ROOT_PASSWORD"] = orgdb_connect_info["DB_ROOT_PASSWORD"]
         os.environ["ORGDB_DATADBASE"] = orgdb_connect_info["DB_DATADBASE"]
-        g.applogger.debug("DB:{} connect-info is set".format(org_db_name))
 
-        match = re.match(r'.*\/workspaces\/(.*?)\/', request.path)
-        workspace_id = match.group(1) if match is not None else ""
-
+        # get workspace_id
+        workspace_id = request.path.split("/")[4]
         if workspace_id:
             os.environ['WORKSPACE_ID'] = workspace_id
 
             # initialize setting workspcae-db connect_info and connect check
             org_db = DBConnectOrg()  # noqa: F405
-            g.applogger.debug("DB:{} can be connected".format(org_db_name))
-            ws_db_name = org_db.get_wsdb_name(workspace_id)
-            wsdb_connect_info = org_db.get_wsdb_connect_info(ws_db_name)
+            g.applogger.debug("ORG_DB:{} can be connected".format(organization_id))
+            wsdb_connect_info = org_db.get_wsdb_connect_info(workspace_id)
+            org_db.db_disconnect()
             if wsdb_connect_info is False:
-                raise AppException("999-00001", [ws_db_name])
+                raise AppException("999-00001", ["WORKSPACE_ID=" + workspace_id])
 
             os.environ["WSDB_HOST"] = wsdb_connect_info["DB_HOST"]
             os.environ["WSDB_PORT"] = str(wsdb_connect_info["DB_PORT"])
             os.environ["WSDB_USER"] = wsdb_connect_info["DB_USER"]
             os.environ["WSDB_PASSWORD"] = wsdb_connect_info["DB_PASSWORD"]
             os.environ["WSDB_DATADBASE"] = wsdb_connect_info["DB_DATADBASE"]
-            g.applogger.debug("DB:{} connect-info is set".format(ws_db_name))
 
             ws_db = DBConnectWs(workspace_id)  # noqa: F405
-            g.applogger.debug("DB:{} can be connected".format(ws_db_name))
+            g.applogger.debug("WS_DB:{} can be connected".format(workspace_id))
 
             # set log-level for user setting
             log_level = g.applogger.set_user_setting(ws_db)
             g.applogger.debug("my LOG-LEVEL is set for {}".format(log_level))
+            ws_db.db_disconnect()
     except AppException as e:
         # catch - raise AppException("xxx-xxxxx", log_format, msg_format)
         return app_exception_response("before-request", e)

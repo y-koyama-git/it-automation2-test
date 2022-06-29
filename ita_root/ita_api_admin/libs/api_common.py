@@ -14,9 +14,8 @@
 """
 api common function module
 """
-from flask import jsonify, request, g
+from flask import request, g
 import os
-import re
 import traceback
 
 from common_libs.common.exception import AppException
@@ -46,7 +45,7 @@ def make_response(data=None, msg="", result_code="000-00000", status_code=200):
     if not data:
         return res_body, status_code
     
-    res_body["data"] = jsonify(data)
+    res_body["data"] = data
     return res_body, status_code
 
 
@@ -77,8 +76,9 @@ def app_exception_response(name, e):
         result_code, log_msg_args = args
         api_msg_args = []
     else:
-        result_code, log_msg_args = args
+        result_code = args
         api_msg_args = []
+        log_msg_args = []
 
     log_msg = g.appmsg.get_log_message(result_code, log_msg_args)
     api_msg = g.appmsg.get_api_message(result_code, api_msg_args)
@@ -145,17 +145,19 @@ def before_request_handler():
         user_id = request.headers.get("User-Id")
         roles = request.headers.get("Roles")
         if user_id is None or roles is None:
-            raise AppException("400-00001", ["User-Id and Roles"])
+            raise AppException("400-00001", ["User-Id and Roles"], ["User-Id and Roles"])
 
         os.environ['USER_ID'] = user_id
         os.environ['Roles'] = roles
         
+        # set language
         language = request.headers.get("Language")
-        if language:
-            # set language for message class
-            os.environ['LANGUAGE'] = language
-            g.appmsg.set_lang(language)
-            g.applogger.debug("LANGUAGE is set for {}".format(language))
+        if not language:
+            language = os.environ.get("DEFAULT_LANGUAGE")
+        os.environ['LANGUAGE'] = language
+
+        g.appmsg.set_lang(language)
+        g.applogger.debug("LANGUAGE is set for {}".format(language))
     except AppException as e:
         # catch - raise AppException("xxx-xxxxx", log_format, msg_format)
         return app_exception_response("before-request", e)
