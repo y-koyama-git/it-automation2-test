@@ -157,7 +157,7 @@ def before_request_handler():
         os.environ['LANGUAGE'] = language
 
         g.appmsg.set_lang(language)
-        g.applogger.debug("LANGUAGE is set for {}".format(language))
+        g.applogger.debug("LANGUAGE({}) is set".format(language))
     except AppException as e:
         # catch - raise AppException("xxx-xxxxx", log_format, msg_format)
         return app_exception_response("before-request", e)

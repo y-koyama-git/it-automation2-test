@@ -75,7 +75,7 @@ class AppLog:
         logging.config.dictConfig(self._config)
         # set instance
         self.__logger_obj = logging.getLogger(self.__name__)
-        self.__logger_obj.debug("create AppLog instance [{}]".format(self.__name__))
+        self.__logger_obj.debug("AppLog instance({}) is created".format(self.__name__))
 
     def set_user_setting(self, wsdb_instance):
         """
@@ -89,13 +89,14 @@ class AppLog:
         data_list = wsdb_instance.table_select('T_COMN_SYSTEM_CONFIG', 'WHERE `CONFIG_ID`=%s AND IFNULL(`CONFIG_ID`, 0)=0', ['LOG_LEVEL'])
         if len(data_list) == 1:
             log_level = data_list[0]['VALUE']
-            self.setLevel(log_level)
-            self.debug("LOG-LVEL:{} is set".format(log_level))
-            return log_level
+            self.set_level(log_level)
+        else:
+            log_level = False
 
-        return False
+        self.debug("my LOG-LEVEL({}) is set".format(log_level))
+        return log_level
 
-    def setLevel(self, level):
+    def set_level(self, level):
         """
         set user-setting log level
 
