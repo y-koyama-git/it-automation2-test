@@ -12,10 +12,8 @@
 # limitations under the License.
 #
 
-import re
 from datetime import datetime
 
-#import column_class
 from column_class import Column
 
 """
@@ -25,7 +23,7 @@ class DateColumn(Column) :
     """
     テキスト系クラス共通処理
     """
-    def __init__(self,objdbca,objtable,rest_key_name):
+    def __init__(self, objdbca, objtable, rest_key_name, cmd_type):
         # カラムクラス名
         self.class_name = self.__class__.__name__
         # メッセージ
@@ -34,7 +32,7 @@ class DateColumn(Column) :
         self.dict_valid = {}
         # テーブル情報
         self.objtable = objtable
-        
+
         # テーブル名
         table_name = ''
         objmenu = objtable.get('MENUINFO')
@@ -59,7 +57,9 @@ class DateColumn(Column) :
 
         self.objdbca = objdbca
 
-    def check_basic_valid(self,val,option={}):
+        self.cmd_type = cmd_type
+
+    def check_basic_valid(self, val, option={}):
         """
             バリデーション処理(カラムクラス毎)
             ARGS:
@@ -75,7 +75,7 @@ class DateColumn(Column) :
         
         if len(val) == 0:
             return retBool,
-
+        
 		# 日付形式に変換
         try:
             dt_val = datetime.strptime(val, '%Y/%m/%d %H:%M:%S')
@@ -83,7 +83,7 @@ class DateColumn(Column) :
             retBool = False
             return retBool, msg
 
-        #　文字列長
+        # 文字列長
         if min_datetime is not None and max_datetime is not None:
             check_val = dt_val.timestamp()
             if check_val < .000000:

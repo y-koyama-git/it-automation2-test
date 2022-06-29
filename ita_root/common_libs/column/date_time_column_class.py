@@ -12,20 +12,18 @@
 # limitations under the License.
 #
 
-import re
 from datetime import datetime
 
-#import column_class
-from date_column_class import DateColumn 
+from date_column_class import DateColumn
 
 """
 カラムクラス個別処理(DateTimeColumn)
 """
-class DateTimeColumn(DateColumn) :
+class DateTimeColumn(DateColumn):
     """
     テキスト系クラス共通処理
     """
-    def __init__(self,objdbca,objtable,rest_key_name):
+    def __init__(self, objdbca, objtable, rest_key_name, cmd_type):
         # カラムクラス名
         self.class_name = self.__class__.__name__
         # メッセージ
@@ -59,7 +57,9 @@ class DateTimeColumn(DateColumn) :
 
         self.objdbca = objdbca
 
-    def check_basic_valid(self,val,option={}):
+        self.cmd_type = cmd_type
+
+    def check_basic_valid(self, val, option={}):
         """
             バリデーション処理(カラムクラス毎)
             ARGS:
@@ -82,7 +82,6 @@ class DateTimeColumn(DateColumn) :
         except ValueError as msg:
             retBool = False
             return retBool, msg
-
         #文字列長
         if min_datetime is not None and max_datetime is not None:
             check_val = dt_val.timestamp()
