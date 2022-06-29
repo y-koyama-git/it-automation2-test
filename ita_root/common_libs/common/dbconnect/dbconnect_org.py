@@ -20,6 +20,7 @@ import os
 
 from .dbconnect_common import DBConnectCommon
 from common_libs.common.exception import AppException
+from common_libs.common.util import ky_decrypt
 
 
 class DBConnectOrg(DBConnectCommon):
@@ -36,21 +37,19 @@ class DBConnectOrg(DBConnectCommon):
 
         if organization_id is None:
             organization_id = os.environ.get('ORGANIZATION_ID')
-        self._organization_id = organization_id
-
-        # decide database name, prefix+organization_id
-        common_db = DBConnectCommon()
-        self._db = common_db.get_orgdb_name(organization_id)
+        self.organization_id = organization_id
 
         # get db-connect-infomation from organization-db
-        connect_info = common_db.get_orgdb_connect_info(self._db)
+        common_db = DBConnectCommon()
+        connect_info = common_db.get_orgdb_connect_info(organization_id)
         if connect_info is False:
-            raise AppException("9990001", [self._db])
+            raise AppException("999-00001", ["ORGANIZATION_ID=" + self.organization_id])
 
         self._host = connect_info['DB_HOST']
         self._port = int(connect_info['DB_PORT'])
         self._db_user = connect_info['DB_USER']
         self._db_passwd = connect_info['DB_PASSWORD']
+        self._db = connect_info['DB_DATADBASE']
 
         # connect database
         self.db_connect()
@@ -61,32 +60,20 @@ class DBConnectOrg(DBConnectCommon):
         """
         self.db_disconnect()
 
-    def get_wsdb_name(self, workspace_id):
-        """
-        get database name for workspace
-        
-        Arguments:
-            workspace_id: workspace_id
-        Returns:
-            database name for workspace: str
-        """
-
-        return "WS_" + self._organization_id.upper() + "_" + workspace_id.upper()
-
-    def get_wsdb_connect_info(self, db_name):
+    def get_wsdb_connect_info(self, workspace_id):
         """
         get database connect infomation for workspace
         
         Arguments:
-            db_name: database name
+            workspace_id: workspace_id name
         Returns:
             database connect infomation for workspace: dict
             or
             get failure: (bool)False
         """
-        ws_db_name = os.environ.get("WSDB_DATADBASE")
-        if ws_db_name is None or ws_db_name != db_name:
-            data_list = self.table_select("T_COMN_WORKSPACE_DB_INFO", "WHERE `DB_DATADBASE`=%s and IFNULL(`DISUSE_FLAG`, 0)=0", [db_name])
+        if os.environ.get("WSDB_DATADBASE") is None or os.environ.get("WORKSPACE_ID") != workspace_id:
+            where = "WHERE `WORKSPACE_ID`=%s and IFNULL(`DISUSE_FLAG`, 0)=0"
+            data_list = self.table_select("T_COMN_WORKSPACE_DB_INFO", where, [workspace_id])
 
             if len(data_list) == 0:
                 return False
@@ -105,7 +92,7 @@ class DBConnectOrg(DBConnectCommon):
 
 class DBConnectOrgRoot(DBConnectOrg):
     """
-    database connection agnet class for organization-db on mariadb
+    database connection root user agnet class for organization-db on mariadb
     """
 
     def __init__(self, organization_id=None):
@@ -117,16 +104,13 @@ class DBConnectOrgRoot(DBConnectOrg):
 
         if organization_id is None:
             organization_id = os.environ.get('ORGANIZATION_ID')
-        self._organization_id = organization_id
-
-        # decide database name, prefix+organization_id
-        common_db = DBConnectCommon()
-        self._db = common_db.get_orgdb_name(organization_id)
+        self.organization_id = organization_id
 
         # get db-connect-infomation from ita-common-db
-        connect_info = common_db.get_orgdb_connect_info(self._db)
+        common_db = DBConnectCommon()
+        connect_info = common_db.get_orgdb_connect_info(organization_id)
         if connect_info is False:
-            raise AppException("9990001", [self._db])
+            raise AppException("999-00001", ["ORGANIZATION_ID=" + organization_id])
 
         self._host = connect_info['DB_HOST']
         self._port = int(connect_info['DB_PORT'])
@@ -157,12 +141,14 @@ class DBConnectOrgRoot(DBConnectOrg):
                 host=self._host,
                 port=self._port,
                 user=self._db_user,
-                passwd=self._db_passwd,
+                passwd=ky_decrypt(self._db_passwd),
                 charset='utf8',
                 cursorclass=pymysql.cursors.DictCursor
             )
         except pymysql.Error as e:
-            raise AppException("9990002", [self._db, e])
+            raise AppException("999-00002", ["ORGANIZATION_ID=" + self.organization_id, e])
+        except Exception:
+            raise AppException("999-00002", ["ORGANIZATION_ID=" + self.organization_id, "cannot access. connect info may be incorrect"])
 
         return True
 
@@ -170,8 +156,6 @@ class DBConnectOrgRoot(DBConnectOrg):
         """
         create database
         """
-        self.database_drop(db_name)
-
         sql = "CREATE DATABASE `{}` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci".format(db_name)
         self.sql_execute(sql)
 
@@ -191,8 +175,6 @@ class DBConnectOrgRoot(DBConnectOrg):
             user_password: user_password
             db_name: database name
         """
-        self.user_drop(user_name)
-
         sql = "CREATE USER IF NOT EXISTS '{user_name}'@'%' IDENTIFIED BY '{user_password}'".format(user_name=user_name, user_password=user_password)
         self.sql_execute(sql)
 

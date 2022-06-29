@@ -14,6 +14,8 @@
 """
 database connection agent module for workspace-db on mariadb
 """
+import os
+
 from .dbconnect_common import DBConnectCommon
 from .dbconnect_org import DBConnectOrg
 from common_libs.common.exception import AppException
@@ -26,28 +28,33 @@ class DBConnectWs(DBConnectCommon):
 
     _workspace_id = ""
 
-    def __init__(self, workspace_id, organization_id=None):
+    def __init__(self, workspace_id=None, organization_id=None):
         """
         constructor
 
         Arguments:
             workspace_id: workspace id
         """
-        # decide database name, prefix+workspace_id
+        if self._db_con is not None and self._db_con.open is True:
+            return True
+
+        if workspace_id is None:
+            workspace_id = os.environ.get('WORKSPACE_ID')
         self._workspace_id = workspace_id
 
-        org_db = DBConnectOrg(organization_id)
-        self._db = org_db.get_wsdb_name(workspace_id)
-
         # get db-connect-infomation from organization-db
-        connect_info = org_db.get_wsdb_connect_info(self._db)
+        org_db = DBConnectOrg(organization_id)
+        connect_info = org_db.get_wsdb_connect_info(workspace_id)
         if connect_info is False:
-            raise AppException("9990001", [self._db])
+            db_info = "WORKSPACE_ID=" + workspace_id
+            db_info = "ORGANIZATION_ID=" + organization_id + "," + db_info if organization_id else db_info
+            raise AppException("999-00001", [db_info])
 
         self._host = connect_info['DB_HOST']
         self._port = int(connect_info['DB_PORT'])
         self._db_user = connect_info['DB_USER']
         self._db_passwd = connect_info['DB_PASSWORD']
+        self._db = connect_info['DB_DATADBASE']
 
         # connect database
         self.db_connect()
