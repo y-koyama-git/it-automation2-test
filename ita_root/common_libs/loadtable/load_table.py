@@ -551,15 +551,15 @@ class loadTable():
             # RESTパラメータへキー変換
             # rownum = 0
             for rows in tmp_result:
-                rest_parameter, rest_file = self.convert_colname_restkey(rows)
+                rest_parameter, rest_file = self.convert_colname_restkey(rows, mode)
                 # result['parameter'].setdefault(str(rownum), rest_parameter)
                 # result['file'].setdefault(str(rownum), rest_file)
                 result_data['parameter'].append(rest_parameter)
                 result_data['file'].append(rest_file)
-                tmp_data = {
-                    'parameter':rest_parameter,
-                    'file':rest_file
-                }
+                tmp_data = {}
+                tmp_data.setdefault('parameter', rest_parameter)
+                if mode != 'excel':
+                    tmp_data.setdefault('file', rest_file)
                 result_list.append(tmp_data)
                 # rownum = +1
 
@@ -567,10 +567,10 @@ class loadTable():
             # retBool = False
             result_code = 'ERR-0003'
             result_msg = 'err_msg'
-
+        
         result = {
             "result": result_code,
-            "data": result_data,
+            "data": result_list,
             "message": result_msg
         }
         
@@ -815,7 +815,7 @@ class loadTable():
 
                     # カラムクラス呼び出し
                     objcolumn = self.get_columnclass(rest_key, cmd_type)
-                    # print([rest_key, objcolumn])
+                    print([rest_key, objcolumn, option])
 
                     # カラムクラス毎の処理:レコード操作前
                     # カラム毎の個別処理:レコード操作前
@@ -894,6 +894,7 @@ class loadTable():
                 # カラムクラス毎の処理:レコード操作後
                 # カラム毎の個別処理:レコード操作後
                 exec2 = objcolumn.after_iud_action(rest_key, option)
+                print([rest_key, objcolumn, option])
                 if exec2[0] is not True:
                     self.set_message(exec2[1], "ERROR")
             # テーブル単位の個別処理後を実行
@@ -965,11 +966,10 @@ class loadTable():
                     col_val = '{}'.format(col_val.strftime('%Y/%m/%d %H:%M:%S.%f'))
 
                 rest_parameter.setdefault(rest_key, col_val)
-                if mode == "output":
+                if mode != "excel":
                     if self.get_col_class_name(rest_key) == 'FileUploadColumn':
                         # ファイル取得＋64変換
                         file_data = '{}のbase64後のSTR'.format(rest_key)
                         rest_file.setdefault(rest_key, file_data)
-
-        # print({"result":result})
+        
         return rest_parameter, rest_file

@@ -2,13 +2,13 @@ from .column_class import Column
 from .num_column_class import NumColumn
 from .text_column_class import TextColumn
 
-# from .file_upload_class import SingleTextColumn
-# from .file_upload_class import MultiTextColumn
-# from .file_upload_class import PasswordColumn
-# from .file_upload_class import IDColumn
-# from .file_upload_class import DateTimeColumn
-# from .file_upload_class import DateColumn
-# from .file_upload_class import FileUploadColumn
+from .single_text_class import SingleTextColumn
+from .muti_text_class import MultiTextColumn
+from .password_class import PasswordColumn
+from .id_class import IdColumn
+from .date_column_class import DateColumn
+from .date_time_column_class import DateTimeColumn
+from .file_upload_column_class import FileUploadColumn
 
 # from .file_upload_class import FloatColumn
 # from .file_upload_class import HostInsideLinkTextColumn
