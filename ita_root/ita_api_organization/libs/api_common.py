@@ -161,7 +161,7 @@ def before_request_handler():
         os.environ['LANGUAGE'] = language
 
         g.appmsg.set_lang(language)
-        g.applogger.debug("LANGUAGE is set for {}".format(language))
+        g.applogger.debug("LANGUAGE({}) is set".format(language))
 
         # get organization_id
         organization_id = request.path.split("/")[2]
@@ -205,8 +205,7 @@ def before_request_handler():
             g.applogger.debug("WS_DB:{} can be connected".format(workspace_id))
 
             # set log-level for user setting
-            log_level = g.applogger.set_user_setting(ws_db)
-            g.applogger.debug("my LOG-LEVEL is set for {}".format(log_level))
+            g.applogger.set_user_setting(ws_db)
             ws_db.db_disconnect()
     except AppException as e:
         # catch - raise AppException("xxx-xxxxx", log_format, msg_format)
