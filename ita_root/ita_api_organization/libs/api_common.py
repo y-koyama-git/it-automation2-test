@@ -171,6 +171,7 @@ def before_request_handler():
         common_db = DBConnectCommon()  # noqa: F405
         g.applogger.debug("ITA_DB is connected")
         orgdb_connect_info = common_db.get_orgdb_connect_info(organization_id)
+        common_db.db_disconnect()
         if orgdb_connect_info is False:
             raise AppException("999-00001", ["ORGANIZATION_ID=" + organization_id])
 
@@ -190,6 +191,7 @@ def before_request_handler():
             org_db = DBConnectOrg()  # noqa: F405
             g.applogger.debug("ORG_DB:{} can be connected".format(organization_id))
             wsdb_connect_info = org_db.get_wsdb_connect_info(workspace_id)
+            org_db.db_disconnect()
             if wsdb_connect_info is False:
                 raise AppException("999-00001", ["WORKSPACE_ID=" + workspace_id])
 
@@ -205,6 +207,7 @@ def before_request_handler():
             # set log-level for user setting
             log_level = g.applogger.set_user_setting(ws_db)
             g.applogger.debug("my LOG-LEVEL is set for {}".format(log_level))
+            ws_db.db_disconnect()
     except AppException as e:
         # catch - raise AppException("xxx-xxxxx", log_format, msg_format)
         return app_exception_response("before-request", e)
