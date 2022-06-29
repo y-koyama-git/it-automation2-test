@@ -15,7 +15,6 @@ import re
 import os
 import base64
 
-#import column_class
 from column_class import Column
 
 """
@@ -139,7 +138,7 @@ class FileUploadColumn(Column):
             
         return retBool,
 
-    def after_iud_common_action(self, val, option={}):
+    def after_iud_common_action(self, val="", option={}):
         """
            カラムクラス毎の個別処理 レコード操作後
             ARGS:

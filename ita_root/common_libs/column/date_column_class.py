@@ -14,7 +14,6 @@
 
 from datetime import datetime
 
-#import column_class
 from column_class import Column
 
 """
@@ -60,7 +59,7 @@ class DateColumn(Column) :
 
         self.cmd_type = cmd_type
 
-    def check_basic_valid(self,val,option={}):
+    def check_basic_valid(self, val, option={}):
         """
             バリデーション処理(カラムクラス毎)
             ARGS:

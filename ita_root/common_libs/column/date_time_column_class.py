@@ -14,13 +14,12 @@
 
 from datetime import datetime
 
-#import column_class
 from date_column_class import DateColumn
 
 """
 カラムクラス個別処理(DateTimeColumn)
 """
-class DateTimeColumn(DateColumn) :
+class DateTimeColumn(DateColumn):
     """
     テキスト系クラス共通処理
     """
@@ -60,7 +59,7 @@ class DateTimeColumn(DateColumn) :
 
         self.cmd_type = cmd_type
 
-    def check_basic_valid(self,val,option={}):
+    def check_basic_valid(self, val, option={}):
         """
             バリデーション処理(カラムクラス毎)
             ARGS:
