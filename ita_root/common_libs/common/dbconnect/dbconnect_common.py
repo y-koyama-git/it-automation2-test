@@ -24,6 +24,7 @@ import secrets
 import string
 
 from common_libs.common.exception import AppException
+from common_libs.common.util import ky_decrypt, ky_encrypt
 
 
 class DBConnectCommon:
@@ -46,7 +47,7 @@ class DBConnectCommon:
         self._host = os.environ.get('DB_HOST')
         self._port = int(os.environ.get('DB_PORT'))
         self._db_user = os.environ.get('DB_USER')
-        self._db_passwd = os.environ.get('DB_PASSWORD')
+        self._db_passwd = ky_encrypt(os.environ.get('DB_PASSWORD'))
 
         # connect database
         self.db_connect()
@@ -72,13 +73,15 @@ class DBConnectCommon:
                 host=self._host,
                 port=self._port,
                 user=self._db_user,
-                passwd=self._db_passwd,
+                passwd=ky_decrypt(self._db_passwd),
                 database=self._db,
                 charset='utf8',
                 cursorclass=pymysql.cursors.DictCursor
             )
         except pymysql.Error as e:
-            raise AppException("9990002", [self._db, e])
+            raise AppException("999-00002", [self._db, e])
+        except Exception:
+            raise AppException("999-00002", [self._db, "cannot access. connect info may be incorrect"])
 
         return True
 
@@ -105,7 +108,7 @@ class DBConnectCommon:
                 self._db_con.begin()
                 res = True
             except pymysql.Error as e:
-                raise AppException("9990003", [self._db, "BEGIN", e])
+                raise AppException("999-00003", [self._db, "BEGIN", e])
 
             if res is True:
                 self._is_transaction = True
@@ -142,7 +145,7 @@ class DBConnectCommon:
                 self._db_con.commit()
                 res = True
             except pymysql.Error as e:
-                raise AppException("9990003", [self._db, "COMMIT", e])
+                raise AppException("999-00003", [self._db, "COMMIT", e])
 
             if res is True:
                 self._is_transaction = False
@@ -162,7 +165,7 @@ class DBConnectCommon:
                 self._db_con.rollback()
                 res = True
             except pymysql.Error as e:
-                raise AppException("9990003", [self._db, "ROLLBACK", e])
+                raise AppException("999-00003", [self._db, "ROLLBACK", e])
 
             if res is True:
                 self._is_transaction = False
@@ -205,7 +208,7 @@ class DBConnectCommon:
             db_cursor.execute(sql, bind_value_list)
             self.__sql_debug(db_cursor)
         except pymysql.Error as e:
-            raise AppException("9990003", [self._db, db_cursor._last_executed, e])
+            raise AppException("999-00003", [self._db, db_cursor._last_executed, e])
 
         data_list = list(db_cursor.fetchall())  # counter plan for 0 data
         db_cursor.close()
@@ -484,16 +487,16 @@ class DBConnectCommon:
             'JOURNAL_ACTION_CLASS': action_class
         }
 
-    def userinfo_generate(self, db_name):
+    def userinfo_generate(self, prefix=""):
         """
         create user for workspace
         
         Arguments:
-            db_name: database name
+            db_name: database name(uuid)
         Returns:
             user_name and user_password: tuple
         """
-        user_name = db_name
+        user_name = prefix + "_" + str(self._uuid_create()).upper()
         user_password = self.password_generate()
         return user_name, user_password
 
@@ -520,31 +523,21 @@ class DBConnectCommon:
 
         return password
 
-    def get_orgdb_name(self, organization_id):
-        """
-        get database name for organization
-        
-        Arguments:
-            organization_id: organization_id
-        Returns:
-            database name for organization: str
-        """
-        return "ORG_" + organization_id.upper()
-
-    def get_orgdb_connect_info(self, db_name):
+    def get_orgdb_connect_info(self, organization_id):
         """
         get database connect infomation for organization
         
         Arguments:
-            db_name: database name
+            organization_id: organization_id
         Returns:
             database connect infomation for organization: dict
             or
             get failure: (bool)False
         """
         org_db_name = os.environ.get("ORGDB_DATADBASE")
-        if org_db_name is None or org_db_name != db_name:
-            data_list = self.table_select("T_COMN_ORGANIZATION_DB_INFO", "WHERE `DB_DATADBASE`=%s and IFNULL(`DISUSE_FLAG`, 0)=0", [db_name])
+        if org_db_name is None:
+            where = "WHERE `ORGANIZATION_ID`=%s and IFNULL(`DISUSE_FLAG`, 0)=0"
+            data_list = self.table_select("T_COMN_ORGANIZATION_DB_INFO", where, [organization_id])
 
             if len(data_list) == 0:
                 return False
