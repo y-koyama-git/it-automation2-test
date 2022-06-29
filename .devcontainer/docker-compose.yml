@@ -12,6 +12,7 @@ services:
     environment:
       - LISTEN_PORT=8000
       - PYTHONPATH=/exastro/
+      - DEFAULT_LANGUAGE=ja
       - DB_HOST=ita-mariadb
       - DB_PORT=3306
       - DB_DATADBASE=ITA_DB
@@ -30,6 +31,7 @@ services:
     environment:
       - LISTEN_PORT=8000
       - PYTHONPATH=/exastro/
+      - DEFAULT_LANGUAGE=ja
       - DB_HOST=ita-mariadb
       - DB_PORT=3306
       - DB_DATADBASE=ITA_DB
