@@ -15,8 +15,10 @@ tags:
     description: レコードの一括操作（登録/更新/廃止/復活/物理削除）
   - name: Menu Excel
     description: Excelの取得・操作
-paths:
+  - name: User Info
+    description: ユーザ情報の取得
 
+paths:
   /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/info/:
     get:
       tags:
@@ -291,7 +293,61 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
-  
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/filter/journal/{uuid}:
+    get:
+      tags:
+        - Menu Filter
+      description: レコードの履歴を取得する
+      operationId: getJournal
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+        - name: uuid
+          in: path
+          description: UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  TABLE:
+                    $ref: '#/components/schemas/TABLE'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
   /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/maintenance/:
     post:
       tags:
@@ -412,58 +468,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
-    delete:
-      tags:
-        - Menu Maintenance
-      description: レコードを物理削除
-      operationId: maintenanceDiscard
-      parameters:
-        - name: organization_id
-          in: path
-          description: OrganizationID
-          required: true
-          schema:
-            type: string
-        - name: workspace_id
-          in: path
-          description: WorkspaceID
-          required: true
-          schema:
-            type: string
-        - name: menu
-          in: path
-          description: メニュー名
-          required: true
-          schema:
-            type: string
-        - name: uuid
-          in: path
-          description: 対象のUUID
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Success
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ERROR_TEMPLATE'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
   /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/maintenance/all/:
     post:
       tags:
@@ -670,6 +675,149 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
 
+  /api/{organization_id}/workspaces/{workspace_id}/ita/users/{user_id}:
+    get:
+      tags:
+        - User Info
+      description: ユーザの権限情報を取得する
+      operationId: getUserAuth
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: user_id
+          in: path
+          description: ユーザID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  TABLE:
+                    $ref: '#/components/schemas/TABLE'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/users/{user_id}/menus:
+    get:
+      tags:
+        - User Info
+      description: ユーザがアクセス可能なメニューグループ・メニューの一覧を取得する
+      operationId: getUserMenus
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: user_id
+          in: path
+          description: ユーザID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  TABLE:
+                    $ref: '#/components/schemas/TABLE'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/users/{user_id}/menus/panels:
+    get:
+      tags:
+        - User Info
+      description: メニューグループの画像を取得する
+      operationId: getMenuGroupPanels
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: user_id
+          in: path
+          description: ユーザID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  TABLE:
+                    $ref: '#/components/schemas/TABLE'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
 
 components:
   schemas:
