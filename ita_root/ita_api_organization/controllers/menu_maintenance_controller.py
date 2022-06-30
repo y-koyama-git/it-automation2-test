@@ -22,8 +22,10 @@ from flask import jsonify
 import sys
 sys.path.append('../../')
 from common_libs.loadtable.load_table import loadTable
+from libs import api_common
 
 
+@api_common.api_filter
 def maintenance_register(body, organization_id, workspace_id, menu):  # noqa: E501
     """maintenance_register
 
@@ -40,72 +42,23 @@ def maintenance_register(body, organization_id, workspace_id, menu):  # noqa: E5
 
     :rtype: InlineResponse2004
     """
-    # if connexion.request.is_json:
-    #    body = object.from_dict(connexion.request.get_json())  # noqa: E501
-    # return 'do some magic!'
-    """
-    try:
-        # DB接続
-        objdbca = DBConnectWs(workspace_id)  # noqa: F405
 
-        cmd_type = 'Register'
-        parameter = {}
-        if connexion.request.is_json:
-            body = dict(connexion.request.get_json())
-            parameter = body
-
-        # loadTable読込
-        objmenu = loadTable(objdbca, menu)
-        # maintenance処理
-        result_data = objmenu.rest_maintenance(parameter, cmd_type)
-        #### result_code,msg未対応
-        result = {
-            "result": "result_code", #result_data[0],
-            "data": result_data, #result_data[1],
-            "message": "msg" #result_data[2]
-        }
-        return jsonify(result), 200
-
-    except Exception as result:
-        # ####メモ：Exceptionクラス作成後、resultをそのままreturnしたい。
-        print(result)
-        result_dummy = {
-            "result": "StatusCode",
-            "message": "aaa bbb ccc"
-        }, 500
-        return result_dummy
-    """
-    try:
-        # DB接続
-        objdbca = DBConnectWs(workspace_id)  # noqa: F405
-        
-        cmd_type = 'Register'
-        target_uuid = ''
-        parameter = {}
-        if connexion.request.is_json:
-            body = dict(connexion.request.get_json())
-            parameter = body
-            parameter.setdefault('maintenance_type',cmd_type)
-
-        # ####メモ：langは取得方法検討中
-        result_data = menu_maintenance.rest_maintenance(objdbca, menu, parameter, target_uuid, 'ja')
-        #### result_code,msg未対応
-        result = {
-            "result": result_data.get('result'), #result_data[0],
-            "data": result_data.get('data'), #result_data[1],
-            "message": result_data.get('message')  #result_data[2]
-        }
-        return jsonify(result), 200
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
     
-    except Exception as result:
-        # ####メモ：Exceptionクラス作成後、resultをそのままreturnしたい。
-        print(result)
-        result_dummy = {
-            "result": "StatusCode",
-            "message": "aaa bbb ccc"
-        }, 500
-        return result_dummy
+    cmd_type = 'Register'
+    target_uuid = ''
+    parameter = {}
+    if connexion.request.is_json:
+        body = dict(connexion.request.get_json())
+        parameter = body
+        parameter.setdefault('maintenance_type', cmd_type)
 
+    result_data = menu_maintenance.rest_maintenance(objdbca, menu, parameter, target_uuid)
+    return result_data,
+
+
+@api_common.api_filter
 def maintenance_update(body, organization_id, workspace_id, menu, uuid):  # noqa: E501
     """maintenance_update
 
@@ -124,62 +77,15 @@ def maintenance_update(body, organization_id, workspace_id, menu, uuid):  # noqa
 
     :rtype: InlineResponse2004
     """
-    """
-    try:
-        # DB接続
-        objdbca = DBConnectWs(workspace_id)  # noqa: F405
 
-        cmd_type = None
-        parameter = {}
-        if connexion.request.is_json:
-            body = dict(connexion.request.get_json())
-            parameter = body
-
-        # メニューのカラム情報を取得
-        objmenu = loadTable(objdbca, menu)
-        result_data = objmenu.rest_maintenance(parameter, cmd_type)
-        #### result_code,msg未対応
-        result = {
-            "result": "result_code", #result_data[0],
-            "data": result_data, #result_data[1],
-            "message": "msg" #result_data[2]
-        }
-        return jsonify(result), 200
-
-    except Exception as result:
-        # ####メモ：Exceptionクラス作成後、resultをそのままreturnしたい。
-        print(result)
-        result_dummy = {
-            "result": "StatusCode",
-            "message": "aaa bbb ccc"
-        }, 500
-        return result_dummy
-    """
-    try:
-        # DB接続
-        objdbca = DBConnectWs(workspace_id)  # noqa: F405
-        
-        target_uuid = uuid
-        parameter = {}
-        if connexion.request.is_json:
-            body = dict(connexion.request.get_json())
-            parameter = body
-            
-        # ####メモ：langは取得方法検討中
-        result_data = menu_maintenance.rest_maintenance(objdbca, menu, parameter, target_uuid, 'ja')
-        #### result_code,msg未対応
-        result = {
-            "result": result_data.get('result'), #result_data[0],
-            "data": result_data.get('data'), #result_data[1],
-            "message": result_data.get('message')  #result_data[2]
-        }
-        return jsonify(result), 200
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
     
-    except Exception as result:
-        # ####メモ：Exceptionクラス作成後、resultをそのままreturnしたい。
-        print(result)
-        result_dummy = {
-            "result": "StatusCode",
-            "message": "aaa bbb ccc"
-        }, 500
-        return result_dummy
+    target_uuid = uuid
+    parameter = {}
+    if connexion.request.is_json:
+        body = dict(connexion.request.get_json())
+        parameter = body
+
+    result_data = menu_maintenance.rest_maintenance(objdbca, menu, parameter, target_uuid)
+    return result_data,
