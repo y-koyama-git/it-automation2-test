@@ -14,9 +14,10 @@
 
 from common_libs.common import *  # noqa: F403
 from libs import menu_info
-from flask import jsonify
+from libs import api_common
 
 
+@api_common.api_filter
 def get_column_list(organization_id, workspace_id, menu):  # noqa: E501
     """get_column_list
 
@@ -31,30 +32,16 @@ def get_column_list(organization_id, workspace_id, menu):  # noqa: E501
 
     :rtype: InlineResponse2001
     """
-    try:
-        # DB接続
-        objdbca = DBConnectWs(workspace_id)  # noqa: F405
-        
-        # メニューのカラム情報を取得
-        result_data = menu_info.collect_menu_column_list(objdbca, menu)
-        result = {
-            "result": result_data[0],
-            "data": result_data[1],
-            "message": result_data[2]
-        }
-        
-        return jsonify(result), 200
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
     
-    except Exception as result:
-        # ####メモ：Exceptionクラス作成後、resultをそのままreturnしたい。
-        print(result)
-        result_dummy = {
-            "result": "StatusCode",
-            "message": "aaa bbb ccc"
-        }, 500
-        return result_dummy
+    # メニューのカラム情報を取得
+    data = menu_info.collect_menu_column_list(objdbca, menu)
+    
+    return data,
 
 
+@api_common.api_filter
 def get_menu_info(organization_id, workspace_id, menu):  # noqa: E501
     """get_menu_info
 
@@ -69,30 +56,16 @@ def get_menu_info(organization_id, workspace_id, menu):  # noqa: E501
 
     :rtype: InlineResponse200
     """
-    try:
-        # DB接続
-        objdbca = DBConnectWs(workspace_id)  # noqa: F405
-        
-        # メニューの基本情報および項目情報の取得
-        result_data = menu_info.collect_menu_info(objdbca, menu)
-        result = {
-            "result": result_data[0],
-            "data": result_data[1],
-            "message": result_data[2]
-        }
-        
-        return jsonify(result), 200
-
-    except Exception as result:
-        # ####メモ：Exceptionクラス作成後、resultをそのままreturnしたい。
-        print(result)
-        result_dummy = {
-            "result": "StatusCode",
-            "message": "aaa bbb ccc"
-        }, 500
-        return result_dummy
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+    
+    # # メニューの基本情報および項目情報の取得
+    data = menu_info.collect_menu_info(objdbca, menu)
+    
+    return data,
 
 
+@api_common.api_filter
 def get_pulldown_list(organization_id, workspace_id, menu, column):  # noqa: E501
     """get_pulldown_list
 
@@ -109,25 +82,10 @@ def get_pulldown_list(organization_id, workspace_id, menu, column):  # noqa: E50
 
     :rtype: InlineResponse2002
     """
-    try:
-        # DB接続
-        objdbca = DBConnectWs(workspace_id)  # noqa: F405
-        
-        # 項目のプルダウン一覧の取得
-        result_data = menu_info.collect_pulldown_list(objdbca, menu, column)
-        result = {
-            "result": result_data[0],
-            "data": result_data[1],
-            "message": result_data[2]
-        }
-        
-        return jsonify(result), 200
-        
-    except Exception as result:
-        # ####メモ：Exceptionクラス作成後、resultをそのままreturnしたい。
-        print(result)
-        result_dummy = {
-            "result": "StatusCode",
-            "message": "aaa bbb ccc"
-        }, 500
-        return result_dummy
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+    
+    # 項目のプルダウン一覧の取得
+    data = menu_info.collect_pulldown_list(objdbca, menu, column)
+    
+    return data,
