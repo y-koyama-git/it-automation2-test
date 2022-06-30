@@ -25,14 +25,11 @@ class MessageTemplate:
     """
     def __init__(self):
         # set lang
-        default_lang = 'en'
+        default_lang = os.getenv('DEFAULT_LANGUAGE')
         self.set_lang(default_lang)
         
         # set messages dir
-        if not os.getenv('ITA_MESSAGES_DIR'):
-            self.path = '/exastro/messages'
-        else:
-            self.path = os.getenv('ITA_MESSAGES_DIR')
+        self.path = '/exastro/messages'
         
         # define variable
         self.messages = {'log': {}, 'api': {}}
