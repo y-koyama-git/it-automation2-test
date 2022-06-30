@@ -14,6 +14,7 @@
 
 import os
 from common_libs.common import *  # noqa: F403
+from flask import session
 
 
 def collect_menu_info(objdbca, menu):
@@ -34,7 +35,7 @@ def collect_menu_info(objdbca, menu):
     t_common_menu_group = 'T_COMN_MENU_GROUP'
     
     # 変数定義
-    lang = os.environ['LANGUAGE']
+    lang = session.get("LANGUAGE")
     
     # ####メモ：ユーザが対象のメニューの情報を取得可能かどうかのロールチェック処理が必要
     role_check = True
@@ -71,6 +72,7 @@ def collect_menu_info(objdbca, menu):
     
     menu_info = ret[0].get('MENU_INFO_' + lang.upper())
     sheet_type = ret[0].get('SHEET_TYPE')
+    history_table_flag = ret[0].get('HISTORY_TABLE_FLAG')
     table_name = ret[0].get('TABLE_NAME')
     view_name = ret[0].get('VIEW_NAME')
     inherit = ret[0].get('INHERIT')
@@ -88,9 +90,12 @@ def collect_menu_info(objdbca, menu):
     
     menu_info_data = {
         'menu_info': menu_info,
+        'menu_group_id': menu_group_id,
         'menu_group_name': menu_group_name,
+        'menu_id': menu_id,
         'menu_name': menu_name,
         'sheet_type': sheet_type,
+        'history_table_flag': history_table_flag,
         'table_name': table_name,
         'view_name': view_name,
         'inherit': inherit,
@@ -175,8 +180,8 @@ def collect_menu_info(objdbca, menu):
         column_info_data[recode.get('COLUMN_NAME_REST')] = detail
 
     info_data = {
-        'MENU_INFO': menu_info_data,
-        'COLUMN_INFO': column_info_data
+        'menu_info': menu_info_data,
+        'column_info': column_info_data
     }
     
     return info_data
@@ -240,7 +245,7 @@ def collect_pulldown_list(objdbca, menu, column):
     t_common_menu = 'T_COMN_MENU'
     t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
     t_common_column_class = 'T_COMN_COLUMN_CLASS'
-    lang = os.environ['LANGUAGE']
+    lang = session.get("LANGUAGE")
     
     # ####メモ：ユーザが対象のメニューの情報を取得可能かどうかのロールチェック処理が必要
     role_check = True

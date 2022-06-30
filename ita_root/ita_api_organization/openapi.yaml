@@ -58,9 +58,9 @@ paths:
                   data:
                     type: object
                     properties:
-                      COLUMN_INFO:
+                      column_info:
                         $ref: '#/components/schemas/COLUMN_INFO'
-                      MENU_INFO:
+                      menu_info:
                         $ref: '#/components/schemas/MENU_INFO'
                   message:
                     type: string
@@ -675,7 +675,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
 
-  /api/{organization_id}/workspaces/{workspace_id}/ita/users/{user_id}:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/user/:
     get:
       tags:
         - User Info
@@ -694,12 +694,6 @@ paths:
           required: true
           schema:
             type: string
-        - name: user_id
-          in: path
-          description: ユーザID
-          required: true
-          schema:
-            type: string
       responses:
         '200':
           description: Success
@@ -708,8 +702,14 @@ paths:
               schema:
                 type: object
                 properties:
-                  TABLE:
-                    $ref: '#/components/schemas/TABLE'
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: SUCCESS
         '401':
           description: Unauthorized
           content:
@@ -723,7 +723,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
 
-  /api/{organization_id}/workspaces/{workspace_id}/ita/users/{user_id}/menus:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/user/menus/:
     get:
       tags:
         - User Info
@@ -742,12 +742,6 @@ paths:
           required: true
           schema:
             type: string
-        - name: user_id
-          in: path
-          description: ユーザID
-          required: true
-          schema:
-            type: string
       responses:
         '200':
           description: Success
@@ -756,8 +750,51 @@ paths:
               schema:
                 type: object
                 properties:
-                  TABLE:
-                    $ref: '#/components/schemas/TABLE'
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    properties:
+                      menu_groups:
+                        example: [
+                          {
+                            "disp_seq": 10,
+                            "id": "101",
+                            "menu_group_name": "メニューグループ1"
+                          },
+                          {
+                            "disp_seq": 20,
+                            "id": "102",
+                            "menu_group_name": "メニューグループ2"
+                          },
+                          {
+                            "disp_seq": 30,
+                            "id": "103",
+                            "menu_group_name": "メニューグループ3"
+                          }
+                        ]
+                      menus:
+                        example: {
+                          "101": [
+                            {"disp_seq": 10, "id": "10101", "menu_name": "メニュー1", "menu_name_rest": "menu_1"},
+                            {"disp_seq": 20, "id": "10102", "menu_name": "メニュー2", "menu_name_rest": "menu_2"},
+                            {"disp_seq": 30, "id": "10103", "menu_name": "メニュー3", "menu_name_rest": "menu_3"}
+                            ],
+                          "102": [
+                            {"disp_seq": 10, "id": "10104", "menu_name": "メニュー4", "menu_name_rest": "menu_4"},
+                            {"disp_seq": 20, "id": "10105", "menu_name": "メニュー5", "menu_name_rest": "menu_5"},
+                            {"disp_seq": 30, "id": "10106", "menu_name": "メニュー6", "menu_name_rest": "menu_6"},
+                            ],
+                          "103": [
+                            {"disp_seq": 10, "id": "10107", "menu_name": "メニュー7", "menu_name_rest": "menu_7"},
+                            {"disp_seq": 20, "id": "10108", "menu_name": "メニュー8", "menu_name_rest": "menu_8"},
+                            {"disp_seq": 30, "id": "10109", "menu_name": "メニュー9", "menu_name_rest": "menu_9"},
+                            ]
+                        }
+                  message:
+                    type: string
+                    example: SUCCESS
         '401':
           description: Unauthorized
           content:
@@ -771,7 +808,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
 
-  /api/{organization_id}/workspaces/{workspace_id}/ita/users/{user_id}/menus/panels:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/user/menus/panels/:
     get:
       tags:
         - User Info
@@ -790,12 +827,6 @@ paths:
           required: true
           schema:
             type: string
-        - name: user_id
-          in: path
-          description: ユーザID
-          required: true
-          schema:
-            type: string
       responses:
         '200':
           description: Success
@@ -804,8 +835,14 @@ paths:
               schema:
                 type: object
                 properties:
-                  TABLE:
-                    $ref: '#/components/schemas/TABLE'
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: SUCCESS
         '401':
           description: Unauthorized
           content:
@@ -915,14 +952,23 @@ components:
         menu_info:
           description: メニューの説明
           type: string
+        menu_group_id:
+          description: メニューグループID
+          type: string
         menu_group_name:
           description: メニューグループの名称
+          type: string
+        menu_id:
+          description: メニューID
           type: string
         menu_name:
           description: メニューの名称
           type: string
         sheet_type:
-          description: メニューのシートタイプ
+          description: シートタイプ
+          type: string
+        history_table_flag:
+          description: 履歴テーブル有無
           type: string
         table_name:
           description: テーブル名
