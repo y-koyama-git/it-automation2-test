@@ -52,7 +52,7 @@ def ky_decrypt(lcstr):
     return base64.b64decode(tmp_str.encode()).decode()
 
 
-def ky_file_encrypt(self, src_file, dest_file):
+def ky_file_encrypt(src_file, dest_file):
     """
     Encode a file
 
@@ -70,7 +70,7 @@ def ky_file_encrypt(self, src_file, dest_file):
         lcstr = Path(src_file).read_text(encoding="utf-8")
         
         # エンコード関数呼び出し
-        enc_data = self.ky_encrypt(lcstr)
+        enc_data = ky_encrypt(lcstr)
         
         # ファイル書き込み
         Path(dest_file).write_text(enc_data, encoding="utf-8")
@@ -83,7 +83,7 @@ def ky_file_encrypt(self, src_file, dest_file):
     return True
 
 
-def ky_file_decrypt(self, src_file, dest_file):
+def ky_file_decrypt(src_file, dest_file):
     """
     Decode a file
 
@@ -101,7 +101,7 @@ def ky_file_decrypt(self, src_file, dest_file):
         lcstr = Path(src_file).read_text(encoding="utf-8")
         
         # デコード関数呼び出し
-        enc_data = self.ky_decrypt(lcstr)
+        enc_data = ky_decrypt(lcstr)
         
         # ファイル書き込み
         Path(dest_file).write_text(enc_data, encoding="utf-8")
