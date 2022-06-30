@@ -16,10 +16,12 @@ controller
 organization_create
 """
 # import connexion
-from common_libs.common.dbconnect import *  # noqa: F403
-from common_libs.common.exception import AppException
-from common_libs.common.util import ky_encrypt
+from flask import g
+
 from libs import api_common
+from common_libs.common.exception import AppException
+from common_libs.common.dbconnect import *  # noqa: F403
+from common_libs.common.util import ky_encrypt
 import os
 
 
@@ -44,7 +46,9 @@ def organization_create(body, organization_id):  # noqa: E501
         try:
             # try to connect organization-db
             org_db = DBConnectOrg(organization_id)  # noqa: F405
-            # organization-db is already existed
+
+            # organization-db already exists
+            g.applogger.debug("ORG_DB:{} can be connected".format(organization_id))
             return '', "ALREADY EXISTS"
         except AppException:
             # organization-db connect info is imperfect, so remake

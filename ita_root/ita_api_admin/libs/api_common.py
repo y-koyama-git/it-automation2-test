@@ -14,7 +14,7 @@
 """
 api common function module
 """
-from flask import request, g
+from flask import request, g, session
 import os
 import traceback
 
@@ -147,14 +147,14 @@ def before_request_handler():
         if user_id is None or roles is None:
             raise AppException("400-00001", ["User-Id and Roles"], ["User-Id and Roles"])
 
-        os.environ['USER_ID'] = user_id
-        os.environ['Roles'] = roles
+        session['USER_ID'] = user_id
+        session['ROLES'] = roles
         
         # set language
         language = request.headers.get("Language")
         if not language:
             language = os.environ.get("DEFAULT_LANGUAGE")
-        os.environ['LANGUAGE'] = language
+        session['LANGUAGE'] = language
 
         g.appmsg.set_lang(language)
         g.applogger.debug("LANGUAGE({}) is set".format(language))

@@ -19,12 +19,11 @@ import uuid
 import datetime
 import os
 import re
-# for generate password
-import secrets
-import string
+
+from flask import g
 
 from common_libs.common.exception import AppException
-from common_libs.common.util import ky_decrypt, ky_encrypt
+from common_libs.common.util import ky_decrypt, ky_encrypt, generate_secrets
 
 
 class DBConnectCommon:
@@ -510,18 +509,31 @@ class DBConnectCommon:
             password string: str
         """
         length = 16
-        # string.ascii_letters - alfabet lower and upper
-        # string.digits - number
-        # string.punctuation - symbol  !"#$%&'()*+,-./:;<=>?@[\]^_`{|}~
         mysql_available_symbol = "!#%&()*+,-./;<=>?@[]^_{|}~"
-        pass_chars = string.ascii_letters + string.digits + mysql_available_symbol
-
-        password = ''.join(secrets.choice(pass_chars) for x in range(length))
+        password = generate_secrets(length, mysql_available_symbol)
 
         if escape is True:
-            password = re.sub(r'([{})/g'.format(mysql_available_symbol), r'\$1', password)
+            password = re.sub(r'([{}])/g'.format(mysql_available_symbol), r'\$1', password)
 
         return password
+
+    def get_connect_info(self):
+        """
+        get database connect infomation for self
+
+        Returns:
+            database connect infomation for self: dict
+        """
+        connect_info = {
+            'DB_HOST': self._host,
+            'DB_PORT': self._port,
+            'DB_USER': self._db_user,
+            'DB_PASSWORD': self._db_passwd
+        }
+        if self._db:
+            connect_info['DB_DATADBASE'] = self._db
+
+        return connect_info
 
     def get_orgdb_connect_info(self, organization_id):
         """
@@ -534,8 +546,7 @@ class DBConnectCommon:
             or
             get failure: (bool)False
         """
-        org_db_name = os.environ.get("ORGDB_DATADBASE")
-        if org_db_name is None:
+        if "db_connect_info" not in g or "ORGDB_DATADBASE" not in g.db_connect_info:
             where = "WHERE `ORGANIZATION_ID`=%s and IFNULL(`DISUSE_FLAG`, 0)=0"
             data_list = self.table_select("T_COMN_ORGANIZATION_DB_INFO", where, [organization_id])
 
@@ -545,10 +556,10 @@ class DBConnectCommon:
             return data_list[0]
 
         return {
-            "DB_HOST": os.environ.get("ORGDB_HOST"),
-            "DB_PORT": os.environ.get("ORGDB_PORT"),
-            "DB_USER": os.environ.get("ORGDB_USER"),
-            "DB_PASSWORD": os.environ.get("ORGDB_PASSWORD"),
-            "DB_ROOT_PASSWORD": os.environ.get("ORGDB_ROOT_PASSWORD"),
-            "DB_DATADBASE": os.environ.get("ORGDB_DATADBASE")
+            "DB_HOST": g.db_connect_info["ORGDB_HOST"],
+            "DB_PORT": g.db_connect_info["ORGDB_PORT"],
+            "DB_USER": g.db_connect_info["ORGDB_USER"],
+            "DB_PASSWORD": g.db_connect_info["ORGDB_PASSWORD"],
+            "DB_ROOT_PASSWORD": g.db_connect_info["ORGDB_ROOT_PASSWORD"],
+            "DB_DATADBASE": g.db_connect_info["ORGDB_DATADBASE"]
         }
