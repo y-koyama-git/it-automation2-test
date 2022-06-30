@@ -14,7 +14,7 @@
 """
 api common function module
 """
-from flask import request, g
+from flask import request, g, session
 import os
 import traceback
 
@@ -151,55 +151,58 @@ def before_request_handler():
         if user_id is None or roles is None:
             raise AppException("400-00001", ["User-Id and Roles"], ["User-Id and Roles"])
 
-        os.environ['USER_ID'] = user_id
-        os.environ['Roles'] = roles
+        session['USER_ID'] = user_id
+        session['ROLES'] = roles
 
         # set language
         language = request.headers.get("Language")
         if not language:
             language = os.environ.get("DEFAULT_LANGUAGE")
-        os.environ['LANGUAGE'] = language
+        session['LANGUAGE'] = language
 
         g.appmsg.set_lang(language)
         g.applogger.debug("LANGUAGE({}) is set".format(language))
 
         # get organization_id
         organization_id = request.path.split("/")[2]
-        os.environ['ORGANIZATION_ID'] = organization_id
+        session['ORGANIZATION_ID'] = organization_id
 
         # initialize setting organization-db connect_info and connect check
         common_db = DBConnectCommon()  # noqa: F405
         g.applogger.debug("ITA_DB is connected")
+
         orgdb_connect_info = common_db.get_orgdb_connect_info(organization_id)
         common_db.db_disconnect()
         if orgdb_connect_info is False:
             raise AppException("999-00001", ["ORGANIZATION_ID=" + organization_id])
 
-        os.environ["ORGDB_HOST"] = orgdb_connect_info["DB_HOST"]
-        os.environ["ORGDB_PORT"] = str(orgdb_connect_info["DB_PORT"])
-        os.environ["ORGDB_USER"] = orgdb_connect_info["DB_USER"]
-        os.environ["ORGDB_PASSWORD"] = orgdb_connect_info["DB_PASSWORD"]
-        os.environ["ORGDB_ROOT_PASSWORD"] = orgdb_connect_info["DB_ROOT_PASSWORD"]
-        os.environ["ORGDB_DATADBASE"] = orgdb_connect_info["DB_DATADBASE"]
+        g.db_connect_info = {}
+        g.db_connect_info["ORGDB_HOST"] = orgdb_connect_info["DB_HOST"]
+        g.db_connect_info["ORGDB_PORT"] = str(orgdb_connect_info["DB_PORT"])
+        g.db_connect_info["ORGDB_USER"] = orgdb_connect_info["DB_USER"]
+        g.db_connect_info["ORGDB_PASSWORD"] = orgdb_connect_info["DB_PASSWORD"]
+        g.db_connect_info["ORGDB_ROOT_PASSWORD"] = orgdb_connect_info["DB_ROOT_PASSWORD"]
+        g.db_connect_info["ORGDB_DATADBASE"] = orgdb_connect_info["DB_DATADBASE"]
 
         # get workspace_id
         workspace_id = request.path.split("/")[4]
         if workspace_id:
-            os.environ['WORKSPACE_ID'] = workspace_id
+            session['WORKSPACE_ID'] = workspace_id
 
             # initialize setting workspcae-db connect_info and connect check
             org_db = DBConnectOrg()  # noqa: F405
             g.applogger.debug("ORG_DB:{} can be connected".format(organization_id))
+
             wsdb_connect_info = org_db.get_wsdb_connect_info(workspace_id)
             org_db.db_disconnect()
             if wsdb_connect_info is False:
                 raise AppException("999-00001", ["WORKSPACE_ID=" + workspace_id])
 
-            os.environ["WSDB_HOST"] = wsdb_connect_info["DB_HOST"]
-            os.environ["WSDB_PORT"] = str(wsdb_connect_info["DB_PORT"])
-            os.environ["WSDB_USER"] = wsdb_connect_info["DB_USER"]
-            os.environ["WSDB_PASSWORD"] = wsdb_connect_info["DB_PASSWORD"]
-            os.environ["WSDB_DATADBASE"] = wsdb_connect_info["DB_DATADBASE"]
+            g.db_connect_info["WSDB_HOST"] = wsdb_connect_info["DB_HOST"]
+            g.db_connect_info["WSDB_PORT"] = str(wsdb_connect_info["DB_PORT"])
+            g.db_connect_info["WSDB_USER"] = wsdb_connect_info["DB_USER"]
+            g.db_connect_info["WSDB_PASSWORD"] = wsdb_connect_info["DB_PASSWORD"]
+            g.db_connect_info["WSDB_DATADBASE"] = wsdb_connect_info["DB_DATADBASE"]
 
             ws_db = DBConnectWs(workspace_id)  # noqa: F405
             g.applogger.debug("WS_DB:{} can be connected".format(workspace_id))

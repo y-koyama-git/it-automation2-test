@@ -16,7 +16,8 @@ database connection agnet class for organization-db on mariadb
 """
 
 import pymysql.cursors  # https://pymysql.readthedocs.io/en/latable_name/
-import os
+
+from flask import session, g
 
 from .dbconnect_common import DBConnectCommon
 from common_libs.common.exception import AppException
@@ -36,7 +37,7 @@ class DBConnectOrg(DBConnectCommon):
             return True
 
         if organization_id is None:
-            organization_id = os.environ.get('ORGANIZATION_ID')
+            organization_id = session.get('ORGANIZATION_ID')
         self.organization_id = organization_id
 
         # get db-connect-infomation from organization-db
@@ -71,7 +72,7 @@ class DBConnectOrg(DBConnectCommon):
             or
             get failure: (bool)False
         """
-        if os.environ.get("WSDB_DATADBASE") is None or os.environ.get("WORKSPACE_ID") != workspace_id:
+        if "db_connect_info" not in g or "WSDB_DATADBASE" not in g.db_connect_info or session.get("WORKSPACE_ID") != workspace_id:
             where = "WHERE `WORKSPACE_ID`=%s and IFNULL(`DISUSE_FLAG`, 0)=0"
             data_list = self.table_select("T_COMN_WORKSPACE_DB_INFO", where, [workspace_id])
 
@@ -81,12 +82,11 @@ class DBConnectOrg(DBConnectCommon):
             return data_list[0]
 
         return {
-            "DB_HOST": os.environ.get("WSDB_HOST"),
-            "DB_PORT": os.environ.get("WSDB_PORT"),
-            "DB_USER": os.environ.get("WSDB_USER"),
-            "DB_PASSWORD": os.environ.get("WSDB_PASSWORD"),
-            "DB_ROOT_PASSWORD": os.environ.get("WSDB_ROOT_PASSWORD"),
-            "DB_DATADBASE": os.environ.get("WSDB_DATADBASE")
+            "DB_HOST": g.db_connect_info["WSDB_HOST"],
+            "DB_PORT": g.db_connect_info["WSDB_PORT"],
+            "DB_USER": g.db_connect_info["WSDB_USER"],
+            "DB_PASSWORD": g.db_connect_info["WSDB_PASSWORD"],
+            "DB_DATADBASE": g.db_connect_info["WSDB_DATADBASE"]
         }
 
 
@@ -103,7 +103,7 @@ class DBConnectOrgRoot(DBConnectOrg):
             return True
 
         if organization_id is None:
-            organization_id = os.environ.get('ORGANIZATION_ID')
+            organization_id = session.get('ORGANIZATION_ID')
         self.organization_id = organization_id
 
         # get db-connect-infomation from ita-common-db

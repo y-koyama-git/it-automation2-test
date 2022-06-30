@@ -15,7 +15,8 @@
 """
 共通関数 module
 """
-
+import secrets
+import string
 import base64
 import codecs
 from pathlib import Path
@@ -111,3 +112,18 @@ def ky_file_decrypt(self, src_file, dest_file):
         fsrc.close()
     
     return True
+
+
+def generate_secrets(length=16, punctuation=''):
+    # string.ascii_letters - alfabet lower and upper
+    # string.digits - number
+    # string.punctuation - symbol  !"#$%&'()*+,-./:;<=>?@[\]^_`{|}~
+    pass_chars = string.ascii_letters + string.digits + punctuation
+    secrets_val = ''.join(secrets.choice(pass_chars) for x in range(length))
+
+    return secrets_val
+
+
+if __name__ == '__main__':
+    # print(generate_secrets())
+    pass

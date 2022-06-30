@@ -16,11 +16,12 @@ controller
 workspace_create
 """
 # import connexion
-from common_libs.common.dbconnect import *  # noqa: F403
-from common_libs.common.exception import AppException
-from common_libs.common.util import ky_encrypt
+from flask import g
+
 from libs import api_common
-import os
+from common_libs.common.exception import AppException
+from common_libs.common.dbconnect import *  # noqa: F403
+from common_libs.common.util import ky_encrypt
 import re
 
 
@@ -47,7 +48,9 @@ def workspace_create(body, organization_id, workspace_id):  # noqa: E501
         try:
             # try to connect workspace-db
             ws_db = DBConnectWs(workspace_id, organization_id)  # noqa: F405
-            # workspace-db is already existed
+
+            # workspace-db already exists
+            g.applogger.debug("WS_DB:{} can be connected".format(workspace_id))  
             return '', "ALREADY EXISTS"
         except AppException:
             # workspace-db connect info is imperfect, so remake
@@ -70,11 +73,12 @@ def workspace_create(body, organization_id, workspace_id):  # noqa: E501
     # register workspace-db connect infomation
     user_name, user_password = org_db.userinfo_generate("WS")
     ws_db_name = user_name
+    connect_info = org_db.get_connect_info()
     try:
         data = {
             'WORKSPACE_ID': workspace_id,
-            'DB_HOST': os.environ.get('DB_HOST'),
-            'DB_PORT': int(os.environ.get('DB_PORT')),
+            'DB_HOST': connect_info['DB_HOST'],
+            'DB_PORT': int(connect_info['DB_PORT']),
             'DB_USER': user_name,
             'DB_PASSWORD': ky_encrypt(user_password),
             'DB_DATADBASE': ws_db_name,
