@@ -455,7 +455,7 @@ class Column():
         # バリデーション閾値の設定（テンプレートのキー以外除外）
         self.set_valid_value()
         # バリデーション閾値の設定（テンプレートのキー以外除外）
-        result = self.check_basic_valid(val, option={})
+        result = self.check_basic_valid(val, option)
 
         return result
 

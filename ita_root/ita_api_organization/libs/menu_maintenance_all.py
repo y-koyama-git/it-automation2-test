@@ -12,10 +12,14 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import os
+from flask import g
+
 from common_libs.common import *  # noqa: F403
 from common_libs.loadtable import *
 
-def rest_maintenance_all(objdbca, menu, parameters, lang):
+
+def rest_maintenance_all(objdbca, menu, parameters):
     """
         メニューのレコード登録/更新(更新/廃止/復活)
         ARGS:
@@ -29,22 +33,26 @@ def rest_maintenance_all(objdbca, menu, parameters, lang):
     """
     
     result_data = {}
-    
-    try:
-        
-        # メッセージクラス呼び出し
-        msg = ''
-        
-        # ####メモ：ユーザが対象のメニューの情報を取得可能かどうかのロールチェック処理が必要
-        # role_check = True
-        # if not role_check:
-        #    # ####メモ：401を意図的に返したいので最終的に自作Exceptionクラスに渡す。引数のルールは別途決める必要あり。
-        #     raise Exception(msg, 'statusCode')
 
-        objmenu = load_table.loadTable(objdbca, menu, lang)
-        result_data = objmenu.rest_maintenance_all(parameters)
+    role_check = True
+    if not role_check:
+        # ####メモ：401を意図的に返したいので最終的に自作Exceptionクラスに渡す。引数のルールは別途決める必要あり。
+        status_code = '401-00001'
+        msg = g.appmsg.get_api_message(status_code, [menu])
+        raise Exception(msg, status_code)
 
-        return result_data
-    
-    except Exception:
-        raise
+
+    objmenu = load_table.loadTable(objdbca, menu)
+    if objmenu.get_objtable() is False:
+        log_msg_args = ["not menu or table"]
+        api_msg_args = ["not menu or table"]
+        raise AppException("401-00001", log_msg_args, api_msg_args) # noqa: F405
+
+    status_code, result, msg = objmenu.rest_maintenance_all(parameters)
+    if status_code != '000-00000':
+        print(msg)
+        log_msg_args = [msg]
+        api_msg_args = [msg]
+        raise AppException(status_code, log_msg_args, api_msg_args)
+
+    return result

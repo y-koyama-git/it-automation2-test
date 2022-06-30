@@ -98,7 +98,7 @@ class NumColumn(Column) :
                 retBool = True
             else:
                 retBool = False
-                msg = "範囲外({}<{}<{})".format(min_num, val, max_num)
+                msg = "範囲外({}<{}<{})[{}]".format(min_num, val, max_num, self.rest_key_name)
                 return retBool, msg
 
         elif min_num is not None:
@@ -107,7 +107,7 @@ class NumColumn(Column) :
                 retBool = True
             else:
                 retBool = False
-                msg = "最小値以下({}<{})".format(min_num, val)
+                msg = "最小値以下({}<{})[{}]".format(min_num, val, self.rest_key_name)
                 return retBool, msg
         elif max_num is not None:
             # 最大値閾値あり
@@ -115,7 +115,7 @@ class NumColumn(Column) :
                 retBool = True
             else:
                 retBool = False
-                msg = "最大値以上({}<{})".format(val, max_num)
+                msg = "最大値以上({}<{})[{}]".format(val, max_num, self.rest_key_name)
                 return retBool, msg
 
         return retBool,

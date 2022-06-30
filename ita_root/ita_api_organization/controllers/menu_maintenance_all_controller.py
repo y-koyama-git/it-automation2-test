@@ -21,8 +21,10 @@ from flask import jsonify
 import sys
 sys.path.append('../../')
 from common_libs.loadtable.load_table import loadTable
+from libs import api_common
 
 
+@api_common.api_filter
 def maintenance_all(body, organization_id, workspace_id, menu):  # noqa: E501
     """maintenance_all
 
@@ -43,31 +45,13 @@ def maintenance_all(body, organization_id, workspace_id, menu):  # noqa: E501
     #    body = object.from_dict(connexion.request.get_json())  # noqa: E501
     # return 'do some magic!'
 
-    try:
-        # DB接続
-        objdbca = DBConnectWs(workspace_id)  # noqa: F405
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
 
-        parameters = []
-        if connexion.request.is_json:
-            body = connexion.request.get_json()
-            parameters = body
-
-        # ####メモ：langは取得方法検討中
-        result_data = menu_maintenance_all.rest_maintenance_all(objdbca, menu, parameters, 'ja')
-        print(["result_data",result_data])
-        #### result_code,msg未対応
-        result = {
-            "result": result_data.get('result'), #result_data[0],
-            "data": result_data.get('data'), #result_data[1],
-            "message": result_data.get('message')  #result_data[2]
-        }
-        return jsonify(result), 200
-    
-    except Exception as result:
-        # ####メモ：Exceptionクラス作成後、resultをそのままreturnしたい。
-        print(result)
-        result_dummy = {
-            "result": "StatusCode",
-            "message": "aaa bbb ccc"
-        }, 500
-        return result_dummy
+    parameters = []
+    if connexion.request.is_json:
+        body = connexion.request.get_json()
+        parameters = body
+        
+    result_data = menu_maintenance_all.rest_maintenance_all(objdbca, menu, parameters)
+    return result_data,
