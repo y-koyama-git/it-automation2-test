@@ -12,10 +12,12 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import connexion
-import six
+from common_libs.common import *  # noqa: F403
+from libs import user_info
+from libs import api_common
 
-def get_menu_group_panels(organization_id, workspace_id, user_id):  # noqa: E501
+
+def get_menu_group_panels(organization_id, workspace_id):  # noqa: E501
     """get_menu_group_panels
 
     メニューグループの画像を取得する # noqa: E501
@@ -24,15 +26,13 @@ def get_menu_group_panels(organization_id, workspace_id, user_id):  # noqa: E501
     :type organization_id: str
     :param workspace_id: WorkspaceID
     :type workspace_id: str
-    :param user_id: ユーザID
-    :type user_id: str
 
-    :rtype: InlineResponse2003
+    :rtype: InlineResponse2005
     """
     return 'do some magic!'
 
 
-def get_user_auth(organization_id, workspace_id, user_id):  # noqa: E501
+def get_user_auth(organization_id, workspace_id):  # noqa: E501
     """get_user_auth
 
     ユーザの権限情報を取得する # noqa: E501
@@ -41,15 +41,14 @@ def get_user_auth(organization_id, workspace_id, user_id):  # noqa: E501
     :type organization_id: str
     :param workspace_id: WorkspaceID
     :type workspace_id: str
-    :param user_id: ユーザID
-    :type user_id: str
 
-    :rtype: InlineResponse2003
+    :rtype: InlineResponse2005
     """
     return 'do some magic!'
 
 
-def get_user_menus(organization_id, workspace_id, user_id):  # noqa: E501
+@api_common.api_filter
+def get_user_menus(organization_id, workspace_id):  # noqa: E501
     """get_user_menus
 
     ユーザがアクセス可能なメニューグループ・メニューの一覧を取得する # noqa: E501
@@ -58,9 +57,13 @@ def get_user_menus(organization_id, workspace_id, user_id):  # noqa: E501
     :type organization_id: str
     :param workspace_id: WorkspaceID
     :type workspace_id: str
-    :param user_id: ユーザID
-    :type user_id: str
 
-    :rtype: InlineResponse2003
+    :rtype: InlineResponse2006
     """
-    return 'do some magic!'
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+    
+    # メニューのカラム情報を取得
+    data = user_info.collect_menus(objdbca)
+    
+    return data,
