@@ -46,7 +46,7 @@ def rest_filter(objdbca, menu, filter_parameter):
         raise AppException("401-00001", log_msg_args, api_msg_args) # noqa: F405
 
     status_code, result, msg = objmenu.rest_filter(filter_parameter, mode)
-    if status_code != '000-0000':
+    if status_code != '000-00000':
         log_msg_args = [msg]
         api_msg_args = [msg]
         raise AppException(status_code, log_msg_args, api_msg_args)
@@ -89,7 +89,7 @@ def rest_filter_journal(objdbca, menu, uuid):
     filter_parameter = {}
     filter_parameter.setdefault('JNL', uuid)
     status_code, result, msg = objmenu.rest_filter(filter_parameter, mode)
-    if status_code != '000-0000':
+    if status_code != '000-00000':
         log_msg_args = [msg]
         api_msg_args = [msg]
         raise AppException(status_code, log_msg_args, api_msg_args)
