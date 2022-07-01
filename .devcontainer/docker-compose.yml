@@ -19,6 +19,7 @@ services:
       - DB_USER=ITA_USER
       - DB_PASSWORD=password
       - DB_ROOT_PASSWORD=password
+      - STORAGEPATH=/storage/
   ita-api-admin:
     build:
       dockerfile: ./ita_root/ita_api_admin/Dockerfile
