@@ -804,7 +804,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_5'
+                $ref: '#/components/schemas/inline_response_200_7'
         "401":
           description: Unauthorized
           content:
@@ -1179,13 +1179,23 @@ components:
           type: string
           example: 000-00000
         data:
-          type: object
+          $ref: '#/components/schemas/inline_response_200_5_data'
         message:
           type: string
           example: SUCCESS
       example:
         result: 000-00000
-        data: {}
+        data:
+          user_id: id-xxxxxxxx
+          user_name: User Name
+          roles:
+          - role1
+          - role2
+          - role3
+          workspaces:
+          - workspace1
+          - workspace2
+          - workspace3
         message: SUCCESS
     inline_response_200_6:
       type: object
@@ -1201,8 +1211,11 @@ components:
       example:
         result: 000-00000
         data:
-          menus:
-            "101":
+          menu_groups:
+          - disp_seq: 10
+            id: "101"
+            menu_group_name: メニューグループ1
+            menus:
             - disp_seq: 10
               id: "10101"
               menu_name: メニュー1
@@ -1215,7 +1228,10 @@ components:
               id: "10103"
               menu_name: メニュー3
               menu_name_rest: menu_3
-            "102":
+          - disp_seq: 20
+            id: "102"
+            menu_group_name: メニューグループ2
+            menus:
             - disp_seq: 10
               id: "10104"
               menu_name: メニュー4
@@ -1228,7 +1244,10 @@ components:
               id: "10106"
               menu_name: メニュー6
               menu_name_rest: menu_6
-            "103":
+          - disp_seq: 30
+            id: "103"
+            menu_group_name: メニューグループ3
+            menus:
             - disp_seq: 10
               id: "10107"
               menu_name: メニュー7
@@ -1241,16 +1260,28 @@ components:
               id: "10109"
               menu_name: メニュー9
               menu_name_rest: menu_9
-          menu_groups:
-          - disp_seq: 10
-            id: "101"
-            menu_group_name: メニューグループ1
-          - disp_seq: 20
-            id: "102"
-            menu_group_name: メニューグループ2
-          - disp_seq: 30
-            id: "103"
-            menu_group_name: メニューグループ3
+        message: SUCCESS
+    inline_response_200_7:
+      type: object
+      properties:
+        result:
+          type: string
+          example: 000-00000
+        data:
+          type: object
+          additionalProperties:
+            type: string
+            properties:
+              panelFileEncoded:
+                description: メニューグループの画像ファイルをbase64エンコードした値
+          description: メニューグループIDがkeyになる
+        message:
+          type: string
+          example: SUCCESS
+      example:
+        result: 000-00000
+        data:
+          key: data
         message: SUCCESS
     MAINTENANCE_PARAMETERS_parameter:
       type: object
@@ -1318,6 +1349,34 @@ components:
             column_type: 0
             column_group_name: column_group_name
             ref_sort_conditions: ref_sort_conditions
+    inline_response_200_5_data:
+      type: object
+      properties:
+        roles:
+          example:
+          - role1
+          - role2
+          - role3
+        user_id:
+          example: id-xxxxxxxx
+        user_name:
+          example: User Name
+        workspaces:
+          example:
+          - workspace1
+          - workspace2
+          - workspace3
+      example:
+        user_id: id-xxxxxxxx
+        user_name: User Name
+        roles:
+        - role1
+        - role2
+        - role3
+        workspaces:
+        - workspace1
+        - workspace2
+        - workspace3
     inline_response_200_6_data:
       type: object
       properties:
@@ -1326,15 +1385,7 @@ components:
           - disp_seq: 10
             id: "101"
             menu_group_name: メニューグループ1
-          - disp_seq: 20
-            id: "102"
-            menu_group_name: メニューグループ2
-          - disp_seq: 30
-            id: "103"
-            menu_group_name: メニューグループ3
-        menus:
-          example:
-            "101":
+            menus:
             - disp_seq: 10
               id: "10101"
               menu_name: メニュー1
@@ -1347,7 +1398,10 @@ components:
               id: "10103"
               menu_name: メニュー3
               menu_name_rest: menu_3
-            "102":
+          - disp_seq: 20
+            id: "102"
+            menu_group_name: メニューグループ2
+            menus:
             - disp_seq: 10
               id: "10104"
               menu_name: メニュー4
@@ -1360,7 +1414,10 @@ components:
               id: "10106"
               menu_name: メニュー6
               menu_name_rest: menu_6
-            "103":
+          - disp_seq: 30
+            id: "103"
+            menu_group_name: メニューグループ3
+            menus:
             - disp_seq: 10
               id: "10107"
               menu_name: メニュー7
@@ -1374,8 +1431,11 @@ components:
               menu_name: メニュー9
               menu_name_rest: menu_9
       example:
-        menus:
-          "101":
+        menu_groups:
+        - disp_seq: 10
+          id: "101"
+          menu_group_name: メニューグループ1
+          menus:
           - disp_seq: 10
             id: "10101"
             menu_name: メニュー1
@@ -1388,7 +1448,10 @@ components:
             id: "10103"
             menu_name: メニュー3
             menu_name_rest: menu_3
-          "102":
+        - disp_seq: 20
+          id: "102"
+          menu_group_name: メニューグループ2
+          menus:
           - disp_seq: 10
             id: "10104"
             menu_name: メニュー4
@@ -1401,7 +1464,10 @@ components:
             id: "10106"
             menu_name: メニュー6
             menu_name_rest: menu_6
-          "103":
+        - disp_seq: 30
+          id: "103"
+          menu_group_name: メニューグループ3
+          menus:
           - disp_seq: 10
             id: "10107"
             menu_name: メニュー7
@@ -1414,14 +1480,4 @@ components:
             id: "10109"
             menu_name: メニュー9
             menu_name_rest: menu_9
-        menu_groups:
-        - disp_seq: 10
-          id: "101"
-          menu_group_name: メニューグループ1
-        - disp_seq: 20
-          id: "102"
-          menu_group_name: メニューグループ2
-        - disp_seq: 30
-          id: "103"
-          menu_group_name: メニューグループ3
 
