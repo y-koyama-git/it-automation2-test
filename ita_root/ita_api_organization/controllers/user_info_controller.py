@@ -17,6 +17,7 @@ from libs import user_info
 from libs import api_common
 
 
+@api_common.api_filter
 def get_menu_group_panels(organization_id, workspace_id):  # noqa: E501
     """get_menu_group_panels
 
@@ -29,9 +30,16 @@ def get_menu_group_panels(organization_id, workspace_id):  # noqa: E501
 
     :rtype: InlineResponse2005
     """
-    return 'do some magic!'
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+    
+    # ユーザの権限情報を取得
+    data = user_info.collect_menu_group_panels(objdbca)
+    
+    return data,
 
 
+@api_common.api_filter
 def get_user_auth(organization_id, workspace_id):  # noqa: E501
     """get_user_auth
 
@@ -44,7 +52,13 @@ def get_user_auth(organization_id, workspace_id):  # noqa: E501
 
     :rtype: InlineResponse2005
     """
-    return 'do some magic!'
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+    
+    # ユーザの権限情報を取得
+    data = user_info.collect_user_auth(objdbca)
+    
+    return data,
 
 
 @api_common.api_filter
