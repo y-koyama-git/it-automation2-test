@@ -50,7 +50,7 @@ def workspace_create(body, organization_id, workspace_id):  # noqa: E501
             ws_db = DBConnectWs(workspace_id, organization_id)  # noqa: F405
 
             # workspace-db already exists
-            g.applogger.debug("WS_DB:{} can be connected".format(workspace_id))  
+            g.applogger.debug("WS_DB:{} can be connected".format(workspace_id))
             return '', "ALREADY EXISTS"
         except AppException:
             # workspace-db connect info is imperfect, so remake
@@ -111,7 +111,7 @@ def workspace_create(body, organization_id, workspace_id):  # noqa: E501
     with open("sql/workspace_master.sql", "r") as f:
         sql_list = f.read().split(";\n")
         for sql in sql_list:
-            sql.replace('__ROLE_ID__', role_id)
+            sql = sql.replace('__ROLE_ID__', role_id)
             if re.fullmatch(r'[\s\n\r]*', sql) is None:
                 ws_db.sql_execute(sql)
 
