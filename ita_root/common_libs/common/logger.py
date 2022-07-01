@@ -15,7 +15,7 @@
 """
 application logging module
 """
-from flask import session
+from flask import g
 import logging
 import logging.config
 import yaml
@@ -168,19 +168,17 @@ class AppLog:
             msg: (str)
         """
         msg = ""
-        organization_id = session.get('ORGANIZATION_ID')
-        if organization_id is None:
-            return msg
-        msg += "[ORGANIZATION_ID:{}]".format(organization_id)
-        
-        workspace_id = session.get('WORKSPACE_ID')
-        if workspace_id is None:
-            return msg + " "
-        msg += "[WORKSPACE_ID:{}]".format(workspace_id)
 
-        user_id = session.get('USER_ID')
-        if user_id is None:
+        if "ORGANIZATION_ID" not in g:
+            return msg
+        msg += "[ORGANIZATION_ID:{}]".format(g.ORGANIZATION_ID)
+
+        if "WORKSPACE_ID" not in g:
             return msg + " "
-        msg += "[USER_ID:{}]".format(workspace_id)
+        msg += "[WORKSPACE_ID:{}]".format(g.WORKSPACE_ID)
+
+        if "USER_ID" not in g:
+            return msg + " "
+        msg += "[USER_ID:{}]".format(g.USER_ID)
 
         return msg + " "
