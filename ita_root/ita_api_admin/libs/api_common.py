@@ -14,7 +14,7 @@
 """
 api common function module
 """
-from flask import request, g, session
+from flask import request, g
 import os
 import traceback
 
@@ -135,8 +135,8 @@ def before_request_handler():
         if user_id is None or roles is None:
             raise AppException("400-00001", ["User-Id and Roles"], ["User-Id and Roles"])
 
-        session['USER_ID'] = user_id
-        session['ROLES'] = roles
+        g.USER_ID = user_id
+        g.ROLES = roles
 
         debug_args = [request.method + ":" + request.url]
         g.applogger.info("[api-start] url:{}".format(*debug_args))
@@ -145,16 +145,16 @@ def before_request_handler():
         language = request.headers.get("Language")
         if not language:
             language = os.environ.get("DEFAULT_LANGUAGE")
-        session['LANGUAGE'] = language
+        g.LANGUAGE = language
 
         g.appmsg.set_lang(language)
         g.applogger.info("LANGUAGE({}) is set".format(language))
     except AppException as e:
         # catch - raise AppException("xxx-xxxxx", log_format, msg_format)
-        return app_exception_response("before-request", e)
+        return app_exception_response(e)
     except Exception as e:
         # catch - other all error
-        return exception_response("before-request", e)
+        return exception_response(e)
 
 
 def api_filter(func):

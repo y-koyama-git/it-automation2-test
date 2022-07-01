@@ -14,7 +14,7 @@
 """
 database connection agent module for workspace-db on mariadb
 """
-from flask import session
+from flask import g
 
 from .dbconnect_common import DBConnectCommon
 from .dbconnect_org import DBConnectOrg
@@ -39,7 +39,7 @@ class DBConnectWs(DBConnectCommon):
             return True
 
         if workspace_id is None:
-            workspace_id = session.get('WORKSPACE_ID')
+            workspace_id = g.WORKSPACE_ID
         self._workspace_id = workspace_id
 
         # get db-connect-infomation from organization-db

@@ -17,7 +17,7 @@ database connection agnet class for organization-db on mariadb
 
 import pymysql.cursors  # https://pymysql.readthedocs.io/en/latable_name/
 
-from flask import session, g
+from flask import g
 
 from .dbconnect_common import DBConnectCommon
 from common_libs.common.exception import AppException
@@ -37,7 +37,7 @@ class DBConnectOrg(DBConnectCommon):
             return True
 
         if organization_id is None:
-            organization_id = session.get('ORGANIZATION_ID')
+            organization_id = g.ORGANIZATION_ID
         self.organization_id = organization_id
 
         # get db-connect-infomation from organization-db
@@ -72,7 +72,8 @@ class DBConnectOrg(DBConnectCommon):
             or
             get failure: (bool)False
         """
-        if "db_connect_info" not in g or "WSDB_DATADBASE" not in g.db_connect_info or session.get("WORKSPACE_ID") != workspace_id:
+        current_workspace_id = g.WORKSPACE_ID if "WORKSPACE_ID" in g else ""
+        if "db_connect_info" not in g or "WSDB_DATADBASE" not in g.db_connect_info or current_workspace_id != workspace_id:
             where = "WHERE `WORKSPACE_ID`=%s and IFNULL(`DISUSE_FLAG`, 0)=0"
             data_list = self.table_select("T_COMN_WORKSPACE_DB_INFO", where, [workspace_id])
 
@@ -103,7 +104,7 @@ class DBConnectOrgRoot(DBConnectOrg):
             return True
 
         if organization_id is None:
-            organization_id = session.get('ORGANIZATION_ID')
+            organization_id = g.ORGANIZATION_ID
         self.organization_id = organization_id
 
         # get db-connect-infomation from ita-common-db
