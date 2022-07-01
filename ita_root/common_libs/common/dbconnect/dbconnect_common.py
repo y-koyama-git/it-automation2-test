@@ -16,14 +16,13 @@ database connection agnet module for ita-common-db on mariadb
 """
 import pymysql.cursors  # https://pymysql.readthedocs.io/en/latable_name/
 import uuid
-import datetime
 import os
 import re
 
 from flask import g
 
 from common_libs.common.exception import AppException
-from common_libs.common.util import ky_decrypt, ky_encrypt, generate_secrets
+from common_libs.common.util import get_timestamp, ky_decrypt, ky_encrypt, generate_secrets
 
 
 class DBConnectCommon:
@@ -307,7 +306,7 @@ class DBConnectCommon:
         is_last_res = True
         for data in data_list:
             # auto set
-            timestamp = str(datetime.datetime.now())
+            timestamp = str(get_timestamp())
             data[primary_key_name] = str(self._uuid_create())
             data[self._COLUMN_NAME_TIMESTAMP] = timestamp
 
@@ -370,7 +369,7 @@ class DBConnectCommon:
         is_last_res = True
         for data in data_list:
             # auto set
-            timestamp = str(datetime.datetime.now())
+            timestamp = str(get_timestamp())
             data[self._COLUMN_NAME_TIMESTAMP] = timestamp
 
             # make sql statement

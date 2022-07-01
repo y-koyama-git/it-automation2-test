@@ -90,10 +90,10 @@ class AppLog:
         if len(data_list) == 1:
             log_level = data_list[0]['VALUE']
             self.set_level(log_level)
+            self.info("my LOG-LEVEL({}) is set".format(log_level))
         else:
             log_level = False
 
-        self.debug("my LOG-LEVEL({}) is set".format(log_level))
         return log_level
 
     def set_level(self, level):
@@ -113,7 +113,7 @@ class AppLog:
         Arguments:
             message: message for output
         """
-        self.__logger_obj.critical(self.env_message() + str(message))
+        self.__logger_obj.critical(self.__env_message() + str(message))
 
     def exception(self, message):
         """
@@ -122,7 +122,7 @@ class AppLog:
         Arguments:
             message: message for output
         """
-        self.__logger_obj.exception(self.env_message() + str(message))
+        self.__logger_obj.exception(self.__env_message() + str(message))
 
     def error(self, message):
         """
@@ -131,7 +131,7 @@ class AppLog:
         Arguments:
             message: message for output
         """
-        self.__logger_obj.error(self.env_message() + str(message))
+        self.__logger_obj.error(self.__env_message() + str(message))
 
     def warning(self, message):
         """
@@ -140,7 +140,7 @@ class AppLog:
         Arguments:
             message: message for output
         """
-        self.__logger_obj.warning(self.env_message() + str(message))
+        self.__logger_obj.warning(self.__env_message() + str(message))
 
     def info(self, message):
         """
@@ -149,7 +149,7 @@ class AppLog:
         Arguments:
             message: message for output
         """
-        self.__logger_obj.info(self.env_message() + str(message))
+        self.__logger_obj.info(self.__env_message() + str(message))
 
     def debug(self, message):
         """
@@ -158,9 +158,9 @@ class AppLog:
         Arguments:
             message: message for output
         """
-        self.__logger_obj.debug(self.env_message() + str(message))
+        self.__logger_obj.debug(self.__env_message() + str(message))
 
-    def env_message(self):
+    def __env_message(self):
         """
         make environ info message
 
@@ -177,5 +177,10 @@ class AppLog:
         if workspace_id is None:
             return msg + " "
         msg += "[WORKSPACE_ID:{}]".format(workspace_id)
+
+        user_id = session.get('USER_ID')
+        if user_id is None:
+            return msg + " "
+        msg += "[USER_ID:{}]".format(workspace_id)
 
         return msg + " "

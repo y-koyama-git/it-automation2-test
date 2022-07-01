@@ -20,6 +20,8 @@ import string
 import base64
 import codecs
 from pathlib import Path
+import datetime
+import re
 
 
 def ky_encrypt(lcstr):
@@ -115,6 +117,15 @@ def ky_file_decrypt(src_file, dest_file):
 
 
 def generate_secrets(length=16, punctuation=''):
+    """
+    generate secrets
+
+    Arguments:
+        length: secrets length
+        punctuation: symbol used
+    Returns:
+        (str)secrets value
+    """
     # string.ascii_letters - alfabet lower and upper
     # string.digits - number
     # string.punctuation - symbol  !"#$%&'()*+,-./:;<=>?@[\]^_`{|}~
@@ -122,6 +133,62 @@ def generate_secrets(length=16, punctuation=''):
     secrets_val = ''.join(secrets.choice(pass_chars) for x in range(length))
 
     return secrets_val
+
+
+def get_timestamp():
+    """
+    get timestamp
+
+    Returns:
+        (timestamp)2022-07-01 07:36:24.551751
+    """
+    return datetime.datetime.now()
+
+
+def arrange_stacktrace_format(t):
+    """
+    stacktrace
+
+    Arguments:
+        t: return traceback.format_exc()
+    Returns:
+        (str)
+    """
+    retStr = ""
+
+    exception_block_arr = t.split('Traceback (most recent call last):\n')
+    # exception_block = exception_block_arr[1]  # most deep exception called
+    exception_block_index = 0
+    for exception_block in exception_block_arr:
+        exception_block = re.sub(r'\n\nDuring handling of the above exception, another exception occurred:\n\n', '', exception_block.strip())
+        if exception_block[0:4] != 'File':
+            continue
+
+        retStr = retStr + "\n{} : exception block".format(exception_block_index)
+        exception_block_index = exception_block_index + 1
+
+        trace_block_arr = re.split('File', exception_block)
+        for trace_block in trace_block_arr:
+            row_arr = re.split('\n', str(trace_block.strip()))
+            row_index = 0
+            row_str = ""
+            length = len(row_arr) - 1
+            if length == 0:
+                continue
+
+            for row in row_arr:
+
+                if row_index == 0:
+                    row_str = "\n -> " + row
+                elif row_index == 1:
+                    row_str = row_str + ", " + row.strip()
+                    retStr = retStr + row_str
+                elif row_index == 2:
+                    retStr = retStr + "\n " + row.strip()
+
+                row_index = row_index + 1
+
+    return retStr
 
 
 if __name__ == '__main__':
