@@ -21,9 +21,10 @@ import traceback
 from common_libs.common.exception import AppException
 from common_libs.common.logger import AppLog
 from common_libs.common.message_class import MessageTemplate
+from common_libs.common.util import get_timestamp, arrange_stacktrace_format
 
 
-def make_response(data=None, msg="", result_code="000-00000", status_code=200):
+def make_response(data=None, msg="", result_code="000-00000", status_code=200, ts=None):
     """
     make http response
     
@@ -40,21 +41,22 @@ def make_response(data=None, msg="", result_code="000-00000", status_code=200):
 
     res_body = {
         "result": result_code,
-        "message": msg
+        "message": msg,
     }
-    if not data:
-        return res_body, status_code
-    
-    res_body["data"] = data
+    res_body["ts"] = ts if ts else str(get_timestamp())
+    if data:
+        res_body["data"] = data
+
+    log_status = "success" if result_code == "000-00000" else "error"
+    g.applogger.info("[api-end][{}]{}".format(log_status, (res_body, status_code)))
     return res_body, status_code
 
 
-def app_exception_response(name, e):
+def app_exception_response(e):
     '''
     make response when AppException occured
     
     Argument:
-        name: location for AppException occured
         e: AppException
     Returns:
         (flask)response
@@ -65,7 +67,7 @@ def app_exception_response(name, e):
         if isinstance(args[0], AppException):
             args = args[0].args
         elif isinstance(args[0], Exception):
-            return exception_response(name, args[0])
+            return exception_response(args[0])
         else:
             is_arg = True
 
@@ -88,18 +90,16 @@ def app_exception_response(name, e):
     if 500 <= status_code:
         status_code = 500
 
-    res = make_response(None, api_msg, result_code, status_code)
-    g.applogger.error("[api-error] {}".format(log_msg))
-    g.applogger.debug("[{}][error] response: {}".format(name, res))
-    return res
+    timestamp = str(get_timestamp())
+    g.applogger.error("[error][ts={}]{}".format(timestamp, log_msg))
+    return make_response(None, api_msg, result_code, status_code, timestamp)
 
 
-def exception_response(name, e):
+def exception_response(e):
     '''
     make response when Exception occured
     
     Argument:
-        name: location for Exception occured
         e: Exception
     Returns:
         (flask)response
@@ -108,31 +108,19 @@ def exception_response(name, e):
     is_arg = False
     while is_arg is False:
         if isinstance(args[0], AppException):
-            return app_exception_response(name, args[0])
+            return app_exception_response(args[0])
         elif isinstance(args[0], Exception):
             args = args[0].args
         else:
             is_arg = True
 
     # catch - other all error
-    # exception_block_arr = traceback.format_exc(limit=3).split("Traceback (most recent call last):\n")
-    # exception_block = exception_block_arr[1]  # most deep exception called
-    # exception_block = re.sub(r'\n\nDuring handling of the above.*?\n\n', '', exception_block)
-    # print(exception_block)
-    
-    # if exception_block[0:7] == '  File ':
-    #     # print(exception_block)
-    #     trace_block_arr = re.split('  File ', exception_block)
-    #     for trace_block in trace_block_arr:
-    #         trace_block = re.sub(r'\n\nDuring handling of the above.*?\n\n', '', trace_block)
-    #         print(trace_block)
-    t = traceback.format_exc()
-    print(t)
+    timestamp = str(get_timestamp())
+    t = traceback.format_exc(limit=3)
+    # g.applogger.exception("[error][ts={}]".format(timestamp))
+    g.applogger.error("[error][ts={}]{}".format(timestamp, arrange_stacktrace_format(t)))
 
-    res = make_response(None, "SYSTEM ERROR", "999-99999", 500)
-    # g.applogger.error("[api-error] {}".format(e))
-    g.applogger.debug("[{}][error] response: {}".format(name, res))
-    return res
+    return make_response(None, "SYSTEM ERROR", "999-99999", 500, timestamp)
 
 
 def before_request_handler():
@@ -141,7 +129,7 @@ def before_request_handler():
         g.applogger = AppLog()
         g.appmsg = MessageTemplate()
 
-        # request-header check(base)
+        # request-header check
         user_id = request.headers.get("User-Id")
         roles = request.headers.get("Roles")
         if user_id is None or roles is None:
@@ -149,7 +137,10 @@ def before_request_handler():
 
         session['USER_ID'] = user_id
         session['ROLES'] = roles
-        
+
+        debug_args = [request.method + ":" + request.url]
+        g.applogger.info("[api-start] url:{}".format(*debug_args))
+
         # set language
         language = request.headers.get("Language")
         if not language:
@@ -157,7 +148,7 @@ def before_request_handler():
         session['LANGUAGE'] = language
 
         g.appmsg.set_lang(language)
-        g.applogger.debug("LANGUAGE({}) is set".format(language))
+        g.applogger.info("LANGUAGE({}) is set".format(language))
     except AppException as e:
         # catch - raise AppException("xxx-xxxxx", log_format, msg_format)
         return app_exception_response("before-request", e)
@@ -186,21 +177,17 @@ def api_filter(func):
             (flask)response
         '''
         try:
-            # controller start
-            g.applogger.debug("[api-start] {} -> {}, list:{} dict:{}".format(func.__module__, func.__name__, args, kwargs))
+            g.applogger.debug("controller start -> {}".format(kwargs))
 
             # controller execute and make response
             controller_res = func(*args, **kwargs)
-            res = make_response(*controller_res)
 
-            # controller end
-            g.applogger.debug("[api-end][success] response: {}".format(res))
-            return res
+            return make_response(*controller_res)
         except AppException as e:
             # catch - raise AppException("xxx-xxxxx", log_format, msg_format)
-            return app_exception_response("api-end", e)
+            return app_exception_response(e)
         except Exception as e:
             # catch - other all error
-            return exception_response("api-end", e)
+            return exception_response(e)
 
     return wrapper
