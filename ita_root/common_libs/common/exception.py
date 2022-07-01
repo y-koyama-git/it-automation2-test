@@ -14,28 +14,33 @@
 """
 exception module for application
 """
-# from flask import g
 
 
 class AppException(Exception):
     """
     exception class for application
     """
-    # def __init__(self, *args):
-    #     """
-    #     constructor
-    #         make exception-message (result_code, msg)
+    def __init__(self, *args):
+        """
+        constructor
+            make AppException args (result_code, log_msg_args, api_msg_args)
 
-    #     Arguments:
-    #         result_code: "500-0001"
-    #         format_strings: list for message args
-    #     Returns:
-            
-    #     """
-    #     result_code, format_strings = args
+        Arguments:
+            result_code: "500-0001"
+            log_msg_args: list for message args
+            api_msg_args: list for message args
+        """
+        api_msg_args = []
+        log_msg_args = []
 
-    #     # get message
-    #     msg = g.appmsg.get_message(result_code, format_strings)
-    #     self.args = result_code, msg
+        if len(args) == 3:
+            result_code, log_msg_args, api_msg_args = args
+        elif len(args) == 2:
+            result_code, log_msg_args = args
+        else:
+            result_code = args[0]
+
+        # set args
+        self.args = result_code, log_msg_args, api_msg_args
 
     # def __str__(self):

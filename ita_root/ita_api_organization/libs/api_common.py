@@ -73,16 +73,7 @@ def app_exception_response(e):
             is_arg = True
 
     # catch - raise AppException("xxx-xxxxx", log_format, msg_format), and get message
-    if len(args) == 3:
-        result_code, log_msg_args, api_msg_args = args
-    elif len(args) == 2:
-        result_code, log_msg_args = args
-        api_msg_args = []
-    else:
-        result_code = args
-        api_msg_args = []
-        log_msg_args = []
-
+    result_code, log_msg_args, api_msg_args = args
     log_msg = g.appmsg.get_log_message(result_code, log_msg_args)
     api_msg = g.appmsg.get_api_message(result_code, api_msg_args)
     
@@ -117,9 +108,9 @@ def exception_response(e):
 
     # catch - other all error
     timestamp = str(get_timestamp())
-    # t = traceback.format_exc(limit=3)
-    g.applogger.exception("[error][ts={}]".format(timestamp))
-    # g.applogger.error("[error][ts={}]{}".format(timestamp, arrange_stacktrace_format(t)))
+    t = traceback.format_exc(limit=3)
+    # g.applogger.exception("[error][ts={}]".format(timestamp))
+    g.applogger.error("[error][ts={}]{}".format(timestamp, arrange_stacktrace_format(t)))
 
     return make_response(None, "SYSTEM ERROR", "999-99999", 500, timestamp)
 
