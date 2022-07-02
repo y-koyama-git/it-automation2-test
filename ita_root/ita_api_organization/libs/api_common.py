@@ -25,6 +25,9 @@ from common_libs.common.message_class import MessageTemplate
 from common_libs.common.util import get_timestamp, arrange_stacktrace_format
 
 
+api_timestamp = None
+
+
 def make_response(data=None, msg="", result_code="000-00000", status_code=200, ts=None):
     """
     make http response
@@ -43,13 +46,13 @@ def make_response(data=None, msg="", result_code="000-00000", status_code=200, t
     res_body = {
         "result": result_code,
         "message": msg,
+        "ts": api_timestamp
     }
-    res_body["ts"] = ts if ts else str(get_timestamp())
     if data:
         res_body["data"] = data
 
     log_status = "success" if result_code == "000-00000" else "error"
-    g.applogger.info("[api-end][{}]{}".format(log_status, (res_body, status_code)))
+    g.applogger.info("[ts={}][api-end][{}] {}".format(api_timestamp, log_status, (res_body, status_code)))
     return res_body, status_code
 
 
@@ -82,9 +85,8 @@ def app_exception_response(e):
     if 500 <= status_code:
         status_code = 500
 
-    timestamp = str(get_timestamp())
-    g.applogger.error("[error][ts={}]{}".format(timestamp, log_msg))
-    return make_response(None, api_msg, result_code, status_code, timestamp)
+    g.applogger.error("[ts={}][error] {}".format(api_timestamp, log_msg))
+    return make_response(None, api_msg, result_code, status_code)
 
 
 def exception_response(e):
@@ -107,19 +109,57 @@ def exception_response(e):
             is_arg = True
 
     # catch - other all error
-    timestamp = str(get_timestamp())
     t = traceback.format_exc(limit=3)
-    # g.applogger.exception("[error][ts={}]".format(timestamp))
-    g.applogger.error("[error][ts={}]{}".format(timestamp, arrange_stacktrace_format(t)))
+    # g.applogger.exception("[error][ts={}]".format(api_timestamp))
+    g.applogger.error("[ts={}][error] {}".format(api_timestamp, arrange_stacktrace_format(t)))
 
-    return make_response(None, "SYSTEM ERROR", "999-99999", 500, timestamp)
+    return make_response(None, "SYSTEM ERROR", "999-99999", 500)
+
+
+def api_filter(func):
+    '''
+    wrap api controller
+    
+    Argument:
+        func: controller(def)
+    Returns:
+        controller wrapper
+    '''
+
+    def wrapper(*args, **kwargs):
+        '''
+        controller wrapper
+        
+        Argument:
+            *args, **kwargs: controller args
+        Returns:
+            (flask)response
+        '''
+        try:
+            g.applogger.debug("[ts={}] controller start -> {}".format(api_timestamp, kwargs))
+
+            # controller execute and make response
+            controller_res = func(*args, **kwargs)
+
+            return make_response(*controller_res)
+        except AppException as e:
+            # catch - raise AppException("xxx-xxxxx", log_format, msg_format)
+            return app_exception_response(e)
+        except Exception as e:
+            # catch - other all error
+            return exception_response(e)
+
+    return wrapper
 
 
 def before_request_handler():
     """
     called before controller is excuted
     """
+    global api_timestamp
+
     try:
+        api_timestamp = str(get_timestamp())
         # create app log instance and message class instance
         g.applogger = AppLog()
         g.appmsg = MessageTemplate()
@@ -141,7 +181,7 @@ def before_request_handler():
         g.ROLES = roles
 
         debug_args = [request.method + ":" + request.url]
-        g.applogger.info("[api-start] url:{}".format(*debug_args))
+        g.applogger.info("[ts={}][api-start] url:{}".format(api_timestamp, *debug_args))
 
         # set language
         language = request.headers.get("Language")
@@ -196,39 +236,3 @@ def before_request_handler():
     except Exception as e:
         # catch - other all error
         return exception_response(e)
-
-
-def api_filter(func):
-    '''
-    wrap api controller
-    
-    Argument:
-        func: controller(def)
-    Returns:
-        controller wrapper
-    '''
-
-    def wrapper(*args, **kwargs):
-        '''
-        controller wrapper
-        
-        Argument:
-            *args, **kwargs: controller args
-        Returns:
-            (flask)response
-        '''
-        try:
-            g.applogger.debug("controller start -> {}".format(kwargs))
-
-            # controller execute and make response
-            controller_res = func(*args, **kwargs)
-
-            return make_response(*controller_res)
-        except AppException as e:
-            # catch - raise AppException("xxx-xxxxx", log_format, msg_format)
-            return app_exception_response(e)
-        except Exception as e:
-            # catch - other all error
-            return exception_response(e)
-
-    return wrapper
