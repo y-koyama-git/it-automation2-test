@@ -35,46 +35,32 @@ class MessageTemplate:
         self.messages = {'log': {}, 'api': {}}
         
         # read message files
-        ret = self.__read_message_files()
-        if ret is not True:
-            # ####メモ：失敗時の動作を考える必要あり
-            # ファイル読み込み失敗時の処理
-            print(ret)
+        self.__read_message_files()
 
     """
     メッセージファイル格納ディレクトリ配下の.jsonファイルを全て読み込み、
     self.messages(dict)に保存する。
-
-    Returns:
-        boolean
-
     """
     def __read_message_files(self):
-        try:
-            message_files = glob.glob(self.path + '/*.json')
-            for file in message_files:
-                # read message file
-                op_file = open(file, 'r', encoding="utf-8")
-                file_json = json.load(op_file)
-                
-                # set messages in dict
-                file_name = os.path.splitext(os.path.basename(file))[0]
-                file_type = file_name[:3].lower()
-                if(file_type == 'log'):
-                    file_type = file_name[:3].lower()
-                    self.messages['log'] = file_json
-                else:
-                    s_file_name = file_name.split('_')
-                    msg_lang = s_file_name[1].lower()
-                    self.messages['api'][msg_lang] = file_json
+        message_files = glob.glob(self.path + '/*.json')
+        for file in message_files:
+            # read message file
+            op_file = open(file, 'r', encoding="utf-8")
+            file_json = json.load(op_file)
             
-            return True
-        
-        except Exception as e:
-            return e
+            # set messages in dict
+            file_name = os.path.splitext(os.path.basename(file))[0]
+            file_type = file_name[:3].lower()
+            if(file_type == 'log'):
+                file_type = file_name[:3].lower()
+                self.messages['log'] = file_json
+            else:
+                s_file_name = file_name.split('_')
+                msg_lang = s_file_name[1].lower()
+                self.messages['api'][msg_lang] = file_json
 
     """
-    set language
+    言語設定
     
     Arguments:
         lang: (str) "ja" | "en"
