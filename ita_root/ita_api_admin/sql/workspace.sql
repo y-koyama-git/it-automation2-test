@@ -126,6 +126,7 @@ CREATE TABLE T_COMN_MENU_TABLE_LINK
     MENU_INFO_JA                    TEXT,                                       -- 説明(ja)
     MENU_INFO_EN                    TEXT,                                       -- 説明(en)
     SHEET_TYPE                      VARCHAR(2),                                 -- シートタイプ
+    HISTORY_TABLE_FLAG              VARCHAR(2),                                 -- 履歴テーブル有無
     INHERIT                         VARCHAR(2),                                 -- 継承フラグ
     VERTICAL                        VARCHAR(2),                                 -- 縦型フラグ
     ROW_INSERT_FLAG                 VARCHAR(2),                                 -- 登録許可フラグ
@@ -155,6 +156,7 @@ CREATE TABLE T_COMN_MENU_TABLE_LINK_JNL
     MENU_INFO_JA                    TEXT,                                       -- 説明(ja)
     MENU_INFO_EN                    TEXT,                                       -- 説明(en)
     SHEET_TYPE                      VARCHAR(2),                                 -- シートタイプ
+    HISTORY_TABLE_FLAG              VARCHAR(2),                                 -- 履歴テーブル有無
     INHERIT                         VARCHAR(2),                                 -- 継承フラグ
     VERTICAL                        VARCHAR(2),                                 -- 縦型フラグ
     ROW_INSERT_FLAG                 VARCHAR(2),                                 -- 登録許可フラグ
@@ -198,6 +200,8 @@ CREATE TABLE T_COMN_MENU_COLUMN_LINK
     VIEW_ITEM                       VARCHAR(2),                                 -- 出力対象フラグ
     UNIQUE_ITEM                     VARCHAR(2),                                 -- 必須入力フラグ
     REQUIRED_ITEM                   VARCHAR(2),                                 -- 一意制約フラグ
+    AUTOREG_HIDE_ITEM               VARCHAR(2),                                 -- 選択対象外フラグ
+    AUTOREG_ONLY_ITEM               VARCHAR(2),                                 -- 代入値自動登録選択項目フラグ
     INITIAL_VALUE                   TEXT,                                       -- 初期値
     VALIDATE_OPTION                 TEXT,                                       -- バリデーション値
     BEFORE_VALIDATE_REGISTER        TEXT,                                       -- 個別バリデーション前
@@ -237,6 +241,8 @@ CREATE TABLE T_COMN_MENU_COLUMN_LINK_JNL
     VIEW_ITEM                       VARCHAR(2),                                 -- 出力対象フラグ
     UNIQUE_ITEM                     VARCHAR(2),                                 -- 必須入力フラグ
     REQUIRED_ITEM                   VARCHAR(2),                                 -- 一意制約フラグ
+    AUTOREG_HIDE_ITEM               VARCHAR(2),                                 -- 選択対象外フラグ
+    AUTOREG_ONLY_ITEM               VARCHAR(2),                                 -- 代入値自動登録選択項目フラグ
     INITIAL_VALUE                   TEXT,                                       -- 初期値
     VALIDATE_OPTION                 TEXT,                                       -- バリデーション値
     BEFORE_VALIDATE_REGISTER        TEXT,                                       -- 個別バリデーション前
