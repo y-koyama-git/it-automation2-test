@@ -14,7 +14,7 @@
 
 import os
 from common_libs.common import *  # noqa: F403
-from flask import session
+from flask import g
 
 
 def collect_menu_info(objdbca, menu):
@@ -35,7 +35,7 @@ def collect_menu_info(objdbca, menu):
     t_common_menu_group = 'T_COMN_MENU_GROUP'
     
     # 変数定義
-    lang = session.get("LANGUAGE")
+    lang = g.LANGUAGE
     
     # ####メモ：ユーザが対象のメニューの情報を取得可能かどうかのロールチェック処理が必要
     role_check = True
@@ -245,7 +245,7 @@ def collect_pulldown_list(objdbca, menu, column):
     t_common_menu = 'T_COMN_MENU'
     t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
     t_common_column_class = 'T_COMN_COLUMN_CLASS'
-    lang = session.get("LANGUAGE")
+    lang = g.LANGUAGE
     
     # ####メモ：ユーザが対象のメニューの情報を取得可能かどうかのロールチェック処理が必要
     role_check = True

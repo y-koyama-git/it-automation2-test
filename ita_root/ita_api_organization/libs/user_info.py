@@ -14,7 +14,7 @@
 
 import os
 from common_libs.common import *  # noqa: F403
-from flask import session
+from flask import g
 
 # ####メモ：あとでutil.pyを使うため不要になる
 import base64
@@ -35,8 +35,8 @@ def collect_menu_group_panels(objdbca):
     t_common_menu_group = 'T_COMN_MENU_GROUP'
     
     # 変数定義
-    user_id = session.get("USER_ID")
-    # lang = session.get("LANGUAGE")
+    user_id = g.USER_ID
+    # lang = g.LANGUAGE
     
     # ####メモ：現状ユーザIDとロールと取得可能メニューについての結びつけを行う機能が未実装のため、すべてのメニューグループ・メニューをリターンする処理とする。
     #     　　：最終的には対象のユーザが取得可能なメニューグループ・メニューのみに絞る処理の実装が必要。
@@ -85,8 +85,8 @@ def collect_user_auth(objdbca):
     # ロールとワークスペースはそれぞれID/NAMEと持ちたいかも。その場合、[{"id": "xxx", "name": "yyy"}, {"id": "xxx", "name": "yyy"}]というような構造にする？
     
     # 変数定義
-    user_id = session.get("USER_ID")
-    # lang = session.get("LANGUAGE")
+    user_id = g.USER_ID
+    # lang = g.LANGUAGE
     
     # ユーザ名を取得
     # ####メモ：共通認証基盤側からユーザ名を取得する処理
@@ -123,8 +123,8 @@ def collect_menus(objdbca):
     t_common_menu_group = 'T_COMN_MENU_GROUP'
     
     # 変数定義
-    user_id = session.get("USER_ID")
-    lang = session.get("LANGUAGE")
+    user_id = g.USER_ID
+    lang = g.LANGUAGE
     
     # ####メモ：現状ユーザIDとロールと取得可能メニューについての結びつけを行う機能が未実装のため、すべてのメニューグループ・メニューをリターンする処理とする。
     #     　　：最終的には対象のユーザが取得可能なメニューグループ・メニューのみに絞る処理の実装が必要。
