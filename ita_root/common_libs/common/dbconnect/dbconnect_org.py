@@ -74,7 +74,7 @@ class DBConnectOrg(DBConnectCommon):
         """
         current_workspace_id = g.WORKSPACE_ID if "WORKSPACE_ID" in g else ""
         if "db_connect_info" not in g or "WSDB_DATADBASE" not in g.db_connect_info or current_workspace_id != workspace_id:
-            where = "WHERE `WORKSPACE_ID`=%s and IFNULL(`DISUSE_FLAG`, 0)=0"
+            where = "WHERE `WORKSPACE_ID`=%s and `DISUSE_FLAG`=0"
             data_list = self.table_select("T_COMN_WORKSPACE_DB_INFO", where, [workspace_id])
 
             if len(data_list) == 0:

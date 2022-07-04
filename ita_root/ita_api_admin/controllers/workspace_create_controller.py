@@ -82,6 +82,7 @@ def workspace_create(body, organization_id, workspace_id):  # noqa: E501
             'DB_USER': user_name,
             'DB_PASSWORD': ky_encrypt(user_password),
             'DB_DATADBASE': ws_db_name,
+            'DISUSE_FLAG': 0
         }
         org_db.db_transaction_start()
         org_db.table_insert("T_COMN_WORKSPACE_DB_INFO", data, "PRIMARY_KEY")

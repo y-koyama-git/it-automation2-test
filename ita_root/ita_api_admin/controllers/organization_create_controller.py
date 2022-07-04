@@ -80,6 +80,7 @@ def organization_create(body, organization_id):  # noqa: E501
             'DB_PASSWORD': ky_encrypt(user_password),
             'DB_DATADBASE': org_db_name,
             'DB_ROOT_PASSWORD': ky_encrypt(os.environ.get('DB_ROOT_PASSWORD')),
+            'DISUSE_FLAG': 0
         }
         common_db.db_transaction_start()
         common_db.table_insert("T_COMN_ORGANIZATION_DB_INFO", data, "PRIMARY_KEY")
