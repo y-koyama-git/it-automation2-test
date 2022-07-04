@@ -30,7 +30,8 @@ def rest_filter(objdbca, menu, filter_parameter):
             mode: 本体 / 履歴
         RETRUN:
             statusCode, {}, msg
-    """    
+    """
+
     role_check = True
     if not role_check:
         # ####メモ：401を意図的に返したいので最終的に自作Exceptionクラスに渡す。引数のルールは別途決める必要あり。
@@ -69,8 +70,6 @@ def rest_filter_journal(objdbca, menu, uuid):
     
     result_data = {}
 
-    # 変数定義
-    lang = os.environ['LANGUAGE']
     
     role_check = True
     if not role_check:
@@ -94,4 +93,4 @@ def rest_filter_journal(objdbca, menu, uuid):
         api_msg_args = [msg]
         raise AppException(status_code, log_msg_args, api_msg_args)
 
-    return result_data
+    return result
