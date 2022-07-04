@@ -18,14 +18,14 @@ organization_create
 # import connexion
 from flask import g
 
-from libs import api_common
+from common_libs.api import api_filter
 from common_libs.common.exception import AppException
 from common_libs.common.dbconnect import *  # noqa: F403
 from common_libs.common.util import ky_encrypt
 import os
 
 
-@api_common.api_filter
+@api_filter
 def organization_create(body, organization_id):  # noqa: E501
     """organization_create
 
@@ -80,7 +80,8 @@ def organization_create(body, organization_id):  # noqa: E501
             'DB_PASSWORD': ky_encrypt(user_password),
             'DB_DATADBASE': org_db_name,
             'DB_ROOT_PASSWORD': ky_encrypt(os.environ.get('DB_ROOT_PASSWORD')),
-            'DISUSE_FLAG': 0
+            'DISUSE_FLAG': 0,
+            'LAST_UPDATE_USER': g.get('USER_ID')
         }
         common_db.db_transaction_start()
         common_db.table_insert("T_COMN_ORGANIZATION_DB_INFO", data, "PRIMARY_KEY")
@@ -110,7 +111,8 @@ def organization_create(body, organization_id):  # noqa: E501
     return '', msg
 
 
-def organization_delete(organization_id):  # noqa: E501
+@api_filter
+def organization_delete(body, organization_id):  # noqa: E501
     """organization_delete
 
     Organizationを削除する # noqa: E501

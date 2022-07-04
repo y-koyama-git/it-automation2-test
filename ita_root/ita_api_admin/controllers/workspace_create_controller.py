@@ -18,14 +18,14 @@ workspace_create
 # import connexion
 from flask import g
 
-from libs import api_common
+from common_libs.api import api_filter
 from common_libs.common.exception import AppException
 from common_libs.common.dbconnect import *  # noqa: F403
 from common_libs.common.util import ky_encrypt
 import re
 
 
-@api_common.api_filter
+@api_filter
 def workspace_create(body, organization_id, workspace_id):  # noqa: E501
     """workspace_create
 
@@ -82,7 +82,8 @@ def workspace_create(body, organization_id, workspace_id):  # noqa: E501
             'DB_USER': user_name,
             'DB_PASSWORD': ky_encrypt(user_password),
             'DB_DATADBASE': ws_db_name,
-            'DISUSE_FLAG': 0
+            'DISUSE_FLAG': 0,
+            'LAST_UPDATE_USER': g.get('USER_ID')
         }
         org_db.db_transaction_start()
         org_db.table_insert("T_COMN_WORKSPACE_DB_INFO", data, "PRIMARY_KEY")
@@ -119,6 +120,7 @@ def workspace_create(body, organization_id, workspace_id):  # noqa: E501
     return '', msg
 
 
+@api_filter
 def workspace_delete(organization_id, workspace_id):  # noqa: E501
     """workspace_delete
 
