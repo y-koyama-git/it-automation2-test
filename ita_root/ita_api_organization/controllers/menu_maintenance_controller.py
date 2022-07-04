@@ -80,12 +80,14 @@ def maintenance_update(body, organization_id, workspace_id, menu, uuid):  # noqa
 
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
-    
+
+    cmd_type = 'Update'
     target_uuid = uuid
     parameter = {}
     if connexion.request.is_json:
         body = dict(connexion.request.get_json())
         parameter = body
+        parameter.setdefault('maintenance_type', cmd_type)
 
     result_data = menu_maintenance.rest_maintenance(objdbca, menu, parameter, target_uuid)
     return result_data,

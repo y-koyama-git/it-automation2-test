@@ -13,6 +13,8 @@
 #
 
 import json
+from flask import g
+from common_libs.driver import *
 
 """
 カラムクラス共通処理(カラム)
@@ -35,12 +37,12 @@ class Column():
             before_iud_action   :レコード操作前の処理（バリデーション、カラムの個別処理）
                 以下を呼び出し
                     before_iud_validate_check   ：カラムクラスのバリデーション
-                    before_iud_menu_action  ：カラムの個別処理
+                    before_iud_col_action  ：カラムの個別処理
 
             after_iud_action    :レコード操作後の処理（バリデーション、個別処理）
                 以下を呼び出し
                     after_iud_common_action :カラムクラスの処理
-                    after_iud_menu_action   :カラムの個別処理
+                    after_iud_col_action   :カラムの個別処理
 
 
 
@@ -54,8 +56,8 @@ class Column():
                 # カラムクラス毎のバリデーション処理
                 def check_basic_valid(self,val):
                 # カラムの個別処理
-                def before_iud_menu_action(self,val=''):
-                def after_iud_menu_action(self,val=''):
+                def before_iud_col_action(self,val=''):
+                def after_iud_col_action(self,val=''):
 
 
         filter関連
@@ -121,12 +123,39 @@ class Column():
 
     def get_objtable(self):
         """
-            テーブルデータを設定
+            テーブルデータを取得
             RETRUN:
                 self.objtable
         """
         return self.objtable
 
+    def get_organization(self):
+        """
+            organizationを取得
+            RETRUN:
+                string
+        """
+        organization_id = g.get('ORGANIZATION_ID')
+        return organization_id
+
+    def get_workspace(self):
+        """
+            workspaceを取得
+            RETRUN:
+                string
+        """
+        workspace_id = g.get('WORKSPACE_ID')
+        return workspace_id
+
+    def get_menu(self):
+        """
+            menuを取得
+            RETRUN:
+                string
+        """
+        menu_id = self.get_objtable().get('MENUINFO').get('MENU_ID')
+        return menu_id
+    
     def set_table_name(self, table_name):
         """
             テーブル名を設定
@@ -305,18 +334,24 @@ class Column():
                 ( True / False , メッセージ )
         """
         retBool = True
-
+        msg = ''
+        parameter = {}
         # 標準バリデーションレコード操作前
         result_1 = self.before_iud_validate_check(val, option)
         if result_1[0] is not True:
             return result_1
 
         # 個別バリデーションレコード操作前
-        result_2 = self.before_iud_menu_action(val, option)
+        result_2 = self.before_iud_col_action(val, option)
         if result_2[0] is not True:
             return result_2
+        else:
+            retBool = result_2[0]
+            msg = result_2[1]
+            parameter = result_2[2]
+            option = result_2[3]
 
-        return retBool,
+        return retBool, msg, parameter, option
 
     # [maintenance] レコード操作後処理実施
     def after_iud_action(self, val='', option={}):
@@ -328,19 +363,24 @@ class Column():
                 ( True / False , メッセージ )
         """
         retBool = True
-        # カラムの設定を取得
-
+        msg = ''
+        parameter = {}
         # 標準バリデーションレコード操作前
         result_1 = self.after_iud_common_action(val, option)
         if result_1 is not True:
             return result_1
 
         # 個別バリデーションレコード操作前
-        result_2 = self.after_iud_menu_action(val, option)
+        result_2 = self.after_iud_col_action(val, option)
         if result_2 is not True:
             return result_2
+        else:
+            retBool = result_2[0]
+            msg = result_2[1]
+            parameter = result_2[2]
+            option = result_2[3]
 
-        return retBool,
+        return retBool, msg, parameter, option
 
     # [maintenance] 共通バリデーション レコード操作前
     def before_iud_validate_check(self, val='', option={}):
@@ -376,7 +416,7 @@ class Column():
         return retBool,
 
     # [maintenance] カラム個別処理 レコード操作前
-    def before_iud_menu_action(self, val='', option={}):
+    def before_iud_col_action(self, val='', option={}):
         """
             カラム個別処理  レコード操作前
             ARGS:
@@ -386,19 +426,34 @@ class Column():
                 ( True / False , メッセージ )
         """
         retBool = True
-        # coll_valid_info = self.get_call_before_valid_info()
+        msg = ''
+        exec_config = self.get_call_before_valid_info()
+        parameter = option.get('parameter')
 
-        # 個別処理
-        ###
-        # 外部ファイル読込、関数/クラス/呼び出し？
+        #exec_config = {}
+        #exec_config['func_name'] = 'ansible_func_1'
+        #exec_config['class_name'] = 'AnsibleDriver'
+        #exec_config['func_name'] = 'common_func'
+        if exec_config is not None:
+            class_name = exec_config.get("class_name")
+            objclass_str = ''
+            if class_name is not None:
+                eval_str = '{}()'.format(class_name)
+                objclass = eval(eval_str)
+                objclass_str = 'objclass.'
+            func_name = exec_config.get("func_name")
 
-        #  個別処理用のファイルの確認
+            eval_str = '{}{}(val, parameter, option)'.format(objclass_str, func_name)
+            tmp_exec = eval(eval_str)
+            
+            if tmp_exec[0] is not True:
+                retBool = False
+                msg = tmp_exec[1]
+            else:
+                parameter = tmp_exec[2]
+                option['parameter'] = parameter
 
-        #  個別処理用のファイルの読込
-
-        # 処理の呼び出し
-
-        return retBool,
+        return retBool, msg, parameter, option
 
     # [maintenance] カラムクラスの個別処理 レコード操作後
     def after_iud_common_action(self, val='', option={}):
@@ -408,7 +463,7 @@ class Column():
                 val:値
                 option:オプション
             RETRUN:
-                ( True / False , メッセージ )
+                retBool, msg, parameter, option
         """
         retBool = True
 
@@ -417,28 +472,30 @@ class Column():
         return retBool,
 
     # [maintenance] カラム個別処理 レコード操作後
-    def after_iud_menu_action(self, val='', option={}):
+    def after_iud_col_action(self, val='', option={}):
         """
             カラム個別処理  レコード操作後
             ARGS:
                 val:値
                 option:個別処理
             RETRUN:
-                ( True / False , メッセージ )
+                retBool, msg, parameter, option
         """
         retBool = True
-        # coll_valid_info = self.get_call_after_valid_info()
-        # カラム個別処理
-        ###
-        # 外部ファイル読込、関数/クラス/呼び出し？
-
-        #  個別処理用のファイルの確認
-
-        #  個別処理用のファイルの読込
-
-        # 処理の呼び出し
-
-        return retBool,
+        msg = ''
+        exec_config = self.get_call_after_valid_info()
+        parameter = option.get('parameter')
+        if exec_config is not None:
+            func_name = exec_config.get("func_name")
+            eval_str = '{}(val, parameter, option)'.format(func_name)
+            tmp_exec = eval(eval_str)
+        if tmp_exec[0] is not True:
+            retBool = False
+            msg = tmp_exec[1]
+        else:
+            parameter =  tmp_exec[2]
+            option['parameter'] = parameter
+        return retBool, msg, parameter, option
 
     # [maintenance] 共通バリデーション呼び出し
     def is_valid(self, val, option={}):
@@ -534,7 +591,7 @@ class Column():
     # [load_table] 値をID連携先のIDへ変換
     def convert_value_id(self, val=''):
         """
-           値をIDに変換
+            値をIDに変換
             ARGS:
                 val:値
             RETRUN:
@@ -547,7 +604,7 @@ class Column():
     # [load_table] 値をID連携先のIDへ変換
     def convert_id_value(self, val=''):
         """
-           IDを値に変換
+            IDを値に変換
             ARGS:
                 val:値
             RETRUN:
@@ -557,6 +614,22 @@ class Column():
         result = val
         return result
 
+    # [load_table] ファイル[base64 string]を取得
+    def get_file_data(self, file_name, target_uuid, target_uuid_jnl=''):
+        """
+            ファイル(base64)を取得
+            ARGS:
+                file_name:ファイル名
+                target_uuid:uuid
+                target_uuid_jnl:uuid
+            RETRUN:
+                base64 string
+        """
+        result = '{} base64 string :{}_{}'.format(file_name, target_uuid, target_uuid_jnl)
+        # /storage/{organization_id}/{workspace_id}/{menu_id}/{target_uuid}/{rest_name}/{file_name}
+        # /storage/{organization_id}/{workspace_id}/{menu_id}/{target_uuid}/{rest_name}/old/{target_uuid_jnl}/{file_name}
+        return result
+    
     # [load_table][filter] ID変換用のリスト取得
     def get_convert_list(self):
         """

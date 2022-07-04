@@ -21,7 +21,66 @@ import random
 
 from flask import g
 from common_libs.column import *
+from common_libs.driver import *
 
+
+# 定数
+# 処理実行種別
+CMD_REGISTER = 'Register'
+CMD_UPDATE = 'Update'
+CMD_RESTORE = 'Restore'
+CMD_DISCARD = 'Discard'
+
+# メッセージ種別
+MSG_LEVEL_DEBUG = 'DEBUG'
+MSG_LEVEL_INFO = 'INFO'
+MSG_LEVEL_WARNING = 'WARNING'
+MSG_LEVEL_ERROR = 'ERROR'
+MSG_LEVEL_CRITICAL = ' CRITICAL'
+
+# 共通REST項目名
+REST_KEY_DISCARD = 'discard'
+REST_KEY_LAST_UPDATE_TIME = 'last_update_date_time'
+REST_KEY_LAST_UPDATE_USER = 'last_updated_user'
+
+# 共通REST項目名(履歴)
+REST_KEY_JNL_SEQ_NO = 'journal_id'
+REST_KEY_LAST_JNL_REG_DATETIME = 'journal_datetime'
+REST_KEY_LAST_JNL_ACTION_CLASS = 'journal_action'
+
+# 共通項目名(履歴)
+COLNAME_JNL_SEQ_NO = 'JOURNAL_SEQ_NO'
+COLNAME_JNL_REG_DATETIME = 'JOURNAL_REG_DATETIME'
+COLNAME_JNL_ACTION_CLASS = 'JOURNAL_ACTION_CLASS'
+
+# objtableキー
+MENUINFO = 'MENUINFO'
+COLINFO = 'COLINFO'
+LIST = 'LIST'
+
+# 紐付関連カラム名
+COLNAME_MENU_ID = 'MENU_ID'
+COLNAME_TABLE_NAME = 'TABLE_NAME'
+COLNAME_SORT_KEY = 'SORT_KEY'
+COLNAME_COL_NAME = 'COL_NAME'
+COLNAME_COLUMN_CLASS_NAME = 'COLUMN_CLASS_NAME'
+COLNAME_LOCK_TABLE = 'LOCK_TABLE'
+COLNAME_COLUMN_NAME_REST = 'COLUMN_NAME_REST'
+COLNAME_REQUIRED_ITEM = 'REQUIRED_ITEM'
+COLNAME_INPUT_ITEM = 'INPUT_ITEM'
+COLNAME_AUTO_INPUT = 'AUTO_INPUT'
+COLNAME_UNIQUE_CONSTRAINT = 'UNIQUE_CONSTRAINT'
+COLNAME_BEFORE_VALIDATE_REGISTER = 'BEFORE_VALIDATE_REGISTER'
+COLNAME_AFTER_VALIDATE_REGISTER = 'AFTER_VALIDATE_REGISTER'
+COLNAME_COLUMN_DISP_SEQ = 'COLUMN_DISP_SEQ'
+
+# maintenance/filter 構造キー
+REST_PARAMETER_KEYNAME = 'parameter'
+REST_FILE_KEYNAME = 'file'
+
+SEARCH_MODE_NOMAL = 'NORMAL'
+SEARCH_MODE_LIST = 'LIST'
+SEARCH_MODE_RANGE = 'RANGE'
 
 class loadTable():
     """
@@ -43,18 +102,19 @@ class loadTable():
 
         # エラーメッセージ集約用
         self.message = {
-            'DEBUG': [],
-            'INFO': [],
-            'WARNING': [],
-            'ERROR': [],
-            'CRITICAL': [],
+            MSG_LEVEL_DEBUG: [],
+            MSG_LEVEL_INFO: [],
+            MSG_LEVEL_WARNING: [],
+            MSG_LEVEL_ERROR: [],
+            MSG_LEVEL_CRITICAL: [],
         }
 
         # DB接続
         self.objdbca = objdbca
 
         # 環境情報
-        self.lang = os.environ['LANGUAGE']
+        # self.lang = os.environ['LANGUAGE']
+        self.lang = 'ja'
         if self.lang is None:
             self.lang = 'ja'
 
@@ -68,23 +128,23 @@ class loadTable():
 
         # 廃止、最終更新日時、最終更新者
         self.base_cols_val = {
-            "discard": 0,
-            "last_update_date_time": None,
-            "last_updated_user": 1,
+            REST_KEY_DISCARD: 0,
+            REST_KEY_LAST_UPDATE_TIME: None,
+            REST_KEY_LAST_UPDATE_USER: 1,
         }
         
         # 処理件数:種別毎
         self.exec_count = {
-            'Register': 0,
-            'Update': 0,
-            'Discard': 0,
-            'Restore': 0,
+            CMD_REGISTER: 0,
+            CMD_UPDATE: 0,
+            CMD_RESTORE: 0,
+            CMD_DISCARD: 0,
         }
         # 履歴共通カラム
         self.jnl_colname = {
-            'JOURNAL_SEQ_NO': "journal_id",
-            'JOURNAL_REG_DATETIME': "journal_datetime",
-            'JOURNAL_ACTION_CLASS': "journal_action",
+            COLNAME_JNL_SEQ_NO: REST_KEY_JNL_SEQ_NO,
+            COLNAME_JNL_REG_DATETIME: REST_KEY_LAST_JNL_REG_DATETIME,
+            COLNAME_JNL_ACTION_CLASS: REST_KEY_LAST_JNL_ACTION_CLASS,
         }
 
     # message設定
@@ -97,7 +157,7 @@ class loadTable():
         if level in self.message:
             self.message[level].append(message)
         else:
-            self.message['ERROR'].append(message)
+            self.message[MSG_LEVEL_ERROR].append(message)
 
     # message取得
     def get_message(self, level=''):
@@ -158,9 +218,6 @@ class loadTable():
             RETRUN:
                 True / エラーメッセージ
         """
-        result = {}
-        result_code = ''
-        result_msg = ''
         menu_info = {}
         cols_info = {}
         list_info = {}
@@ -185,7 +242,7 @@ class loadTable():
 
         for tmp_menu in tmp_menu_info:
             menu_info = tmp_menu
-            menu_id = tmp_menu.get('MENU_ID')
+            menu_id = tmp_menu.get(COLNAME_MENU_ID)
 
         # カラム情報情報
         try:
@@ -211,7 +268,7 @@ class loadTable():
             cols_info = {}
             list_info = {}
             for tmp_col_info in tmp_cols_info:
-                rest_name = tmp_col_info.get('COLUMN_NAME_REST')
+                rest_name = tmp_col_info.get(COLNAME_COLUMN_NAME_REST)
                 cols_info.setdefault(rest_name, tmp_col_info)
                 
                 # 参照先テーブル情報
@@ -226,10 +283,16 @@ class loadTable():
                         user_env = self.get_lang().upper()
                         ref_col_name = "{}_{}".format(ref_col_name, user_env)
 
+                    if ref_sort_conditions is None:
+                        str_order_by = ''
+                    else:
+                        str_order_by = ''
+
                     query_str = textwrap.dedent("""
                         SELECT * FROM {table_name}
                         WHERE DISUSE_FLAG <> 1
-                    """).format(table_name=ref_table_name).strip()
+                        {order_by}
+                    """).format(table_name=ref_table_name, order_by=str_order_by).strip()
                     tmp_rows = self.objdbca.sql_execute(query_str)
 
                     tmp_list = {}
@@ -245,9 +308,9 @@ class loadTable():
             return False
 
         result_data = {
-            'MENUINFO': menu_info,
-            'COLINFO': cols_info,
-            'LIST': list_info
+            MENUINFO: menu_info,
+            COLINFO: cols_info,
+            LIST: list_info
         }
 
         return result_data
@@ -259,7 +322,7 @@ class loadTable():
                 string
         """
         return self.lang
-    
+
     def get_objtable(self):
         """
             テーブルデータを設定
@@ -268,13 +331,37 @@ class loadTable():
         """
         return self.objtable
 
+    def get_unique_constraint(self):
+        """
+            組み合わせ一意制約取得
+            RETRUN:
+                {}
+        """
+        return self.objtable.get(MENUINFO).get(COLNAME_UNIQUE_CONSTRAINT)
+
+    def get_menu_before_validate_register(self):
+        """
+            レコード操作前処理設定取得(メニュー)
+            RETRUN:
+                {}
+        """
+        return self.objtable.get(MENUINFO).get(COLNAME_BEFORE_VALIDATE_REGISTER)
+
+    def get_menu_after_validate_register(self):
+        """
+            レコード操作後処理設定取得(メニュー)
+            RETRUN:
+                {}
+        """
+        return self.objtable.get(MENUINFO).get(COLNAME_AFTER_VALIDATE_REGISTER)
+
     def get_objcols(self):
         """
             全カラム設定を取得
             RETRUN:
                 {}
         """
-        return self.objtable.get('COLINFO')
+        return self.objtable.get(COLINFO)
 
     def get_objcol(self, rest_key):
         """
@@ -290,7 +377,7 @@ class loadTable():
             RETRUN:
                 string
         """
-        return self.get_objtable().get('MENUINFO').get('TABLE_NAME')
+        return self.get_objtable().get(MENUINFO).get(COLNAME_TABLE_NAME)
 
     def get_table_name_jnl(self):
         """
@@ -298,14 +385,15 @@ class loadTable():
             RETRUN:
                 string
         """
-        return "{}_JNL".format(self.get_objtable().get('MENUINFO').get('TABLE_NAME'))
+        return "{}_JNL".format(self.get_objtable().get(MENUINFO).get(COLNAME_TABLE_NAME))
+
     def get_sort_key(self):
         """
             ソートキーを取得
             RETRUN:
                 {} or [] ?
         """
-        return self.get_objtable().get('MENUINFO').get('SORT_KEY')
+        return self.get_objtable().get(MENUINFO).get(COLNAME_SORT_KEY)
 
     def get_col_name(self, rest_key):
         """
@@ -315,7 +403,7 @@ class loadTable():
         """
         col_name = None
         if self.get_objcol(rest_key) is not None:
-            col_name = self.get_objcol(rest_key).get("COL_NAME")
+            col_name = self.get_objcol(rest_key).get(COLNAME_COL_NAME)
         return col_name
 
     def get_col_class_name(self, rest_key):
@@ -327,7 +415,7 @@ class loadTable():
         col_class_name = None
         get_objcol = self.get_objcol(rest_key)
         if get_objcol is not None:
-            col_class_name = get_objcol.get("COLUMN_CLASS_NAME")
+            col_class_name = get_objcol.get(COLNAME_COLUMN_CLASS_NAME)
         return col_class_name
 
     def is_columnclass(self, rest_key):
@@ -370,8 +458,8 @@ class loadTable():
             objcolumn = eval(eval_class_str)
         
         # objcolumnを設定
-        if rest_key in self.objtable['COLINFO']:
-            self.objtable['COLINFO'][rest_key].setdefault('objcolumn', objcolumn)
+        if rest_key in self.objtable[COLINFO]:
+            self.objtable[COLINFO][rest_key].setdefault('objcolumn', objcolumn)
 
     def get_columnclass(self, rest_key, cmd_type=''):
         """
@@ -403,7 +491,7 @@ class loadTable():
             RETRUN:
                 self.objtable
         """
-        return self.get_objtable().get('MENUINFO').get('LOCK_TABLE')
+        return self.get_objtable().get(MENUINFO).get(COLNAME_LOCK_TABLE)
 
     def get_restkey_list(self):
         """
@@ -416,11 +504,11 @@ class loadTable():
             tmp_sort = sorted(
                 self.get_objcols().items(),
                 key=lambda x: (
-                    x[1]['COLUMN_DISP_SEQ']
+                    x[1][COLNAME_COLUMN_DISP_SEQ]
                 )
             )
             for x in tmp_sort:
-                sortlist.append(x[1].get('COLUMN_NAME_REST'))
+                sortlist.append(x[1].get(COLNAME_COLUMN_NAME_REST))
         except Exception:
             print("sort Err")
 
@@ -434,9 +522,9 @@ class loadTable():
         """
         required_restkey_list = []
         for rest_key in self.get_restkey_list():
-            required_item = self.get_objcol(rest_key).get('REQUIRED_ITEM')
-            input_item = self.get_objcol(rest_key).get('INPUT_ITEM')
-            auto_input = self.get_objcol(rest_key).get('AUTO_INPUT')
+            required_item = self.get_objcol(rest_key).get(COLNAME_REQUIRED_ITEM)
+            input_item = self.get_objcol(rest_key).get(COLNAME_INPUT_ITEM)
+            auto_input = self.get_objcol(rest_key).get(COLNAME_AUTO_INPUT)
             if required_item == '1' and input_item == '1' and auto_input != '1':
                 required_restkey_list.append(rest_key)
 
@@ -450,7 +538,7 @@ class loadTable():
         """
         result = ''
         for rest_key, objcol in self.get_objcols().items():
-            tmp_col_name = objcol.get('COL_NAME')
+            tmp_col_name = objcol.get(COLNAME_COL_NAME)
             if col_name == tmp_col_name:
                 result = rest_key
                 break
@@ -469,7 +557,27 @@ class loadTable():
         result = ''
         table_name = self.get_table_name_jnl()
         column_list, primary_key_list = self.objdbca.table_columns_get(self.get_table_name())
-        primary_key= primary_key_list[0]
+        primary_key = primary_key_list[0]
+        query_str = textwrap.dedent("""
+            SELECT * FROM {table_name}
+            WHERE {primary_key} = %s
+            ORDER BY LAST_UPDATE_TIMESTAMP DESC
+            LIMIT 1
+        """).format(table_name=table_name, primary_key=primary_key).strip()
+        result = self.objdbca.sql_execute(query_str, [uuid])
+
+        return result
+
+    def get_target_rows(self, uuid):
+        """
+            get target row data 
+            RETRUN:
+                []
+        """
+        result = ''
+        table_name = self.get_table_name()
+        column_list, primary_key_list = self.objdbca.table_columns_get(self.get_table_name())
+        primary_key = primary_key_list[0]
         query_str = textwrap.dedent("""
             SELECT * FROM {table_name}
             WHERE {primary_key} = %s
@@ -491,23 +599,23 @@ class loadTable():
                 status_code, result, msg,
         """
 
-        # 変数定義
-        lang = os.environ['LANGUAGE']
         status_code = '000-00000'  # 成功
         msg = ''
-        
+
         search_mode_list = [
-            'NORMAL',
-            'LIST',
-            'RANGE'
-            ]
-        retBool =True
-        result_data = {}
+            SEARCH_MODE_NOMAL,
+            SEARCH_MODE_LIST,
+            SEARCH_MODE_RANGE
+        ]
+
         result_list = []
         filter_querys = []
         try:
+            # テーブル情報（カラム、PK取得）
+            column_list, primary_key_list = self.objdbca.table_columns_get(self.get_table_name())
+            
             # テーブル本体
-            if mode in ['nomal','excel']:
+            if mode in ['nomal', 'excel']:
                 table_name = self.get_table_name()
                 # parameter check
                 if isinstance(parameter, dict):
@@ -546,7 +654,7 @@ class loadTable():
                 if sort_key is not None:
                     str_orderby = ''
                     where_str = where_str + str_orderby
-            elif mode in ['jnl','excel_jnl']:
+            elif mode in ['jnl', 'excel_jnl']:
                 # 履歴テーブル
                 where_str = ''
                 bind_value_list = []
@@ -564,8 +672,6 @@ class loadTable():
                     msg_ags = 'not jnl uuid'
                     raise Exception(status_code, msg_ags)
 
-                # テーブル情報（カラム、PK取得）
-                column_list, primary_key_list = self.objdbca.table_columns_get(self.get_table_name())
                 target_uuid_key = self.get_rest_key(primary_key_list[0])
                 
                 where_str = textwrap.dedent("""
@@ -581,22 +687,20 @@ class loadTable():
             # データ取得
             tmp_result = self.objdbca.table_select(table_name, where_str, bind_value_list)
 
-            # RESTキー変換はSQL OR python
-            result_data = {
-                "parameter": [],
-                "file": []
-            }
             # RESTパラメータへキー変換
             for rows in tmp_result:
-                rest_parameter, rest_file = self.convert_colname_restkey(rows, mode)
+                # rest_parameter, rest_file = self.convert_colname_restkey(rows, mode)
+                target_uuid = rows.get(primary_key_list[0])
+                target_uuid_jnl = rows.get(COLNAME_JNL_SEQ_NO)
+                rest_parameter, rest_file = self.convert_colname_restkey(rows, target_uuid, target_uuid_jnl, mode)
                 tmp_data = {}
-                tmp_data.setdefault('parameter', rest_parameter)
+                tmp_data.setdefault(REST_PARAMETER_KEYNAME, rest_parameter)
                 if mode != 'excel' or mode != 'excel_jnl':
-                    tmp_data.setdefault('file', rest_file)
+                    tmp_data.setdefault(REST_FILE_KEYNAME, rest_file)
                 result_list.append(tmp_data)
                 
         except Exception as e:
-            print( e.args )
+            print(e)
             if len(e.args) == 2:
                 status_code = '{}'.format(e.args[0])
                 msg_args = '{}'.format(e.args[1])
@@ -621,8 +725,6 @@ class loadTable():
                 status_code, result, msg,
         """
         result_data = {}
-        result_code = ''
-        result_msg = ''
         result = {
             "result": '',
             "data": {},
@@ -630,8 +732,6 @@ class loadTable():
         }
         tmp_data = None
 
-        # 変数定義
-        lang = os.environ['LANGUAGE']
         status_code = '000-00000'  # 成功
         msg = ''
         
@@ -656,12 +756,10 @@ class loadTable():
 
             # maintenance呼び出し
             result_data = self.exec_maintenance(parameters, target_uuid, cmd_type)
-            
+
             if result_data[0] is True:
                 # コミット  トランザクション終了
-                self.objdbca.db_transaction_end(True)
-                # 実行種別件数取得
-                self.set_exec_count_up(cmd_type)
+                self.objdbca.db_transaction_end(False)
                 tmp_data = self.get_exec_count()
             else:
                 # ロールバック トランザクション終了
@@ -673,7 +771,7 @@ class loadTable():
         except Exception as e:
             # ロールバック トランザクション終了
             self.objdbca.db_transaction_end(False)
-            print( e.args )
+            print(e)
             if len(e.args) == 2:
                 status_code = '{}'.format(e.args[0])
                 msg_args = '{}'.format(e.args[1])
@@ -698,14 +796,10 @@ class loadTable():
                 status_code, result, msg,
         """
 
-        # 変数定義
-        lang = os.environ['LANGUAGE']
         status_code = '000-00000'  # 成功
         msg = ''
         
         result_data = []
-        result_code = ''
-        result_msg = ''
         result = {
             "result": '',
             "data": {},
@@ -734,30 +828,29 @@ class loadTable():
                 # テーブル情報（カラム、PK取得）
                 column_list, primary_key_list = self.objdbca.table_columns_get(self.get_table_name())
                 target_uuid_key = self.get_rest_key(primary_key_list[0])
-                target_uuid = parameters.get('parameter').get(target_uuid_key)
+                target_uuid = parameters.get(REST_PARAMETER_KEYNAME).get(target_uuid_key)
                 
                 # maintenance呼び出し
                 tmp_result = self.exec_maintenance(parameters, target_uuid, cmd_type)
                 # result.setdefault(entry_no, tmp_result)
                 result_data.append(tmp_result[1])
-                self.set_exec_count_up(cmd_type)
 
-            # print({"error": self.get_message_count("ERROR")})
-            if self.get_message_count("ERROR") == 0:
+            # print({MSG_LEVEL_ERROR: self.get_message_count(MSG_LEVEL_ERROR)})
+            if self.get_message_count(MSG_LEVEL_ERROR) == 0:
                 # コミット
-                self.objdbca.db_transaction_end(True)
+                self.objdbca.db_transaction_end(False)
                 # tmp_data = result_data
                 tmp_data = self.get_exec_count()
-            elif self.get_message_count("ERROR") > 0:
+            elif self.get_message_count(MSG_LEVEL_ERROR) > 0:
                 # ロールバック トランザクション終了
                 self.objdbca.db_transaction_end(False)
                 status_code = '200-99999'
-                msg_args = self.get_message("ERROR")
+                msg_args = self.get_message(MSG_LEVEL_ERROR)
                 msg = g.appmsg.get_api_message(status_code, [msg_args])
         except Exception as e:
             # ロールバック トランザクション終了
             self.objdbca.db_transaction_end(False)
-            print( e.args )
+            print(e)
             if len(e.args) == 2:
                 status_code = '{}'.format(e.args[0])
                 msg_args = '{}'.format(e.args[1])
@@ -788,27 +881,43 @@ class loadTable():
     
             # 各カラム単位の基本処理（前）、個別処理（前）を実施
             # REST用キーのパラメータ、ファイル(base64)
-            entry_parameter = parameters.get('parameter')
-            entry_file = parameters.get('file')
+            entry_parameter = parameters.get(REST_PARAMETER_KEYNAME)
+            entry_file = parameters.get(REST_FILE_KEYNAME)
 
-            # 更新系の追い越し判定簡易チェック
-            if cmd_type != 'Register':
-                if "last_update_date_time" not in entry_parameter:
-                    print("追い越し判定予定")
-
-            # 更新時
-            if cmd_type != 'Register':
-                if "discard" in entry_parameter:
-                    tmp_discard = entry_parameter.get("discard")
-                    if tmp_discard == "1":
-                        cmd_type = 'Discard'
-                    elif tmp_discard == "0":
-                        cmd_type = 'Restore'
-                    else:
-                        cmd_type = 'Update'
-            print([cmd_type,target_uuid])
             # テーブル情報（カラム、PK取得）
             column_list, primary_key_list = self.objdbca.table_columns_get(self.get_table_name())
+
+            # 更新時
+            if cmd_type != CMD_REGISTER:
+                # discard 関連
+                if "discard" in entry_parameter:
+                    tmp_discard = entry_parameter.get(REST_KEY_DISCARD)
+                    if tmp_discard in ['1', 1]:
+                        cmd_type = CMD_DISCARD
+                    elif tmp_discard in ['0', 0]:
+                        cmd_type = CMD_RESTORE
+                    else:
+                        cmd_type = CMD_UPDATE
+                print(cmd_type)
+                tmp_row = self.get_target_rows(target_uuid)
+
+                # 更新系の追い越し判定
+                lastupdatetime_key = self.get_col_name('last_update_date_time')
+                lastupdatetime_row = '{}'.format(tmp_row[0].get(lastupdatetime_key).strftime('%Y/%m/%d %H:%M:%S.%f'))
+                lastupdatetime_parameter = entry_parameter.get('last_update_date_time')
+                if lastupdatetime_row != lastupdatetime_parameter:
+                    retBool = False
+                    msg = "{}他の操作により更新済みの為".format('')
+                    self.set_message(msg, MSG_LEVEL_ERROR)
+
+                # 廃止→廃止へのチェック
+                discard_key = self.get_col_name(REST_KEY_DISCARD)
+                discard_row = tmp_row[0].get(discard_key)
+                discard_parameter = entry_parameter.get(REST_KEY_DISCARD)
+                if  cmd_type == CMD_DISCARD and discard_row in ['1', 1] and discard_parameter in ['1', 1]:
+                    retBool = False
+                    msg = "{}:廃止済みの為、廃止不可".format(REST_KEY_DISCARD)
+                    self.set_message(msg, MSG_LEVEL_ERROR)
 
             base_cols_val = self.base_cols_val.copy()
 
@@ -816,12 +925,12 @@ class loadTable():
             for tmp_keys in list(entry_parameter.keys()):
                 objcol = self.get_objcol(tmp_keys)
                 if objcol is not None:
-                    input_item = objcol.get('INPUT_ITEM')
+                    input_item = objcol.get(COLNAME_INPUT_ITEM)
                     tmp_col_name = self.get_col_name(tmp_keys)
                     if input_item != '1':
                         if tmp_col_name not in column_list:
                             del entry_parameter[tmp_keys]
-                    if cmd_type == 'Discard':
+                    if cmd_type == CMD_DISCARD:
                         if tmp_col_name not in primary_key_list:
                             del entry_parameter[tmp_keys]
                     self.set_columnclass(tmp_keys, cmd_type)
@@ -836,99 +945,122 @@ class loadTable():
                 return retBool, msg
             
             # required 簡易チェック
-            required_restkey_list = self.get_required_restkey_list()
-            if len(required_restkey_list) <= len(entry_parameter):
-                for required_restkey in required_restkey_list:
-                    if required_restkey not in entry_parameter:
-                        retBool = False
-                        msg = "{}:必須項目不足".format(required_restkey)
-                        print(msg)
-                        return retBool, msg
-            else:
-                retBool = False
-                msg = "必須項目不足"
-                print(msg)
-                return retBool, msg
+            if cmd_type == CMD_REGISTER:
+                required_restkey_list = self.get_required_restkey_list()
+                if len(required_restkey_list) <= len(entry_parameter):
+                    for required_restkey in required_restkey_list:
+                        if required_restkey not in entry_parameter:
+                            retBool = False
+                            msg = "{}:必須項目不足".format(required_restkey)
+                            print(msg)
+                            return retBool, msg
+                else:
+                    retBool = False
+                    msg = "必須項目不足"
+                    print(msg)
+                    print(required_restkey_list)
+                    print(entry_parameter)
+                    return retBool, msg
 
-            # 更新系処理時 uuid 埋め込み
-            if cmd_type != 'Register' and target_uuid != '':
+            elif cmd_type != CMD_REGISTER and target_uuid != '':
+                # 更新系処理時 uuid 埋め込み
                 target_uuid_key = self.get_rest_key(primary_key_list[0])
                 entry_parameter[target_uuid_key] = target_uuid
 
-            for rest_key, rest_val in entry_parameter.items():
+            target_option = {}
+
+            for rest_key in list(entry_parameter.keys()):
+                rest_val = entry_parameter.get(rest_key)
                 if rest_key in self.restkey_list:
                     option = {}
                     option.setdefault("uuid", target_uuid)
+                    option.setdefault("parameter", entry_parameter)
 
                     # ファイル有無
                     if entry_file is not None:
                         if rest_key in entry_file:
                             option.setdefault("file_data", entry_file.get(rest_key))
-
+                            
+                    target_option.setdefault(rest_key, option)
+                    
                     # カラムクラス呼び出し
                     objcolumn = self.get_columnclass(rest_key, cmd_type)
-                    # print([rest_key, objcolumn, option])
-
-                    # カラムクラス毎の処理:レコード操作前
-                    # カラム毎の個別処理:レコード操作前
-                    exec1 = objcolumn.before_iud_action(rest_val, option)
-                    if exec1[0] is not True:
-                        self.set_message(exec1[1], "ERROR")
+                
+                    # カラムクラス毎の処理:レコード操作前 + カラム毎の個別処理:レコード操作前
+                    tmp_exec = objcolumn.before_iud_action(rest_val, option)
+                    # print([rest_key, tmp_exec, option])
+                    if tmp_exec[0] is not True:
+                        self.set_message(tmp_exec[1], MSG_LEVEL_ERROR)
+                    else:
+                        # VALUE → ID 変換処理不要ならVALUE変更無し
+                        rest_val = objcolumn.convert_value_id(rest_val)
+                        entry_parameter[rest_key] = rest_val
                 else:
                     retBool = False
                     msg = "不正なキー"
                     return retBool, msg
-    
-            # テーブル単位の個別処理前を実行
-                # メニュー共通処理:レコード操作前
-                # メニュー個別処理:レコード操作前
+
+            # メニュー共通処理:レコード操作前
+            tmp_exec = self.exec_unique_constraint(entry_parameter, target_uuid)
+            if tmp_exec[0] is not True:
+                self.set_message(tmp_exec[1], MSG_LEVEL_ERROR)
+
+            # メニュー個別処理:レコード操作前
+            target_option = {}
+            tmp_exec = self.exec_menu_before_validate(entry_parameter, target_uuid, target_option)
+            if tmp_exec[0] is not True:
+                self.set_message(tmp_exec[1], MSG_LEVEL_ERROR)
+            else:
+                print(tmp_exec)
 
             # レコード操作前エラー確認
-            if self.get_message_count("ERROR") > 0:
+            if self.get_message_count(MSG_LEVEL_ERROR) > 0:
                 retBool = False
-                return retBool, self.get_message("ERROR")
+                print(['AAAAA',retBool, self.get_message(MSG_LEVEL_ERROR)])
+                return retBool, self.get_message(MSG_LEVEL_ERROR)
 
             # 登録・更新処理　# SQL生成  INSERT / UPDATE
 
             # 廃止の設定
-            if cmd_type == 'Discard':
-                base_cols_val['discard'] = 1
+            if cmd_type == CMD_DISCARD:
+                base_cols_val[CMD_DISCARD] = 1
             else:
-                base_cols_val['discard'] = 0
+                base_cols_val[CMD_DISCARD] = 0
 
             entry_parameter.update(base_cols_val)
 
             # rest_key → カラム名に変換
             colname_parameter = self.convert_restkey_colname(entry_parameter)
 
-            if cmd_type == 'Register':
+            if cmd_type == CMD_REGISTER:
                 # print(" [{}] INSERT XXXXXX / INSERT XXXXXX_JNL ".format(cmd_type))
                 result = self.objdbca.table_insert(self.get_table_name(), colname_parameter, primary_key_list[0])
-            elif cmd_type == 'Update':
+            elif cmd_type == CMD_UPDATE:
                 # print(" [{}] UPDATE XXXXXX / INSERT XXXXXX_JNL ".format(cmd_type))
                 result = self.objdbca.table_update(self.get_table_name(), colname_parameter, primary_key_list[0])
-            elif cmd_type == 'Discard':
+            elif cmd_type == CMD_DISCARD:
                 # print(" [{}] UPDATE XXXXXX / INSERT XXXXXX_JNL ".format(cmd_type))
                 result = self.objdbca.table_update(self.get_table_name(), colname_parameter, primary_key_list[0])
-            elif cmd_type == 'Restore':
+            elif cmd_type == CMD_RESTORE:
                 # print(" [{}] UPDATE XXXXXX / INSERT XXXXXX_JNL ".format(cmd_type))
                 result = self.objdbca.table_update(self.get_table_name(), colname_parameter, primary_key_list[0])
 
             if result is False:
-                self.set_message(result, "ERROR")
+                self.set_message(result, MSG_LEVEL_ERROR)
             else:
                 result_uuid = result[0].get(primary_key_list[0])
-                result_uuid_jnl = self.get_maintenance_uuid(result_uuid)[0].get('JOURNAL_SEQ_NO')
+                result_uuid_jnl = self.get_maintenance_uuid(result_uuid)[0].get(COLNAME_JNL_SEQ_NO)
                 
                 temp_rows = {primary_key_list[0]: result[0].get(primary_key_list[0])}
                 tmp_result = self.convert_colname_restkey(temp_rows)
                 result = tmp_result[0]
 
             # レコード操作後エラー確認
-            if self.get_message_count("ERROR"):
+            if self.get_message_count(MSG_LEVEL_ERROR):
                 retBool = False
-                return retBool, self.get_message("ERROR")
-
+                return retBool, self.get_message(MSG_LEVEL_ERROR)
+            print('EEEE')
+            target_option = {}
             # 各カラム単位の基本処理（後）、個別処理（後）を実施
             for rest_key, rest_val in entry_parameter.items():
                 # カラムクラス呼び出し
@@ -944,23 +1076,29 @@ class loadTable():
 
                 # カラムクラス毎の処理:レコード操作後
                 # カラム毎の個別処理:レコード操作後
-                exec2 = objcolumn.after_iud_action(rest_key, option)
+                tmp_exec = objcolumn.after_iud_action(rest_key, option)
                 # print([rest_key, objcolumn, option])
-                if exec2[0] is not True:
-                    self.set_message(exec2[1], "ERROR")
+                if tmp_exec[0] is not True:
+                    self.set_message(tmp_exec[1], MSG_LEVEL_ERROR)
             # テーブル単位の個別処理後を実行
                 # メニュー共通処理:レコード操作後
                 # メニュー個別処理:レコード操作後
+                # act3 = self.exec_before_validate_register(entry_parameter, target_uuid, target_option)
 
             # レコード操作後エラー確認
-            if self.get_message_count("ERROR"):
+            if self.get_message_count(MSG_LEVEL_ERROR) != 0:
                 retBool = False
-                return retBool, self.get_message("ERROR")
+                return retBool, self.get_message(MSG_LEVEL_ERROR)
+            
+            # 実行種別件数カウントアップ
+            self.set_exec_count_up(cmd_type)
+            
         except Exception as e:
             print(e)
             retBool = False
             result = e
-        
+
+
         return retBool, result
 
     # [output]:検索結果のファイル出力
@@ -997,7 +1135,7 @@ class loadTable():
                 result.setdefault(colname, restval)
         return result
 
-    def convert_colname_restkey(self, rows, mode=''):
+    def convert_colname_restkey(self, rows, target_uuid='', target_uuid_jnl='', mode=''):
         """
             []::RESTパラメータへキー変換
             ARGS:
@@ -1018,10 +1156,64 @@ class loadTable():
                     col_val = '{}'.format(col_val.strftime('%Y/%m/%d %H:%M:%S.%f'))
 
                 rest_parameter.setdefault(rest_key, col_val)
-                if mode != "excel":
+                if mode not in ['excel', 'excel_jnl']:
                     if self.get_col_class_name(rest_key) == 'FileUploadColumn':
+                        objcolumn = self.get_columnclass(rest_key)
                         # ファイル取得＋64変換
-                        file_data = '{}のbase64後のSTR'.format(rest_key)
+                        file_data = objcolumn.get_file_data(col_val, target_uuid, target_uuid_jnl)
                         rest_file.setdefault(rest_key, file_data)
         
         return rest_parameter, rest_file
+
+    # []:組み合わせ一意制約の実施
+    def exec_unique_constraint(self, parameter, target_uuid):
+        """
+            []::組み合わせ一意制約の実施
+            ARGS:
+                parameter:パラメータ
+                target_uuid:対象pk(uuid)
+            RETRUN:
+                {}
+        """
+        retBool = True
+        msg = ''
+        unique_constraint = self.get_unique_constraint()
+        if unique_constraint is not None:
+            print({"unique_constraint": unique_constraint, 'target_uuid': target_uuid})
+        return retBool, msg
+
+    # []: レコード操作前処理の実施(メニュー)
+    def exec_menu_before_validate(self, parameter, target_uuid, target_option):
+        """
+            []::レコード操作前処理の実施(メニュー)
+            ARGS:
+                parameter:パラメータ
+            RETRUN:
+                {}
+        """
+        retBool = True
+        msg = ''
+        exec_config = self.get_menu_before_validate_register()
+        if exec_config is not None:
+            print({"before_validate": exec_config, 'target_uuid': target_uuid, 'target_option': target_option})
+        return retBool, msg
+
+    # []:レコード操作後処理の実施(メニュー)
+    def exec_menu_after_validate(self, parameter, target_uuid, target_option):
+        """
+            []::レコード操作後処理の実施(メニュー)
+            ARGS:
+                parameter:パラメータ
+            RETRUN:
+                {}
+        """
+        retBool = True
+        msg = ''
+        exec_config = self.get_menu_after_validate_register()
+        if exec_config is not None:
+            print({"after_validate": exec_config, 'target_uuid': target_uuid, 'target_option': target_option})
+        return retBool, msg
+
+    def dprint(self, vars):
+        import pprint
+        pprint.pprint(vars)
