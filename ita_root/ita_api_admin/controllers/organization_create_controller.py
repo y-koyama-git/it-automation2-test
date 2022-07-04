@@ -108,3 +108,16 @@ def organization_create(body, organization_id):  # noqa: E501
     org_db.sqlfile_execute("sql/organization.sql")
 
     return '', msg
+
+
+def organization_delete(organization_id):  # noqa: E501
+    """organization_delete
+
+    Organizationを削除する # noqa: E501
+
+    :param organization_id: OrganizationID
+    :type organization_id: str
+
+    :rtype: InlineResponse200
+    """
+    return 'do some magic!'

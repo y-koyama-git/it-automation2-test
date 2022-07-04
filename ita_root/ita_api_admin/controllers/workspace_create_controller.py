@@ -117,3 +117,18 @@ def workspace_create(body, organization_id, workspace_id):  # noqa: E501
                 ws_db.sql_execute(sql)
 
     return '', msg
+
+
+def workspace_delete(organization_id, workspace_id):  # noqa: E501
+    """workspace_delete
+
+    Workspaceを削除する # noqa: E501
+
+    :param organization_id: organizationID
+    :type organization_id: str
+    :param workspace_id: WorkspaceID
+    :type workspace_id: str
+
+    :rtype: InlineResponse200
+    """
+    return 'do some magic!'
