@@ -1076,7 +1076,7 @@ class loadTable():
 
                 # カラムクラス毎の処理:レコード操作後
                 # カラム毎の個別処理:レコード操作後
-                tmp_exec = objcolumn.after_iud_action(rest_key, option)
+                tmp_exec = objcolumn.after_iud_action(rest_val, option)
                 # print([rest_key, objcolumn, option])
                 if tmp_exec[0] is not True:
                     self.set_message(tmp_exec[1], MSG_LEVEL_ERROR)
