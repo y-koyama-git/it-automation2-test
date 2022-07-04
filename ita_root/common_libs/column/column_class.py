@@ -14,7 +14,7 @@
 
 import json
 from flask import g
-from common_libs.driver import *
+
 
 """
 カラムクラス共通処理(カラム)
