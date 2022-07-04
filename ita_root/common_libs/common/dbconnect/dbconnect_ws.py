@@ -39,7 +39,7 @@ class DBConnectWs(DBConnectCommon):
             return True
 
         if workspace_id is None:
-            workspace_id = g.WORKSPACE_ID
+            workspace_id = g.get('WORKSPACE_ID')
         self._workspace_id = workspace_id
 
         # get db-connect-infomation from organization-db

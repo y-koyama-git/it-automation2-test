@@ -12,19 +12,25 @@
 # limitations under the License.
 #
 """
-api common function module
+common_libs api common function module
 """
-from flask import request, g
-import os
+from flask import g
 import traceback
 
 from common_libs.common.exception import AppException
-from common_libs.common.logger import AppLog
-from common_libs.common.message_class import MessageTemplate
 from common_libs.common.util import get_timestamp, arrange_stacktrace_format
 
-
 api_timestamp = None
+
+
+def set_api_timestamp():
+    global api_timestamp
+    api_timestamp = str(get_timestamp())
+
+
+def get_api_timestamp():
+    global api_timestamp
+    return api_timestamp
 
 
 def make_response(data=None, msg="", result_code="000-00000", status_code=200, ts=None):
@@ -149,40 +155,3 @@ def api_filter(func):
             return exception_response(e)
 
     return wrapper
-
-
-def before_request_handler():
-    global api_timestamp
-
-    try:
-        api_timestamp = str(get_timestamp())
-        # create app log instance and message class instance
-        g.applogger = AppLog()
-        g.appmsg = MessageTemplate()
-
-        # request-header check
-        user_id = request.headers.get("User-Id")
-        roles = request.headers.get("Roles")
-        if user_id is None or roles is None:
-            raise AppException("400-00001", ["User-Id and Roles"], ["User-Id and Roles"])
-
-        g.USER_ID = user_id
-        g.ROLES = roles
-
-        debug_args = [request.method + ":" + request.url]
-        g.applogger.info("[ts={}][api-start]url: {}".format(api_timestamp, *debug_args))
-
-        # set language
-        language = request.headers.get("Language")
-        if not language:
-            language = os.environ.get("DEFAULT_LANGUAGE")
-        g.LANGUAGE = language
-
-        g.appmsg.set_lang(language)
-        g.applogger.info("LANGUAGE({}) is set".format(language))
-    except AppException as e:
-        # catch - raise AppException("xxx-xxxxx", log_format, msg_format)
-        return app_exception_response(e)
-    except Exception as e:
-        # catch - other all error
-        return exception_response(e)

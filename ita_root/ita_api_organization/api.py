@@ -16,7 +16,7 @@ import os
 import connexion
 
 from dotenv import load_dotenv  # python-dotenv
-from libs.api_common import before_request_handler
+from libs.organization_common import before_request_handler
 import secrets
 import string
 
