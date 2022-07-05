@@ -22,10 +22,10 @@ from flask import jsonify
 import sys
 sys.path.append('../../')
 from common_libs.loadtable.load_table import loadTable
-from libs import api_common
+from common_libs.api import api_filter
 
 
-@api_common.api_filter
+@api_filter
 def maintenance_register(body, organization_id, workspace_id, menu):  # noqa: E501
     """maintenance_register
 
@@ -58,7 +58,7 @@ def maintenance_register(body, organization_id, workspace_id, menu):  # noqa: E5
     return result_data,
 
 
-@api_common.api_filter
+@api_filter
 def maintenance_update(body, organization_id, workspace_id, menu, uuid):  # noqa: E501
     """maintenance_update
 

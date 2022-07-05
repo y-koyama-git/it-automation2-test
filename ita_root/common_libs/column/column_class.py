@@ -129,24 +129,6 @@ class Column():
         """
         return self.objtable
 
-    def get_organization(self):
-        """
-            organizationを取得
-            RETRUN:
-                string
-        """
-        organization_id = g.get('ORGANIZATION_ID')
-        return organization_id
-
-    def get_workspace(self):
-        """
-            workspaceを取得
-            RETRUN:
-                string
-        """
-        workspace_id = g.get('WORKSPACE_ID')
-        return workspace_id
-
     def get_menu(self):
         """
             menuを取得
@@ -429,11 +411,10 @@ class Column():
         msg = ''
         exec_config = self.get_call_before_valid_info()
         parameter = option.get('parameter')
-
-        #exec_config = {}
-        #exec_config['func_name'] = 'ansible_func_1'
-        #exec_config['class_name'] = 'AnsibleDriver'
-        #exec_config['func_name'] = 'common_func'
+        # exec_config = {}
+        # exec_config['func_name'] = 'ansible_func_1'
+        # exec_config['class_name'] = 'AnsibleDriver'
+        # exec_config['func_name'] = 'common_func'
         if exec_config is not None:
             class_name = exec_config.get("class_name")
             objclass_str = ''
@@ -443,7 +424,7 @@ class Column():
                 objclass_str = 'objclass.'
             func_name = exec_config.get("func_name")
 
-            eval_str = '{}{}(val, parameter, option)'.format(objclass_str, func_name)
+            eval_str = '{}{}(self.objdbca, val, parameter, option)'.format(objclass_str, func_name)
             tmp_exec = eval(eval_str)
             
             if tmp_exec[0] is not True:
@@ -453,7 +434,7 @@ class Column():
                 parameter = tmp_exec[2]
                 option['parameter'] = parameter
 
-        return retBool, msg, parameter, option
+        return retBool, msg, parameter, option,
 
     # [maintenance] カラムクラスの個別処理 レコード操作後
     def after_iud_common_action(self, val='', option={}):
@@ -466,10 +447,10 @@ class Column():
                 retBool, msg, parameter, option
         """
         retBool = True
-
+        msg = ''
         # カラムクラス毎の個別処理
 
-        return retBool,
+        return retBool, msg,
 
     # [maintenance] カラム個別処理 レコード操作後
     def after_iud_col_action(self, val='', option={}):
@@ -487,15 +468,15 @@ class Column():
         parameter = option.get('parameter')
         if exec_config is not None:
             func_name = exec_config.get("func_name")
-            eval_str = '{}(val, parameter, option)'.format(func_name)
+            eval_str = '{}(self.objdbca, val, parameter, option)'.format(func_name)
             tmp_exec = eval(eval_str)
         if tmp_exec[0] is not True:
             retBool = False
             msg = tmp_exec[1]
         else:
-            parameter =  tmp_exec[2]
+            parameter = tmp_exec[2]
             option['parameter'] = parameter
-        return retBool, msg, parameter, option
+        return retBool, msg, parameter, option,
 
     # [maintenance] 共通バリデーション呼び出し
     def is_valid(self, val, option={}):
@@ -544,7 +525,7 @@ class Column():
             result = self.objdbca.table_count(self.table_name, where_str, bind_value_list)
             if result != 0:
                 retBool = False
-                msg = '{}:一意制約'.format(self.rest_key_name)
+                msg = '{}({}):一意制約'.format(self.rest_key_name, val)
                 return retBool, msg
         return retBool,
 

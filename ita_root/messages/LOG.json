@@ -9,6 +9,7 @@
     "200-99999": "{}",
     "400-00001": "Request-Header Paramater({}) is Required",
     "401-00001": "You do not have access privileges to the target menu. (menu: {})",
+    "400-99999": "{}",
     "999-00001": "[Database Error] Database({}) connect infomation is not found",
     "999-00002": "[Database Error] Database({}) : {}",
     "999-00003": "[Database Error] Database({}) SQL:{}, {}",
