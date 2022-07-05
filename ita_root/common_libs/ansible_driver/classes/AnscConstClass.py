@@ -77,16 +77,16 @@ class AnscConst:
     DF_README_VARS                       = "ITAREADME_VARS"     # ITA_readme
 
     # 変数タイプ
-    DF_VAR_TYPE_VAR                      = "VAR";
-    DF_VAR_TYPE_GBL                      = "GBL";
-    DF_VAR_TYPE_TPF                      = "TPF";
+    DF_VAR_TYPE_VAR                      = "VAR"
+    DF_VAR_TYPE_GBL                      = "GBL"
+    DF_VAR_TYPE_TPF                      = "TPF"
 
     # 正規表記でエスケープが必要な文字 $ ( ) * + - / ? ^ { | }
     # 親変数で許容する文字: xxx_[0-9a-zA-Z_]　  GBL/TPF
     VAR_parent_VarName  = "/^(\s*)[0-9a-zA-Z_]*(\s*)$/"      # 通常の変数       
     GBL_parent_VarName  = "/^(\s*)GBL_[0-9a-zA-Z_]*(\s*)$/"  # グローバル変数   
     TPF_parent_VarName  = "/^(\s*)TPF_[0-9a-zA-Z_]*(\s*)$/"  # テンプレート変数
-
+    
     # 実行エンジン
     DF_EXEC_MODE_ANSIBLE                            = '1'    # Ansibleで実行
     DF_EXEC_MODE_AAC                                = '2'    # ansible automation controllerで実行

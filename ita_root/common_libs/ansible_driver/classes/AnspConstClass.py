@@ -34,20 +34,12 @@ class AnspConst(AnscConst):
     vg_ansible_role_varsDB           = ""
 
     # AnsibleTowerのita_executions_prepare_buildで使用している変数
-    vg_tower_driver_type             = "pioneer";
-    vg_tower_driver_id               = "ns";
-    vg_tower_driver_name             = "pioneer";
+    vg_tower_driver_type             = "pioneer"
+    vg_tower_driver_id               = "ns"
+    vg_tower_driver_name             = "pioneer"
 
-    vg_parent_playbook_name          = "playbook.yml";
-    vg_log_driver_name               = "Pioneer";
+    vg_parent_playbook_name          = "playbook.yml"
+    vg_log_driver_name               = "Pioneer"
 
     vg_OrchestratorSubId             = "PIONEER_NS"
     vg_OrchestratorSubId_dir         = "ns"
-        
-    # 利用用途がないはずなので一旦コメントアウト enomoto 最後に消す
-    #zip_temp_save_dir               = $root_dir_path . '/temp'
-    #vg_exe_ins_input_file_dir       = $root_dir_path . "/uploadfiles/2100020213"
-    #vg_exe_ins_result_file_dir      = $root_dir_path . "/uploadfiles/2100020213"
-    #vg_ansible_master_file_pkeyITEM = "DIALOG_MATTER_ID"
-    #vg_ansible_master_file_nameITEM = "DIALOG_MATTER_FILE"
-    #vg_exe_ins_msg_table_jnl_seq    = "C_ANSIBLE_PNS_EXE_INS_MNG_JSQ"
