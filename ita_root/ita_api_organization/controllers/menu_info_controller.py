@@ -14,10 +14,10 @@
 
 from common_libs.common import *  # noqa: F403
 from libs import menu_info
-from libs import api_common
+from common_libs.api import api_filter
 
 
-@api_common.api_filter
+@api_filter
 def get_column_list(organization_id, workspace_id, menu):  # noqa: E501
     """get_column_list
 
@@ -41,7 +41,7 @@ def get_column_list(organization_id, workspace_id, menu):  # noqa: E501
     return data,
 
 
-@api_common.api_filter
+@api_filter
 def get_menu_info(organization_id, workspace_id, menu):  # noqa: E501
     """get_menu_info
 
@@ -65,7 +65,7 @@ def get_menu_info(organization_id, workspace_id, menu):  # noqa: E501
     return data,
 
 
-@api_common.api_filter
+@api_filter
 def get_pulldown_list(organization_id, workspace_id, menu, column):  # noqa: E501
     """get_pulldown_list
 

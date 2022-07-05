@@ -14,10 +14,10 @@
 
 from common_libs.common import *  # noqa: F403
 from libs import user_info
-from libs import api_common
+from common_libs.api import api_filter
 
 
-@api_common.api_filter
+@api_filter
 def get_menu_group_panels(organization_id, workspace_id):  # noqa: E501
     """get_menu_group_panels
 
@@ -39,7 +39,7 @@ def get_menu_group_panels(organization_id, workspace_id):  # noqa: E501
     return data,
 
 
-@api_common.api_filter
+@api_filter
 def get_user_auth(organization_id, workspace_id):  # noqa: E501
     """get_user_auth
 
@@ -61,7 +61,7 @@ def get_user_auth(organization_id, workspace_id):  # noqa: E501
     return data,
 
 
-@api_common.api_filter
+@api_filter
 def get_user_menus(organization_id, workspace_id):  # noqa: E501
     """get_user_menus
 
