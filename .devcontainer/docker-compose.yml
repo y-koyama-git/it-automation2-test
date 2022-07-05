@@ -30,7 +30,7 @@ services:
         - HTTPS_PROXY=${HTTPS_PROXY}
         - https_proxy=${HTTPS_PROXY}
     environment:
-      - LISTEN_PORT=8000
+      - LISTEN_PORT=8079
       - PYTHONPATH=/exastro/
       - DEFAULT_LANGUAGE=ja
       - DB_HOST=ita-mariadb

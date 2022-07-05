@@ -17,8 +17,8 @@ import connexion
 
 from dotenv import load_dotenv  # python-dotenv
 from libs.organization_common import before_request_handler
-import secrets
-import string
+# import secrets
+# import string
 
 
 # load environ variables
@@ -28,7 +28,7 @@ flask_app = connexion.FlaskApp(__name__, specification_dir='./swagger/')
 flask_app.add_api('swagger.yaml')
 
 flask_app.app.before_request(before_request_handler)
-flask_app.app.secret_key = "".join(secrets.choice(string.ascii_letters + string.digits + '_' + '-' + '!' + '#' + '&') for i in range(64))
+# flask_app.app.secret_key = "".join(secrets.choice(string.ascii_letters + string.digits + '_' + '-' + '!' + '#' + '&') for i in range(64))
 
 
 if __name__ == '__main__':
