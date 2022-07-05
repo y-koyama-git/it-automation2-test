@@ -12,10 +12,11 @@
 # limitations under the License.
 #
 """
-api common function module
+organization common function module
 """
 from flask import request, g
 import os
+import ast
 
 from common_libs.common.dbconnect import *  # noqa: F403
 from common_libs.common.exception import AppException
@@ -43,7 +44,7 @@ def before_request_handler():
 
         # request-header check
         user_id = request.headers.get("User-Id")
-        roles = request.headers.get("Roles")
+        roles = ast.literal_eval(request.headers.get("Roles"))
         if user_id is None or roles is None:
             raise AppException("400-00001", ["User-Id and Roles"], ["User-Id and Roles"])
 
@@ -106,3 +107,31 @@ def before_request_handler():
     except Exception as e:
         # catch - other all error
         return exception_response(e)
+
+
+def check_auth_menu(menu_id, wsdb_istc=None):
+    """
+    check_auth_menu
+
+    Arguments:
+        menu_id: menu_id
+        wsdb_istc: (class)DBConnectWs Instance
+    Returns:
+        (list) list of PRIVILEGE
+    """
+    if not wsdb_istc:
+        wsdb_istc = DBConnectWs(g.get('WORKSPACE_ID'))  # noqa: F405
+
+    role_id_list = g.get('ROLES')
+    prepared_list = list(map(lambda a: "%s", role_id_list))
+
+    where = 'WHERE `MENU_ID`=%s AND `ROLE_ID` in ({}) AND `DISUSE_FLAG`=0'.format(",".join(prepared_list))
+    data_list = wsdb_istc.table_select('T_COMN_ROLE_MENU_LINK', where, [menu_id, *role_id_list])
+
+    res = []
+    for data in data_list:
+        res.append(data['PRIVILEGE'])
+
+    # make unique
+    res = list(set(res))
+    return res

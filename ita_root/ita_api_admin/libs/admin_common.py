@@ -12,7 +12,7 @@
 # limitations under the License.
 #
 """
-api common function module
+admin common function module
 """
 from flask import request, g
 import os
@@ -32,7 +32,7 @@ def before_request_handler():
 
         # request-header check
         user_id = request.headers.get("User-Id")
-        roles = request.headers.get("Roles")
+        roles = list(request.headers.get("Roles"))
         if user_id is None or roles is None:
             raise AppException("400-00001", ["User-Id and Roles"], ["User-Id and Roles"])
 

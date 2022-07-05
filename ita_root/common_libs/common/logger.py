@@ -86,7 +86,7 @@ class AppLog:
         Returns:
             log_level(str) or False
         """
-        data_list = wsdb_instance.table_select('T_COMN_SYSTEM_CONFIG', 'WHERE `CONFIG_ID`=%s AND IFNULL(`CONFIG_ID`, 0)=0', ['LOG_LEVEL'])
+        data_list = wsdb_instance.table_select('T_COMN_SYSTEM_CONFIG', 'WHERE `CONFIG_ID`=%s AND `DISUSE_FLAG`=0', ['LOG_LEVEL'])
         if len(data_list) == 1:
             log_level = data_list[0]['VALUE']
             self.set_level(log_level)
