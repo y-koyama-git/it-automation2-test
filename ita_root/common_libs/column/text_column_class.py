@@ -80,39 +80,40 @@ class TextColumn(Column):
         max_length = None
         preg_match = None
 
-        # カラムの閾値を取得
-        objcols = self.get_objcols()
-        if objcols is not None:
-            if self.get_rest_key_name() in objcols:
-                dict_valid = self.get_dict_valid()
-                # 閾値(文字列長)
-                max_length = dict_valid.get('max_length')
-                min_length = dict_valid.get('min_length')
-                if min_length is None:
-                    min_length = 0
+        if val is not None:
+            # カラムの閾値を取得
+            objcols = self.get_objcols()
+            if objcols is not None:
+                if self.get_rest_key_name() in objcols:
+                    dict_valid = self.get_dict_valid()
+                    # 閾値(文字列長)
+                    max_length = dict_valid.get('max_length')
+                    min_length = dict_valid.get('min_length')
+                    if min_length is None:
+                        min_length = 0
 
-                # 閾値(正規表現)
-                preg_match = dict_valid.get('preg_match')
+                    # 閾値(正規表現)
+                    preg_match = dict_valid.get('preg_match')
 
-        # 文字列長
-        if max_length is not None:
-            check_val = len(str(val).encode('utf-8'))
-            if check_val != 0:
-                if int(min_length) < check_val < int(max_length):
-                    retBool = True
-                else:
-                    retBool = False
-                    msg = "文字長エラー (閾値:{}<値<{}, 値{})[{}]".format(min_length, max_length, check_val, self.rest_key_name)
-                    return retBool, msg
+            # 文字列長
+            if max_length is not None:
+                check_val = len(str(val).encode('utf-8'))
+                if check_val != 0:
+                    if int(min_length) < check_val < int(max_length):
+                        retBool = True
+                    else:
+                        retBool = False
+                        msg = "文字長エラー (閾値:{}<値<{}, 値{})[{}]".format(min_length, max_length, check_val, self.rest_key_name)
+                        return retBool, msg
 
-        # 正規表現
-        if preg_match is not None:
-            if len(preg_match) != 0:
-                patarn = re.compile(preg_match)
-                tmp_result = patarn.fullmatch(val)
-                if tmp_result is None:
-                    retBool = False
-                    msg = "正規表現エラー (閾値:{},値{})[{}]".format(patarn, val, self.rest_key_name)
-                    return retBool, msg
+            # 正規表現
+            if preg_match is not None:
+                if len(preg_match) != 0:
+                    patarn = re.compile(preg_match)
+                    tmp_result = patarn.fullmatch(val)
+                    if tmp_result is None:
+                        retBool = False
+                        msg = "正規表現エラー (閾値:{},値{})[{}]".format(patarn, val, self.rest_key_name)
+                        return retBool, msg
 
         return retBool,

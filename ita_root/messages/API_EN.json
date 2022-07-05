@@ -9,6 +9,7 @@
     "200-99999": "{}",
     "400-00001": "Request-Header Paramater({}) is Required",
     "401-00001": "You do not have access privileges to the target menu. (menu: {})",
+    "400-99999": "{}",
     "999-00001": "System Error",
     "999-00002": "System Error",
     "999-00003": "System Error"

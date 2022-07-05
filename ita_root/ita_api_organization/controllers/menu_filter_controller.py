@@ -22,9 +22,10 @@ from flask import jsonify
 import sys
 sys.path.append('../../')
 from common_libs.loadtable.load_table import loadTable
-from libs import api_common
+from common_libs.api import api_filter
 
-@api_common.api_filter
+
+@api_filter
 def get_filter(organization_id, workspace_id, menu):  # noqa: E501
     """get_filter
 
@@ -47,7 +48,7 @@ def get_filter(organization_id, workspace_id, menu):  # noqa: E501
     return result_data,
 
 
-@api_common.api_filter
+@api_filter
 def get_journal(organization_id, workspace_id, menu, uuid):  # noqa: E501
     """get_journal
 
@@ -72,7 +73,7 @@ def get_journal(organization_id, workspace_id, menu, uuid):  # noqa: E501
     return result_data,
 
 
-@api_common.api_filter
+@api_filter
 def post_filter(body, organization_id, workspace_id, menu):  # noqa: E501
     """post_filter
 
