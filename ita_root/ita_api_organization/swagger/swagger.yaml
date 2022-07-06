@@ -121,12 +121,63 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.menu_info_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/info/pulldown/{column}/:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/info/pulldown/:
     get:
       tags:
       - Menu Info
-      description: 項目のプルダウン選択用の一覧を取得する
+      description: IDColumn項目のプルダウン選択用の一覧を取得する
       operationId: get_pulldown_list
+      parameters:
+      - name: organization_id
+        in: path
+        description: OrganizationID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: path
+        description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: menu
+        in: path
+        description: メニュー名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_2'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+      x-openapi-router-controller: controllers.menu_info_controller
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/info/search/candidates/{column}/:
+    get:
+      tags:
+      - Menu Info
+      description: 表示フィルタで利用するプルダウン検索の候補一覧を取得する
+      operationId: get_search_candidates
       parameters:
       - name: organization_id
         in: path
@@ -166,7 +217,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_2'
+                $ref: '#/components/schemas/inline_response_200_3'
         "401":
           description: Unauthorized
           content:
@@ -217,7 +268,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_3'
+                $ref: '#/components/schemas/inline_response_200_4'
         "401":
           description: Unauthorized
           content:
@@ -265,16 +316,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
               description: 検索条件を設定
-        required: true
       responses:
         "200":
           description: Success
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_4'
+                $ref: '#/components/schemas/inline_response_200_5'
         "401":
           description: Unauthorized
           content:
@@ -333,7 +382,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_3'
+                $ref: '#/components/schemas/inline_response_200_4'
         "401":
           description: Unauthorized
           content:
@@ -383,14 +432,13 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/menu_maintenance_body'
-        required: true
       responses:
         "200":
           description: Success
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_4'
+                $ref: '#/components/schemas/inline_response_200_5'
         "401":
           description: Unauthorized
           content:
@@ -447,16 +495,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
               description: 更新する値を設定。廃止/復活は廃止フラグを更新することで実施。
-        required: true
       responses:
         "200":
           description: Success
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_4'
+                $ref: '#/components/schemas/inline_response_200_5'
         "401":
           description: Unauthorized
           content:
@@ -509,14 +555,13 @@ paths:
               description: 登録/更新/廃止/復活するidとレコードの値を設定
               items:
                 $ref: '#/components/schemas/MAINTENANCE_PARAMETERS'
-        required: true
       responses:
         "200":
           description: Success
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_4'
+                $ref: '#/components/schemas/inline_response_200_5'
         "401":
           description: Unauthorized
           content:
@@ -567,7 +612,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_3'
+                $ref: '#/components/schemas/inline_response_200_4'
         "401":
           description: Unauthorized
           content:
@@ -615,9 +660,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
               description: 検索条件を設定
-        required: true
       responses:
         "200":
           description: Success
@@ -669,13 +712,18 @@ paths:
         explode: false
         schema:
           type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: 検索条件を設定
       responses:
         "200":
           description: Success
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_3'
+                $ref: '#/components/schemas/inline_response_200_4'
         "401":
           description: Unauthorized
           content:
@@ -718,7 +766,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_5'
+                $ref: '#/components/schemas/inline_response_200_6'
         "401":
           description: Unauthorized
           content:
@@ -761,7 +809,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_6'
+                $ref: '#/components/schemas/inline_response_200_7'
         "401":
           description: Unauthorized
           content:
@@ -804,7 +852,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_7'
+                $ref: '#/components/schemas/inline_response_200_8'
         "401":
           description: Unauthorized
           content:
@@ -1049,13 +1097,13 @@ components:
       properties:
         result:
           type: string
-          example: 001-002
+          example: 000-00000
         data:
           $ref: '#/components/schemas/inline_response_200_data'
         message:
           type: string
       example:
-        result: 001-002
+        result: 000-00000
         data:
           menu_info:
             sheet_type: sheet_type
@@ -1108,7 +1156,7 @@ components:
       properties:
         result:
           type: string
-          example: 001-002
+          example: 000-00000
         data:
           type: array
           example:
@@ -1119,7 +1167,7 @@ components:
         message:
           type: string
       example:
-        result: 001-002
+        result: 000-00000
         data:
         - column1
         - column2
@@ -1130,7 +1178,47 @@ components:
       properties:
         result:
           type: string
-          example: 001-002
+          example: 000-00000
+        data:
+          type: array
+          example:
+            IDColumn1:
+              id1: name1
+              id2: name2
+              id3: name3
+            IDColumn2:
+              id1: name1
+              id2: name2
+              id3: name3
+            IDColumn3:
+              id1: name1
+              id2: name2
+              id3: name3
+          items: {}
+        message:
+          type: string
+      example:
+        result: 000-00000
+        data:
+          IDColumn1:
+            id1: name1
+            id2: name2
+            id3: name3
+          IDColumn2:
+            id1: name1
+            id2: name2
+            id3: name3
+          IDColumn3:
+            id1: name1
+            id2: name2
+            id3: name3
+        message: message
+    inline_response_200_3:
+      type: object
+      properties:
+        result:
+          type: string
+          example: 000-00000
         data:
           type: array
           example:
@@ -1141,37 +1229,31 @@ components:
         message:
           type: string
       example:
-        result: 001-002
+        result: 000-00000
         data:
           id1: name1
           id2: name2
           id3: name3
         message: message
-    inline_response_200_3:
-      type: object
-      properties:
-        TABLE:
-          $ref: '#/components/schemas/TABLE'
-      example:
-        TABLE:
-          TD: {}
-          TD_IHP: {}
-          PAGE_NO: 0
-          UNIQUE_VAL: {}
     inline_response_200_4:
       type: object
       properties:
-        status:
+        result:
+          type: string
+          example: 000-00000
+        data:
+          $ref: '#/components/schemas/inline_response_200_4_data'
+        message:
           type: string
       example:
-        status: status
-    menu_maintenance_body:
-      properties:
-        parameter:
-          $ref: '#/components/schemas/MAINTENANCE_PARAMETER_P'
-        file:
-          $ref: '#/components/schemas/MAINTENANCE_PARAMETER_F'
-      description: 登録する値を設定
+        result: 000-00000
+        data:
+          TABLE:
+            TD: {}
+            TD_IHP: {}
+            PAGE_NO: 0
+            UNIQUE_VAL: {}
+        message: message
     inline_response_200_5:
       type: object
       properties:
@@ -1179,7 +1261,28 @@ components:
           type: string
           example: 000-00000
         data:
-          $ref: '#/components/schemas/inline_response_200_5_data'
+          type: object
+        message:
+          type: string
+      example:
+        result: 000-00000
+        data: {}
+        message: message
+    menu_maintenance_body:
+      properties:
+        parameter:
+          $ref: '#/components/schemas/MAINTENANCE_PARAMETER_P'
+        file:
+          $ref: '#/components/schemas/MAINTENANCE_PARAMETER_F'
+      description: 登録する値を設定
+    inline_response_200_6:
+      type: object
+      properties:
+        result:
+          type: string
+          example: 000-00000
+        data:
+          $ref: '#/components/schemas/inline_response_200_6_data'
         message:
           type: string
           example: SUCCESS
@@ -1197,14 +1300,14 @@ components:
           - workspace2
           - workspace3
         message: SUCCESS
-    inline_response_200_6:
+    inline_response_200_7:
       type: object
       properties:
         result:
           type: string
           example: 000-00000
         data:
-          $ref: '#/components/schemas/inline_response_200_6_data'
+          $ref: '#/components/schemas/inline_response_200_7_data'
         message:
           type: string
           example: SUCCESS
@@ -1261,7 +1364,7 @@ components:
               menu_name: メニュー9
               menu_name_rest: menu_9
         message: SUCCESS
-    inline_response_200_7:
+    inline_response_200_8:
       type: object
       properties:
         result:
@@ -1349,7 +1452,18 @@ components:
             column_type: 0
             column_group_name: column_group_name
             ref_sort_conditions: ref_sort_conditions
-    inline_response_200_5_data:
+    inline_response_200_4_data:
+      type: object
+      properties:
+        TABLE:
+          $ref: '#/components/schemas/TABLE'
+      example:
+        TABLE:
+          TD: {}
+          TD_IHP: {}
+          PAGE_NO: 0
+          UNIQUE_VAL: {}
+    inline_response_200_6_data:
       type: object
       properties:
         roles:
@@ -1377,7 +1491,7 @@ components:
         - workspace1
         - workspace2
         - workspace3
-    inline_response_200_6_data:
+    inline_response_200_7_data:
       type: object
       properties:
         menu_groups:

@@ -26,21 +26,21 @@ from common_libs.api import api_filter
 
 
 @api_filter
-def maintenance_register(body, organization_id, workspace_id, menu):  # noqa: E501
+def maintenance_register(organization_id, workspace_id, menu, body=None):  # noqa: E501
     """maintenance_register
 
     レコードを登録する # noqa: E501
 
-    :param body: 
-    :type body: dict | bytes
     :param organization_id: OrganizationID
     :type organization_id: str
     :param workspace_id: WorkspaceID
     :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
+    :param body: 
+    :type body: dict | bytes
 
-    :rtype: InlineResponse2004
+    :rtype: InlineResponse2005
     """
 
     # DB接続
@@ -59,13 +59,11 @@ def maintenance_register(body, organization_id, workspace_id, menu):  # noqa: E5
 
 
 @api_filter
-def maintenance_update(body, organization_id, workspace_id, menu, uuid):  # noqa: E501
+def maintenance_update(organization_id, workspace_id, menu, uuid, body=None):  # noqa: E501
     """maintenance_update
 
     レコードを更新/廃止/復活する # noqa: E501
 
-    :param body: 
-    :type body: dict | bytes
     :param organization_id: OrganizationID
     :type organization_id: str
     :param workspace_id: WorkspaceID
@@ -74,8 +72,10 @@ def maintenance_update(body, organization_id, workspace_id, menu, uuid):  # noqa
     :type menu: str
     :param uuid: 対象のUUID
     :type uuid: str
+    :param body: 
+    :type body: dict | bytes
 
-    :rtype: InlineResponse2004
+    :rtype: InlineResponse2005
     """
 
     # DB接続

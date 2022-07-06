@@ -74,21 +74,21 @@ def get_journal(organization_id, workspace_id, menu, uuid):  # noqa: E501
 
 
 @api_filter
-def post_filter(body, organization_id, workspace_id, menu):  # noqa: E501
+def post_filter(organization_id, workspace_id, menu, body=None):  # noqa: E501
     """post_filter
 
     検索条件を指定し、レコードを取得する # noqa: E501
 
-    :param body: 
-    :type body: dict | bytes
     :param organization_id: OrganizationID
     :type organization_id: str
     :param workspace_id: WorkspaceID
     :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
+    :param body: 
+    :type body: dict | bytes
 
-    :rtype: InlineResponse2004
+    :rtype: InlineResponse2005
     """
 
     # DB接続
