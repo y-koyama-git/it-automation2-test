@@ -4,6 +4,7 @@
     "200-00002": "The target menu does not exist in \"Menu Table list\".(menu: {})",
     "200-00003": "The group to which the target menu belongs does not exist in \"Menu Group list\"(menu: {})",
     "200-00004": "The target menu does not exist in \"Menu Column list\". (menu: {})",
+    "200-00005": "The target column does not exist in the target menu.(menu: {}, column: {})",
     "200-99999": "{}",
     "400-00001": "Request-Header Paramater({}) is Required",
     "401-00001": "You do not have access privileges to the target menu. (menu: {})",
