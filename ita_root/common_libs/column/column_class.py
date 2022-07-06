@@ -112,6 +112,7 @@ class Column():
         
         self.cmd_type = cmd_type
 
+        
     # self 設定、取得関連
     def set_objtable(self, objtable):
         """
@@ -128,7 +129,7 @@ class Column():
                 self.objtable
         """
         return self.objtable
-
+    
     def get_menu(self):
         """
             menuを取得
@@ -576,11 +577,11 @@ class Column():
             ARGS:
                 val:値
             RETRUN:
-                string
+                retBool, msg, val
         """
-        # result = self.get_convert_list().get("VALUE").get(val)
-        result = val
-        return result
+        retBool = True
+        msg = ''
+        return retBool, msg, val
 
     # [load_table] 値をID連携先のIDへ変換
     def convert_id_value(self, val=''):
@@ -589,11 +590,11 @@ class Column():
             ARGS:
                 val:値
             RETRUN:
-                string
+                retBool, msg, val
         """
-        # result = self.get_convert_list().get("ID").get(val)
-        result = val
-        return result
+        retBool = True
+        msg = ''
+        return retBool, msg, val
 
     # [load_table] ファイル[base64 string]を取得
     def get_file_data(self, file_name, target_uuid, target_uuid_jnl=''):
@@ -607,8 +608,6 @@ class Column():
                 base64 string
         """
         result = '{} base64 string :{}_{}'.format(file_name, target_uuid, target_uuid_jnl)
-        # /storage/{organization_id}/{workspace_id}/{menu_id}/{target_uuid}/{rest_name}/{file_name}
-        # /storage/{organization_id}/{workspace_id}/{menu_id}/{target_uuid}/{rest_name}/old/{target_uuid_jnl}/{file_name}
         return result
     
     # [load_table][filter] ID変換用のリスト取得
