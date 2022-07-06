@@ -270,7 +270,7 @@ def collect_pulldown_list(objdbca, menu):
     
     menu_id = ret[0].get('MENU_ID')  # 対象メニューを特定するためのID
     
-    # 『メニュー-カラム紐付管理』テーブルから対象の項目のデータを取得
+    # 『メニュー-カラム紐付管理』テーブルから対象のメニューのデータを取得
     ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
     
     pulldown_list = {}
@@ -286,7 +286,6 @@ def collect_pulldown_list(objdbca, menu):
         column_name_rest = str(recode.get('COLUMN_NAME_REST'))
         ref_table_name = recode.get('REF_TABLE_NAME')
         ref_pkey_name = recode.get('REF_PKEY_NAME')
-        
         ref_col_name = recode.get('REF_COL_NAME')
         if recode.get('REF_MULTI_LANG') == "1":
             ref_col_name = ref_col_name + "_" + lang.upper()
@@ -317,6 +316,7 @@ def collect_search_candidates(objdbca, menu, column):
     t_common_menu = 'T_COMN_MENU'
     t_common_menu_table_link = 'T_COMN_MENU_TABLE_LINK'
     t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
+    lang = g.LANGUAGE
     
     # ####メモ：ユーザが対象のメニューの情報を取得可能かどうかのロールチェック処理が必要
     role_check = True
@@ -335,20 +335,38 @@ def collect_search_candidates(objdbca, menu, column):
     
     menu_id = ret[0].get('MENU_ID')  # 対象メニューを特定するためのID
     
-    # 『メニュー-テーブル紐付管理』テーブルから対象のテーブル名を取得
-    ret = objdbca.table_select(t_common_menu_table_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
-    
-    table_name = ret[0].get('TABLE_NAME')
-    
-    # ####メモ：リクエストで送られてくるカラムはcolumn_name_restなので、そこからカラム名を取ってくる処理が必要。
-    # #### ↓
-    
-    # 対象のテーブルのカラム一覧を取得し、対象のカラムの有無を確認
-    ret = objdbca.table_columns_get(table_name)
-    if column not in ret[0]:
+    # 『メニュー-カラム紐付管理』テーブルから対象の項目のデータを取得
+    ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND COLUMN_NAME_REST = %s AND DISUSE_FLAG = %s', [menu_id, column, 0])  # noqa: E501
+    if not ret:
         log_msg_args = [menu, column]
         api_msg_args = [menu, column]
         raise AppException("200-00005", log_msg_args, api_msg_args)  # noqa: F405
+    
+    col_name = str(ret[0].get('COL_NAME'))
+    column_class_id = str(ret[0].get('COLUMN_CLASS'))
+    
+    ref_table_name = ret[0].get('REF_TABLE_NAME')
+    ref_pkey_name = ret[0].get('REF_PKEY_NAME')
+    ref_multi_lang = ret[0].get('REF_MULTI_LANG')
+    ref_col_name = ref_col_name = ret[0].get('REF_COL_NAME')
+    if ref_multi_lang == "1":
+        ref_col_name = ref_col_name + "_" + lang.upper()
+    
+    # 『メニュー-テーブル紐付管理』テーブルから対象のテーブル名を取得
+    ret = objdbca.table_select(t_common_menu_table_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
+    if not ret:
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException("200-00002", log_msg_args, api_msg_args)  # noqa: F405
+    
+    table_name = ret[0].get('TABLE_NAME')
+    
+    # 対象のテーブルのカラム一覧を取得し、対象のカラムの有無を確認
+    ret = objdbca.table_columns_get(table_name)
+    if col_name not in ret[0]:
+        log_msg_args = [menu, col_name]
+        api_msg_args = [menu, col_name]
+        raise AppException("200-00006", log_msg_args, api_msg_args)  # noqa: F405
     
     # 対象のテーブルからレコードを取得し、対象のカラムの値を一覧化
     ret = objdbca.table_select(table_name, 'WHERE DISUSE_FLAG = %s', [0])
@@ -357,10 +375,25 @@ def collect_search_candidates(objdbca, menu, column):
         return []
     
     search_candidates = []
-    for recode in ret:
-        target = recode.get(column)
-        search_candidates.append(target)
+    # id_column_list = ["7", "11", "18"]  # id 7(IDColumn), id 11(LinkIDColumn), id 18(AppIDColumn)
+    id_column_list = ["7", "11"]  # ####メモ：18(AppIDColumn)の場合は別の挙動になるはずなので、いったん除外。
+    id_column_check = column_class_id in id_column_list
     
+    if id_column_check:
+        # IDColumn系の場合は、参照元のレコードを取得し値を差し替える
+        ret_2 = objdbca.table_select(ref_table_name, 'WHERE DISUSE_FLAG = %s', [0])
+        ref_list = {}
+        for recode_2 in ret_2:
+            ref_list[recode_2.get(ref_pkey_name)] = recode_2.get(ref_col_name)
+        
+        for recode in ret:
+            convert = ref_list[recode.get(col_name)]
+            search_candidates.append(convert)
+    else:
+        for recode in ret:
+            target = recode.get(col_name)
+            search_candidates.append(target)
+        
     # 重複を削除(元の並び順は維持)
     if search_candidates:
         search_candidates = list(dict.fromkeys(search_candidates))
