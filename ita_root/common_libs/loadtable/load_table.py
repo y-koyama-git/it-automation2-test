@@ -118,10 +118,7 @@ class loadTable():
         self.objdbca = objdbca
 
         # 環境情報
-        # self.lang = os.environ['LANGUAGE']
-        self.lang = 'ja'
-        if self.lang is None:
-            self.lang = 'ja'
+        self.lang = g.LANGUAGE
 
         # メニュー関連情報
         self.objtable = {}
@@ -716,7 +713,7 @@ class loadTable():
                 msg_args = '{}'.format(*e.args)
                 msg = g.appmsg.get_api_message(status_code, [msg_args])
         finally:
-            print(result_list)
+            # print(result_list)
             result = result_list
         return status_code, result, msg,
 
@@ -953,23 +950,26 @@ class loadTable():
                     print([rest_key, objcolumn])
                     # カラムクラス毎の処理:レコード操作前 + カラム毎の個別処理:レコード操作前
                     tmp_exec = objcolumn.before_iud_action(rest_val, option)
-                    #print([rest_key, objcolumn])
+                    
                     if tmp_exec[0] is not True:
                         self.set_message(tmp_exec[1], MSG_LEVEL_ERROR)
                     else:
                         # VALUE → ID 変換処理不要ならVALUE変更無し
-                        rest_val = objcolumn.convert_value_id(rest_val)
-                        entry_parameter[rest_key] = rest_val
+                        tmp_exec = objcolumn.convert_value_id(rest_val)
+                        if tmp_exec[0] is True:
+                            entry_parameter[rest_key] = tmp_exec[2]
+                        else:
+                            self.set_message(tmp_exec[1], MSG_LEVEL_ERROR)
 
             # メニュー共通処理:レコード操作前 組み合わせ一意制約
             self.exec_unique_constraint(entry_parameter, target_uuid)
-
+            
             # メニュー、カラム個別処理:レコード操作前
             target_option = {}
             tmp_exec = self.exec_menu_before_validate(entry_parameter, target_uuid, target_option)
             if tmp_exec[0] is not True:
                 self.set_message(tmp_exec[1], MSG_LEVEL_ERROR)
-
+            
             # レコード操作前エラー確認
             if self.get_message_count(MSG_LEVEL_ERROR) > 0:
                 retBool = False
@@ -1096,6 +1096,14 @@ class loadTable():
                 if isinstance(col_val, datetime.datetime):
                     col_val = '{}'.format(col_val.strftime('%Y/%m/%d %H:%M:%S.%f'))
 
+                if self.get_col_class_name(rest_key) in ['IdColumn', 'LastUpdateUserColumn', 'LinkIDColumn', 'LinkIDColumn']:
+                    objcolumn = self.get_columnclass(rest_key)
+                    # col_val = objcolumn.convert_id_value(col_val)
+                    # ID → VALUE 変換処理不要ならVALUE変更無し
+                    tmp_exec = objcolumn.convert_id_value(col_val)
+                    if tmp_exec[0] is True:
+                        col_val = tmp_exec[2]
+    
                 rest_parameter.setdefault(rest_key, col_val)
                 if mode not in ['excel', 'excel_jnl']:
                     if self.get_col_class_name(rest_key) == 'FileUploadColumn':
@@ -1217,7 +1225,7 @@ class loadTable():
             else:
                 parameter = tmp_exec[2]
                 option['parameter'] = parameter
-                
+
         return retBool, msg,
 
     def check_authority_cmd(self, cmd_type=''):
