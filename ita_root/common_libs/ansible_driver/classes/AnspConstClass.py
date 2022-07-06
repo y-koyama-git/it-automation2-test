@@ -42,4 +42,4 @@ class AnspConst(AnscConst):
     vg_log_driver_name               = "Pioneer"
 
     vg_OrchestratorSubId             = "PIONEER_NS"
-    vg_OrchestratorSubId_dir         = "ns"
+    vg_OrchestratorSubId_dir         = "pioneer"

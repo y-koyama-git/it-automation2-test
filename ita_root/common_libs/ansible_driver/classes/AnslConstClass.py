@@ -42,4 +42,4 @@ class AnslConst(AnscConst):
     vg_log_driver_name                 = "Legacy"
 
     vg_OrchestratorSubId             = "LEGACY_NS"
-    vg_OrchestratorSubId_dir         = "ns"
+    vg_OrchestratorSubId_dir         = "legacy"

@@ -43,4 +43,4 @@ class AnsrConst(AnscConst):
     vg_log_driver_name               = "Legacy-Role"
     
     vg_OrchestratorSubId             = "LEGACY_RL"
-    vg_OrchestratorSubId_dir         = "rl"
+    vg_OrchestratorSubId_dir         = "regacy_role"
