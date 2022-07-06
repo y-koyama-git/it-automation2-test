@@ -231,13 +231,12 @@ def collect_menu_column_list(objdbca, menu):
     return column_list
 
 
-def collect_pulldown_list(objdbca, menu, column):
+def collect_pulldown_list(objdbca, menu):
     """
         IDカラム(IDColumn, LinkIDColumn, AppIDColumn)のプルダウン選択用一覧の取得
         ARGS:
             objdbca:DB接クラス  DBConnectWs()
             menu: メニュー string
-            column: カラム string
         RETRUN:
             pulldown_list
     """
@@ -271,32 +270,33 @@ def collect_pulldown_list(objdbca, menu, column):
     menu_id = ret[0].get('MENU_ID')  # 対象メニューを特定するためのID
     
     # 『メニュー-カラム紐付管理』テーブルから対象の項目のデータを取得
-    ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND COLUMN_NAME_REST = %s AND DISUSE_FLAG = %s', [menu_id, column, 0])  # noqa: E501
-    if not ret:
-        log_msg_args = [menu, column]
-        api_msg_args = [menu, column]
-        raise AppException("200-00005", log_msg_args, api_msg_args)  # noqa: F405
+    ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])  # noqa: E501
     
-    column_class_id = str(ret[0].get('COLUMN_CLASS'))
-    id_column_list = ["7", "11", "18"]  # id 7(IDColumn), id 11(LinkIDColumn), id 18(AppIDColumn)
-    id_column_check = column_class_id in id_column_list
-    if not id_column_check:
-        log_msg_args = [column, column_class_master.get(column_class_id)]
-        api_msg_args = [column, column_class_master.get(column_class_id)]
-        raise AppException("200-00006", log_msg_args, api_msg_args)  # noqa: F405
-    
-    ref_table_name = ret[0].get('REF_TABLE_NAME')
-    ref_pkey_name = ret[0].get('REF_PKEY_NAME')
-    if ret[0].get('REF_MULTI_LANG'):
-        ref_col_name = ret[0].get('REF_COL_NAME_' + lang.upper())
-    else:
-        ref_col_name = ret[0].get('REF_COL_NAME')
-    # ####メモ：現状、ソートコンディションを考慮していない。
-    # ref_sort_conditions = ret[0].get('REF_SORT_CONDITIONS')
-    
-    ret = objdbca.table_select(ref_table_name, 'WHERE DISUSE_FLAG = %s', [0])
     pulldown_list = {}
+    # id_column_list = ["7", "11", "18"]  # id 7(IDColumn), id 11(LinkIDColumn), id 18(AppIDColumn)
+    id_column_list = ["7", "11"] # ####メモ：18(AppIDColumn)の場合は別の挙動になるはずなので、いったん除外。
     for recode in ret:
-        pulldown_list[recode.get(ref_pkey_name)] = recode.get(ref_col_name)
+        column_class_id = str(recode.get('COLUMN_CLASS'))
+        
+        id_column_check = column_class_id in id_column_list
+        if not id_column_check:
+            continue
+        
+        column_name_rest = str(recode.get('COLUMN_NAME_REST'))
+        ref_table_name = recode.get('REF_TABLE_NAME')
+        ref_pkey_name = recode.get('REF_PKEY_NAME')
+        
+        ref_col_name = recode.get('REF_COL_NAME')
+        if recode.get('REF_MULTI_LANG') == "1":
+            ref_col_name = ref_col_name + "_" + lang.upper()
+        
+        # ####メモ：現状、ソートコンディションを考慮していない。
+        # ref_sort_conditions = recode.get('REF_SORT_CONDITIONS')
+        ret_2 = objdbca.table_select(ref_table_name, 'WHERE DISUSE_FLAG = %s', [0])
+        column_pulldown_list = {}
+        for recode_2 in ret_2:
+            column_pulldown_list[recode_2.get(ref_pkey_name)] = recode_2.get(ref_col_name)
+        
+        pulldown_list[column_name_rest] = column_pulldown_list
     
     return pulldown_list
