@@ -13,13 +13,14 @@
 #
 import re
 
-""" 
+"""
   指定文字列からの変数抜出及び変数具体値置き換モジュール
-""" 
+"""
+
 class WrappedStringReplaceAdmin:
-    """ 
+    """
       指定文字列からの変数抜出及び変数具体値置き換えクラス
-    """ 
+    """
 
     def __init__(self):
         self.strReplacedString = ''
@@ -43,31 +44,31 @@ class WrappedStringReplaceAdmin:
         # 入力データを行単位に分解
         arry_list = strSourceString.split("\n")
         for lineString in arry_list:
-            lineString = lineString + "\n";
+            lineString = lineString + "\n"
             if lineString.find("#") == 0:
                 self.strReplacedString += lineString
             else:
                 # エスケープコード付きの#を一時的に改行に置換
-                wstr = lineString;
-                rpstr = wstr.replace("\\\#","\n\n")
+                wstr = lineString
+                rpstr = wstr.replace("\\\#", "\n\n")
                 # コメント( #)マーク以降の文字列を削除した文字列で変数の具体値置換
                 # #の前の文字がスペースの場合にコメントとして扱う
                 splitList = rpstr.split(' #')
                 lineString = splitList[0]
                 splitList.pop(0)
                 # 各変数を具体値に置換
-                for  dectReplace in aryReplaceSource:
+                for dectReplace in aryReplaceSource:
                     for strVar, strVal in dectReplace.items():
                         # 変数を具体値に置換
                         strVarName = strHeadPattern + strVar + strTailPattern
-                        strReplace = lineString.replace(strVarName,strVal)
+                        strReplace = lineString.replace(strVarName, strVal)
                         lineString = strReplace
                 # コメント(#)以降の文字列を元に戻す。
                 for strLine in splitList:
                     lineString += " #" + strLine
                 # エスケープコード付きの#を元に戻す。
-                rpstr = lineString.replace("\n\n","\#")
-                self.strReplacedString += rpstr;
+                rpstr = lineString.replace("\n\n", "\#")
+                self.strReplacedString += rpstr
         return boolRet
 
     def getReplacedString(self):
@@ -104,7 +105,7 @@ class WrappedStringReplaceAdmin:
 
         # 入力データを行単位に分解
         arry_list = strSourceString.split("\n")
-        line = 0;
+        line = 0
         for lineString in arry_list:
             # 行番号
             line += 1
@@ -115,13 +116,13 @@ class WrappedStringReplaceAdmin:
                 continue
 
             # エスケープコード付きの#を一時的に改行に置換
-            wstr = lineString;
+            wstr = lineString
             # コメント( #)マーク以降の文字列を削除する。
             # #の前の文字がスペースの場合にコメントとして扱う
             splitList = wstr.split(' #')
             strRemainString = splitList[0]
             if len(str.strip(strRemainString)) == 0:
-                #空行は読み飛ばす
+                # 空行は読み飛ばす
                 continue
             # 変数名　{{ ???_[a-zA-Z0-9_] | Fillter function }} または{{ ???_[a-zA-Z0-9_] }}　を取出す
             keyFilter = "{{[\s]" + var_heder_id + "[a-zA-Z0-9_]*" + tailmarke
@@ -133,11 +134,11 @@ class WrappedStringReplaceAdmin:
                 unique_set = []
             for var_name_match in unique_set:
                 # 変数名を抜出す
-                var_name_match = var_name_match.replace("{{ ","")
-                var_name_match = var_name_match.replace(reptailmarke,"")
+                var_name_match = var_name_match.replace("{{ ", "")
+                var_name_match = var_name_match.replace(reptailmarke, "")
 
                 # 変数位置退避
-                var_dict  = {}
+                var_dict = {}
                 var_dict[line] = var_name_match
                 mt_varsLineArray.append(var_dict)
 
@@ -145,7 +146,7 @@ class WrappedStringReplaceAdmin:
                 if mt_varsArray.count(var_name_match) == 0:
                     mt_varsArray.append(var_name_match)
 
-            #--- 予約変数　{{ 予約変数 | Fillter function }}　の抜き出し
+            # --- 予約変数　{{ 予約変数 | Fillter function }}　の抜き出し
             for localvarname in arrylocalvars:
                 keyFilter = "{{[\s]" + localvarname + tailmarke
                 match = re.findall(keyFilter, strRemainString)
@@ -156,11 +157,11 @@ class WrappedStringReplaceAdmin:
                     unique_set = []
                 for var_name_match in unique_set:
                     # 変数名を抜出す
-                    var_name_match = var_name_match.replace("{{ ","")
-                    var_name_match = var_name_match.replace(reptailmarke,"")
+                    var_name_match = var_name_match.replace("{{ ", "")
+                    var_name_match = var_name_match.replace(reptailmarke, "")
 
                     # 変数位置退避
-                    var_dict  = {}
+                    var_dict = {}
                     var_dict[line] = var_name_match
                     mt_varsLineArray.append(var_dict)
 
