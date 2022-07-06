@@ -44,12 +44,12 @@ def before_request_handler():
 
         # set language
         language = request.headers.get("Language")
-        if not language:
+        if language:
+            g.appmsg.set_lang(language)
+            g.applogger.info("LANGUAGE({}) is set".format(language))
+        else:
             language = os.environ.get("DEFAULT_LANGUAGE")
         g.LANGUAGE = language
-
-        g.appmsg.set_lang(language)
-        g.applogger.info("LANGUAGE({}) is set".format(language))
     except AppException as e:
         # catch - raise AppException("xxx-xxxxx", log_format, msg_format)
         return app_exception_response(e)
