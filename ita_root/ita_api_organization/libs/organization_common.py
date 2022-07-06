@@ -56,12 +56,12 @@ def before_request_handler():
 
         # set language
         language = request.headers.get("Language")
-        if not language:
+        if language:
+            g.appmsg.set_lang(language)
+            g.applogger.info("LANGUAGE({}) is set".format(language))
+        else:
             language = os.environ.get("DEFAULT_LANGUAGE")
         g.LANGUAGE = language
-
-        g.appmsg.set_lang(language)
-        g.applogger.info("LANGUAGE({}) is set".format(language))
 
         # initialize setting organization-db connect_info and connect check
         common_db = DBConnectCommon()  # noqa: F405
@@ -117,7 +117,7 @@ def check_auth_menu(menu_id, wsdb_istc=None):
         menu_id: menu_id
         wsdb_istc: (class)DBConnectWs Instance
     Returns:
-        (list) list of PRIVILEGE
+        (int) PRIVILEGE value
     """
     if not wsdb_istc:
         wsdb_istc = DBConnectWs(g.get('WORKSPACE_ID'))  # noqa: F405
@@ -128,10 +128,11 @@ def check_auth_menu(menu_id, wsdb_istc=None):
     where = 'WHERE `MENU_ID`=%s AND `ROLE_ID` in ({}) AND `DISUSE_FLAG`=0'.format(",".join(prepared_list))
     data_list = wsdb_istc.table_select('T_COMN_ROLE_MENU_LINK', where, [menu_id, *role_id_list])
 
-    res = []
+    res = False
     for data in data_list:
-        res.append(data['PRIVILEGE'])
+        privilege = data['PRIVILEGE']
+        if privilege == 1:
+            return privilege
+        res = privilege
 
-    # make unique
-    res = list(set(res))
     return res

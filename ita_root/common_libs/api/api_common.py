@@ -53,7 +53,8 @@ def make_response(data=None, msg="", result_code="000-00000", status_code=200, t
         "message": msg,
         "ts": api_timestamp
     }
-    if data:
+
+    if result_code == "000-00000":
         res_body["data"] = data
 
     log_status = "success" if result_code == "000-00000" else "error"
