@@ -38,35 +38,10 @@ def organization_create(body, organization_id):  # noqa: E501
 
     :rtype: InlineResponse200
     """
-    msg = ""
-
     common_db = DBConnectCommon()  # noqa: F405
     connect_info = common_db.get_orgdb_connect_info(organization_id)
     if connect_info:
-        try:
-            # try to connect organization-db
-            org_db = DBConnectOrg(organization_id)  # noqa: F405
-
-            # organization-db already exists
-            g.applogger.debug("ORG_DB:{} can be connected".format(organization_id))
-            return '', "ALREADY EXISTS"
-        except AppException:
-            # organization-db connect info is imperfect, so remake
-            org_root_db = DBConnectOrgRoot(organization_id)  # noqa: F405
-            org_root_db.database_drop(connect_info['DB_DATADBASE'])
-            org_root_db.user_drop(connect_info['DB_USER'])
-            org_root_db.db_disconnect()
-            data = {
-                'PRIMARY_KEY': connect_info['PRIMARY_KEY'],
-                'DISUSE_FLAG': 1
-            }
-            try:
-                common_db.db_transaction_start()
-                common_db.table_update("T_COMN_ORGANIZATION_DB_INFO", data, "PRIMARY_KEY")
-                common_db.db_commit()
-            except AppException:
-                common_db.db_rollback()
-            msg = "REBUILD"
+        return '', "ALREADY EXISTS"
 
     # register organization-db connect infomation
     user_name, user_password = common_db.userinfo_generate("ORG")
@@ -86,11 +61,6 @@ def organization_create(body, organization_id):  # noqa: E501
         common_db.db_transaction_start()
         common_db.table_insert("T_COMN_ORGANIZATION_DB_INFO", data, "PRIMARY_KEY")
         common_db.db_commit()
-
-    # except AppException as e:
-    #     common_db.db_rollback()
-    #     # raise AppException(*e.args)
-    #     raise AppException(e)
     except Exception as e:
         common_db.db_rollback()
         raise Exception(e)
@@ -108,11 +78,11 @@ def organization_create(body, organization_id):  # noqa: E501
     # create table of organization-db
     org_db.sqlfile_execute("sql/organization.sql")
 
-    return '', msg
+    return '',
 
 
 @api_filter
-def organization_delete(body, organization_id):  # noqa: E501
+def organization_delete(organization_id):  # noqa: E501
     """organization_delete
 
     Organizationを削除する # noqa: E501
@@ -122,4 +92,58 @@ def organization_delete(body, organization_id):  # noqa: E501
 
     :rtype: InlineResponse200
     """
-    return 'do some magic!'
+    # get organization_id
+    g.ORGANIZATION_ID = organization_id
+
+    common_db = DBConnectCommon()  # noqa: F405
+    connect_info = common_db.get_orgdb_connect_info(organization_id)
+    if connect_info is False:
+        return '', "ALREADY DELETED"
+
+    g.db_connect_info = {}
+    g.db_connect_info["ORGDB_HOST"] = connect_info["DB_HOST"]
+    g.db_connect_info["ORGDB_PORT"] = str(connect_info["DB_PORT"])
+    g.db_connect_info["ORGDB_USER"] = connect_info["DB_USER"]
+    g.db_connect_info["ORGDB_PASSWORD"] = connect_info["DB_PASSWORD"]
+    g.db_connect_info["ORGDB_ROOT_PASSWORD"] = connect_info["DB_ROOT_PASSWORD"]
+    g.db_connect_info["ORGDB_DATADBASE"] = connect_info["DB_DATADBASE"]
+
+    # get ws-db connect infomation
+    org_db = DBConnectOrg(organization_id)  # noqa: F405
+    workspace_data_list = org_db.table_select("T_COMN_WORKSPACE_DB_INFO", "WHERE `DISUSE_FLAG`=0")
+
+    org_root_db = DBConnectOrgRoot(organization_id)  # noqa: F405
+    for workspace_data in workspace_data_list:
+        # drop ws-db and ws-db-user
+        org_root_db.database_drop(workspace_data['DB_DATADBASE'])
+        org_root_db.user_drop(workspace_data['DB_USER'])
+
+        # disuse ws-db connect infomation
+        data = {
+            'PRIMARY_KEY': workspace_data['PRIMARY_KEY'],
+            'DISUSE_FLAG': 1
+        }
+        org_db.db_transaction_start()
+        org_db.table_update("T_COMN_WORKSPACE_DB_INFO", data, "PRIMARY_KEY")
+        org_db.db_commit()
+    org_db.db_disconnect()
+
+    # drop org-db and org-db-user
+    org_root_db.database_drop(connect_info['DB_DATADBASE'])
+    org_root_db.user_drop(connect_info['DB_USER'])
+    org_root_db.db_disconnect()
+
+    # disuse org-db connect infomation
+    data = {
+        'PRIMARY_KEY': connect_info['PRIMARY_KEY'],
+        'DISUSE_FLAG': 1
+    }
+    try:
+        common_db.db_transaction_start()
+        common_db.table_update("T_COMN_ORGANIZATION_DB_INFO", data, "PRIMARY_KEY")
+        common_db.db_commit()
+    except AppException as e:
+        common_db.db_rollback()
+        raise AppException(e)
+
+    return '',

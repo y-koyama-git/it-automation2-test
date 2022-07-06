@@ -35,40 +35,15 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
     :type organization_id: str
     :param workspace_id: WorkspaceID
     :type workspace_id: str
-    :param body: 
+    :param body:
     :type body: dict | bytes
 
     :rtype: InlineResponse200
     """
-    msg = ""
-
     org_db = DBConnectOrg(organization_id)  # noqa: F405
     connect_info = org_db.get_wsdb_connect_info(workspace_id)
     if connect_info:
-        try:
-            # try to connect workspace-db
-            ws_db = DBConnectWs(workspace_id, organization_id)  # noqa: F405
-
-            # workspace-db already exists
-            g.applogger.debug("WS_DB:{} can be connected".format(workspace_id))
-            return '', "ALREADY EXISTS"
-        except AppException:
-            # workspace-db connect info is imperfect, so remake
-            org_root_db = DBConnectOrgRoot(organization_id)  # noqa: F405
-            org_root_db.database_drop(connect_info['DB_DATADBASE'])
-            org_root_db.user_drop(connect_info['DB_USER'])
-            org_root_db.db_disconnect()
-            data = {
-                'PRIMARY_KEY': connect_info['PRIMARY_KEY'],
-                'DISUSE_FLAG': 1
-            }
-            try:
-                org_db.db_transaction_start()
-                org_db.table_update("T_COMN_WORKSPACE_DB_INFO", data, "PRIMARY_KEY")
-                org_db.db_commit()
-            except AppException:
-                org_db.db_rollback()
-            msg = "REBUILD"
+        return '', "ALREADY EXISTS"
 
     # register workspace-db connect infomation
     user_name, user_password = org_db.userinfo_generate("WS")
@@ -117,7 +92,7 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
             if re.fullmatch(r'[\s\n\r]*', sql) is None:
                 ws_db.sql_execute(sql)
 
-    return '', msg
+    return '',
 
 
 @api_filter
@@ -133,4 +108,30 @@ def workspace_delete(organization_id, workspace_id):  # noqa: E501
 
     :rtype: InlineResponse200
     """
-    return 'do some magic!'
+    # get organization_id
+    g.ORGANIZATION_ID = organization_id
+
+    org_db = DBConnectOrg(organization_id)  # noqa: F405
+    connect_info = org_db.get_wsdb_connect_info(workspace_id)
+    if connect_info is False:
+        return '', "ALREADY DELETED"
+
+    # drop ws-db and ws-db-user
+    org_root_db = DBConnectOrgRoot(organization_id)  # noqa: F405
+    org_root_db.database_drop(connect_info['DB_DATADBASE'])
+    org_root_db.user_drop(connect_info['DB_USER'])
+    org_root_db.db_disconnect()
+
+    # disuse ws-db connect infomation
+    data = {
+        'PRIMARY_KEY': connect_info['PRIMARY_KEY'],
+        'DISUSE_FLAG': 1
+    }
+    try:
+        org_db.db_transaction_start()
+        org_db.table_update("T_COMN_WORKSPACE_DB_INFO", data, "PRIMARY_KEY")
+        org_db.db_commit()
+    except AppException:
+        org_db.db_rollback()
+
+    return '',
