@@ -3,6 +3,8 @@ import yaml
 """
   yamlファイルのパースモジュール
 """
+
+
 class YamlParse:
     """
       yamlファイルのパースクラス
@@ -10,17 +12,17 @@ class YamlParse:
     def __init__(self):
         self.lv_lasterrmsg = ""
 
-    def SetLastError(err):
+    def SetLastError(self, err):
         """
           パースエラー情報退避
           Arguments:
-            err:  パースエラー情報 
+            err: パースエラー情報
           Returns:
             None
         """
         self.lv_lasterrmsg = err
 
-    def GetLastError():
+    def GetLastError(self):
         """
           パースエラー情報所得
           Arguments:
@@ -30,7 +32,7 @@ class YamlParse:
         """
         return self.lv_lasterrmsg
 
-    def Parse(yamlfile):
+    def Parse(self, yamlfile):
         """
           yamlファイルパース処理
           Arguments:
