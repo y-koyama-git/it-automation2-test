@@ -26,17 +26,17 @@ import re
 
 
 @api_filter
-def workspace_create(body, organization_id, workspace_id):  # noqa: E501
+def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
     """workspace_create
 
     Workspaceを作成する # noqa: E501
 
-    :param body:
-    :type body: dict | bytes
     :param organization_id: organizationID
     :type organization_id: str
     :param workspace_id: WorkspaceID
     :type workspace_id: str
+    :param body: 
+    :type body: dict | bytes
 
     :rtype: InlineResponse200
     """

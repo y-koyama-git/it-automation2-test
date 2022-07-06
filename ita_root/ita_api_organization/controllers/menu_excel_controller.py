@@ -34,19 +34,19 @@ def get_excel_filter(organization_id, workspace_id, menu):  # noqa: E501
     return 'do some magic!'
 
 
-def post_excel_filter(body, organization_id, workspace_id, menu):  # noqa: E501
+def post_excel_filter(organization_id, workspace_id, menu, body=None):  # noqa: E501
     """post_excel_filter
 
     検索条件を指定し、レコードを取得する # noqa: E501
 
-    :param body: 
-    :type body: dict | bytes
     :param organization_id: OrganizationID
     :type organization_id: str
     :param workspace_id: WorkspaceID
     :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
+    :param body: 
+    :type body: dict | bytes
 
     :rtype: InlineResponse2004
     """
@@ -55,7 +55,7 @@ def post_excel_filter(body, organization_id, workspace_id, menu):  # noqa: E501
     return 'do some magic!'
 
 
-def post_excel_maintenance(organization_id, workspace_id, menu):  # noqa: E501
+def post_excel_maintenance(organization_id, workspace_id, menu, body=None):  # noqa: E501
     """post_excel_maintenance
 
     Excelでレコードを登録/更新/廃止/復活する # noqa: E501
@@ -66,7 +66,9 @@ def post_excel_maintenance(organization_id, workspace_id, menu):  # noqa: E501
     :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
+    :param body: 
+    :type body: dict | bytes
 
-    :rtype: InlineResponse2003
+    :rtype: InlineResponse2004
     """
     return 'do some magic!'

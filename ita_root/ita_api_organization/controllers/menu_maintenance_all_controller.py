@@ -25,21 +25,21 @@ from common_libs.api import api_filter
 
 
 @api_filter
-def maintenance_all(body, organization_id, workspace_id, menu):  # noqa: E501
+def maintenance_all(organization_id, workspace_id, menu, body=None):  # noqa: E501
     """maintenance_all
 
     レコードを一括で登録/更新/廃止/復活する # noqa: E501
 
-    :param body: 
-    :type body: list | bytes
     :param organization_id: OrganizationID
     :type organization_id: str
     :param workspace_id: WorkspaceID
     :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
+    :param body: 
+    :type body: list | bytes
 
-    :rtype: InlineResponse2004
+    :rtype: InlineResponse2005
     """
     # if connexion.request.is_json:
     #    body = object.from_dict(connexion.request.get_json())  # noqa: E501

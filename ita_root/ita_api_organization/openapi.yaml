@@ -54,7 +54,7 @@ paths:
                 properties:
                   result:
                     type: string
-                    example: 001-002
+                    example: 000-00000
                   data:
                     type: object
                     properties:
@@ -112,7 +112,7 @@ paths:
                 properties:
                   result:
                     type: string
-                    example: 001-002
+                    example: 000-00000
                   data:
                     type: array
                     items: {}
@@ -132,12 +132,67 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
   
-  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/info/pulldown/{column}/:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/info/pulldown/:
     get:
       tags:
         - Menu Info
-      description: 項目のプルダウン選択用の一覧を取得する
+      description: IDColumn項目のプルダウン選択用の一覧を取得する
       operationId: getPulldownList
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    items: {}
+                    example: {IDColumn1: {"id1": "name1", "id2": "name2", "id3": "name3"}, IDColumn2: {"id1": "name1", "id2": "name2", "id3": "name3"}, IDColumn3: {"id1": "name1", "id2": "name2", "id3": "name3"}}
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/info/search/candidates/{column}/:
+    get:
+      tags:
+        - Menu Info
+      description: 表示フィルタで利用するプルダウン検索の候補一覧を取得する
+      operationId: getSearchCandidates
       parameters:
         - name: organization_id
           in: path
@@ -173,7 +228,7 @@ paths:
                 properties:
                   result:
                     type: string
-                    example: 001-002
+                    example: 000-00000
                   data:
                     type: object
                     items: {}
@@ -192,7 +247,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
-          
+  
   /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/filter/:
     get:
       tags:
@@ -226,8 +281,16 @@ paths:
               schema:
                 type: object
                 properties:
-                  TABLE:
-                    $ref: '#/components/schemas/TABLE'
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    properties:
+                      TABLE:
+                       $ref: '#/components/schemas/TABLE'
+                  message:
+                    type: string
         '401':
           description: Unauthorized
           content:
@@ -265,12 +328,10 @@ paths:
           schema:
             type: string
       requestBody:
-        required: true
         content:
           application/json:
             schema:
               description: 検索条件を設定
-              type: object
       responses:
         '200':
           description: Success
@@ -279,7 +340,12 @@ paths:
               schema:
                 type: object
                 properties:
-                  status:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                  message:
                     type: string
         '401':
           description: Unauthorized
@@ -333,8 +399,16 @@ paths:
               schema:
                 type: object
                 properties:
-                  TABLE:
-                    $ref: '#/components/schemas/TABLE'
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    properties:
+                      TABLE:
+                       $ref: '#/components/schemas/TABLE'
+                  message:
+                    type: string
         '401':
           description: Unauthorized
           content:
@@ -374,7 +448,6 @@ paths:
           schema:
             type: string
       requestBody:
-        required: true
         content:
           application/json:
             schema:
@@ -393,7 +466,12 @@ paths:
               schema:
                 type: object
                 properties:
-                  status:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                  message:
                     type: string
         '401':
           description: Unauthorized
@@ -440,12 +518,10 @@ paths:
           schema:
             type: string
       requestBody:
-        required: true
         content:
           application/json:
             schema:
               description: 更新する値を設定。廃止/復活は廃止フラグを更新することで実施。
-              type: object
       responses:
         '200':
           description: Success
@@ -454,7 +530,12 @@ paths:
               schema:
                 type: object
                 properties:
-                  status:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                  message:
                     type: string
         '401':
           description: Unauthorized
@@ -495,12 +576,10 @@ paths:
           schema:
             type: string
       requestBody:
-        required: true
         content:
           application/json:
             schema:
               description: 登録/更新/廃止/復活するidとレコードの値を設定
-              type: array
               items: {
                 $ref: '#/components/schemas/MAINTENANCE_PARAMETERS',
               }
@@ -512,7 +591,12 @@ paths:
               schema:
                 type: object
                 properties:
-                  status:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                  message:
                     type: string
         '401':
           description: Unauthorized
@@ -560,8 +644,16 @@ paths:
               schema:
                 type: object
                 properties:
-                  TABLE:
-                    $ref: '#/components/schemas/TABLE'
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    properties:
+                      TABLE:
+                       $ref: '#/components/schemas/TABLE'
+                  message:
+                    type: string
         '401':
           description: Unauthorized
           content:
@@ -599,12 +691,10 @@ paths:
           schema:
             type: string
       requestBody:
-        required: true
         content:
           application/json:
             schema:
               description: 検索条件を設定
-              type: object
       responses:
         '200':
           description: Success
@@ -613,7 +703,15 @@ paths:
               schema:
                 type: object
                 properties:
-                  status:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    properties:
+                      TABLE:
+                       $ref: '#/components/schemas/TABLE'
+                  message:
                     type: string
         '401':
           description: Unauthorized
@@ -652,6 +750,11 @@ paths:
           required: true
           schema:
             type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: 検索条件を設定
       responses:
         '200':
           description: Success
@@ -660,8 +763,16 @@ paths:
               schema:
                 type: object
                 properties:
-                  TABLE:
-                    $ref: '#/components/schemas/TABLE'
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    properties:
+                      TABLE:
+                       $ref: '#/components/schemas/TABLE'
+                  message:
+                    type: string
         '401':
           description: Unauthorized
           content:
