@@ -131,7 +131,7 @@ def check_auth_menu(menu_id, wsdb_istc=None):
     res = False
     for data in data_list:
         privilege = data['PRIVILEGE']
-        if privilege == 1:
+        if privilege == '1':
             return privilege
         res = privilege
 
