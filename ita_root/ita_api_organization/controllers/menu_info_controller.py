@@ -84,8 +84,7 @@ def get_pulldown_list(organization_id, workspace_id, menu):  # noqa: E501
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
     
     # 項目のプルダウン一覧の取得
-    # data = menu_info.collect_pulldown_list(objdbca, menu, column)
-    data = "改装中"
+    data = menu_info.collect_pulldown_list(objdbca, menu)
     
     return data,
 
