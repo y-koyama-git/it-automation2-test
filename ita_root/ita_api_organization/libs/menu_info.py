@@ -12,7 +12,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import os
 from common_libs.common import *  # noqa: F403
 from flask import g
 
@@ -52,6 +51,7 @@ def collect_menu_info(objdbca, menu):
         api_msg_args = [menu]
         raise AppException("200-00001", log_msg_args, api_msg_args)  # noqa: F405
     
+    # ####メモ：xx_flagとかの0/1が入る箇所は、IDColumnで参照している元から表示名(True/False)を持ってきて入れなおすべき？
     menu_id = ret[0].get('MENU_ID')  # 対象メニューを特定するためのID
     menu_group_id = ret[0].get('MENU_GROUP_ID')  # 対象メニューグループを特定するためのID
     menu_name = ret[0].get('MENU_NAME_' + lang.upper())
@@ -129,6 +129,7 @@ def collect_menu_info(objdbca, menu):
         api_msg_args = [menu]
         raise AppException("200-00004", log_msg_args, api_msg_args)  # noqa: F405
     
+    # ####メモ：xx_flagとかの0/1が入る箇所は、IDColumnで参照している元から表示名(True/False)を持ってきて入れなおすべき？
     column_info_data = {}
     for recode in ret:
         # json形式のレコードは改行を削除
@@ -270,11 +271,11 @@ def collect_pulldown_list(objdbca, menu):
     menu_id = ret[0].get('MENU_ID')  # 対象メニューを特定するためのID
     
     # 『メニュー-カラム紐付管理』テーブルから対象の項目のデータを取得
-    ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])  # noqa: E501
+    ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
     
     pulldown_list = {}
     # id_column_list = ["7", "11", "18"]  # id 7(IDColumn), id 11(LinkIDColumn), id 18(AppIDColumn)
-    id_column_list = ["7", "11"] # ####メモ：18(AppIDColumn)の場合は別の挙動になるはずなので、いったん除外。
+    id_column_list = ["7", "11"]  # ####メモ：18(AppIDColumn)の場合は別の挙動になるはずなので、いったん除外。
     for recode in ret:
         column_class_id = str(recode.get('COLUMN_CLASS'))
         
@@ -300,3 +301,68 @@ def collect_pulldown_list(objdbca, menu):
         pulldown_list[column_name_rest] = column_pulldown_list
     
     return pulldown_list
+
+
+def collect_search_candidates(objdbca, menu, column):
+    """
+        IDカラム(IDColumn, LinkIDColumn, AppIDColumn)のプルダウン選択用一覧の取得
+        ARGS:
+            objdbca:DB接クラス  DBConnectWs()
+            menu: メニュー string
+            column: カラム string
+        RETRUN:
+            search_candidates
+    """
+    # 変数定義
+    t_common_menu = 'T_COMN_MENU'
+    t_common_menu_table_link = 'T_COMN_MENU_TABLE_LINK'
+    t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
+    
+    # ####メモ：ユーザが対象のメニューの情報を取得可能かどうかのロールチェック処理が必要
+    role_check = True
+    if not role_check:
+        # ####メモ：401を意図的に返したいので最終的に自作Exceptionクラスに渡す。引数のルールは別途決める必要あり。
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException("401-00001", log_msg_args, api_msg_args)  # noqa: F405
+    
+    # 『メニュー管理』テーブルから対象のデータを取得
+    ret = objdbca.table_select(t_common_menu, 'WHERE MENU_NAME_REST = %s AND DISUSE_FLAG = %s', [menu, 0])
+    if not ret:
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException("200-00001", log_msg_args, api_msg_args)  # noqa: F405
+    
+    menu_id = ret[0].get('MENU_ID')  # 対象メニューを特定するためのID
+    
+    # 『メニュー-テーブル紐付管理』テーブルから対象のテーブル名を取得
+    ret = objdbca.table_select(t_common_menu_table_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
+    
+    table_name = ret[0].get('TABLE_NAME')
+    
+    # ####メモ：リクエストで送られてくるカラムはcolumn_name_restなので、そこからカラム名を取ってくる処理が必要。
+    # #### ↓
+    
+    # 対象のテーブルのカラム一覧を取得し、対象のカラムの有無を確認
+    ret = objdbca.table_columns_get(table_name)
+    if column not in ret[0]:
+        log_msg_args = [menu, column]
+        api_msg_args = [menu, column]
+        raise AppException("200-00005", log_msg_args, api_msg_args)  # noqa: F405
+    
+    # 対象のテーブルからレコードを取得し、対象のカラムの値を一覧化
+    ret = objdbca.table_select(table_name, 'WHERE DISUSE_FLAG = %s', [0])
+    if not ret:
+        # レコードが0件の場合は空をreturn
+        return []
+    
+    search_candidates = []
+    for recode in ret:
+        target = recode.get(column)
+        search_candidates.append(target)
+    
+    # 重複を削除(元の並び順は維持)
+    if search_candidates:
+        search_candidates = list(dict.fromkeys(search_candidates))
+    
+    return search_candidates

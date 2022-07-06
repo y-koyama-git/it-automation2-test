@@ -83,12 +83,13 @@ def get_pulldown_list(organization_id, workspace_id, menu):  # noqa: E501
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
     
-    # 項目のプルダウン一覧の取得
+    # IDColumn項目のプルダウン一覧の取得
     data = menu_info.collect_pulldown_list(objdbca, menu)
     
     return data,
 
 
+@api_filter
 def get_search_candidates(organization_id, workspace_id, menu, column):  # noqa: E501
     """get_search_candidates
 
@@ -105,4 +106,10 @@ def get_search_candidates(organization_id, workspace_id, menu, column):  # noqa:
 
     :rtype: InlineResponse2003
     """
-    return 'do some magic!'
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405   
+    
+    # 対象項目のプルダウン検索候補一覧を取得
+    data = menu_info.collect_search_candidates(objdbca, menu, column)
+    
+    return data,
