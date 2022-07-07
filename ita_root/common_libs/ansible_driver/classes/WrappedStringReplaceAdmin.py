@@ -17,11 +17,11 @@ import re
   指定文字列からの変数抜出及び変数具体値置き換モジュール
 """
 
+
 class WrappedStringReplaceAdmin:
     """
       指定文字列からの変数抜出及び変数具体値置き換えクラス
     """
-
     def __init__(self):
         self.strReplacedString = ''
 
