@@ -13,15 +13,12 @@
 #
 
 from datetime import datetime
-
 from column_class import Column
 
-"""
-カラムクラス個別処理(DateColumn)
-"""
-class DateColumn(Column) :
+
+class DateColumn(Column):
     """
-    テキスト系クラス共通処理
+    カラムクラス個別処理(DateColumn)
     """
     def __init__(self, objdbca, objtable, rest_key_name, cmd_type):
         # カラムクラス名
@@ -76,7 +73,7 @@ class DateColumn(Column) :
         if len(val) == 0:
             return retBool,
         
-		# 日付形式に変換
+        # 日付形式に変換
         try:
             dt_val = datetime.strptime(val, '%Y/%m/%d %H:%M:%S')
         except ValueError as msg:

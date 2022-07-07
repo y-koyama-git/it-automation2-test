@@ -14,15 +14,14 @@
 import re
 import os
 import base64
-
+from flask import g
 from column_class import Column
+from common_libs.common import *  # noqa: F403
 
-"""
-カラムクラス個別処理(FileUploadColumn)
-"""
+
 class FileUploadColumn(Column):
     """
-    ファイル系クラス共通処理
+    カラムクラス個別処理(FileUploadColumn)
     """
     def __init__(self, objdbca, objtable, rest_key_name, cmd_type):
 
@@ -124,7 +123,7 @@ class FileUploadColumn(Column):
             msg = "バイト数無し (閾値:{},値{})[{}]".format(upload_max_size, len(decode_option), self.rest_key_name)
             return retBool, msg
 
-        # 拡張子だけ取り出す
+        # 禁止拡張子チェック
         if forbidden_extension is not None:
             forbidden_extensions = forbidden_extension.split(';')
             extension_arr = os.path.splitext(val)
@@ -140,7 +139,7 @@ class FileUploadColumn(Column):
 
     def after_iud_common_action(self, val="", option={}):
         """
-           カラムクラス毎の個別処理 レコード操作後
+            カラムクラス毎の個別処理 レコード操作後
             ARGS:
                 val:値
                 option:オプション
@@ -148,20 +147,77 @@ class FileUploadColumn(Column):
                 True / エラーメッセージ
         """
         retBool = True
-        decode = base64.b64decode(option["file_data"].encode())
-        decode_option = decode.decode()
+        cmd_type = self.get_cmd_type()
+        # 廃止の場合return
+        if cmd_type == "Discard":
+            return retBool
+        
+        # base64からデコードしてstrに変換
+        decode_option = base64.b64decode(option["file_data"].encode()).decode()
         uuid = option["uuid"]
+        uuid_jnl = option["uuid_jnl"]
+        workspace_id = g.get("WORKSPACE_ID")
+        menu_id = self.get_menu()
+        rest_name = self.get_rest_key_name()
 
-        # カラムクラス毎の個別処理
-        dir_path = "/workspace/ita_root/test/menu_id/" + uuid
-        if not os.path.isdir(dir_path):
-            os.makedirs(dir_path)
-            
-        try:
-            with open(os.path.join(dir_path, val), "x") as f:
-                f.write(str(decode_option))
-        except FileExistsError as msg:
+        # ファイルパス取得
+        path = get_file_path(workspace_id, menu_id, uuid, rest_name, val, uuid_jnl)  # noqa: F405
+        dir_path = path["file_path"]
+        old_dir_path = path["old_file_path"]
+                
+        # old配下にファイルアップロード
+        if len(old_dir_path) > 0:
+            upload_file(old_dir_path, decode_option)  # noqa: F405
+        else:
             retBool = False
+            msg = "ファイルパスの取得エラー"
             return retBool, msg
+        
+        # 更新、復活の場合シンボリックリンクを削除
+        if cmd_type == "Update" or cmd_type == "Restore":
+            # 更新前のファイルパス取得
+            filepath = os.path.dirname(dir_path)
+            # 更新前のファイル名取得
+            filelist = []
+            for f in os.listdir(filepath):
+                if os.path.isfile(os.path.join(filepath, f)):
+                    filelist.append(f)
+            old_file_path = filepath + "/" + filelist[0]
+            
+            try:
+                os.unlink(old_file_path)
+            except Exception:
+                retBool = False
+                msg = "シンボリックリンク削除エラー old_file_path:{}".format(old_file_path)
+                return retBool, msg
 
+        # シンボリックリンク作成
+        try:
+            os.symlink(old_dir_path, dir_path)
+        except Exception:
+            retBool = False
+            msg = "シンボリックリンク作成エラー old_dir_path:{}, dir_path:{}".format(old_dir_path, dir_path)
+            return retBool, msg
+        
         return retBool,
+    
+    def get_file_data(self, file_name, target_uuid, target_uuid_jnl=''):
+        """
+            ファイル(base64)を取得
+            ARGS:
+                file_name:ファイル名
+                target_uuid:uuid
+                target_uuid_jnl:uuid
+            RETRUN:
+                base64 string
+        """
+
+        workspace_id = g.get("WORKSPACE_ID")
+        menu_id = self.get_menu()
+        rest_name = self.get_rest_key_name()
+
+        path = get_file_path(workspace_id, menu_id, target_uuid, rest_name, file_name, target_uuid_jnl)  # noqa: F405
+        dir_path = path["file_path"]
+        # ファイルの中身を読み込んでbase64に変換してreturn　読み込めなかったらFalse
+        result = file_encode(dir_path)  # noqa: F405
+        return result

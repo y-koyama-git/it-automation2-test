@@ -13,15 +13,12 @@
 #
 
 from datetime import datetime
-
 from date_column_class import DateColumn
 
-"""
-カラムクラス個別処理(DateTimeColumn)
-"""
+
 class DateTimeColumn(DateColumn):
     """
-    テキスト系クラス共通処理
+    カラムクラス個別処理(DateTimeColumn)
     """
     def __init__(self, objdbca, objtable, rest_key_name, cmd_type):
         # カラムクラス名
@@ -76,13 +73,13 @@ class DateTimeColumn(DateColumn):
         if len(val) == 0:
             return retBool,
 
-		# 日付形式に変換
+        # 日付形式に変換
         try:
             dt_val = datetime.strptime(val, '%Y/%m/%d %H:%M:%S.%f')
         except ValueError as msg:
             retBool = False
             return retBool, msg
-        #文字列長
+        # 文字列長
         if min_datetime is not None and max_datetime is not None:
             check_val = dt_val.timestamp()
             if check_val < .000000:
