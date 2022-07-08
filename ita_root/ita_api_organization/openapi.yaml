@@ -248,6 +248,118 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
   
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/filter/count/:
+    get:
+      tags:
+        - Menu Filter
+      description: レコード全件の件数を取得する
+      operationId: getFilterCount
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    properties:
+                      TABLE:
+                       $ref: '#/components/schemas/TABLE'
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+    post:
+      tags:
+        - Menu Filter
+      description: 検索条件を指定し、レコードの件数する
+      operationId: postFilterCount
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: 検索条件を設定
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
   /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/filter/:
     get:
       tags:
@@ -611,11 +723,67 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
 
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/excel/format/:
+    get:
+      tags:
+        - Menu Excel
+      description: 新規登録用Excelを取得する
+      operationId: getExcelFormat
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    properties:
+                      TABLE:
+                       $ref: '#/components/schemas/TABLE'
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
   /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/excel/:
     get:
       tags:
         - Menu Excel
-      description: レコードを全件取得する
+      description: 全件のExcelを取得する
       operationId: getExcelFilter
       parameters:
         - name: organization_id
@@ -669,7 +837,7 @@ paths:
     post:
       tags:
         - Menu Excel
-      description: 検索条件を指定し、レコードを取得する
+      description: 検索条件を指定し、Excelを取得する
       operationId: postExcelFilter
       parameters:
         - name: organization_id
@@ -755,6 +923,62 @@ paths:
           application/json:
             schema:
               description: 検索条件を設定
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    properties:
+                      TABLE:
+                       $ref: '#/components/schemas/TABLE'
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/excel/journal/:
+    get:
+      tags:
+        - Menu Excel
+      description: 変更履歴のExcelを取得する
+      operationId: getExcelJournal
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: Success
