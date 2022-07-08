@@ -229,7 +229,7 @@ def get_upload_file_path(workspace_id, menu_id, uuid, column_name_rest, file_nam
     if uuid_jnl is not None:
         if len(uuid_jnl) > 0:
             old_file_path = "/storage/{}/{}/uploadfiles/{}/{}/{}/old/{}/{}".format(organization_id, workspace_id, uuid, menu_id, column_name_rest, uuid_jnl, file_name)  # noqa: E501
-    
+
     return {"file_path": file_path, "old_file_path": old_file_path}
 
 
@@ -244,19 +244,19 @@ def upload_file(file_path, text):
         is success:(bool)
     """
     path = os.path.dirname(file_path)
-    
+
     if type(text) is bytes:
         text = base64.b64decode(text.encode()).decode()
-    
+
     if not os.path.isdir(path):
         os.makedirs(path)
-        
+
     try:
         with open(file_path, "x") as f:
             f.write(str(text))
     except Exception:
         return False
-    
+
     return True
 
 
@@ -272,17 +272,16 @@ def encrypt_upload_file(file_path, text):
     """
     text = ky_encrypt(text)
     path = os.path.dirname(file_path)
-    print(path)
-    
+
     if not os.path.isdir(path):
         os.makedirs(path)
-        
+
     try:
         with open(file_path, "x") as f:
             f.write(str(text))
     except Exception:
         return False
-    
+
     return True
 
 

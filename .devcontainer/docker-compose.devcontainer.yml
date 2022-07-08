@@ -22,7 +22,6 @@ services:
       - ~/.config/git/ignore:/home/app_user/.config/git/ignore
       - ${TALISMAN_HOME}:${TALISMAN_HOME}
       - ../.volumes/storage:/storage
-
     environment:
       - FLASK_ENV=development
       - HTTP_PROXY=${HTTP_PROXY}
@@ -56,6 +55,7 @@ services:
       - /mnt/mainte/talisman/.talismanrc:/mnt/mainte/talisman/.talismanrc
       - ~/.config/git/ignore:/home/app_user/.config/git/ignore
       - ${TALISMAN_HOME}:${TALISMAN_HOME}
+      - ../.volumes/storage:/storage
     environment:
       - FLASK_ENV=development
       - HTTP_PROXY=${HTTP_PROXY}

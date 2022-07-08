@@ -171,7 +171,7 @@ def check_request_body():
 
 def check_request_body_key(body, key):
     '''
-    check request_body's key
+    check request_body's key for required
     
     Argument:
         body: (dict) controller arg body
@@ -180,7 +180,7 @@ def check_request_body_key(body, key):
         key's value
     '''
     val = body.get(key)
-    if not val:
+    if val is None:
         raise AppException("400-00002", [key], [key])
 
     return val
