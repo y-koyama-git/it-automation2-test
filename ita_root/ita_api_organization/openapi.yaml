@@ -1315,7 +1315,7 @@ components:
           type: string
         history_table_flag:
           description: 履歴テーブル有無
-          type: string
+          type: boolean
         table_name:
           description: テーブル名
           type: string
@@ -1327,6 +1327,18 @@ components:
           type: boolean
         vertical:
           description: 縦型フラグ
+          type: boolean
+        row_insert_flag:
+          description: 登録許可フラグ
+          type: boolean
+        row_update_flag:
+          description: 更新許可フラグ
+          type: boolean
+        row_disuse_flag:
+          description: 廃止許可フラグ
+          type: boolean
+        row_reuse_flag:
+          description: 復活許可フラグ
           type: boolean
         login_necessity:
           description: 認証有無
@@ -1349,6 +1361,9 @@ components:
         sort_key:
           description: ソートキー
           type: string
+        privilege:
+          description: メニューに対する権限
+          type: integer
     ERROR_TEMPLATE:
       type: object
       properties:
