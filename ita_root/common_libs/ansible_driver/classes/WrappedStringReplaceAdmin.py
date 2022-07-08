@@ -93,7 +93,7 @@ class WrappedStringReplaceAdmin:
                                          [変数名, .....]
             FillterVars:(in)             Fillter設定されている変数抜出有無(bool)
           Returns:
-            True(bool), mt_varsLineArray, mt_varsArray
+            True(bool)
         """
         # Fillter定義されている変数も抜出すか判定
         if FillterVars == True:
@@ -169,4 +169,4 @@ class WrappedStringReplaceAdmin:
                     if mt_varsArray.count(var_name_match) == 0:
                         mt_varsArray.append(var_name_match)
             # 予約変数　{{ 予約変数 | Fillter function }}　の抜き出し ---
-        return True, mt_varsLineArray, mt_varsArray
+        return True
