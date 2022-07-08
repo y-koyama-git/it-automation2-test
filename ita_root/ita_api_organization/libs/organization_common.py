@@ -22,7 +22,7 @@ from common_libs.common.dbconnect import *  # noqa: F403
 from common_libs.common.exception import AppException
 from common_libs.common.logger import AppLog
 from common_libs.common.message_class import MessageTemplate
-from common_libs.api import set_api_timestamp, get_api_timestamp, app_exception_response, exception_response
+from common_libs.api import set_api_timestamp, get_api_timestamp, app_exception_response, exception_response, check_request_body
 
 
 def before_request_handler():
@@ -34,6 +34,8 @@ def before_request_handler():
         # create app log instance and message class instance
         g.applogger = AppLog()
         g.appmsg = MessageTemplate()
+
+        check_request_body()
 
         # get organization_id
         organization_id = request.path.split("/")[2]
@@ -117,7 +119,7 @@ def check_auth_menu(menu_id, wsdb_istc=None):
         menu_id: menu_id
         wsdb_istc: (class)DBConnectWs Instance
     Returns:
-        (int) PRIVILEGE value
+        (str) PRIVILEGE value
     """
     if not wsdb_istc:
         wsdb_istc = DBConnectWs(g.get('WORKSPACE_ID'))  # noqa: F405
