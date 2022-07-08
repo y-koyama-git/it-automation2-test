@@ -19,9 +19,9 @@ from file_upload_class import FileUploadColumn
 from common_libs.common import *  # noqa: F403
 
 
-class FileUploadEncodeColumn(FileUploadColumn):
+class FileUploadEncryptColumn(FileUploadColumn):
     """
-    カラムクラス個別処理(FileUploadEncodeColumn)
+    カラムクラス個別処理(FileUploadEncryptColumn)
     """
     def __init__(self, objdbca, objtable, rest_key_name, cmd_type):
         # カラムクラス名
@@ -83,7 +83,7 @@ class FileUploadEncodeColumn(FileUploadColumn):
         rest_name = self.get_rest_key_name()
 
         # ファイルパス取得
-        path = get_file_path(workspace_id, menu_id, uuid, rest_name, val, uuid_jnl)  # noqa: F405
+        path = get_upload_file_path(workspace_id, menu_id, uuid, rest_name, val, uuid_jnl)  # noqa: F405
         dir_path = path["file_path"]
         old_dir_path = path["old_file_path"]
                 
