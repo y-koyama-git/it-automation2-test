@@ -1217,7 +1217,7 @@ components:
           type: string
           description: シートタイプ
         history_table_flag:
-          type: string
+          type: boolean
           description: 履歴テーブル有無
         table_name:
           type: string
@@ -1231,6 +1231,18 @@ components:
         vertical:
           type: boolean
           description: 縦型フラグ
+        row_insert_flag:
+          type: boolean
+          description: 登録許可フラグ
+        row_update_flag:
+          type: boolean
+          description: 更新許可フラグ
+        row_disuse_flag:
+          type: boolean
+          description: 廃止許可フラグ
+        row_reuse_flag:
+          type: boolean
+          description: 復活許可フラグ
         login_necessity:
           type: boolean
           description: 認証有無
@@ -1252,12 +1264,20 @@ components:
         sort_key:
           type: string
           description: ソートキー
+        privilege:
+          type: integer
+          description: メニューに対する権限
       example:
         sheet_type: sheet_type
-        history_table_flag: history_table_flag
+        history_table_flag: true
+        row_update_flag: true
         web_print_limit: 7
         initial_filter_flg: true
+        row_reuse_flag: true
         vertical: true
+        row_insert_flag: true
+        privilege: 2
+        row_disuse_flag: true
         sort_key: sort_key
         table_name: table_name
         menu_group_id: menu_group_id
@@ -1315,10 +1335,15 @@ components:
         data:
           menu_info:
             sheet_type: sheet_type
-            history_table_flag: history_table_flag
+            history_table_flag: true
+            row_update_flag: true
             web_print_limit: 7
             initial_filter_flg: true
+            row_reuse_flag: true
             vertical: true
+            row_insert_flag: true
+            privilege: 2
+            row_disuse_flag: true
             sort_key: sort_key
             table_name: table_name
             menu_group_id: menu_group_id
@@ -1617,10 +1642,15 @@ components:
       example:
         menu_info:
           sheet_type: sheet_type
-          history_table_flag: history_table_flag
+          history_table_flag: true
+          row_update_flag: true
           web_print_limit: 7
           initial_filter_flg: true
+          row_reuse_flag: true
           vertical: true
+          row_insert_flag: true
+          privilege: 2
+          row_disuse_flag: true
           sort_key: sort_key
           table_name: table_name
           menu_group_id: menu_group_id
