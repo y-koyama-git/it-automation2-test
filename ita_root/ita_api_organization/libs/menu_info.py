@@ -57,7 +57,6 @@ def collect_menu_info(objdbca, menu):
     sort_key = ret[0].get('SORT_KEY')
     
     role_check = check_auth_menu(menu_id)
-    print(role_check)
     if not role_check:
         log_msg_args = [menu]
         api_msg_args = [menu]
