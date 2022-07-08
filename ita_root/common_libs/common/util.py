@@ -206,11 +206,10 @@ def file_encode(file_path):
         with open(file_path, "rb") as f:
             return base64.b64encode(f.read()).decode()
     except Exception:
-        retBool = False
-        return retBool
+        return False
 
 
-def get_file_path(workspace_id, menu_id, uuid, column_name_rest, file_name, uuid_jnl):
+def get_upload_file_path(workspace_id, menu_id, uuid, column_name_rest, file_name, uuid_jnl):
     """
     Get filepath
 
@@ -225,11 +224,11 @@ def get_file_path(workspace_id, menu_id, uuid, column_name_rest, file_name, uuid
         filepath
     """
     organization_id = g.get("ORGANIZATION_ID")
-    file_path = "/storage/{}/{}/uploadfiles/{}/{}/{}/{}".format(organization_id, workspace_id, menu_id, uuid, column_name_rest, file_name)
+    file_path = "/storage/{}/{}/uploadfiles/{}/{}/{}/{}".format(organization_id, workspace_id, uuid, menu_id, column_name_rest, file_name)
     old_file_path = ""
     if uuid_jnl is not None:
         if len(uuid_jnl) > 0:
-            old_file_path = "/storage/{}/{}/uploadfiles/{}/{}/{}/old/{}/{}".format(organization_id, workspace_id, menu_id, uuid, column_name_rest, uuid_jnl, file_name)  # noqa: E501
+            old_file_path = "/storage/{}/{}/uploadfiles/{}/{}/{}/old/{}/{}".format(organization_id, workspace_id, uuid, menu_id, column_name_rest, uuid_jnl, file_name)  # noqa: E501
     
     return {"file_path": file_path, "old_file_path": old_file_path}
 
@@ -255,9 +254,8 @@ def upload_file(file_path, text):
     try:
         with open(file_path, "x") as f:
             f.write(str(text))
-    except FileExistsError:
-        retBool = False
-        return retBool
+    except Exception:
+        return False
     
     return True
 
@@ -282,9 +280,8 @@ def encrypt_upload_file(file_path, text):
     try:
         with open(file_path, "x") as f:
             f.write(str(text))
-    except FileExistsError:
-        retBool = False
-        return retBool
+    except Exception:
+        return False
     
     return True
 

@@ -14,6 +14,7 @@
 
 from common_libs.common import *  # noqa: F403
 from flask import g
+from libs.organization_common import check_auth_menu
 
 
 def collect_menu_info(objdbca, menu):
@@ -36,14 +37,6 @@ def collect_menu_info(objdbca, menu):
     # 変数定義
     lang = g.LANGUAGE
     
-    # ####メモ：ユーザが対象のメニューの情報を取得可能かどうかのロールチェック処理が必要
-    role_check = True
-    if not role_check:
-        # ####メモ：401を意図的に返したいので最終的に自作Exceptionクラスに渡す。引数のルールは別途決める必要あり。
-        log_msg_args = [menu]
-        api_msg_args = [menu]
-        raise AppException("401-00001", log_msg_args, api_msg_args)  # noqa: F405
-    
     # 『メニュー管理』テーブルから対象のデータを取得
     ret = objdbca.table_select(t_common_menu, 'WHERE MENU_NAME_REST = %s AND DISUSE_FLAG = %s', [menu, 0])
     if not ret:
@@ -62,6 +55,13 @@ def collect_menu_info(objdbca, menu):
     web_print_confirm = ret[0].get('WEB_PRINT_CONFIRM')
     xls_print_limit = ret[0].get('XLS_PRINT_LIMIT')
     sort_key = ret[0].get('SORT_KEY')
+    
+    role_check = check_auth_menu(menu_id)
+    print(role_check)
+    if not role_check:
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException("401-00001", log_msg_args, api_msg_args)  # noqa: F405
     
     # 『メニュー-テーブル紐付管理』テーブルから対象のデータを取得
     ret = objdbca.table_select(t_common_menu_table_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
@@ -201,14 +201,6 @@ def collect_menu_column_list(objdbca, menu):
     t_common_menu = 'T_COMN_MENU'
     t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
     
-    # ####メモ：ユーザが対象のメニューの情報を取得可能かどうかのロールチェック処理が必要
-    role_check = True
-    if not role_check:
-        # ####メモ：401を意図的に返したいので最終的に自作Exceptionクラスに渡す。引数のルールは別途決める必要あり。
-        log_msg_args = [menu]
-        api_msg_args = [menu]
-        raise AppException("401-00001", log_msg_args, api_msg_args)  # noqa: F405
-    
     # 『メニュー管理』テーブルから対象のデータを取得
     ret = objdbca.table_select(t_common_menu, 'WHERE MENU_NAME_REST = %s AND DISUSE_FLAG = %s', [menu, 0])
     if not ret:
@@ -217,6 +209,12 @@ def collect_menu_column_list(objdbca, menu):
         raise AppException("200-00001", log_msg_args, api_msg_args)  # noqa: F405
     
     menu_id = ret[0].get('MENU_ID')  # 対象メニューを特定するためのID
+    
+    role_check = check_auth_menu(menu_id)
+    if not role_check:
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException("401-00001", log_msg_args, api_msg_args)  # noqa: F405
     
     # 『メニュー-カラム紐付管理』テーブルから対象のデータを取得
     ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s ORDER BY COLUMN_DISP_SEQ ASC', [menu_id])
@@ -247,14 +245,6 @@ def collect_pulldown_list(objdbca, menu):
     t_common_column_class = 'T_COMN_COLUMN_CLASS'
     lang = g.LANGUAGE
     
-    # ####メモ：ユーザが対象のメニューの情報を取得可能かどうかのロールチェック処理が必要
-    role_check = True
-    if not role_check:
-        # ####メモ：401を意図的に返したいので最終的に自作Exceptionクラスに渡す。引数のルールは別途決める必要あり。
-        log_msg_args = [menu]
-        api_msg_args = [menu]
-        raise AppException("401-00001", log_msg_args, api_msg_args)  # noqa: F405
-    
     # 『カラムクラスマスタ』テーブルからcolumn_typeの一覧を取得
     ret = objdbca.table_select(t_common_column_class, 'WHERE DISUSE_FLAG = %s', [0])
     column_class_master = {}
@@ -269,6 +259,12 @@ def collect_pulldown_list(objdbca, menu):
         raise AppException("200-00001", log_msg_args, api_msg_args)  # noqa: F405
     
     menu_id = ret[0].get('MENU_ID')  # 対象メニューを特定するためのID
+    
+    role_check = check_auth_menu(menu_id)
+    if not role_check:
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException("401-00001", log_msg_args, api_msg_args)  # noqa: F405
     
     # 『メニュー-カラム紐付管理』テーブルから対象のメニューのデータを取得
     ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
@@ -317,15 +313,7 @@ def collect_search_candidates(objdbca, menu, column):
     t_common_menu_table_link = 'T_COMN_MENU_TABLE_LINK'
     t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
     lang = g.LANGUAGE
-    
-    # ####メモ：ユーザが対象のメニューの情報を取得可能かどうかのロールチェック処理が必要
-    role_check = True
-    if not role_check:
-        # ####メモ：401を意図的に返したいので最終的に自作Exceptionクラスに渡す。引数のルールは別途決める必要あり。
-        log_msg_args = [menu]
-        api_msg_args = [menu]
-        raise AppException("401-00001", log_msg_args, api_msg_args)  # noqa: F405
-    
+        
     # 『メニュー管理』テーブルから対象のデータを取得
     ret = objdbca.table_select(t_common_menu, 'WHERE MENU_NAME_REST = %s AND DISUSE_FLAG = %s', [menu, 0])
     if not ret:
@@ -335,6 +323,12 @@ def collect_search_candidates(objdbca, menu, column):
     
     menu_id = ret[0].get('MENU_ID')  # 対象メニューを特定するためのID
     
+    role_check = check_auth_menu(menu_id)
+    if not role_check:
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException("401-00001", log_msg_args, api_msg_args)  # noqa: F405
+
     # 『メニュー-カラム紐付管理』テーブルから対象の項目のデータを取得
     ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND COLUMN_NAME_REST = %s AND DISUSE_FLAG = %s', [menu_id, column, 0])  # noqa: E501
     if not ret:

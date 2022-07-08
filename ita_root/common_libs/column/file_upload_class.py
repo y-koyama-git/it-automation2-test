@@ -161,7 +161,7 @@ class FileUploadColumn(Column):
         rest_name = self.get_rest_key_name()
 
         # ファイルパス取得
-        path = get_file_path(workspace_id, menu_id, uuid, rest_name, val, uuid_jnl)  # noqa: F405
+        path = get_upload_file_path(workspace_id, menu_id, uuid, rest_name, val, uuid_jnl)  # noqa: F405
         dir_path = path["file_path"]
         old_dir_path = path["old_file_path"]
                 
@@ -216,7 +216,7 @@ class FileUploadColumn(Column):
         menu_id = self.get_menu()
         rest_name = self.get_rest_key_name()
 
-        path = get_file_path(workspace_id, menu_id, target_uuid, rest_name, file_name, target_uuid_jnl)  # noqa: F405
+        path = get_upload_file_path(workspace_id, menu_id, target_uuid, rest_name, file_name, target_uuid_jnl)  # noqa: F405
         dir_path = path["file_path"]
         # ファイルの中身を読み込んでbase64に変換してreturn　読み込めなかったらFalse
         result = file_encode(dir_path)  # noqa: F405
