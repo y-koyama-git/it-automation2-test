@@ -18,7 +18,7 @@ workspace_create
 # import connexion
 from flask import g
 
-from common_libs.api import api_filter
+from common_libs.api import api_filter, check_request_body_key
 from common_libs.common.exception import AppException
 from common_libs.common.dbconnect import *  # noqa: F403
 from common_libs.common.util import ky_encrypt
@@ -40,6 +40,8 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
 
     :rtype: InlineResponse200
     """
+    role_id = check_request_body_key(body, 'role_id')
+
     org_db = DBConnectOrg(organization_id)  # noqa: F405
     connect_info = org_db.get_wsdb_connect_info(workspace_id)
     if connect_info:
@@ -80,11 +82,8 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
     ws_db = DBConnectWs(workspace_id, organization_id)  # noqa: F405
     # create table of workspace-db
     ws_db.sqlfile_execute("sql/workspace.sql")
-    # insert initial data of workspace-db
-    role_id = str(body['role_id'])
-    if role_id == "":
-        raise Exception("role_id is not found in request body")
 
+    # insert initial data of workspace-db
     with open("sql/workspace_master.sql", "r") as f:
         sql_list = f.read().split(";\n")
         for sql in sql_list:

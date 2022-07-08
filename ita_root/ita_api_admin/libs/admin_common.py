@@ -21,7 +21,7 @@ import ast
 from common_libs.common.exception import AppException
 from common_libs.common.logger import AppLog
 from common_libs.common.message_class import MessageTemplate
-from common_libs.api import set_api_timestamp, get_api_timestamp, app_exception_response, exception_response
+from common_libs.api import set_api_timestamp, get_api_timestamp, app_exception_response, exception_response, check_request_body
 
 
 def before_request_handler():
@@ -30,6 +30,8 @@ def before_request_handler():
         # create app log instance and message class instance
         g.applogger = AppLog()
         g.appmsg = MessageTemplate()
+
+        check_request_body()
 
         # request-header check
         user_id = request.headers.get("User-Id")
