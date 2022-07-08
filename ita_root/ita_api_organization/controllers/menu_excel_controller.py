@@ -20,7 +20,7 @@ import six
 def get_excel_filter(organization_id, workspace_id, menu):  # noqa: E501
     """get_excel_filter
 
-    レコードを全件取得する # noqa: E501
+    全件のExcelを取得する # noqa: E501
 
     :param organization_id: OrganizationID
     :type organization_id: str
@@ -29,7 +29,41 @@ def get_excel_filter(organization_id, workspace_id, menu):  # noqa: E501
     :param menu: メニュー名
     :type menu: str
 
-    :rtype: InlineResponse2003
+    :rtype: InlineResponse2004
+    """
+    return 'do some magic!'
+
+
+def get_excel_format(organization_id, workspace_id, menu):  # noqa: E501
+    """get_excel_format
+
+    新規登録用Excelを取得する # noqa: E501
+
+    :param organization_id: OrganizationID
+    :type organization_id: str
+    :param workspace_id: WorkspaceID
+    :type workspace_id: str
+    :param menu: メニュー名
+    :type menu: str
+
+    :rtype: InlineResponse2004
+    """
+    return 'do some magic!'
+
+
+def get_excel_journal(organization_id, workspace_id, menu):  # noqa: E501
+    """get_excel_journal
+
+    変更履歴のExcelを取得する # noqa: E501
+
+    :param organization_id: OrganizationID
+    :type organization_id: str
+    :param workspace_id: WorkspaceID
+    :type workspace_id: str
+    :param menu: メニュー名
+    :type menu: str
+
+    :rtype: InlineResponse2004
     """
     return 'do some magic!'
 
@@ -37,7 +71,7 @@ def get_excel_filter(organization_id, workspace_id, menu):  # noqa: E501
 def post_excel_filter(organization_id, workspace_id, menu, body=None):  # noqa: E501
     """post_excel_filter
 
-    検索条件を指定し、レコードを取得する # noqa: E501
+    検索条件を指定し、Excelを取得する # noqa: E501
 
     :param organization_id: OrganizationID
     :type organization_id: str
@@ -51,7 +85,7 @@ def post_excel_filter(organization_id, workspace_id, menu, body=None):  # noqa: 
     :rtype: InlineResponse2004
     """
     if connexion.request.is_json:
-        body = object.from_dict(connexion.request.get_json())  # noqa: E501
+        body = Object.from_dict(connexion.request.get_json())  # noqa: E501
     return 'do some magic!'
 
 
@@ -71,4 +105,6 @@ def post_excel_maintenance(organization_id, workspace_id, menu, body=None):  # n
 
     :rtype: InlineResponse2004
     """
+    if connexion.request.is_json:
+        body = Object.from_dict(connexion.request.get_json())  # noqa: E501
     return 'do some magic!'
