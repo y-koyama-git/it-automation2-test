@@ -9,7 +9,7 @@ from .id_class import IdColumn  # noqa: F401
 from .date_column_class import DateColumn  # noqa: F401
 from .date_time_class import DateTimeColumn  # noqa: F401
 from .file_upload_class import FileUploadColumn  # noqa: F401
-from .file_upload_encode_class import FileUploadEncodeColumn  # noqa: F401
+from .file_upload_encrypt_class import FileUploadEncryptColumn  # noqa: F401
 
 # from .file_upload_class import FloatColumn
 # from .file_upload_class import HostInsideLinkTextColumn

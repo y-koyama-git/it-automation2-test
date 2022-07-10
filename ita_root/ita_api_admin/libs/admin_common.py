@@ -16,11 +16,12 @@ admin common function module
 """
 from flask import request, g
 import os
+import ast
 
 from common_libs.common.exception import AppException
 from common_libs.common.logger import AppLog
 from common_libs.common.message_class import MessageTemplate
-from common_libs.api import set_api_timestamp, get_api_timestamp, app_exception_response, exception_response
+from common_libs.api import set_api_timestamp, get_api_timestamp, app_exception_response, exception_response, check_request_body
 
 
 def before_request_handler():
@@ -30,10 +31,12 @@ def before_request_handler():
         g.applogger = AppLog()
         g.appmsg = MessageTemplate()
 
+        check_request_body()
+
         # request-header check
         user_id = request.headers.get("User-Id")
-        roles = list(request.headers.get("Roles"))
-        if user_id is None or roles is None:
+        roles = ast.literal_eval(request.headers.get("Roles"))
+        if user_id is None or roles is None or type(roles) is not list:
             raise AppException("400-00001", ["User-Id and Roles"], ["User-Id and Roles"])
 
         g.USER_ID = user_id

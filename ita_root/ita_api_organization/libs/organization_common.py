@@ -22,7 +22,7 @@ from common_libs.common.dbconnect import *  # noqa: F403
 from common_libs.common.exception import AppException
 from common_libs.common.logger import AppLog
 from common_libs.common.message_class import MessageTemplate
-from common_libs.api import set_api_timestamp, get_api_timestamp, app_exception_response, exception_response
+from common_libs.api import set_api_timestamp, get_api_timestamp, app_exception_response, exception_response, check_request_body
 
 
 def before_request_handler():
@@ -35,6 +35,8 @@ def before_request_handler():
         g.applogger = AppLog()
         g.appmsg = MessageTemplate()
 
+        check_request_body()
+
         # get organization_id
         organization_id = request.path.split("/")[2]
         g.ORGANIZATION_ID = organization_id
@@ -45,7 +47,7 @@ def before_request_handler():
         # request-header check
         user_id = request.headers.get("User-Id")
         roles = ast.literal_eval(request.headers.get("Roles"))
-        if user_id is None or roles is None:
+        if user_id is None or roles is None or type(roles) is not list:
             raise AppException("400-00001", ["User-Id and Roles"], ["User-Id and Roles"])
 
         g.USER_ID = user_id
@@ -117,7 +119,7 @@ def check_auth_menu(menu_id, wsdb_istc=None):
         menu_id: menu_id
         wsdb_istc: (class)DBConnectWs Instance
     Returns:
-        (int) PRIVILEGE value
+        (str) PRIVILEGE value
     """
     if not wsdb_istc:
         wsdb_istc = DBConnectWs(g.get('WORKSPACE_ID'))  # noqa: F405

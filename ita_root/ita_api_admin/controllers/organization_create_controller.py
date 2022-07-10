@@ -17,12 +17,12 @@ organization_create
 """
 # import connexion
 from flask import g
+import os
 
 from common_libs.api import api_filter
 from common_libs.common.exception import AppException
 from common_libs.common.dbconnect import *  # noqa: F403
 from common_libs.common.util import ky_encrypt
-import os
 
 
 @api_filter
@@ -42,6 +42,12 @@ def organization_create(body, organization_id):  # noqa: E501
     connect_info = common_db.get_orgdb_connect_info(organization_id)
     if connect_info:
         return '', "ALREADY EXISTS"
+
+    # make storage directory for organization
+    strage_path = os.environ.get('STORAGEPATH')
+    organization_dir = strage_path + organization_id + "/"
+    if not os.path.isdir(organization_dir):
+        os.makedirs(organization_dir)
 
     # register organization-db connect infomation
     user_name, user_password = common_db.userinfo_generate("ORG")
