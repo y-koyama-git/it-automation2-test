@@ -78,8 +78,8 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
             for file_info in file_info_list:
                 for file, copy_cfg in file_info.items():
                     org_file = os.environ.get('PYTHONPATH') + "/".join(["files", menu_id, file])
-                    old_file_path = os.environ.get('STORAGEPATH') + "uploadfiles/" + menu_id + copy_cfg[0] + file
-                    file_path = os.environ.get('STORAGEPATH') + "uploadfiles/" + menu_id + copy_cfg[1] + file
+                    old_file_path = workspace_dir + "uploadfiles/" + menu_id + copy_cfg[0] + file
+                    file_path = workspace_dir + "uploadfiles/" + menu_id + copy_cfg[1] + file
                     print(org_file)
                     print(file_path)
                     print(old_file_path)
