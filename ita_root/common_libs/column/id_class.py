@@ -146,24 +146,25 @@ class IdColumn(Column):
         retBool = True
         msg = ''
         
-        try:
-            user_env = g.LANGUAGE.upper()
-            table_name = self.get_objcol().get("REF_TABLE_NAME")
-            where_str = "WHERE {} = %s".format(self.get_objcol().get("REF_PKEY_NAME"))
-            bind_value_list = [val]
-            return_values = self.objdbca.table_select(table_name, where_str, bind_value_list)
-            if len(return_values) == 1:
-                # 連携先のテーブルが言語別のカラムを持つか判定
-                ref_malti_lang = self.get_objcol().get("REF_MULTI_LANG")
-                if ref_malti_lang == '1':
-                    ref_col_name = "{}_{}".format(self.get_objcol().get("REF_COL_NAME"), user_env)
-                else:
-                    ref_col_name = "{}".format(self.get_objcol().get("REF_COL_NAME"))
-                val = return_values[0].get(ref_col_name)
+        if val is not None:
+            try:
+                user_env = g.LANGUAGE.upper()
+                table_name = self.get_objcol().get("REF_TABLE_NAME")
+                where_str = "WHERE {} = %s".format(self.get_objcol().get("REF_PKEY_NAME"))
+                bind_value_list = [val]
+                return_values = self.objdbca.table_select(table_name, where_str, bind_value_list)
+                if len(return_values) == 1:
+                    # 連携先のテーブルが言語別のカラムを持つか判定
+                    ref_malti_lang = self.get_objcol().get("REF_MULTI_LANG")
+                    if ref_malti_lang == '1':
+                        ref_col_name = "{}_{}".format(self.get_objcol().get("REF_COL_NAME"), user_env)
+                    else:
+                        ref_col_name = "{}".format(self.get_objcol().get("REF_COL_NAME"))
+                    val = return_values[0].get(ref_col_name)
 
-            else:
-                raise Exception()
-        except Exception as e:
-            val = 'ID変換失敗({})'.format(val)
+                else:
+                    raise Exception()
+            except Exception as e:
+                val = 'ID変換失敗({})'.format(val)
 
         return retBool, msg, val,
