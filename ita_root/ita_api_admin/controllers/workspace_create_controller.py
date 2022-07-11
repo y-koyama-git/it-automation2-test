@@ -17,12 +17,14 @@ workspace_create
 """
 # import connexion
 from flask import g
+import os
+import re
+import json
 
 from common_libs.api import api_filter, check_request_body_key
 from common_libs.common.exception import AppException
 from common_libs.common.dbconnect import *  # noqa: F403
 from common_libs.common.util import ky_encrypt
-import re
 
 
 @api_filter
@@ -44,8 +46,45 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
 
     org_db = DBConnectOrg(organization_id)  # noqa: F405
     connect_info = org_db.get_wsdb_connect_info(workspace_id)
-    if connect_info:
-        return '', "ALREADY EXISTS"
+    # if connect_info:
+    #     return '', "ALREADY EXISTS"
+
+    # make storage directory for workspace
+    strage_path = os.environ.get('STORAGEPATH')
+    workspace_dir = strage_path + "/".join([organization_id, workspace_id]) + "/"
+    if not os.path.isdir(workspace_dir):
+        os.makedirs(workspace_dir)
+
+    dir_list = [
+        ['driver'],
+        ['driver', 'ansible'],
+        ['driver', 'ansible', 'legacy'],
+        ['driver', 'ansible', 'pioneer'],
+        ['driver', 'ansible', 'legacy_role'],
+        ['driver', 'ansible', 'git_repositories'],
+        ['driver', 'conductor'],
+        ['driver', 'terraform'],
+        ['uploadfiles'],
+    ]
+    for dir in dir_list:
+        abs_dir = workspace_dir + "/".join(dir)
+        if not os.path.isdir(abs_dir):
+            os.makedirs(abs_dir)
+
+    # set initial material
+    with open('files/config.json', 'r') as material_conf_json:
+        material_conf = json.load(material_conf_json)
+        for menu_id, file_info_list in material_conf.items():
+            for file_info in file_info_list:
+                for file, copy_cfg in file_info.items():
+                    org_file = os.environ.get('PYTHONPATH') + "/".join(["files", menu_id, file])
+                    old_file_path = os.environ.get('STORAGEPATH') + "uploadfiles/" + menu_id + copy_cfg[0] + file
+                    file_path = os.environ.get('STORAGEPATH') + "uploadfiles/" + menu_id + copy_cfg[1] + file
+                    print(org_file)
+                    print(file_path)
+                    print(old_file_path)
+
+    # return '', "ALREADY EXISTS"
 
     # register workspace-db connect infomation
     user_name, user_password = org_db.userinfo_generate("WS")
