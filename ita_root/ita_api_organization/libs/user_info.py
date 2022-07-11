@@ -160,7 +160,9 @@ def collect_menus(objdbca):
     menu_group_list = []
     for recode in ret:
         add_menu_group = {}
+        parent_menu_group_id = recode.get('PARENT_MENU_GROUP_ID')
         menu_group_id = recode.get('MENU_GROUP_ID')
+        add_menu_group['parent_id'] = parent_menu_group_id
         add_menu_group['id'] = menu_group_id
         add_menu_group['menu_group_name'] = recode.get('MENU_GROUP_NAME_' + lang.upper())
         add_menu_group['disp_seq'] = recode.get('DISP_SEQ')
