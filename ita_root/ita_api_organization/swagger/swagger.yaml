@@ -1550,6 +1550,7 @@ components:
           menu_groups:
           - disp_seq: 10
             id: "101"
+            parent_id: ""
             menu_group_name: メニューグループ1
             menus:
             - disp_seq: 10
@@ -1566,6 +1567,7 @@ components:
               menu_name_rest: menu_3
           - disp_seq: 20
             id: "102"
+            parent_id: "101"
             menu_group_name: メニューグループ2
             menus:
             - disp_seq: 10
@@ -1582,6 +1584,7 @@ components:
               menu_name_rest: menu_6
           - disp_seq: 30
             id: "103"
+            parent_id: "101"
             menu_group_name: メニューグループ3
             menus:
             - disp_seq: 10
@@ -1736,6 +1739,7 @@ components:
           example:
           - disp_seq: 10
             id: "101"
+            parent_id: ""
             menu_group_name: メニューグループ1
             menus:
             - disp_seq: 10
@@ -1752,6 +1756,7 @@ components:
               menu_name_rest: menu_3
           - disp_seq: 20
             id: "102"
+            parent_id: "101"
             menu_group_name: メニューグループ2
             menus:
             - disp_seq: 10
@@ -1768,6 +1773,7 @@ components:
               menu_name_rest: menu_6
           - disp_seq: 30
             id: "103"
+            parent_id: "101"
             menu_group_name: メニューグループ3
             menus:
             - disp_seq: 10
@@ -1786,6 +1792,7 @@ components:
         menu_groups:
         - disp_seq: 10
           id: "101"
+          parent_id: ""
           menu_group_name: メニューグループ1
           menus:
           - disp_seq: 10
@@ -1802,6 +1809,7 @@ components:
             menu_name_rest: menu_3
         - disp_seq: 20
           id: "102"
+          parent_id: "101"
           menu_group_name: メニューグループ2
           menus:
           - disp_seq: 10
@@ -1818,6 +1826,7 @@ components:
             menu_name_rest: menu_6
         - disp_seq: 30
           id: "103"
+          parent_id: "101"
           menu_group_name: メニューグループ3
           menus:
           - disp_seq: 10
