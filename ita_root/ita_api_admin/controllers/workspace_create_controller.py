@@ -134,9 +134,11 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
 
         # insert initial data of workspace-db
         with open("sql/workspace_master.sql", "r") as f:
-            sql_list = f.read().split(";\n")
+            file = f.read()
+            file = file.replace('__ROLE_ID__', role_id)
+
+            sql_list = file.split(";\n")
             for sql in sql_list:
-                sql = sql.replace('__ROLE_ID__', role_id)
                 if re.fullmatch(r'[\s\n\r]*', sql) is None:
                     ws_db.sql_execute(sql)
 
