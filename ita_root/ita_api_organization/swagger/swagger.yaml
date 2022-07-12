@@ -231,6 +231,112 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.menu_info_controller
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/filter/count/:
+    get:
+      tags:
+      - Menu Filter
+      description: レコード全件の件数を取得する
+      operationId: get_filter_count
+      parameters:
+      - name: organization_id
+        in: path
+        description: OrganizationID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: path
+        description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: menu
+        in: path
+        description: メニュー名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_4'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+      x-openapi-router-controller: controllers.menu_filter_controller
+    post:
+      tags:
+      - Menu Filter
+      description: 検索条件を指定し、レコードの件数する
+      operationId: post_filter_count
+      parameters:
+      - name: organization_id
+        in: path
+        description: OrganizationID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: path
+        description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: menu
+        in: path
+        description: メニュー名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: 検索条件を設定
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_5'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+      x-openapi-router-controller: controllers.menu_filter_controller
   /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/filter/:
     get:
       tags:
@@ -575,11 +681,62 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.menu_maintenance_all_controller
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/excel/format/:
+    get:
+      tags:
+      - Menu Excel
+      description: 新規登録用Excelを取得する
+      operationId: get_excel_format
+      parameters:
+      - name: organization_id
+        in: path
+        description: OrganizationID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: path
+        description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: menu
+        in: path
+        description: メニュー名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_4'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+      x-openapi-router-controller: controllers.menu_excel_controller
   /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/excel/:
     get:
       tags:
       - Menu Excel
-      description: レコードを全件取得する
+      description: 全件のExcelを取得する
       operationId: get_excel_filter
       parameters:
       - name: organization_id
@@ -629,7 +786,7 @@ paths:
     post:
       tags:
       - Menu Excel
-      description: 検索条件を指定し、レコードを取得する
+      description: 検索条件を指定し、Excelを取得する
       operationId: post_excel_filter
       parameters:
       - name: organization_id
@@ -717,6 +874,57 @@ paths:
           application/json:
             schema:
               description: 検索条件を設定
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_4'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+      x-openapi-router-controller: controllers.menu_excel_controller
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/excel/journal/:
+    get:
+      tags:
+      - Menu Excel
+      description: 変更履歴のExcelを取得する
+      operationId: get_excel_journal
+      parameters:
+      - name: organization_id
+        in: path
+        description: OrganizationID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: path
+        description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: menu
+        in: path
+        description: メニュー名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
       responses:
         "200":
           description: Success
@@ -1009,7 +1217,7 @@ components:
           type: string
           description: シートタイプ
         history_table_flag:
-          type: string
+          type: boolean
           description: 履歴テーブル有無
         table_name:
           type: string
@@ -1023,6 +1231,18 @@ components:
         vertical:
           type: boolean
           description: 縦型フラグ
+        row_insert_flag:
+          type: boolean
+          description: 登録許可フラグ
+        row_update_flag:
+          type: boolean
+          description: 更新許可フラグ
+        row_disuse_flag:
+          type: boolean
+          description: 廃止許可フラグ
+        row_reuse_flag:
+          type: boolean
+          description: 復活許可フラグ
         login_necessity:
           type: boolean
           description: 認証有無
@@ -1044,12 +1264,20 @@ components:
         sort_key:
           type: string
           description: ソートキー
+        privilege:
+          type: integer
+          description: メニューに対する権限
       example:
         sheet_type: sheet_type
-        history_table_flag: history_table_flag
+        history_table_flag: true
+        row_update_flag: true
         web_print_limit: 7
         initial_filter_flg: true
+        row_reuse_flag: true
         vertical: true
+        row_insert_flag: true
+        privilege: 2
+        row_disuse_flag: true
         sort_key: sort_key
         table_name: table_name
         menu_group_id: menu_group_id
@@ -1107,10 +1335,15 @@ components:
         data:
           menu_info:
             sheet_type: sheet_type
-            history_table_flag: history_table_flag
+            history_table_flag: true
+            row_update_flag: true
             web_print_limit: 7
             initial_filter_flg: true
+            row_reuse_flag: true
             vertical: true
+            row_insert_flag: true
+            privilege: 2
+            row_disuse_flag: true
             sort_key: sort_key
             table_name: table_name
             menu_group_id: menu_group_id
@@ -1317,6 +1550,7 @@ components:
           menu_groups:
           - disp_seq: 10
             id: "101"
+            parent_id: ""
             menu_group_name: メニューグループ1
             menus:
             - disp_seq: 10
@@ -1333,6 +1567,7 @@ components:
               menu_name_rest: menu_3
           - disp_seq: 20
             id: "102"
+            parent_id: "101"
             menu_group_name: メニューグループ2
             menus:
             - disp_seq: 10
@@ -1349,6 +1584,7 @@ components:
               menu_name_rest: menu_6
           - disp_seq: 30
             id: "103"
+            parent_id: "101"
             menu_group_name: メニューグループ3
             menus:
             - disp_seq: 10
@@ -1409,10 +1645,15 @@ components:
       example:
         menu_info:
           sheet_type: sheet_type
-          history_table_flag: history_table_flag
+          history_table_flag: true
+          row_update_flag: true
           web_print_limit: 7
           initial_filter_flg: true
+          row_reuse_flag: true
           vertical: true
+          row_insert_flag: true
+          privilege: 2
+          row_disuse_flag: true
           sort_key: sort_key
           table_name: table_name
           menu_group_id: menu_group_id
@@ -1498,6 +1739,7 @@ components:
           example:
           - disp_seq: 10
             id: "101"
+            parent_id: ""
             menu_group_name: メニューグループ1
             menus:
             - disp_seq: 10
@@ -1514,6 +1756,7 @@ components:
               menu_name_rest: menu_3
           - disp_seq: 20
             id: "102"
+            parent_id: "101"
             menu_group_name: メニューグループ2
             menus:
             - disp_seq: 10
@@ -1530,6 +1773,7 @@ components:
               menu_name_rest: menu_6
           - disp_seq: 30
             id: "103"
+            parent_id: "101"
             menu_group_name: メニューグループ3
             menus:
             - disp_seq: 10
@@ -1548,6 +1792,7 @@ components:
         menu_groups:
         - disp_seq: 10
           id: "101"
+          parent_id: ""
           menu_group_name: メニューグループ1
           menus:
           - disp_seq: 10
@@ -1564,6 +1809,7 @@ components:
             menu_name_rest: menu_3
         - disp_seq: 20
           id: "102"
+          parent_id: "101"
           menu_group_name: メニューグループ2
           menus:
           - disp_seq: 10
@@ -1580,6 +1826,7 @@ components:
             menu_name_rest: menu_6
         - disp_seq: 30
           id: "103"
+          parent_id: "101"
           menu_group_name: メニューグループ3
           menus:
           - disp_seq: 10

@@ -14,6 +14,7 @@
 
 from common_libs.common import *  # noqa: F403
 from flask import g
+from libs.organization_common import check_auth_menu
 
 
 def collect_menu_info(objdbca, menu):
@@ -36,14 +37,6 @@ def collect_menu_info(objdbca, menu):
     # 変数定義
     lang = g.LANGUAGE
     
-    # ####メモ：ユーザが対象のメニューの情報を取得可能かどうかのロールチェック処理が必要
-    role_check = True
-    if not role_check:
-        # ####メモ：401を意図的に返したいので最終的に自作Exceptionクラスに渡す。引数のルールは別途決める必要あり。
-        log_msg_args = [menu]
-        api_msg_args = [menu]
-        raise AppException("401-00001", log_msg_args, api_msg_args)  # noqa: F405
-    
     # 『メニュー管理』テーブルから対象のデータを取得
     ret = objdbca.table_select(t_common_menu, 'WHERE MENU_NAME_REST = %s AND DISUSE_FLAG = %s', [menu, 0])
     if not ret:
@@ -51,7 +44,6 @@ def collect_menu_info(objdbca, menu):
         api_msg_args = [menu]
         raise AppException("200-00001", log_msg_args, api_msg_args)  # noqa: F405
     
-    # ####メモ：xx_flagとかの0/1が入る箇所は、IDColumnで参照している元から表示名(True/False)を持ってきて入れなおすべき？
     menu_id = ret[0].get('MENU_ID')  # 対象メニューを特定するためのID
     menu_group_id = ret[0].get('MENU_GROUP_ID')  # 対象メニューグループを特定するためのID
     menu_name = ret[0].get('MENU_NAME_' + lang.upper())
@@ -62,6 +54,16 @@ def collect_menu_info(objdbca, menu):
     web_print_confirm = ret[0].get('WEB_PRINT_CONFIRM')
     xls_print_limit = ret[0].get('XLS_PRINT_LIMIT')
     sort_key = ret[0].get('SORT_KEY')
+    
+    # メニューに対するロール権限をチェック（Falseなら権限エラー）
+    role_check = check_auth_menu(menu_id)
+    if not role_check:
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException("401-00001", log_msg_args, api_msg_args)  # noqa: F405
+    
+    # check_auth_menuの戻り値をprivilegeの値として使用([1: メンテナンス可, 2: 閲覧のみ] ロールが複数あり混在する場合は1が優先される)
+    privilege = role_check
     
     # 『メニュー-テーブル紐付管理』テーブルから対象のデータを取得
     ret = objdbca.table_select(t_common_menu_table_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
@@ -77,6 +79,10 @@ def collect_menu_info(objdbca, menu):
     view_name = ret[0].get('VIEW_NAME')
     inherit = ret[0].get('INHERIT')
     vertical = ret[0].get('VERTICAL')
+    row_insert_flag = ret[0].get('ROW_INSERT_FLAG')
+    row_update_flag = ret[0].get('ROW_UPDATE_FLAG')
+    row_disuse_flag = ret[0].get('ROW_DISUSE_FLAG')
+    row_reuse_flag = ret[0].get('ROW_REUSE_FLAG')
     
     # 『メニューグループ管理』テーブルから対象のデータを取得
     ret = objdbca.table_select(t_common_menu_group, 'WHERE MENU_GROUP_ID = %s AND DISUSE_FLAG = %s', [menu_group_id, 0])
@@ -100,13 +106,18 @@ def collect_menu_info(objdbca, menu):
         'view_name': view_name,
         'inherit': inherit,
         'vertical': vertical,
+        'row_insert_flag': row_insert_flag,
+        'row_update_flag': row_update_flag,
+        'row_disuse_flag': row_disuse_flag,
+        'row_reuse_flag': row_reuse_flag,
         'login_necessity': login_necessity,
         'auto_filter_flg': auto_filter_flg,
         'initial_filter_flg': initial_filter_flg,
         'web_print_limit': web_print_limit,
         'web_print_confirm': web_print_confirm,
         'xls_print_limit': xls_print_limit,
-        'sort_key': sort_key
+        'sort_key': sort_key,
+        'privilege': privilege
     }
     
     # 『カラムクラスマスタ』テーブルからcolumn_typeの一覧を取得
@@ -129,7 +140,6 @@ def collect_menu_info(objdbca, menu):
         api_msg_args = [menu]
         raise AppException("200-00004", log_msg_args, api_msg_args)  # noqa: F405
     
-    # ####メモ：xx_flagとかの0/1が入る箇所は、IDColumnで参照している元から表示名(True/False)を持ってきて入れなおすべき？
     column_info_data = {}
     for recode in ret:
         # json形式のレコードは改行を削除
@@ -201,14 +211,6 @@ def collect_menu_column_list(objdbca, menu):
     t_common_menu = 'T_COMN_MENU'
     t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
     
-    # ####メモ：ユーザが対象のメニューの情報を取得可能かどうかのロールチェック処理が必要
-    role_check = True
-    if not role_check:
-        # ####メモ：401を意図的に返したいので最終的に自作Exceptionクラスに渡す。引数のルールは別途決める必要あり。
-        log_msg_args = [menu]
-        api_msg_args = [menu]
-        raise AppException("401-00001", log_msg_args, api_msg_args)  # noqa: F405
-    
     # 『メニュー管理』テーブルから対象のデータを取得
     ret = objdbca.table_select(t_common_menu, 'WHERE MENU_NAME_REST = %s AND DISUSE_FLAG = %s', [menu, 0])
     if not ret:
@@ -217,6 +219,13 @@ def collect_menu_column_list(objdbca, menu):
         raise AppException("200-00001", log_msg_args, api_msg_args)  # noqa: F405
     
     menu_id = ret[0].get('MENU_ID')  # 対象メニューを特定するためのID
+    
+    # メニューに対するロール権限をチェック（Falseなら権限エラー）
+    role_check = check_auth_menu(menu_id)
+    if not role_check:
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException("401-00001", log_msg_args, api_msg_args)  # noqa: F405
     
     # 『メニュー-カラム紐付管理』テーブルから対象のデータを取得
     ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s ORDER BY COLUMN_DISP_SEQ ASC', [menu_id])
@@ -247,14 +256,6 @@ def collect_pulldown_list(objdbca, menu):
     t_common_column_class = 'T_COMN_COLUMN_CLASS'
     lang = g.LANGUAGE
     
-    # ####メモ：ユーザが対象のメニューの情報を取得可能かどうかのロールチェック処理が必要
-    role_check = True
-    if not role_check:
-        # ####メモ：401を意図的に返したいので最終的に自作Exceptionクラスに渡す。引数のルールは別途決める必要あり。
-        log_msg_args = [menu]
-        api_msg_args = [menu]
-        raise AppException("401-00001", log_msg_args, api_msg_args)  # noqa: F405
-    
     # 『カラムクラスマスタ』テーブルからcolumn_typeの一覧を取得
     ret = objdbca.table_select(t_common_column_class, 'WHERE DISUSE_FLAG = %s', [0])
     column_class_master = {}
@@ -270,7 +271,14 @@ def collect_pulldown_list(objdbca, menu):
     
     menu_id = ret[0].get('MENU_ID')  # 対象メニューを特定するためのID
     
-    # 『メニュー-カラム紐付管理』テーブルから対象の項目のデータを取得
+    # メニューに対するロール権限をチェック（Falseなら権限エラー）
+    role_check = check_auth_menu(menu_id)
+    if not role_check:
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException("401-00001", log_msg_args, api_msg_args)  # noqa: F405
+    
+    # 『メニュー-カラム紐付管理』テーブルから対象のメニューのデータを取得
     ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
     
     pulldown_list = {}
@@ -286,7 +294,6 @@ def collect_pulldown_list(objdbca, menu):
         column_name_rest = str(recode.get('COLUMN_NAME_REST'))
         ref_table_name = recode.get('REF_TABLE_NAME')
         ref_pkey_name = recode.get('REF_PKEY_NAME')
-        
         ref_col_name = recode.get('REF_COL_NAME')
         if recode.get('REF_MULTI_LANG') == "1":
             ref_col_name = ref_col_name + "_" + lang.upper()
@@ -317,15 +324,8 @@ def collect_search_candidates(objdbca, menu, column):
     t_common_menu = 'T_COMN_MENU'
     t_common_menu_table_link = 'T_COMN_MENU_TABLE_LINK'
     t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
-    
-    # ####メモ：ユーザが対象のメニューの情報を取得可能かどうかのロールチェック処理が必要
-    role_check = True
-    if not role_check:
-        # ####メモ：401を意図的に返したいので最終的に自作Exceptionクラスに渡す。引数のルールは別途決める必要あり。
-        log_msg_args = [menu]
-        api_msg_args = [menu]
-        raise AppException("401-00001", log_msg_args, api_msg_args)  # noqa: F405
-    
+    lang = g.LANGUAGE
+        
     # 『メニュー管理』テーブルから対象のデータを取得
     ret = objdbca.table_select(t_common_menu, 'WHERE MENU_NAME_REST = %s AND DISUSE_FLAG = %s', [menu, 0])
     if not ret:
@@ -335,20 +335,45 @@ def collect_search_candidates(objdbca, menu, column):
     
     menu_id = ret[0].get('MENU_ID')  # 対象メニューを特定するためのID
     
-    # 『メニュー-テーブル紐付管理』テーブルから対象のテーブル名を取得
-    ret = objdbca.table_select(t_common_menu_table_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
-    
-    table_name = ret[0].get('TABLE_NAME')
-    
-    # ####メモ：リクエストで送られてくるカラムはcolumn_name_restなので、そこからカラム名を取ってくる処理が必要。
-    # #### ↓
-    
-    # 対象のテーブルのカラム一覧を取得し、対象のカラムの有無を確認
-    ret = objdbca.table_columns_get(table_name)
-    if column not in ret[0]:
+    # メニューに対するロール権限をチェック（Falseなら権限エラー）
+    role_check = check_auth_menu(menu_id)
+    if not role_check:
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException("401-00001", log_msg_args, api_msg_args)  # noqa: F405
+
+    # 『メニュー-カラム紐付管理』テーブルから対象の項目のデータを取得
+    ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND COLUMN_NAME_REST = %s AND DISUSE_FLAG = %s', [menu_id, column, 0])  # noqa: E501
+    if not ret:
         log_msg_args = [menu, column]
         api_msg_args = [menu, column]
         raise AppException("200-00005", log_msg_args, api_msg_args)  # noqa: F405
+    
+    col_name = str(ret[0].get('COL_NAME'))
+    column_class_id = str(ret[0].get('COLUMN_CLASS'))
+    
+    ref_table_name = ret[0].get('REF_TABLE_NAME')
+    ref_pkey_name = ret[0].get('REF_PKEY_NAME')
+    ref_multi_lang = ret[0].get('REF_MULTI_LANG')
+    ref_col_name = ref_col_name = ret[0].get('REF_COL_NAME')
+    if ref_multi_lang == "1":
+        ref_col_name = ref_col_name + "_" + lang.upper()
+    
+    # 『メニュー-テーブル紐付管理』テーブルから対象のテーブル名を取得
+    ret = objdbca.table_select(t_common_menu_table_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
+    if not ret:
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException("200-00002", log_msg_args, api_msg_args)  # noqa: F405
+    
+    table_name = ret[0].get('TABLE_NAME')
+    
+    # 対象のテーブルのカラム一覧を取得し、対象のカラムの有無を確認
+    ret = objdbca.table_columns_get(table_name)
+    if col_name not in ret[0]:
+        log_msg_args = [menu, col_name]
+        api_msg_args = [menu, col_name]
+        raise AppException("200-00006", log_msg_args, api_msg_args)  # noqa: F405
     
     # 対象のテーブルからレコードを取得し、対象のカラムの値を一覧化
     ret = objdbca.table_select(table_name, 'WHERE DISUSE_FLAG = %s', [0])
@@ -357,10 +382,25 @@ def collect_search_candidates(objdbca, menu, column):
         return []
     
     search_candidates = []
-    for recode in ret:
-        target = recode.get(column)
-        search_candidates.append(target)
+    # id_column_list = ["7", "11", "18"]  # id 7(IDColumn), id 11(LinkIDColumn), id 18(AppIDColumn)
+    id_column_list = ["7", "11"]  # ####メモ：18(AppIDColumn)の場合は別の挙動になるはずなので、いったん除外。
+    id_column_check = column_class_id in id_column_list
     
+    if id_column_check:
+        # IDColumn系の場合は、参照元のレコードを取得し値を差し替える
+        ret_2 = objdbca.table_select(ref_table_name, 'WHERE DISUSE_FLAG = %s', [0])
+        ref_list = {}
+        for recode_2 in ret_2:
+            ref_list[recode_2.get(ref_pkey_name)] = recode_2.get(ref_col_name)
+        
+        for recode in ret:
+            convert = ref_list[recode.get(col_name)]
+            search_candidates.append(convert)
+    else:
+        for recode in ret:
+            target = recode.get(col_name)
+            search_candidates.append(target)
+        
     # 重複を削除(元の並び順は維持)
     if search_candidates:
         search_candidates = list(dict.fromkeys(search_candidates))

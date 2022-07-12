@@ -14,7 +14,8 @@
 
 import json
 from flask import g
-
+import importlib
+# from common_libs.validate import *
 
 """
 カラムクラス共通処理(カラム)
@@ -412,29 +413,24 @@ class Column():
         msg = ''
         exec_config = self.get_call_before_valid_info()
         parameter = option.get('parameter')
-        # exec_config = {}
-        # exec_config['func_name'] = 'ansible_func_1'
-        # exec_config['class_name'] = 'AnsibleDriver'
-        # exec_config['func_name'] = 'common_func'
+        # exec_config = 'common_libs.validate'
         if exec_config is not None:
-            class_name = exec_config.get("class_name")
-            objclass_str = ''
-            if class_name is not None:
-                eval_str = '{}()'.format(class_name)
-                objclass = eval(eval_str)
-                objclass_str = 'objclass.'
-            func_name = exec_config.get("func_name")
+            if exec_config is not None:
+                """
+                # exec_func = importlib.import_module(exec_config)
+                # eval_str = 'exec_func.main_func(self.objdbca, val, parameter, option)'
+                # exec_func = importlib.import_module(exec_config)
+                # eval_str = 'exec_func.valid.external_valid()'
+                eval_str = 'validate_10102.valid.external_valid()'
+                tmp_exec = eval(eval_str)
 
-            eval_str = '{}{}(self.objdbca, val, parameter, option)'.format(objclass_str, func_name)
-            tmp_exec = eval(eval_str)
-            
-            if tmp_exec[0] is not True:
-                retBool = False
-                msg = tmp_exec[1]
-            else:
-                parameter = tmp_exec[2]
-                option['parameter'] = parameter
-
+                if tmp_exec[0] is not True:
+                    retBool = False
+                    msg = tmp_exec[1]
+                else:
+                    parameter = tmp_exec[2]
+                    option['parameter'] = parameter
+                """
         return retBool, msg, parameter, option,
 
     # [maintenance] カラムクラスの個別処理 レコード操作後
@@ -479,6 +475,19 @@ class Column():
             option['parameter'] = parameter
         return retBool, msg, parameter, option,
 
+    # [maintenance] カラム個別処理 レコード操作後の状態回復処理
+    def after_iud_restore_action(self, val="", option={}):
+        """
+            カラムクラス毎の個別処理 レコード操作後の状態回復処理
+            ARGS:
+                option:オプション
+            RETRUN:
+                True / エラーメッセージ
+        """
+        retBool = True
+        msg = ''
+        return retBool, msg,
+        
     # [maintenance] 共通バリデーション呼び出し
     def is_valid(self, val, option={}):
         """
@@ -494,8 +503,10 @@ class Column():
         # バリデーション閾値の設定（テンプレートのキー以外除外）
         self.set_valid_value()
         # バリデーション閾値の設定（テンプレートのキー以外除外）
-        result = self.check_basic_valid(val, option)
-
+        if val is not None:
+            result = self.check_basic_valid(val, option)
+        else:
+            result = True, ''
         return result
 
     # [maintenance] 一意バリデーション呼び出し

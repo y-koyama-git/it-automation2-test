@@ -26,6 +26,24 @@ from common_libs.api import api_filter
 
 
 @api_filter
+def get_filter_count(organization_id, workspace_id, menu):  # noqa: E501
+    """get_filter_count
+
+    レコード全件の件数を取得する # noqa: E501
+
+    :param organization_id: OrganizationID
+    :type organization_id: str
+    :param workspace_id: WorkspaceID
+    :type workspace_id: str
+    :param menu: メニュー名
+    :type menu: str
+
+    :rtype: InlineResponse2004
+    """
+    return 'do some magic!',
+
+
+@api_filter
 def get_filter(organization_id, workspace_id, menu):  # noqa: E501
     """get_filter
 
@@ -102,3 +120,25 @@ def post_filter(organization_id, workspace_id, menu, body=None):  # noqa: E501
     # メニューのカラム情報を取得
     result_data = menu_filter.rest_filter(objdbca, menu, filter_parameter)
     return result_data,
+
+
+@api_filter
+def post_filter_count(organization_id, workspace_id, menu, body=None):  # noqa: E501
+    """post_filter_count
+
+    検索条件を指定し、レコードの件数する # noqa: E501
+
+    :param organization_id: OrganizationID
+    :type organization_id: str
+    :param workspace_id: WorkspaceID
+    :type workspace_id: str
+    :param menu: メニュー名
+    :type menu: str
+    :param body: 
+    :type body: dict | bytes
+
+    :rtype: InlineResponse2005
+    """
+    if connexion.request.is_json:
+        body = Object.from_dict(connexion.request.get_json())  # noqa: E501
+    return 'do some magic!'
