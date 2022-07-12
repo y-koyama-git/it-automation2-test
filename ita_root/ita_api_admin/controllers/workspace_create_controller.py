@@ -53,7 +53,6 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
     # make storage directory for workspace
     strage_path = os.environ.get('STORAGEPATH')
     workspace_dir = strage_path + "/".join([organization_id, workspace_id]) + "/"
-    print(workspace_dir)
     if not os.path.isdir(workspace_dir):
         os.makedirs(workspace_dir)
     else:
@@ -161,7 +160,6 @@ def workspace_delete(organization_id, workspace_id):  # noqa: E501
 
     strage_path = os.environ.get('STORAGEPATH')
     workspace_dir = strage_path + "/".join([organization_id, workspace_id]) + "/"
-    print(workspace_dir)
     if os.path.isdir(workspace_dir):
         shutil.rmtree(workspace_dir)
     else:
