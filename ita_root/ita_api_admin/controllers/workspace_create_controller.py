@@ -20,6 +20,7 @@ from flask import g
 import os
 import re
 import json
+import shutil
 
 from common_libs.api import api_filter, check_request_body_key
 from common_libs.common.exception import AppException
@@ -46,14 +47,17 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
 
     org_db = DBConnectOrg(organization_id)  # noqa: F405
     connect_info = org_db.get_wsdb_connect_info(workspace_id)
-    # if connect_info:
-    #     return '', "ALREADY EXISTS"
+    if connect_info:
+        return '', "ALREADY EXISTS"
 
     # make storage directory for workspace
     strage_path = os.environ.get('STORAGEPATH')
     workspace_dir = strage_path + "/".join([organization_id, workspace_id]) + "/"
+    print(workspace_dir)
     if not os.path.isdir(workspace_dir):
         os.makedirs(workspace_dir)
+    else:
+        return '', "ALREADY EXISTS"
 
     dir_list = [
         ['driver'],
@@ -78,13 +82,14 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
             for file_info in file_info_list:
                 for file, copy_cfg in file_info.items():
                     org_file = os.environ.get('PYTHONPATH') + "/".join(["files", menu_id, file])
-                    old_file_path = workspace_dir + "uploadfiles/" + menu_id + copy_cfg[0] + file
-                    file_path = workspace_dir + "uploadfiles/" + menu_id + copy_cfg[1] + file
-                    print(org_file)
-                    print(file_path)
-                    print(old_file_path)
+                    old_file_path = workspace_dir + "uploadfiles/" + menu_id + copy_cfg[0]
+                    file_path = workspace_dir + "uploadfiles/" + menu_id + copy_cfg[1]
 
-    # return '', "ALREADY EXISTS"
+                    if not os.path.isdir(old_file_path):
+                        os.makedirs(old_file_path)
+
+                    shutil.copy(org_file, old_file_path + file)
+                    os.symlink(old_file_path + file, file_path + file)
 
     # register workspace-db connect infomation
     user_name, user_password = org_db.userinfo_generate("WS")
@@ -152,6 +157,14 @@ def workspace_delete(organization_id, workspace_id):  # noqa: E501
     org_db = DBConnectOrg(organization_id)  # noqa: F405
     connect_info = org_db.get_wsdb_connect_info(workspace_id)
     if connect_info is False:
+        return '', "ALREADY DELETED"
+
+    strage_path = os.environ.get('STORAGEPATH')
+    workspace_dir = strage_path + "/".join([organization_id, workspace_id]) + "/"
+    print(workspace_dir)
+    if os.path.isdir(workspace_dir):
+        shutil.rmtree(workspace_dir)
+    else:
         return '', "ALREADY DELETED"
 
     # drop ws-db and ws-db-user
