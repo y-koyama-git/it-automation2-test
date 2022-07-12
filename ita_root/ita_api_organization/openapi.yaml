@@ -17,6 +17,16 @@ tags:
     description: Excelの取得・操作
   - name: User Info
     description: ユーザ情報の取得
+  - name: System Info
+    description: ITAの情報取得
+  - name: Menu Create
+    description: メニュー作成機能
+  - name: Conductor Controll
+    description: Conductorの作業実行・作業状態確認・緊急停止・予約取消・保留解除
+  - name: Driver Controll
+    description: Driverの作業実行・作業状態確認・緊急停止・予約取消
+  - name: Compare Controll
+    description: 比較情報取得・比較の実行
 
 paths:
   /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/info/:
