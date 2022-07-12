@@ -113,7 +113,9 @@ class loadTable():
             MSG_LEVEL_ERROR: [],
             MSG_LEVEL_CRITICAL: [],
         }
-
+        # レコード操作結果
+        self.exec_result = []
+        
         # DB接続
         self.objdbca = objdbca
 
@@ -178,6 +180,25 @@ class loadTable():
             message = self.message
         return message
 
+    # レコード操作実行データ保存
+    def set_exec_result(self, result_data):
+        """
+            レコード操作結果保存
+            ARGS:
+                self.exec_result
+        """
+        self.exec_result.append(result_data)
+
+    # 実行データ取得
+    def get_exec_result(self):
+        """
+            レコード操作結果取得
+            ARGS:
+            RETRUN:
+                self.exec_result
+        """
+        return self.exec_result
+    
     # message数取得
     def get_message_count(self, level=''):
         """
@@ -536,6 +557,8 @@ class loadTable():
     def get_rest_key(self, col_name):
         """
             rest_key list
+            ARGS:
+                col_name:カラム名
             RETRUN:
                 []
         """
@@ -553,7 +576,8 @@ class loadTable():
 
     def get_maintenance_uuid(self, uuid):
         """
-            rest_key list
+            ARGS:
+                uuid:pk
             RETRUN:
                 []
         """
@@ -569,6 +593,27 @@ class loadTable():
         """).format(table_name=table_name, primary_key=primary_key).strip()
         result = self.objdbca.sql_execute(query_str, [uuid])
 
+        return result
+
+    def get_target_jnl_uuids(self, uuid):
+        """
+            ARGS:
+                uuid:pk
+            RETRUN:
+                []
+        """
+        result = []
+        table_name = self.get_table_name_jnl()
+        column_list, primary_key_list = self.objdbca.table_columns_get(self.get_table_name())
+        primary_key = primary_key_list[0]
+        query_str = textwrap.dedent("""
+            SELECT * FROM {table_name}
+            WHERE {primary_key} = %s
+            ORDER BY LAST_UPDATE_TIMESTAMP DESC
+        """).format(table_name=table_name, primary_key=primary_key).strip()
+        tmp_result = self.objdbca.sql_execute(query_str, [uuid])
+        for row in tmp_result:
+            result.append(row)
         return result
 
     def get_target_rows(self, uuid):
@@ -767,6 +812,11 @@ class loadTable():
             else:
                 # ロールバック トランザクション終了
                 self.objdbca.db_transaction_end(False)
+                # 想定内エラーの切り戻し処理
+                list_exec_result = self.get_exec_result()
+                for tmp_exec_result in list_exec_result:
+                    entry_parameter = tmp_exec_result.get('parameter')
+                    self.exec_restore_action(entry_parameter, tmp_exec_result)
                 status_code = '200-99999'
                 msg_args = result_data[1]
                 msg = g.appmsg.get_api_message(status_code, [msg_args])
@@ -836,7 +886,7 @@ class loadTable():
                 tmp_result = self.exec_maintenance(parameters, target_uuid, cmd_type)
                 # result.setdefault(entry_no, tmp_result)
                 result_data.append(tmp_result[1])
-
+            # self.set_message('ERR_', MSG_LEVEL_ERROR)
             if self.get_message_count(MSG_LEVEL_ERROR) == 0:
                 # コミット
                 self.objdbca.db_transaction_end(True)
@@ -845,9 +895,17 @@ class loadTable():
             elif self.get_message_count(MSG_LEVEL_ERROR) > 0:
                 # ロールバック トランザクション終了
                 self.objdbca.db_transaction_end(False)
+                # 想定内エラーの切り戻し処理
+                list_exec_result = self.get_exec_result()
+                for tmp_exec_result in list_exec_result:
+                    entry_parameter = tmp_exec_result.get('parameter')
+                    self.exec_restore_action(entry_parameter, tmp_exec_result)
+
                 status_code = '200-99999'
                 msg_args = self.get_message(MSG_LEVEL_ERROR)
                 msg = g.appmsg.get_api_message(status_code, [msg_args])
+
+
         except Exception as e:
             # ロールバック トランザクション終了
             self.objdbca.db_transaction_end(False)
@@ -888,8 +946,8 @@ class loadTable():
             # テーブル情報（カラム、PK取得）
             column_list, primary_key_list = self.objdbca.table_columns_get(self.get_table_name())
             target_uuid_key = self.get_rest_key(primary_key_list[0])
-
-            maintenance_flg = True
+            target_jnls = []
+            
             # 更新時
             if cmd_type != CMD_REGISTER:
                 tmp_rows = self.get_target_rows(target_uuid)
@@ -899,13 +957,16 @@ class loadTable():
                     self.set_message(msg, MSG_LEVEL_ERROR)
                 else:
                     tmp_row = tmp_rows[0]
-
+                    
                     # 更新系の追い越し判定
                     self.chk_lastupdatetime(tmp_row, entry_parameter)
                     
                     # 更新系処理の場合、廃止フラグから処理種別判定、変更
                     cmd_type = self.convert_cmd_type(cmd_type, tmp_row, entry_parameter)
-                
+
+                    target_jnls = self.get_target_jnl_uuids(target_uuid)
+                    # print(target_jnls)
+
             # 処理種別の権限確認(メッセージ集約せずに、400系エラーを返却)
             exec_authority = self.check_authority_cmd(cmd_type)
             if exec_authority[0] is not True:
@@ -947,19 +1008,20 @@ class loadTable():
                     
                     # カラムクラス呼び出し
                     objcolumn = self.get_columnclass(rest_key, cmd_type)
-                    print([rest_key, objcolumn])
+                    # print([rest_key, objcolumn])
                     # カラムクラス毎の処理:レコード操作前 + カラム毎の個別処理:レコード操作前
                     tmp_exec = objcolumn.before_iud_action(rest_val, option)
-                    
+                    # print([rest_key, tmp_exec[0]])
                     if tmp_exec[0] is not True:
                         self.set_message(tmp_exec[1], MSG_LEVEL_ERROR)
                     else:
-                        # VALUE → ID 変換処理不要ならVALUE変更無し
-                        tmp_exec = objcolumn.convert_value_id(rest_val)
-                        if tmp_exec[0] is True:
-                            entry_parameter[rest_key] = tmp_exec[2]
-                        else:
-                            self.set_message(tmp_exec[1], MSG_LEVEL_ERROR)
+                        if rest_val is not None:
+                            # VALUE → ID 変換処理不要ならVALUE変更無し
+                            tmp_exec = objcolumn.convert_value_id(rest_val)
+                            if tmp_exec[0] is True:
+                                entry_parameter[rest_key] = tmp_exec[2]
+                            else:
+                                self.set_message(tmp_exec[1], MSG_LEVEL_ERROR)
 
             # メニュー共通処理:レコード操作前 組み合わせ一意制約
             self.exec_unique_constraint(entry_parameter, target_uuid)
@@ -1005,6 +1067,7 @@ class loadTable():
             if result is False:
                 self.set_message(result, MSG_LEVEL_ERROR)
             else:
+
                 result_uuid = result[0].get(primary_key_list[0])
                 result_uuid_jnl = self.get_maintenance_uuid(result_uuid)[0].get(COLNAME_JNL_SEQ_NO)
                 temp_rows = {primary_key_list[0]: result[0].get(primary_key_list[0])}
@@ -1021,7 +1084,7 @@ class loadTable():
             for rest_key, rest_val in entry_parameter.items():
                 # カラムクラス呼び出し
                 objcolumn = self.get_columnclass(rest_key, cmd_type)
-                print([rest_key, objcolumn])
+                # print([rest_key, objcolumn])
                 option = {}
                 option.setdefault("uuid", result_uuid)
                 option.setdefault("uuid_jnl", result_uuid_jnl)
@@ -1043,14 +1106,30 @@ class loadTable():
                 self.set_message(tmp_exec[1], MSG_LEVEL_ERROR)
             else:
                 print(tmp_exec)
+
+            target_options = {}
+            target_options.setdefault("uuid", result_uuid)
+            target_options.setdefault("uuid_jnl", result_uuid_jnl)
+            target_options.setdefault("parameter", entry_parameter)
+            target_options.setdefault("target_jnls", target_jnls)
+
+            # 実行結果を保存
+            self.set_exec_result(target_options)
+            # print( self.get_exec_result() )
                 
             # レコード操作後エラー確認
             if self.get_message_count(MSG_LEVEL_ERROR) != 0:
+                """
+                    print(self.get_message(MSG_LEVEL_ERROR))
+                    
+                    tmp_exec = self.exec_restore_action(entry_parameter, target_options)
+                """
                 retBool = False
                 return retBool, self.get_message(MSG_LEVEL_ERROR)
-            
+
             # 実行種別件数カウントアップ
             self.set_exec_count_up(cmd_type)
+            
             
         except Exception as e:
             print(e)
@@ -1226,6 +1305,30 @@ class loadTable():
                 parameter = tmp_exec[2]
                 option['parameter'] = parameter
 
+        return retBool, msg,
+
+    # []:想定内エラーの切り戻し処理
+    def exec_restore_action(self, entry_parameter, target_option):
+        """
+            []:::想定内エラーの切り戻し処理
+            ARGS:
+                parameter:パラメータ
+            RETRUN:
+                {}
+        """
+        retBool = True
+        msg = ''
+        # print(target_option)
+        # 各カラム単位の基本処理（後）、個別処理（後）を実施
+        for rest_key, rest_val in entry_parameter.items():
+            # カラムクラス呼び出し
+            objcolumn = self.get_columnclass(rest_key)
+            # print([rest_key,objcolumn])
+            # カラムクラス毎の処理:レコード操作後 ,カラム毎の個別処理:レコード操作後
+            tmp_exec = objcolumn.after_iud_restore_action(rest_val, target_option)
+            if tmp_exec[0] is not True:
+                print('切り戻し失敗')
+                # self.set_message('切り戻し失敗', MSG_LEVEL_ERROR)
         return retBool, msg,
 
     def check_authority_cmd(self, cmd_type=''):

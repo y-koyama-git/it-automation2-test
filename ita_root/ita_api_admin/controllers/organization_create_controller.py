@@ -18,6 +18,7 @@ organization_create
 # import connexion
 from flask import g
 import os
+import shutil
 
 from common_libs.api import api_filter
 from common_libs.common.exception import AppException
@@ -48,6 +49,8 @@ def organization_create(body, organization_id):  # noqa: E501
     organization_dir = strage_path + organization_id + "/"
     if not os.path.isdir(organization_dir):
         os.makedirs(organization_dir)
+    else:
+        return '', "ALREADY EXISTS"
 
     # register organization-db connect infomation
     user_name, user_password = common_db.userinfo_generate("ORG")
@@ -104,6 +107,13 @@ def organization_delete(organization_id):  # noqa: E501
     common_db = DBConnectCommon()  # noqa: F405
     connect_info = common_db.get_orgdb_connect_info(organization_id)
     if connect_info is False:
+        return '', "ALREADY DELETED"
+
+    strage_path = os.environ.get('STORAGEPATH')
+    organization_dir = strage_path + organization_id + "/"
+    if os.path.isdir(organization_dir):
+        shutil.rmtree(organization_dir)
+    else:
         return '', "ALREADY DELETED"
 
     g.db_connect_info = {}
