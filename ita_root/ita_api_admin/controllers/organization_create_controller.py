@@ -18,9 +18,9 @@ organization_create
 # import connexion
 from flask import g
 import os
+import shutil
 
 from common_libs.api import api_filter
-from common_libs.common.exception import AppException
 from common_libs.common.dbconnect import *  # noqa: F403
 from common_libs.common.util import ky_encrypt
 
@@ -38,6 +38,8 @@ def organization_create(body, organization_id):  # noqa: E501
 
     :rtype: InlineResponse200
     """
+    g.ORGANIZATION_ID = organization_id
+
     common_db = DBConnectCommon()  # noqa: F405
     connect_info = common_db.get_orgdb_connect_info(organization_id)
     if connect_info:
@@ -48,11 +50,16 @@ def organization_create(body, organization_id):  # noqa: E501
     organization_dir = strage_path + organization_id + "/"
     if not os.path.isdir(organization_dir):
         os.makedirs(organization_dir)
+    else:
+        return '', "ALREADY EXISTS"
 
-    # register organization-db connect infomation
-    user_name, user_password = common_db.userinfo_generate("ORG")
-    org_db_name = user_name
     try:
+        org_root_db = None
+
+        user_name, user_password = common_db.userinfo_generate("ORG")
+        org_db_name = user_name
+
+        # register organization-db connect infomation
         data = {
             'ORGANIZATION_ID': organization_id,
             'DB_HOST': os.environ.get('DB_HOST'),
@@ -66,23 +73,35 @@ def organization_create(body, organization_id):  # noqa: E501
         }
         common_db.db_transaction_start()
         common_db.table_insert("T_COMN_ORGANIZATION_DB_INFO", data, "PRIMARY_KEY")
+
+        g.db_connect_info = {}
+        g.db_connect_info["ORGDB_HOST"] = data['DB_HOST']
+        g.db_connect_info["ORGDB_PORT"] = str(data['DB_PORT'])
+        g.db_connect_info["ORGDB_USER"] = data['DB_USER']
+        g.db_connect_info["ORGDB_PASSWORD"] = data['DB_PASSWORD']
+        g.db_connect_info["ORGDB_ROOT_PASSWORD"] = data['DB_ROOT_PASSWORD']
+        g.db_connect_info["ORGDB_DATADBASE"] = data['DB_DATADBASE']
+        org_root_db = DBConnectOrgRoot(organization_id)  # noqa: F405
+        # create workspace-databse
+        org_root_db.database_create(org_db_name)
+        # create workspace-user and grant user privileges
+        org_root_db.user_create(user_name, user_password, org_db_name)
+
+        # connect organization-db
+        org_db = DBConnectOrg(organization_id)  # noqa: F405
+        # create table of organization-db
+        org_db.sqlfile_execute("sql/organization.sql")
+
         common_db.db_commit()
     except Exception as e:
+        shutil.rmtree(organization_dir)
         common_db.db_rollback()
+
+        if org_root_db:
+            org_root_db.database_drop(org_db_name)
+            org_root_db.user_drop(user_name)
+
         raise Exception(e)
-
-    org_root_db = DBConnectOrgRoot(organization_id)  # noqa: F405
-    # create workspace-databse
-    org_root_db.database_create(org_db_name)
-    # create workspace-user and grant user privileges
-    org_root_db.user_create(user_name, user_password, org_db_name)
-    # print(user_name, user_password)
-    org_root_db.db_disconnect()
-
-    # connect organization-db
-    org_db = DBConnectOrg(organization_id)  # noqa: F405
-    # create table of organization-db
-    org_db.sqlfile_execute("sql/organization.sql")
 
     return '',
 
@@ -104,6 +123,14 @@ def organization_delete(organization_id):  # noqa: E501
     common_db = DBConnectCommon()  # noqa: F405
     connect_info = common_db.get_orgdb_connect_info(organization_id)
     if connect_info is False:
+        return '', "ALREADY DELETED"
+
+    # delete storage directory for organization
+    strage_path = os.environ.get('STORAGEPATH')
+    organization_dir = strage_path + organization_id + "/"
+    if os.path.isdir(organization_dir):
+        shutil.rmtree(organization_dir)
+    else:
         return '', "ALREADY DELETED"
 
     g.db_connect_info = {}
@@ -144,12 +171,8 @@ def organization_delete(organization_id):  # noqa: E501
         'PRIMARY_KEY': connect_info['PRIMARY_KEY'],
         'DISUSE_FLAG': 1
     }
-    try:
-        common_db.db_transaction_start()
-        common_db.table_update("T_COMN_ORGANIZATION_DB_INFO", data, "PRIMARY_KEY")
-        common_db.db_commit()
-    except AppException as e:
-        common_db.db_rollback()
-        raise AppException(e)
+    common_db.db_transaction_start()
+    common_db.table_update("T_COMN_ORGANIZATION_DB_INFO", data, "PRIMARY_KEY")
+    common_db.db_commit()
 
     return '',
