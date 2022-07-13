@@ -36,6 +36,8 @@ class AppLog:
     # logging dict-config
     _config = {}
 
+    __available_log_level = ["ERROR", "INFO", "DEBUG"]
+
     def __init__(self):
         """
         constructor
@@ -89,8 +91,9 @@ class AppLog:
         data_list = wsdb_instance.table_select('T_COMN_SYSTEM_CONFIG', 'WHERE `CONFIG_ID`=%s AND `DISUSE_FLAG`=0', ['LOG_LEVEL'])
         if len(data_list) == 1:
             log_level = data_list[0]['VALUE']
-            self.set_level(log_level)
-            self.info("my LOG-LEVEL({}) is set".format(log_level))
+            if log_level in self.__available_log_level:
+                self.set_level(log_level)
+                self.info("my LOG-LEVEL({}) is set".format(log_level))
         else:
             log_level = False
 

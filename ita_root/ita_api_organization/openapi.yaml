@@ -17,6 +17,16 @@ tags:
     description: Excelの取得・操作
   - name: User Info
     description: ユーザ情報の取得
+  - name: System Info
+    description: ITAの情報取得
+  - name: Menu Create
+    description: メニュー作成機能
+  - name: Conductor Controll
+    description: Conductorの作業実行・作業状態確認・緊急停止・予約取消・保留解除
+  - name: Driver Controll
+    description: Driverの作業実行・作業状態確認・緊急停止・予約取消
+  - name: Compare Controll
+    description: 比較情報取得・比較の実行
 
 paths:
   /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/info/:
@@ -54,7 +64,7 @@ paths:
                 properties:
                   result:
                     type: string
-                    example: 001-002
+                    example: 000-00000
                   data:
                     type: object
                     properties:
@@ -112,7 +122,7 @@ paths:
                 properties:
                   result:
                     type: string
-                    example: 001-002
+                    example: 000-00000
                   data:
                     type: array
                     items: {}
@@ -132,12 +142,67 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
   
-  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/info/pulldown/{column}/:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/info/pulldown/:
     get:
       tags:
         - Menu Info
-      description: 項目のプルダウン選択用の一覧を取得する
+      description: IDColumn項目のプルダウン選択用の一覧を取得する
       operationId: getPulldownList
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    items: {}
+                    example: {IDColumn1: {"id1": "name1", "id2": "name2", "id3": "name3"}, IDColumn2: {"id1": "name1", "id2": "name2", "id3": "name3"}, IDColumn3: {"id1": "name1", "id2": "name2", "id3": "name3"}}
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/info/search/candidates/{column}/:
+    get:
+      tags:
+        - Menu Info
+      description: 表示フィルタで利用するプルダウン検索の候補一覧を取得する
+      operationId: getSearchCandidates
       parameters:
         - name: organization_id
           in: path
@@ -173,7 +238,7 @@ paths:
                 properties:
                   result:
                     type: string
-                    example: 001-002
+                    example: 000-00000
                   data:
                     type: object
                     items: {}
@@ -192,7 +257,119 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
-          
+  
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/filter/count/:
+    get:
+      tags:
+        - Menu Filter
+      description: レコード全件の件数を取得する
+      operationId: getFilterCount
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    properties:
+                      TABLE:
+                       $ref: '#/components/schemas/TABLE'
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+    post:
+      tags:
+        - Menu Filter
+      description: 検索条件を指定し、レコードの件数する
+      operationId: postFilterCount
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: 検索条件を設定
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
   /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/filter/:
     get:
       tags:
@@ -226,8 +403,16 @@ paths:
               schema:
                 type: object
                 properties:
-                  TABLE:
-                    $ref: '#/components/schemas/TABLE'
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    properties:
+                      TABLE:
+                       $ref: '#/components/schemas/TABLE'
+                  message:
+                    type: string
         '401':
           description: Unauthorized
           content:
@@ -265,12 +450,10 @@ paths:
           schema:
             type: string
       requestBody:
-        required: true
         content:
           application/json:
             schema:
               description: 検索条件を設定
-              type: object
       responses:
         '200':
           description: Success
@@ -279,7 +462,12 @@ paths:
               schema:
                 type: object
                 properties:
-                  status:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                  message:
                     type: string
         '401':
           description: Unauthorized
@@ -333,8 +521,16 @@ paths:
               schema:
                 type: object
                 properties:
-                  TABLE:
-                    $ref: '#/components/schemas/TABLE'
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    properties:
+                      TABLE:
+                       $ref: '#/components/schemas/TABLE'
+                  message:
+                    type: string
         '401':
           description: Unauthorized
           content:
@@ -374,7 +570,6 @@ paths:
           schema:
             type: string
       requestBody:
-        required: true
         content:
           application/json:
             schema:
@@ -393,7 +588,12 @@ paths:
               schema:
                 type: object
                 properties:
-                  status:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                  message:
                     type: string
         '401':
           description: Unauthorized
@@ -440,12 +640,10 @@ paths:
           schema:
             type: string
       requestBody:
-        required: true
         content:
           application/json:
             schema:
               description: 更新する値を設定。廃止/復活は廃止フラグを更新することで実施。
-              type: object
       responses:
         '200':
           description: Success
@@ -454,7 +652,12 @@ paths:
               schema:
                 type: object
                 properties:
-                  status:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                  message:
                     type: string
         '401':
           description: Unauthorized
@@ -495,12 +698,10 @@ paths:
           schema:
             type: string
       requestBody:
-        required: true
         content:
           application/json:
             schema:
               description: 登録/更新/廃止/復活するidとレコードの値を設定
-              type: array
               items: {
                 $ref: '#/components/schemas/MAINTENANCE_PARAMETERS',
               }
@@ -512,7 +713,68 @@ paths:
               schema:
                 type: object
                 properties:
-                  status:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/excel/format/:
+    get:
+      tags:
+        - Menu Excel
+      description: 新規登録用Excelを取得する
+      operationId: getExcelFormat
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    properties:
+                      TABLE:
+                       $ref: '#/components/schemas/TABLE'
+                  message:
                     type: string
         '401':
           description: Unauthorized
@@ -531,7 +793,7 @@ paths:
     get:
       tags:
         - Menu Excel
-      description: レコードを全件取得する
+      description: 全件のExcelを取得する
       operationId: getExcelFilter
       parameters:
         - name: organization_id
@@ -560,8 +822,16 @@ paths:
               schema:
                 type: object
                 properties:
-                  TABLE:
-                    $ref: '#/components/schemas/TABLE'
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    properties:
+                      TABLE:
+                       $ref: '#/components/schemas/TABLE'
+                  message:
+                    type: string
         '401':
           description: Unauthorized
           content:
@@ -577,7 +847,7 @@ paths:
     post:
       tags:
         - Menu Excel
-      description: 検索条件を指定し、レコードを取得する
+      description: 検索条件を指定し、Excelを取得する
       operationId: postExcelFilter
       parameters:
         - name: organization_id
@@ -599,12 +869,10 @@ paths:
           schema:
             type: string
       requestBody:
-        required: true
         content:
           application/json:
             schema:
               description: 検索条件を設定
-              type: object
       responses:
         '200':
           description: Success
@@ -613,7 +881,15 @@ paths:
               schema:
                 type: object
                 properties:
-                  status:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    properties:
+                      TABLE:
+                       $ref: '#/components/schemas/TABLE'
+                  message:
                     type: string
         '401':
           description: Unauthorized
@@ -652,6 +928,11 @@ paths:
           required: true
           schema:
             type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: 検索条件を設定
       responses:
         '200':
           description: Success
@@ -660,8 +941,72 @@ paths:
               schema:
                 type: object
                 properties:
-                  TABLE:
-                    $ref: '#/components/schemas/TABLE'
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    properties:
+                      TABLE:
+                       $ref: '#/components/schemas/TABLE'
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/excel/journal/:
+    get:
+      tags:
+        - Menu Excel
+      description: 変更履歴のExcelを取得する
+      operationId: getExcelJournal
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    properties:
+                      TABLE:
+                       $ref: '#/components/schemas/TABLE'
+                  message:
+                    type: string
         '401':
           description: Unauthorized
           content:
@@ -770,6 +1115,7 @@ paths:
                           {
                             "disp_seq": 10,
                             "id": "101",
+                            "parent_id": "",
                             "menu_group_name": "メニューグループ1",
                             "menus": [
                               {"disp_seq": 10, "id": "10101", "menu_name": "メニュー1", "menu_name_rest": "menu_1"},
@@ -780,6 +1126,7 @@ paths:
                           {
                             "disp_seq": 20,
                             "id": "102",
+                            "parent_id": "101",
                             "menu_group_name": "メニューグループ2",
                             "menus": [
                               {"disp_seq": 10, "id": "10104", "menu_name": "メニュー4", "menu_name_rest": "menu_4"},
@@ -790,6 +1137,7 @@ paths:
                           {
                             "disp_seq": 30,
                             "id": "103",
+                            "parent_id": "101",
                             "menu_group_name": "メニューグループ3",
                             "menus": [
                               {"disp_seq": 10, "id": "10107", "menu_name": "メニュー7", "menu_name_rest": "menu_7"},
@@ -980,7 +1328,7 @@ components:
           type: string
         history_table_flag:
           description: 履歴テーブル有無
-          type: string
+          type: boolean
         table_name:
           description: テーブル名
           type: string
@@ -992,6 +1340,18 @@ components:
           type: boolean
         vertical:
           description: 縦型フラグ
+          type: boolean
+        row_insert_flag:
+          description: 登録許可フラグ
+          type: boolean
+        row_update_flag:
+          description: 更新許可フラグ
+          type: boolean
+        row_disuse_flag:
+          description: 廃止許可フラグ
+          type: boolean
+        row_reuse_flag:
+          description: 復活許可フラグ
           type: boolean
         login_necessity:
           description: 認証有無
@@ -1014,6 +1374,9 @@ components:
         sort_key:
           description: ソートキー
           type: string
+        privilege:
+          description: メニューに対する権限
+          type: integer
     ERROR_TEMPLATE:
       type: object
       properties:

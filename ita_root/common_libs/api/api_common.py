@@ -14,7 +14,7 @@
 """
 common_libs api common function module
 """
-from flask import g
+from flask import g, request
 import traceback
 
 from common_libs.common.exception import AppException
@@ -53,7 +53,8 @@ def make_response(data=None, msg="", result_code="000-00000", status_code=200, t
         "message": msg,
         "ts": api_timestamp
     }
-    if data:
+
+    if result_code == "000-00000":
         res_body["data"] = data
 
     log_status = "success" if result_code == "000-00000" else "error"
@@ -114,7 +115,7 @@ def exception_response(e):
             is_arg = True
 
     # catch - other all error
-    t = traceback.format_exc(limit=3)
+    t = traceback.format_exc()
     # g.applogger.exception("[error][ts={}]".format(api_timestamp))
     g.applogger.error("[ts={}][error] {}".format(api_timestamp, arrange_stacktrace_format(t)))
 
@@ -155,3 +156,31 @@ def api_filter(func):
             return exception_response(e)
 
     return wrapper
+
+
+def check_request_body():
+    '''
+    check wheter request_body is json_format or not
+    '''
+    if request.content_type == "application/json":
+        try:
+            request.get_json()
+        except Exception:
+            raise AppException("400-00002", ["json_format"], ["json_format"])
+
+
+def check_request_body_key(body, key):
+    '''
+    check request_body's key for required
+    
+    Argument:
+        body: (dict) controller arg body
+        key:  key for check
+    Returns:
+        key's value
+    '''
+    val = body.get(key)
+    if val is None:
+        raise AppException("400-00002", [key], [key])
+
+    return val

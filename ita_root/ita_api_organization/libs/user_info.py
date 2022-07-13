@@ -56,12 +56,9 @@ def collect_menu_group_panels(objdbca):
         # /strorage/{organization_id}/{workspace_id}/uploadfiles/{menu_id}/{uuid}/{column_rest_name}/
         icon_path = "/workspace/ita_root/test/MENU_GROUP_ICON/"
         target_file = icon_path + menu_group_id + "/" + icon
-        print(target_file)
         
-        # ####メモ：util.pyのファイル変換関数を使いたい
-        with open(target_file, "rb") as f:
-            encoded = base64.b64encode(f.read()).decode(encoding='utf-8')  # base64エンコードしたものをstring型にしたもの
-            print(encoded)
+        # 対象ファイルをbase64エンコード
+        encoded = file_encode(target_file)  # noqa: F405
         
         panels_data[menu_group_id] = encoded
     
@@ -163,7 +160,9 @@ def collect_menus(objdbca):
     menu_group_list = []
     for recode in ret:
         add_menu_group = {}
+        parent_menu_group_id = recode.get('PARENT_MENU_GROUP_ID')
         menu_group_id = recode.get('MENU_GROUP_ID')
+        add_menu_group['parent_id'] = parent_menu_group_id
         add_menu_group['id'] = menu_group_id
         add_menu_group['menu_group_name'] = recode.get('MENU_GROUP_NAME_' + lang.upper())
         add_menu_group['disp_seq'] = recode.get('DISP_SEQ')

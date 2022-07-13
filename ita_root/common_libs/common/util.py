@@ -22,6 +22,8 @@ import codecs
 from pathlib import Path
 import datetime
 import re
+import os
+from flask import g
 
 
 def ky_encrypt(lcstr):
@@ -189,6 +191,98 @@ def arrange_stacktrace_format(t):
                 row_index = row_index + 1
 
     return retStr
+
+
+def file_encode(file_path):
+    """
+    Encode a file to base64
+
+    Arguments:
+        file_path: Encoding target filepath
+    Returns:
+        Encoded string
+    """
+    try:
+        with open(file_path, "rb") as f:
+            return base64.b64encode(f.read()).decode()
+    except Exception:
+        return False
+
+
+def get_upload_file_path(workspace_id, menu_id, uuid, column_name_rest, file_name, uuid_jnl):
+    """
+    Get filepath
+
+    Arguments:
+        workspace_id: workspace_id
+        menu_id: menu_id
+        uuid: uuid
+        column_name_rest: column_name_rest
+        file_name: Target file name
+        uuid_jnl: uuid_jnl
+    Returns:
+        filepath
+    """
+    organization_id = g.get("ORGANIZATION_ID")
+    file_path = "/storage/{}/{}/uploadfiles/{}/{}/{}/{}".format(organization_id, workspace_id, uuid, menu_id, column_name_rest, file_name)
+    old_file_path = ""
+    if uuid_jnl is not None:
+        if len(uuid_jnl) > 0:
+            old_file_path = "/storage/{}/{}/uploadfiles/{}/{}/{}/old/{}/{}".format(organization_id, workspace_id, uuid, menu_id, column_name_rest, uuid_jnl, file_name)  # noqa: E501
+
+    return {"file_path": file_path, "old_file_path": old_file_path}
+
+
+def upload_file(file_path, text):
+    """
+    Upload a file
+
+    Arguments:
+        file_path: Target filepath
+        text: file text
+    Returns:
+        is success:(bool)
+    """
+    path = os.path.dirname(file_path)
+
+    if type(text) is bytes:
+        text = base64.b64decode(text.encode()).decode()
+
+    if not os.path.isdir(path):
+        os.makedirs(path)
+
+    try:
+        with open(file_path, "x") as f:
+            f.write(str(text))
+    except Exception:
+        return False
+
+    return True
+
+
+def encrypt_upload_file(file_path, text):
+    """
+    Encode and upload file
+
+    Arguments:
+        file_path: Target filepath
+        text: file text
+    Returns:
+        is success:(bool)
+    """
+    text = ky_encrypt(text)
+    path = os.path.dirname(file_path)
+
+    if not os.path.isdir(path):
+        os.makedirs(path)
+
+    try:
+        with open(file_path, "x") as f:
+            f.write(str(text))
+    except Exception:
+        return False
+
+    return True
 
 
 if __name__ == '__main__':

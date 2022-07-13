@@ -438,36 +438,6 @@ CREATE TABLE T_COMN_MOVEMENT_JNL
 
 
 
--- 紐付対象メニュー
-CREATE TABLE T_COMN_LINK_TARGET_MENU
-(
-    LINK_TARGET_MENU_ID             VARCHAR(40),                                -- UUID
-    MENU_ID                         VARCHAR(40),                                -- メニュー
-    SHEET_TYPE                      VARCHAR(2),                                 -- シートタイプ
-    NOTE                            TEXT,                                       -- 備考
-    DISUSE_FLAG                     VARCHAR(1),                                 -- 廃止フラグ
-    LAST_UPDATE_TIMESTAMP           DATETIME(6),                                -- 最終更新日時
-    LAST_UPDATE_USER                VARCHAR(40),                                -- 最終更新者
-    PRIMARY KEY(LINK_TARGET_MENU_ID)
-)ENGINE = InnoDB, CHARSET = utf8mb4, COLLATE = utf8mb4_bin, ROW_FORMAT=COMPRESSED ,KEY_BLOCK_SIZE=8;
-
-CREATE TABLE T_COMN_LINK_TARGET_MENU_JNL
-(
-    JOURNAL_SEQ_NO                  VARCHAR(40),                                -- 履歴用シーケンス
-    JOURNAL_REG_DATETIME            DATETIME(6),                                -- 履歴用変更日時
-    JOURNAL_ACTION_CLASS            VARCHAR (8),                                -- 履歴用変更種別
-    LINK_TARGET_MENU_ID             VARCHAR(40),                                -- UUID
-    MENU_ID                         VARCHAR(40),                                -- メニュー
-    SHEET_TYPE                      VARCHAR(2),                                 -- シートタイプ
-    NOTE                            TEXT,                                       -- 備考
-    DISUSE_FLAG                     VARCHAR(1),                                 -- 廃止フラグ
-    LAST_UPDATE_TIMESTAMP           DATETIME(6),                                -- 最終更新日時
-    LAST_UPDATE_USER                VARCHAR(40),                                -- 最終更新者
-    PRIMARY KEY(JOURNAL_SEQ_NO)
-)ENGINE = InnoDB, CHARSET = utf8mb4, COLLATE = utf8mb4_bin, ROW_FORMAT=COMPRESSED ,KEY_BLOCK_SIZE=8;
-
-
-
 -- カラムクラスマスタ
 CREATE TABLE T_COMN_COLUMN_CLASS
 (

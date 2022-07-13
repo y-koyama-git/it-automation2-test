@@ -17,64 +17,90 @@ workspace_create
 """
 # import connexion
 from flask import g
+import os
+import re
+import json
+import shutil
 
-from common_libs.api import api_filter
-from common_libs.common.exception import AppException
+from common_libs.api import api_filter, check_request_body_key
 from common_libs.common.dbconnect import *  # noqa: F403
 from common_libs.common.util import ky_encrypt
-import re
 
 
 @api_filter
-def workspace_create(body, organization_id, workspace_id):  # noqa: E501
+def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
     """workspace_create
 
     Workspaceを作成する # noqa: E501
 
-    :param body:
-    :type body: dict | bytes
     :param organization_id: organizationID
     :type organization_id: str
     :param workspace_id: WorkspaceID
     :type workspace_id: str
+    :param body:
+    :type body: dict | bytes
 
     :rtype: InlineResponse200
     """
-    msg = ""
+    g.ORGANIZATION_ID = organization_id
+    g.WORKSPACE_ID = workspace_id
+
+    role_id = check_request_body_key(body, 'role_id')
 
     org_db = DBConnectOrg(organization_id)  # noqa: F405
     connect_info = org_db.get_wsdb_connect_info(workspace_id)
     if connect_info:
-        try:
-            # try to connect workspace-db
-            ws_db = DBConnectWs(workspace_id, organization_id)  # noqa: F405
+        return '', "ALREADY EXISTS"
 
-            # workspace-db already exists
-            g.applogger.debug("WS_DB:{} can be connected".format(workspace_id))
-            return '', "ALREADY EXISTS"
-        except AppException:
-            # workspace-db connect info is imperfect, so remake
-            org_root_db = DBConnectOrgRoot(organization_id)  # noqa: F405
-            org_root_db.database_drop(connect_info['DB_DATADBASE'])
-            org_root_db.user_drop(connect_info['DB_USER'])
-            org_root_db.db_disconnect()
-            data = {
-                'PRIMARY_KEY': connect_info['PRIMARY_KEY'],
-                'DISUSE_FLAG': 1
-            }
-            try:
-                org_db.db_transaction_start()
-                org_db.table_update("T_COMN_WORKSPACE_DB_INFO", data, "PRIMARY_KEY")
-                org_db.db_commit()
-            except AppException:
-                org_db.db_rollback()
-            msg = "REBUILD"
+    # make storage directory for workspace
+    strage_path = os.environ.get('STORAGEPATH')
+    workspace_dir = strage_path + "/".join([organization_id, workspace_id]) + "/"
+    if not os.path.isdir(workspace_dir):
+        os.makedirs(workspace_dir)
+    else:
+        return '', "ALREADY EXISTS"
 
-    # register workspace-db connect infomation
-    user_name, user_password = org_db.userinfo_generate("WS")
-    ws_db_name = user_name
-    connect_info = org_db.get_connect_info()
     try:
+        org_root_db = None
+
+        # make storage directory for workspace job
+        dir_list = [
+            ['driver'],
+            ['driver', 'ansible'],
+            ['driver', 'ansible', 'legacy'],
+            ['driver', 'ansible', 'pioneer'],
+            ['driver', 'ansible', 'legacy_role'],
+            ['driver', 'ansible', 'git_repositories'],
+            ['driver', 'conductor'],
+            ['driver', 'terraform'],
+            ['uploadfiles'],
+        ]
+        for dir in dir_list:
+            abs_dir = workspace_dir + "/".join(dir)
+            if not os.path.isdir(abs_dir):
+                os.makedirs(abs_dir)
+
+        # set initial material
+        with open('files/config.json', 'r') as material_conf_json:
+            material_conf = json.load(material_conf_json)
+            for menu_id, file_info_list in material_conf.items():
+                for file_info in file_info_list:
+                    for file, copy_cfg in file_info.items():
+                        org_file = os.environ.get('PYTHONPATH') + "/".join(["files", menu_id, file])
+                        old_file_path = workspace_dir + "uploadfiles/" + menu_id + copy_cfg[0]
+                        file_path = workspace_dir + "uploadfiles/" + menu_id + copy_cfg[1]
+
+                        if not os.path.isdir(old_file_path):
+                            os.makedirs(old_file_path)
+
+                        shutil.copy(org_file, old_file_path + file)
+                        os.symlink(old_file_path + file, file_path + file)
+
+        # register workspace-db connect infomation
+        user_name, user_password = org_db.userinfo_generate("WS")
+        ws_db_name = user_name
+        connect_info = org_db.get_connect_info()
+
         data = {
             'WORKSPACE_ID': workspace_id,
             'DB_HOST': connect_info['DB_HOST'],
@@ -88,36 +114,46 @@ def workspace_create(body, organization_id, workspace_id):  # noqa: E501
         org_db.db_transaction_start()
         org_db.table_insert("T_COMN_WORKSPACE_DB_INFO", data, "PRIMARY_KEY")
 
+        org_root_db = DBConnectOrgRoot(organization_id)  # noqa: F405
+        # create workspace-databse
+        org_root_db.database_create(ws_db_name)
+        # create workspace-user and grant user privileges
+        org_root_db.user_create(user_name, user_password, ws_db_name)
+        # print(user_name, user_password)
+
+        # connect workspace-db
+        g.db_connect_info = {}
+        g.db_connect_info["WSDB_HOST"] = data["DB_HOST"]
+        g.db_connect_info["WSDB_PORT"] = str(data["DB_PORT"])
+        g.db_connect_info["WSDB_USER"] = data["DB_USER"]
+        g.db_connect_info["WSDB_PASSWORD"] = data["DB_PASSWORD"]
+        g.db_connect_info["WSDB_DATADBASE"] = data["DB_DATADBASE"]
+        ws_db = DBConnectWs(workspace_id, organization_id)  # noqa: F405
+        # create table of workspace-db
+        ws_db.sqlfile_execute("sql/workspace.sql")
+
+        # insert initial data of workspace-db
+        with open("sql/workspace_master.sql", "r") as f:
+            file = f.read()
+            file = file.replace('__ROLE_ID__', role_id)
+
+            sql_list = file.split(";\n")
+            for sql in sql_list:
+                if re.fullmatch(r'[\s\n\r]*', sql) is None:
+                    ws_db.sql_execute(sql)
+
         org_db.db_commit()
     except Exception as e:
+        shutil.rmtree(workspace_dir)
         org_db.db_rollback()
+
+        if org_root_db:
+            org_root_db.database_drop(ws_db_name)
+            org_root_db.user_drop(user_name)
+
         raise Exception(e)
 
-    org_root_db = DBConnectOrgRoot(organization_id)  # noqa: F405
-    # create workspace-databse
-    org_root_db.database_create(ws_db_name)
-    # create workspace-user and grant user privileges
-    org_root_db.user_create(user_name, user_password, ws_db_name)
-    # print(user_name, user_password)
-    org_root_db.db_disconnect()
-
-    # connect workspace-db
-    ws_db = DBConnectWs(workspace_id, organization_id)  # noqa: F405
-    # create table of workspace-db
-    ws_db.sqlfile_execute("sql/workspace.sql")
-    # insert initial data of workspace-db
-    role_id = str(body['role_id'])
-    if role_id == "":
-        raise Exception("role_id is not found in request body")
-
-    with open("sql/workspace_master.sql", "r") as f:
-        sql_list = f.read().split(";\n")
-        for sql in sql_list:
-            sql = sql.replace('__ROLE_ID__', role_id)
-            if re.fullmatch(r'[\s\n\r]*', sql) is None:
-                ws_db.sql_execute(sql)
-
-    return '', msg
+    return '',
 
 
 @api_filter
@@ -133,4 +169,35 @@ def workspace_delete(organization_id, workspace_id):  # noqa: E501
 
     :rtype: InlineResponse200
     """
-    return 'do some magic!'
+    # get organization_id
+    g.ORGANIZATION_ID = organization_id
+
+    org_db = DBConnectOrg(organization_id)  # noqa: F405
+    connect_info = org_db.get_wsdb_connect_info(workspace_id)
+    if connect_info is False:
+        return '', "ALREADY DELETED"
+
+    # delete storage directory for workspace
+    strage_path = os.environ.get('STORAGEPATH')
+    workspace_dir = strage_path + "/".join([organization_id, workspace_id]) + "/"
+    if os.path.isdir(workspace_dir):
+        shutil.rmtree(workspace_dir)
+    else:
+        return '', "ALREADY DELETED"
+
+    # drop ws-db and ws-db-user
+    org_root_db = DBConnectOrgRoot(organization_id)  # noqa: F405
+    org_root_db.database_drop(connect_info['DB_DATADBASE'])
+    org_root_db.user_drop(connect_info['DB_USER'])
+    org_root_db.db_disconnect()
+
+    # disuse ws-db connect infomation
+    data = {
+        'PRIMARY_KEY': connect_info['PRIMARY_KEY'],
+        'DISUSE_FLAG': 1
+    }
+    org_db.db_transaction_start()
+    org_db.table_update("T_COMN_WORKSPACE_DB_INFO", data, "PRIMARY_KEY")
+    org_db.db_commit()
+
+    return '',
