@@ -12,13 +12,14 @@
 # limitations under the License.
 #
 
-from logging import raiseExceptions
+
 import sys
 import os
 import datetime
 import textwrap
 import random
 import json
+import importlib
 
 from flask import g
 from common_libs.column import *
@@ -65,6 +66,7 @@ COLNAME_ROW_INSERT_FLAG = 'ROW_INSERT_FLAG'
 COLNAME_ROW_UPDATE_FLAG = 'ROW_UPDATE_FLAG'
 COLNAME_ROW_DISUSE_FLAG = 'ROW_DISUSE_FLAG'
 COLNAME_ROW_REUSE_FLAG = 'ROW_REUSE_FLAG'
+COLNAME_SHEET_TYPE = 'SHEET_TYPE'
 
 COLNAME_SORT_KEY = 'SORT_KEY'
 COLNAME_COL_NAME = 'COL_NAME'
@@ -78,6 +80,7 @@ COLNAME_UNIQUE_CONSTRAINT = 'UNIQUE_CONSTRAINT'
 COLNAME_BEFORE_VALIDATE_REGISTER = 'BEFORE_VALIDATE_REGISTER'
 COLNAME_AFTER_VALIDATE_REGISTER = 'AFTER_VALIDATE_REGISTER'
 COLNAME_COLUMN_DISP_SEQ = 'COLUMN_DISP_SEQ'
+COLNAME_SAVE_TYPE = 'SAVE_TYPE'
 
 # maintenance/filter 構造キー
 REST_PARAMETER_KEYNAME = 'parameter'
@@ -320,7 +323,6 @@ class loadTable():
 
                     tmp_list = {}
                     for tmp_row in tmp_rows:
-
                         tmp_id = tmp_row.get(ref_pkey_name)
                         tmp_nm = tmp_row.get(ref_col_name)
                         tmp_list.setdefault(tmp_id, tmp_nm)
@@ -362,6 +364,14 @@ class loadTable():
         """
         return self.objtable.get(MENUINFO).get(COLNAME_UNIQUE_CONSTRAINT)
 
+    def get_menu_id(self):
+        """
+            メニューID取得
+            RETRUN:
+                {}
+        """
+        return self.objtable.get(MENUINFO).get(COLNAME_MENU_ID)
+
     def get_menu_before_validate_register(self):
         """
             レコード操作前処理設定取得(メニュー)
@@ -394,6 +404,14 @@ class loadTable():
                 {}
         """
         return self.get_objcols().get(rest_key)
+
+    def get_save_type(self, rest_key):
+        """
+            単一カラムのsave_typeを取得
+            RETRUN:
+                {}
+        """
+        return self.get_objcol(rest_key).get(COLNAME_SAVE_TYPE)
 
     def get_table_name(self):
         """
@@ -576,6 +594,7 @@ class loadTable():
 
     def get_maintenance_uuid(self, uuid):
         """
+            対象の最終更新履歴を取得
             ARGS:
                 uuid:pk
             RETRUN:
@@ -597,6 +616,7 @@ class loadTable():
 
     def get_target_jnl_uuids(self, uuid):
         """
+            対象の履歴一括取得
             ARGS:
                 uuid:pk
             RETRUN:
@@ -618,7 +638,8 @@ class loadTable():
 
     def get_target_rows(self, uuid):
         """
-            get target row data 
+            対象のレコード取得
+            get target row data
             RETRUN:
                 []
         """
@@ -737,7 +758,6 @@ class loadTable():
 
             # RESTパラメータへキー変換
             for rows in tmp_result:
-                # rest_parameter, rest_file = self.convert_colname_restkey(rows, mode)
                 target_uuid = rows.get(primary_key_list[0])
                 target_uuid_jnl = rows.get(COLNAME_JNL_SEQ_NO)
                 rest_parameter, rest_file = self.convert_colname_restkey(rows, target_uuid, target_uuid_jnl, mode)
@@ -794,14 +814,9 @@ class loadTable():
             # 対象メニューのテーブルと「ロック対象テーブル」を昇順でロック
             locktable_list = self.get_locktable()
             if locktable_list is not None:
-                tmp_result = self.objdbca.table_lock(locktable_list)
+                tmp_result = self.objdbca.table_lock([locktable_list])
             else:
                 tmp_result = self.objdbca.table_lock([self.get_table_name()])
-            
-            # リトライ？エラー
-            if tmp_result == '':
-                print('')
-
             # maintenance呼び出し
             result_data = self.exec_maintenance(parameters, target_uuid, cmd_type)
 
@@ -834,7 +849,6 @@ class loadTable():
                 msg_args = '{}'.format(*e.args)
                 msg = g.appmsg.get_api_message(status_code, [msg_args])
         finally:
-            # print([status_code, tmp_data, msg])
             result = tmp_data
         return status_code, result, msg,
     
@@ -867,12 +881,11 @@ class loadTable():
             # 対象メニューのテーブルと「ロック対象テーブル」を昇順でロック
             locktable_list = self.get_locktable()
             if locktable_list is not None:
-                tmp_result = self.objdbca.table_lock(locktable_list)
+                tmp_result = self.objdbca.table_lock([locktable_list])
             else:
-                tmp_result = self.objdbca.table_lock(list(self.get_table_name()))
+                tmp_result = self.objdbca.table_lock([self.get_table_name()])
 
             for tmp_parameters in list_parameters:
-                # entry_no = list_parameters.index(tmp_parameters)
                 cmd_type = tmp_parameters.get("maintenance_type")
                 
                 parameters = tmp_parameters
@@ -880,17 +893,17 @@ class loadTable():
                 # テーブル情報（カラム、PK取得）
                 column_list, primary_key_list = self.objdbca.table_columns_get(self.get_table_name())
                 target_uuid_key = self.get_rest_key(primary_key_list[0])
-                target_uuid = parameters.get(REST_PARAMETER_KEYNAME).get(target_uuid_key)
+                if REST_PARAMETER_KEYNAME in parameters:
+                    target_uuid = parameters.get(REST_PARAMETER_KEYNAME).get(target_uuid_key)
+                else:
+                    target_uuid = ''
 
                 # maintenance呼び出し
                 tmp_result = self.exec_maintenance(parameters, target_uuid, cmd_type)
-                # result.setdefault(entry_no, tmp_result)
                 result_data.append(tmp_result[1])
-            # self.set_message('ERR_', MSG_LEVEL_ERROR)
             if self.get_message_count(MSG_LEVEL_ERROR) == 0:
                 # コミット
                 self.objdbca.db_transaction_end(True)
-                # tmp_data = result_data
                 tmp_data = self.get_exec_count()
             elif self.get_message_count(MSG_LEVEL_ERROR) > 0:
                 # ロールバック トランザクション終了
@@ -905,7 +918,6 @@ class loadTable():
                 msg_args = self.get_message(MSG_LEVEL_ERROR)
                 msg = g.appmsg.get_api_message(status_code, [msg_args])
 
-
         except Exception as e:
             # ロールバック トランザクション終了
             self.objdbca.db_transaction_end(False)
@@ -919,7 +931,6 @@ class loadTable():
                 msg_args = '{}'.format(*e.args)
                 msg = g.appmsg.get_api_message(status_code, [msg_args])
         finally:
-            # print([status_code, tmp_data, msg])
             result = tmp_data
         return status_code, result, msg,
 
@@ -947,7 +958,7 @@ class loadTable():
             column_list, primary_key_list = self.objdbca.table_columns_get(self.get_table_name())
             target_uuid_key = self.get_rest_key(primary_key_list[0])
             target_jnls = []
-            
+            current_row = {}
             # 更新時
             if cmd_type != CMD_REGISTER:
                 tmp_rows = self.get_target_rows(target_uuid)
@@ -956,16 +967,16 @@ class loadTable():
                     msg = "{}({})が存在しません".format(target_uuid_key, target_uuid)
                     self.set_message(msg, MSG_LEVEL_ERROR)
                 else:
-                    tmp_row = tmp_rows[0]
-                    
+                    current_row = tmp_rows[0]
+
                     # 更新系の追い越し判定
-                    self.chk_lastupdatetime(tmp_row, entry_parameter)
+                    self.chk_lastupdatetime(current_row, entry_parameter)
                     
                     # 更新系処理の場合、廃止フラグから処理種別判定、変更
-                    cmd_type = self.convert_cmd_type(cmd_type, tmp_row, entry_parameter)
+                    cmd_type = self.convert_cmd_type(cmd_type, current_row, entry_parameter)
 
+                    # 履歴の一括取得
                     target_jnls = self.get_target_jnl_uuids(target_uuid)
-                    # print(target_jnls)
 
             # 処理種別の権限確認(メッセージ集約せずに、400系エラーを返却)
             exec_authority = self.check_authority_cmd(cmd_type)
@@ -990,34 +1001,33 @@ class loadTable():
                 target_uuid_key = self.get_rest_key(primary_key_list[0])
                 entry_parameter[target_uuid_key] = target_uuid
 
-            target_option = {}
-
+            # 各カラム単位の基本処理（前）、個別処理（前）を実施
             for rest_key in list(entry_parameter.keys()):
                 rest_val = entry_parameter.get(rest_key)
                 if rest_key in self.restkey_list:
-                    option = {}
-                    option.setdefault("uuid", target_uuid)
-                    option.setdefault("parameter", entry_parameter)
-
+                    target_col_option = {}
+                    target_col_option.setdefault("uuid", target_uuid)
+                    target_col_option.setdefault("uuid_jnl", '')
+                    # target_col_option.setdefault("parameter", entry_parameter)
+                    target_col_option.setdefault("cmd_type", cmd_type)
+                    target_col_option.setdefault("rest_key_name", rest_key)
+                    target_col_option.setdefault("col_name", self.get_col_name(rest_key))
                     # ファイル有無
                     if entry_file is not None:
                         if rest_key in entry_file:
-                            option.setdefault("file_data", entry_file.get(rest_key))
-                            
-                    target_option.setdefault(rest_key, option)
-                    
+                            target_col_option.setdefault("file_data", entry_file.get(rest_key))
+
                     # カラムクラス呼び出し
                     objcolumn = self.get_columnclass(rest_key, cmd_type)
-                    # print([rest_key, objcolumn])
+
                     # カラムクラス毎の処理:レコード操作前 + カラム毎の個別処理:レコード操作前
-                    tmp_exec = objcolumn.before_iud_action(rest_val, option)
-                    # print([rest_key, tmp_exec[0]])
+                    tmp_exec = objcolumn.before_iud_action(rest_val, target_col_option)
                     if tmp_exec[0] is not True:
                         self.set_message(tmp_exec[1], MSG_LEVEL_ERROR)
                     else:
                         if rest_val is not None:
-                            # VALUE → ID 変換処理不要ならVALUE変更無し
-                            tmp_exec = objcolumn.convert_value_id(rest_val)
+                            # VALUE 変換処理不要ならVALUE変更無し
+                            tmp_exec = objcolumn.convert_value_input(rest_val)
                             if tmp_exec[0] is True:
                                 entry_parameter[rest_key] = tmp_exec[2]
                             else:
@@ -1027,11 +1037,22 @@ class loadTable():
             self.exec_unique_constraint(entry_parameter, target_uuid)
             
             # メニュー、カラム個別処理:レコード操作前
-            target_option = {}
-            tmp_exec = self.exec_menu_before_validate(entry_parameter, target_uuid, target_option)
+            target_menu_option = {
+                'uuid': target_uuid,
+                'uuid_jnl': '',
+                'parameter': entry_parameter,
+                'file': entry_file,
+                'cmd_type': cmd_type,
+            }
+
+            tmp_exec = self.exec_menu_before_validate(target_menu_option)
             if tmp_exec[0] is not True:
                 self.set_message(tmp_exec[1], MSG_LEVEL_ERROR)
-            
+            else:
+                target_menu_option = tmp_exec[2]
+                entry_parameter = target_menu_option.get('parameter')
+                entry_file = target_menu_option.get('file')
+
             # レコード操作前エラー確認
             if self.get_message_count(MSG_LEVEL_ERROR) > 0:
                 retBool = False
@@ -1048,26 +1069,23 @@ class loadTable():
             entry_parameter.update(base_cols_val)
 
             # rest_key → カラム名に変換
-            colname_parameter = self.convert_restkey_colname(entry_parameter)
+            colname_parameter = self.convert_restkey_colname(entry_parameter, current_row)
 
-            # 登録・更新処理　# SQL生成  INSERT / UPDATE
+            # 登録・更新処理
             if cmd_type == CMD_REGISTER:
-                # print(" [{}] INSERT XXXXXX / INSERT XXXXXX_JNL ".format(cmd_type))
                 result = self.objdbca.table_insert(self.get_table_name(), colname_parameter, primary_key_list[0])
             elif cmd_type == CMD_UPDATE:
-                # print(" [{}] UPDATE XXXXXX / INSERT XXXXXX_JNL ".format(cmd_type))
                 result = self.objdbca.table_update(self.get_table_name(), colname_parameter, primary_key_list[0])
             elif cmd_type == CMD_DISCARD:
-                # print(" [{}] UPDATE XXXXXX / INSERT XXXXXX_JNL ".format(cmd_type))
                 result = self.objdbca.table_update(self.get_table_name(), colname_parameter, primary_key_list[0])
             elif cmd_type == CMD_RESTORE:
-                # print(" [{}] UPDATE XXXXXX / INSERT XXXXXX_JNL ".format(cmd_type))
                 result = self.objdbca.table_update(self.get_table_name(), colname_parameter, primary_key_list[0])
 
+            result_uuid = ''
+            result_uuid_jnl = ''
             if result is False:
                 self.set_message(result, MSG_LEVEL_ERROR)
             else:
-
                 result_uuid = result[0].get(primary_key_list[0])
                 result_uuid_jnl = self.get_maintenance_uuid(result_uuid)[0].get(COLNAME_JNL_SEQ_NO)
                 temp_rows = {primary_key_list[0]: result[0].get(primary_key_list[0])}
@@ -1079,81 +1097,94 @@ class loadTable():
                 retBool = False
                 return retBool, self.get_message(MSG_LEVEL_ERROR)
 
-            target_option = {}
             # 各カラム単位の基本処理（後）、個別処理（後）を実施
             for rest_key, rest_val in entry_parameter.items():
                 # カラムクラス呼び出し
                 objcolumn = self.get_columnclass(rest_key, cmd_type)
-                # print([rest_key, objcolumn])
-                option = {}
-                option.setdefault("uuid", result_uuid)
-                option.setdefault("uuid_jnl", result_uuid_jnl)
-                option.setdefault("parameter", entry_parameter)
-
+                target_col_option = {}
+                target_col_option.setdefault("uuid", result_uuid)
+                target_col_option.setdefault("uuid_jnl", result_uuid_jnl)
+                target_col_option.setdefault("cmd_type", cmd_type)
+                target_col_option.setdefault("rest_key_name", rest_key)
+                target_col_option.setdefault("col_name", self.get_col_name(rest_key))
                 # ファイル有無
                 if entry_file is not None:
                     if rest_key in entry_file:
-                        option.setdefault("file_data", entry_file.get(rest_key))
+                        target_col_option.setdefault("file_data", entry_file.get(rest_key))
                 # カラムクラス毎の処理:レコード操作後 ,カラム毎の個別処理:レコード操作後
-                tmp_exec = objcolumn.after_iud_action(rest_val, option)
+                tmp_exec = objcolumn.after_iud_action(rest_val, target_col_option)
                 if tmp_exec[0] is not True:
                     self.set_message(tmp_exec[1], MSG_LEVEL_ERROR)
 
             # テーブル単位の個別処理後を実行
             # メニュー、カラム個別処理:レコード操作後
-            tmp_exec = self.exec_menu_after_validate(entry_parameter, target_uuid, target_option)
+            target_menu_option['uuid_jnl'] = result_uuid_jnl
+            target_menu_option['parameter'] = entry_parameter
+            target_menu_option['file'] = entry_file
+
+            tmp_exec = self.exec_menu_after_validate(target_menu_option)
             if tmp_exec[0] is not True:
                 self.set_message(tmp_exec[1], MSG_LEVEL_ERROR)
             else:
-                print(tmp_exec)
-
-            target_options = {}
-            target_options.setdefault("uuid", result_uuid)
-            target_options.setdefault("uuid_jnl", result_uuid_jnl)
-            target_options.setdefault("parameter", entry_parameter)
-            target_options.setdefault("target_jnls", target_jnls)
-
+                target_menu_option = tmp_exec[2]
+                entry_parameter = target_menu_option.get('parameter')
+                entry_file = target_menu_option.get('file')
+            
             # 実行結果を保存
-            self.set_exec_result(target_options)
-            # print( self.get_exec_result() )
-                
+            target_result_info = {}
+            target_result_info.setdefault("uuid", result_uuid)
+            target_result_info.setdefault("uuid_jnl", result_uuid_jnl)
+            target_result_info.setdefault("parameter", entry_parameter)
+            target_result_info.setdefault("target_jnls", target_jnls)
+            self.set_exec_result(target_result_info)
+
             # レコード操作後エラー確認
             if self.get_message_count(MSG_LEVEL_ERROR) != 0:
-                """
-                    print(self.get_message(MSG_LEVEL_ERROR))
-                    
-                    tmp_exec = self.exec_restore_action(entry_parameter, target_options)
-                """
                 retBool = False
                 return retBool, self.get_message(MSG_LEVEL_ERROR)
 
             # 実行種別件数カウントアップ
             self.set_exec_count_up(cmd_type)
-            
-            
+
         except Exception as e:
             print(e)
             retBool = False
             result = e
 
-            # print('Exception')
         return retBool, result
 
     # []:RESTパラメータのキー変換
-    def convert_restkey_colname(self, parameter):
+    def convert_restkey_colname(self, parameter, rows):
         """
             []::RESTパラメータのキー変換
             ARGS:
                 parameter:パラメータ
-                mode: 登録/更新/廃止/復活
+                rows: 現在のDB上の値
             RETRUN:
                 {}
         """
         result = {}
+        json_data = {}
+        json_data_colname = ''
+        # RESTパラメータのキー→DBカラム名に変更
         for restkey, restval in parameter.items():
             colname = self.get_col_name(restkey)
+            save_type = self.get_save_type(restkey)
+            if save_type == 'JSON':
+                json_data_colname = colname
+                json_data.setdefault(restkey, restval)
             if colname is not None:
                 result.setdefault(colname, restval)
+
+        if len(json_data_colname) > 0:
+            if json_data_colname in rows:
+                try:
+                    base_json_data = json.loads(rows.get(json_data_colname))
+                    base_json_data.update(json_data)
+                except Exception:
+                    base_json_data = {}
+                result[json_data_colname] = json.dumps(base_json_data)
+
         return result
 
     def convert_colname_restkey(self, rows, target_uuid='', target_uuid_jnl='', mode=''):
@@ -1168,29 +1199,43 @@ class loadTable():
         rest_parameter = {}
         rest_file = {}
         for col_name, col_val in rows.items():
-            rest_key = self.get_rest_key(col_name)
+            # メニュー作成パラメータDATA_JSON構造
+            if col_name == 'DATA_JSON':
+                try:
+                    json_rows = json.loads(col_val)
+                except Exception:
+                    json_rows = col_val
+                for jsonkey, jsonval in json_rows.items():
+                    rest_parameter.setdefault(jsonkey, jsonval)
+                    if mode not in ['excel', 'excel_jnl']:
+                        if self.get_col_class_name(jsonkey) == 'FileUploadColumn':
+                            objcolumn = self.get_columnclass(jsonkey)
+                            # ファイル取得＋64変換
+                            file_data = objcolumn.get_file_data(jsonval, target_uuid, target_uuid_jnl)
+                            rest_file.setdefault(jsonkey, file_data)
+            else:
+                rest_key = self.get_rest_key(col_name)
 
-            if len(rest_key) > 0:
+                if len(rest_key) > 0:
 
-                if isinstance(col_val, datetime.datetime):
-                    col_val = '{}'.format(col_val.strftime('%Y/%m/%d %H:%M:%S.%f'))
+                    if isinstance(col_val, datetime.datetime):
+                        col_val = '{}'.format(col_val.strftime('%Y/%m/%d %H:%M:%S.%f'))
 
-                if self.get_col_class_name(rest_key) in ['IdColumn', 'LastUpdateUserColumn', 'LinkIDColumn', 'LinkIDColumn']:
-                    objcolumn = self.get_columnclass(rest_key)
-                    # col_val = objcolumn.convert_id_value(col_val)
-                    # ID → VALUE 変換処理不要ならVALUE変更無し
-                    tmp_exec = objcolumn.convert_id_value(col_val)
-                    if tmp_exec[0] is True:
-                        col_val = tmp_exec[2]
-    
-                rest_parameter.setdefault(rest_key, col_val)
-                if mode not in ['excel', 'excel_jnl']:
-                    if self.get_col_class_name(rest_key) == 'FileUploadColumn':
+                    if self.get_col_class_name(rest_key) in ['IdColumn', 'LastUpdateUserColumn', 'LinkIDColumn', 'LinkIDColumn']:
                         objcolumn = self.get_columnclass(rest_key)
-                        # ファイル取得＋64変換
-                        file_data = objcolumn.get_file_data(col_val, target_uuid, target_uuid_jnl)
-                        rest_file.setdefault(rest_key, file_data)
+                        # ID → VALUE 変換処理不要ならVALUE変更無し
+                        tmp_exec = objcolumn.convert_value_output(col_val)
+                        if tmp_exec[0] is True:
+                            col_val = tmp_exec[2]
         
+                    rest_parameter.setdefault(rest_key, col_val)
+                    if mode not in ['excel', 'excel_jnl']:
+                        if self.get_col_class_name(rest_key) == 'FileUploadColumn':
+                            objcolumn = self.get_columnclass(rest_key)
+                            # ファイル取得＋64変換
+                            file_data = objcolumn.get_file_data(col_val, target_uuid, target_uuid_jnl)
+                            rest_file.setdefault(rest_key, file_data)
+            
         return rest_parameter, rest_file
 
     # []:組み合わせ一意制約の実施
@@ -1205,39 +1250,61 @@ class loadTable():
         """
         retBool = True
         msg = ''
+        # 組み合わせ一意設定取得
         unique_constraint = self.get_unique_constraint()
         if unique_constraint is not None:
-            print({"unique_constraint": unique_constraint, 'target_uuid': target_uuid})
             column_list, primary_key_list = self.objdbca.table_columns_get(self.get_table_name())
             tmp_constraint = json.loads(unique_constraint)
+            # 組み合わせ一意検索用Where句生成
             for tmp_uq in tmp_constraint:
                 bind_value_list = []
                 where_str = ''
                 dict_bind_kv = {}
-                for tmp_colname in tmp_uq:
+                for tmp_constraint_key in tmp_uq:
                     conjunction = 'where'
                     if len(where_str) != 0:
                         conjunction = 'and'
-                    tmp_where_str = " `{}` = %s ".format(tmp_colname)
-                    where_str = where_str + ' {} {}'.format(conjunction, tmp_where_str)
-                    val = parameter.get(self.get_rest_key(tmp_colname))
-                    bind_value_list.append(val)
-                    dict_bind_kv.setdefault(self.get_rest_key(tmp_colname),val)
+                    objcol = self.get_objcol(tmp_constraint_key)
+                    # カラム名,rest_name_keyか判定
+                    if tmp_constraint_key in column_list:
+                        tmp_where_str = " `{}` = %s ".format(tmp_constraint_key)
+                        where_str = where_str + ' {} {}'.format(conjunction, tmp_where_str)
+                        val = parameter.get(self.get_rest_key(tmp_constraint_key))
+                        bind_value_list.append(val)
+                        dict_bind_kv.setdefault(self.get_rest_key(tmp_constraint_key), val)
+                    else:
+                        objcol = self.get_objcol(tmp_constraint_key)
+                        if objcol is not None:
+                            seve_type = self.get_save_type(tmp_constraint_key)
+                            if seve_type == 'JSON':
+                                where_str = where_str + conjunction + ' JSON_UNQUOTE(JSON_EXTRACT(`{}`,"$.{}")) = %s '.format(
+                                    self.get_col_name(tmp_constraint_key),
+                                    tmp_constraint_key,
+                                )
+                                val = parameter.get(tmp_constraint_key)
+                                bind_value_list.append(val)
+                                dict_bind_kv.setdefault(tmp_constraint_key, val)
+                                
+                # 更新時自身をIDを除外
+                if target_uuid is not None:
+                    if len(target_uuid) != 0:
+                        where_str = where_str + " and `{}` <> %s ".format(primary_key_list[0])
+                        bind_value_list.append(target_uuid)
 
-                if (target_uuid == '' or target_uuid is None) is False:
-                    where_str = where_str + " and `{}` <> %s ".format(primary_key_list[0])
-                    bind_value_list.append(target_uuid)
-
-                table_count = self.objdbca.table_count(self.get_table_name(), where_str, bind_value_list)
-                if table_count != 0:
+                table_count = self.objdbca.table_select(self.get_table_name(), where_str, bind_value_list)
+                if len(table_count) != 0:
+                    list_uuids = []
+                    for table_count_rows in table_count:
+                        list_uuids.append(table_count_rows.get(primary_key_list[0]))
+                    
                     retBool = False
                     status_code = '200-99999'
-                    msg_args = 'unique_constraint error {} '.format(dict_bind_kv)
+                    msg_args = 'unique_constraint error {}:{} '.format(str(dict_bind_kv),str(list_uuids))
                     msg = g.appmsg.get_api_message(status_code, [msg_args])
                     self.set_message(msg, MSG_LEVEL_ERROR)
 
     # []: レコード操作前処理の実施(メニュー)
-    def exec_menu_before_validate(self, parameter, target_uuid, target_option):
+    def exec_menu_before_validate(self, target_option):
         """
             []::レコード操作前処理の実施(メニュー)
             ARGS:
@@ -1248,31 +1315,27 @@ class loadTable():
         retBool = True
         msg = ''
         exec_config = self.get_menu_before_validate_register()
-        # print({"before_validate": exec_config})
+        parameter = target_option.get('parameter')
+        file = target_option.get('file')
+        external_validate_path = 'common_libs.validate.valid_{}'.format(self.get_menu_id())
         if exec_config is not None:
-            print({"before_validate": exec_config, 'target_uuid': target_uuid, 'target_option': target_option})
-            class_name = exec_config.get("class_name")
-            objclass_str = ''
-            if class_name is not None:
-                eval_str = '{}()'.format(class_name)
-                objclass = eval(eval_str)
-                objclass_str = 'objclass.'
-            func_name = exec_config.get("func_name")
+            if exec_config is not None:
+                exec_func = importlib.import_module(external_validate_path)
+                eval_str = 'exec_func.{}(self.objdbca, self.objtable, parameter, file, target_option)'.format(exec_config)
+                tmp_exec = eval(eval_str)
 
-            eval_str = '{}{}(self.objdbca, parameter, target_uuid, target_option)'.format(objclass_str, func_name)
-            tmp_exec = eval(eval_str)
-            
-            if tmp_exec[0] is not True:
-                retBool = False
-                msg = tmp_exec[1]
-            else:
-                parameter = tmp_exec[2]
-                option['parameter'] = parameter
-                
-        return retBool, msg,
+                if tmp_exec[0] is not True:
+                    retBool = False
+                    msg = tmp_exec[1]
+                else:
+                    parameter = tmp_exec[2]
+                    file = tmp_exec[3]
+                    target_option['parameter'] = parameter
+                    target_option['file'] = file
+        return retBool, msg, target_option,
 
     # []:レコード操作後処理の実施(メニュー)
-    def exec_menu_after_validate(self, parameter, target_uuid, target_option):
+    def exec_menu_after_validate(self, target_option):
         """
             []::レコード操作後処理の実施(メニュー)
             ARGS:
@@ -1283,29 +1346,23 @@ class loadTable():
         retBool = True
         msg = ''
         exec_config = self.get_menu_after_validate_register()
-        # print({"after_validate": exec_config})
+        parameter = target_option.get('parameter')
+        file = target_option.get('file')
+        external_validate_path = 'common_libs.validate.valid_{}'.format(self.get_menu_id())
         if exec_config is not None:
-            print({"after_validate": exec_config, 'target_uuid': target_uuid, 'target_option': target_option})
-
-            class_name = exec_config.get("class_name")
-            objclass_str = ''
-            if class_name is not None:
-                eval_str = '{}()'.format(class_name)
-                objclass = eval(eval_str)
-                objclass_str = 'objclass.'
-            func_name = exec_config.get("func_name")
-
-            eval_str = '{}{}(self.objdbca, parameter, target_uuid, target_option)'.format(objclass_str, func_name)
-            tmp_exec = eval(eval_str)
-            
-            if tmp_exec[0] is not True:
-                retBool = False
-                msg = tmp_exec[1]
-            else:
-                parameter = tmp_exec[2]
-                option['parameter'] = parameter
-
-        return retBool, msg,
+            if exec_config is not None:
+                exec_func = importlib.import_module(external_validate_path)
+                eval_str = 'exec_func.{}(self.objdbca, self.objtable, parameter, file, target_option)'.format(exec_config)
+                tmp_exec = eval(eval_str)
+                if tmp_exec[0] is not True:
+                    retBool = False
+                    msg = tmp_exec[1]
+                else:
+                    parameter = tmp_exec[2]
+                    file = tmp_exec[3]
+                    target_option['parameter'] = parameter
+                    target_option['file'] = file
+        return retBool, msg, target_option,
 
     # []:想定内エラーの切り戻し処理
     def exec_restore_action(self, entry_parameter, target_option):
@@ -1318,12 +1375,10 @@ class loadTable():
         """
         retBool = True
         msg = ''
-        # print(target_option)
         # 各カラム単位の基本処理（後）、個別処理（後）を実施
         for rest_key, rest_val in entry_parameter.items():
             # カラムクラス呼び出し
             objcolumn = self.get_columnclass(rest_key)
-            # print([rest_key,objcolumn])
             # カラムクラス毎の処理:レコード操作後 ,カラム毎の個別処理:レコード操作後
             tmp_exec = objcolumn.after_iud_restore_action(rest_val, target_option)
             if tmp_exec[0] is not True:
@@ -1372,9 +1427,11 @@ class loadTable():
         lastupdatetime_key = self.get_col_name('last_update_date_time')
         lastupdatetime_row = '{}'.format(row_data.get(lastupdatetime_key).strftime('%Y/%m/%d %H:%M:%S.%f'))
         lastupdatetime_parameter = entry_parameter.get('last_update_date_time')
+        lastupdatetime_parameter = lastupdatetime_parameter.replace('-', '/')
 
         # 更新系の追い越し判定
-        if lastupdatetime_row != lastupdatetime_parameter:
+        # if lastupdatetime_row != lastupdatetime_parameter:
+        if lastupdatetime_row < lastupdatetime_parameter:
             status_code = '200-99999'
             msg_args = "他の操作により更新済みの為"
             msg = g.appmsg.get_api_message(status_code, [msg_args])
@@ -1462,7 +1519,6 @@ class loadTable():
             else:
                 status_code = '200-99999'
                 msg_args = "必須項目不足\n({})".format(",\n".join(required_restkey_list))
-                print(msg_args)
                 msg = g.appmsg.get_api_message(status_code, [msg_args])
 
         if status_code != '':
