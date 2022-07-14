@@ -619,3 +619,16 @@ FROM
 
 
 
+-- 処理実行フラグ管理
+CREATE TABLE T_COMN_PROC_LOADED_LIST
+(
+    ROW_ID                          VARCHAR(40),                                -- UUID
+    PROC_NAME                       VARCHAR(64),                                -- 処理名
+    LOADED_FLG                      VARCHAR(1),                                 -- 実行フラグ
+    LAST_UPDATE_TIMESTAMP           DATETIME(6),                                -- 最終更新日時
+    PRIMARY KEY(ROW_ID)
+)ENGINE = InnoDB, CHARSET = utf8mb4, COLLATE = utf8mb4_bin, ROW_FORMAT=COMPRESSED ,KEY_BLOCK_SIZE=8;
+
+
+
+
