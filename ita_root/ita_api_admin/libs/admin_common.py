@@ -37,7 +37,7 @@ def before_request_handler():
         user_id = request.headers.get("User-Id")
         roles = ast.literal_eval(request.headers.get("Roles"))
         if user_id is None or roles is None or type(roles) is not list:
-            raise AppException("400-00001", ["User-Id and Roles"], ["User-Id and Roles"])
+            raise AppException("400-00001", ["User-Id or Roles"], ["User-Id or Roles"])
 
         g.USER_ID = user_id
         g.ROLES = roles

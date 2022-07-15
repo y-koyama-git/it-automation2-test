@@ -14,6 +14,9 @@
     "999-00001": "[Database Error] Database({}) connect infomation is not found",
     "999-00002": "[Database Error] Database({}) : {}",
     "999-00003": "[Database Error] Database({}) SQL:{}, {}",
+    "999-00004": "[Gitlab Error] Database({}) gitlab connect infomation is not found",
+    "999-00005": "[Gitlab Error] request failed : {}",
+    "999-99999": "{}",
     "BKY-00001": "[sample] Common backyard error",
     "BKY-10001": "[sample] Ansible backyard error",
     "BKY-20001": "[sample] Create Menu backyard error"

@@ -72,7 +72,9 @@ class DBConnectOrg(DBConnectCommon):
             or
             get failure: (bool)False
         """
-        if "db_connect_info" not in g or "WSDB_DATADBASE" not in g.db_connect_info or g.get('WORKSPACE_ID') != workspace_id:
+        isnot_register_db_connect_info = "db_connect_info" not in g or "WSDB_DATADBASE" not in g.db_connect_info
+        isnot_same_workspace = g.get('WORKSPACE_ID') and g.get('WORKSPACE_ID') != workspace_id
+        if isnot_register_db_connect_info or isnot_same_workspace:
             where = "WHERE `WORKSPACE_ID`=%s and `DISUSE_FLAG`=0 LIMIT 1"
             data_list = self.table_select("T_COMN_WORKSPACE_DB_INFO", where, [workspace_id])
 
