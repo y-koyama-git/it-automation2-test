@@ -38,8 +38,6 @@ def organization_create(body, organization_id):  # noqa: E501
 
     :rtype: InlineResponse200
     """
-    g.ORGANIZATION_ID = organization_id
-
     common_db = DBConnectCommon()  # noqa: F405
     connect_info = common_db.get_orgdb_connect_info(organization_id)
     if connect_info:
@@ -56,10 +54,10 @@ def organization_create(body, organization_id):  # noqa: E501
     try:
         org_root_db = None
 
+        # make organization-db connect infomation
         user_name, user_password = common_db.userinfo_generate("ORG")
         org_db_name = user_name
 
-        # register organization-db connect infomation
         data = {
             'ORGANIZATION_ID': organization_id,
             'DB_HOST': os.environ.get('DB_HOST'),
@@ -71,8 +69,6 @@ def organization_create(body, organization_id):  # noqa: E501
             'DISUSE_FLAG': 0,
             'LAST_UPDATE_USER': g.get('USER_ID')
         }
-        common_db.db_transaction_start()
-        common_db.table_insert("T_COMN_ORGANIZATION_DB_INFO", data, "PRIMARY_KEY")
 
         g.db_connect_info = {}
         g.db_connect_info["ORGDB_HOST"] = data['DB_HOST']
@@ -92,6 +88,9 @@ def organization_create(body, organization_id):  # noqa: E501
         # create table of organization-db
         org_db.sqlfile_execute("sql/organization.sql")
 
+        # register organization-db connect infomation
+        common_db.db_transaction_start()
+        common_db.table_insert("T_COMN_ORGANIZATION_DB_INFO", data, "PRIMARY_KEY")
         common_db.db_commit()
     except Exception as e:
         shutil.rmtree(organization_dir)

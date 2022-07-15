@@ -119,7 +119,8 @@ def exception_response(e):
     # g.applogger.exception("[error][ts={}]".format(api_timestamp))
     g.applogger.error("[ts={}][error] {}".format(api_timestamp, arrange_stacktrace_format(t)))
 
-    return make_response(None, "SYSTEM ERROR", "999-99999", 500)
+    api_msg = g.appmsg.get_api_message("999-99999")
+    return make_response(None, api_msg, "999-99999", 500)
 
 
 def api_filter(func):
