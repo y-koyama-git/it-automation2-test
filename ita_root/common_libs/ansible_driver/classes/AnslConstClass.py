@@ -11,7 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from common_libs.ansible import *
+from common_libs.ansible_driver.classes import AnscConst
+
 
 """
   legacyの実行に必要な定数定義モジュール
