@@ -43,7 +43,6 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
     :rtype: InlineResponse200
     """
     g.ORGANIZATION_ID = organization_id
-    g.WORKSPACE_ID = workspace_id
 
     role_id = check_request_body_key(body, 'role_id')
 
@@ -96,7 +95,7 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
                         shutil.copy(org_file, old_file_path + file)
                         os.symlink(old_file_path + file, file_path + file)
 
-        # register workspace-db connect infomation
+        # make workspace-db connect infomation
         user_name, user_password = org_db.userinfo_generate("WS")
         ws_db_name = user_name
         connect_info = org_db.get_connect_info()
@@ -111,8 +110,6 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
             'DISUSE_FLAG': 0,
             'LAST_UPDATE_USER': g.get('USER_ID')
         }
-        org_db.db_transaction_start()
-        org_db.table_insert("T_COMN_WORKSPACE_DB_INFO", data, "PRIMARY_KEY")
 
         org_root_db = DBConnectOrgRoot(organization_id)  # noqa: F405
         # create workspace-databse
@@ -142,6 +139,9 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
                 if re.fullmatch(r'[\s\n\r]*', sql) is None:
                     ws_db.sql_execute(sql)
 
+        # register workspace-db connect infomation
+        org_db.db_transaction_start()
+        org_db.table_insert("T_COMN_WORKSPACE_DB_INFO", data, "PRIMARY_KEY")
         org_db.db_commit()
     except Exception as e:
         shutil.rmtree(workspace_dir)
