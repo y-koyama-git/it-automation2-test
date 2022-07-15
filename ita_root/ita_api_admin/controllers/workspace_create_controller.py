@@ -56,6 +56,7 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
     workspace_dir = strage_path + "/".join([organization_id, workspace_id]) + "/"
     if not os.path.isdir(workspace_dir):
         os.makedirs(workspace_dir)
+        g.applogger.debug("made workspace_dir")
     else:
         return '', "ALREADY EXISTS"
 
@@ -94,17 +95,18 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
 
                         shutil.copy(org_file, old_file_path + file)
                         os.symlink(old_file_path + file, file_path + file)
+        g.applogger.debug("set initial material")
 
         # make workspace-db connect infomation
-        user_name, user_password = org_db.userinfo_generate("WS")
-        ws_db_name = user_name
+        username, user_password = org_db.userinfo_generate("WS")
+        ws_db_name = username
         connect_info = org_db.get_connect_info()
 
         data = {
             'WORKSPACE_ID': workspace_id,
             'DB_HOST': connect_info['DB_HOST'],
             'DB_PORT': int(connect_info['DB_PORT']),
-            'DB_USER': user_name,
+            'DB_USER': username,
             'DB_PASSWORD': ky_encrypt(user_password),
             'DB_DATADBASE': ws_db_name,
             'DISUSE_FLAG': 0,
@@ -115,8 +117,9 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
         # create workspace-databse
         org_root_db.database_create(ws_db_name)
         # create workspace-user and grant user privileges
-        org_root_db.user_create(user_name, user_password, ws_db_name)
-        # print(user_name, user_password)
+        org_root_db.user_create(username, user_password, ws_db_name)
+        # print(username, user_password)
+        g.applogger.debug("created db and db-user")
 
         # connect workspace-db
         g.db_connect_info = {}
@@ -128,6 +131,7 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
         ws_db = DBConnectWs(workspace_id, organization_id)  # noqa: F405
         # create table of workspace-db
         ws_db.sqlfile_execute("sql/workspace.sql")
+        g.applogger.debug("executed sql/workspace.sql")
 
         # insert initial data of workspace-db
         with open("sql/workspace_master.sql", "r") as f:
@@ -138,6 +142,7 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
             for sql in sql_list:
                 if re.fullmatch(r'[\s\n\r]*', sql) is None:
                     ws_db.sql_execute(sql)
+        g.applogger.debug("executed sql/workspace_master.sql")
 
         # register workspace-db connect infomation
         org_db.db_transaction_start()
@@ -149,7 +154,7 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
 
         if org_root_db:
             org_root_db.database_drop(ws_db_name)
-            org_root_db.user_drop(user_name)
+            org_root_db.user_drop(username)
 
         raise Exception(e)
 
