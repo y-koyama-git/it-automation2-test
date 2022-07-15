@@ -3,7 +3,6 @@ import requests  # noqa F401
 import os
 import json
 
-from common_libs.common.dbconnect import DBConnectCommon
 from common_libs.common.exception import AppException
 
 
@@ -24,13 +23,8 @@ class GitLabAgent:
             # organization create controller
             self.__token = os.environ.get('GITLAB_ROOT_TOKEN')
         else:
-            common_db = DBConnectCommon()
-            where = "WHERE `ORGANIZATION_ID`=%s and `DISUSE_FLAG`=0 LIMIT 1"
-            data_list = common_db.table_select("T_COMN_ORGANIZATION_DB_INFO", where, [organization_id])
-            if len(data_list) == 0:
-                raise AppException("999-00004", ["ORGANIZATION_ID=" + organization_id])
-
-            self.__token = data_list[0]['GITLAB_TOKEN']
+            # backyard
+            self.__token = g.gitlab_connect_info.get('GITLAB_TOKEN')
 
     def send_api(self, method, resource, data=None, get_params=None):
         url = self.__api_base_url + resource
@@ -46,21 +40,22 @@ class GitLabAgent:
 
                 if "error" in res:
                     err_msg = "{}:{} paramas={}, data={} -> {}:{}".format(method, resource, get_params, data, response.status_code, response.text)
-                    raise AppException("999-00005", [])
+                    raise AppException("999-00004", [])
                 else:
                     print(res)
                     return res
             else:
                 err_msg = "{}:{} paramas={}, data={} -> {}:{}".format(method, resource, get_params, data, response.status_code, response.text)
-                raise AppException("999-00005", [err_msg])
+                raise AppException("999-00004", [err_msg])
         else:
             if 200 <= response.status_code < 299:
                 return True
             else:
                 err_msg = "{}:{} paramas={}, data={} -> {}:{}".format(method, resource, get_params, data, response.status_code, response.text)
-                raise AppException("999-00005", [err_msg])
+                raise AppException("999-00004", [err_msg])
 
     def get_user(self, username=""):
+        # https://docs.gitlab.com/ee/api/users.html#list-users
         if not username:
             params = {}
         else:
@@ -71,21 +66,23 @@ class GitLabAgent:
         return self.send_api(method="get", resource="users", get_params=params)
 
     def create_user(self, username):
+        # https://docs.gitlab.com/ee/api/users.html#user-creation
         payload = {
             "name": username,
             "username": username,
-            "email": "hogehoge@example.com",
+            "email": username + "@example.com",
             "can_create_group": False,
             "admin": False,
             "external": False,  # can_create_project
             "force_random_password": True,
-            "projects_limit": 1000,
+            "projects_limit": 10000,
             "skip_confirmation": True
         }
 
         return self.send_api(method="post", resource="users", data=payload)
 
     def delete_user(self, user_id):
+        # https://docs.gitlab.com/ee/api/users.html#user-deletion
         payload = {
             "id": user_id,
             'hard_delete': True
@@ -94,6 +91,7 @@ class GitLabAgent:
         return self.send_api(method="delete", resource="users/{}".format(user_id), data=payload)
 
     def create_personal_access_tokens(self, user_id, username):
+        # https://docs.gitlab.com/ee/api/users.html#create-a-personal-access-token
         payload = {
             "user_id": user_id,
             "name": username,
@@ -104,6 +102,7 @@ class GitLabAgent:
         return self.send_api(method="post", resource="users/{}/personal_access_tokens".format(user_id), data=payload)
 
     def create_project(self, project_name):
+        # https://docs.gitlab.com/ee/api/projects.html#create-project
         payload = {
             "name": project_name,
             # "path": project_path,
