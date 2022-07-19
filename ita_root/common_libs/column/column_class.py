@@ -113,6 +113,10 @@ class Column():
         
         self.cmd_type = cmd_type
 
+        # デフォルト処理名
+        self.encrypt_name = 'ky_encrypt'
+        self.decrypt_name = 'ky_decrypt'
+
     # self 設定、取得関連
     def set_objtable(self, objtable):
         """
@@ -138,7 +142,39 @@ class Column():
         """
         menu_id = self.get_objtable().get('MENUINFO').get('MENU_ID')
         return menu_id
-    
+
+    def set_encrypt_name(self, encrypt_name):
+        """
+            encrypt_nameを設定
+            ARGS:
+                table_name
+        """
+        self.encrypt_name = encrypt_name
+
+    def get_encrypt_name(self):
+        """
+            encrypt_nameを取得
+            RETRUN:
+                self.encrypt_name
+        """
+        return self.encrypt_name
+
+    def set_decrypt_name(self, decrypt_name):
+        """
+            decrypt_nameを設定
+            ARGS:
+                table_name
+        """
+        self.decrypt_name = decrypt_name
+
+    def get_decrypt_name(self):
+        """
+            decrypt_nameを取得
+            RETRUN:
+                self.decrypt_name
+        """
+        return self.decrypt_name
+
     def set_table_name(self, table_name):
         """
             テーブル名を設定
@@ -203,6 +239,14 @@ class Column():
         """
         return self.get_objcols().get(self.get_rest_key_name())
 
+    def set_cmd_type(self, cmd_type):
+        """
+            cmd_typeを設定
+            ARGS:
+                cmd_type
+        """
+        self.cmd_type = cmd_type
+        
     def get_save_type(self):
         """
             単一カラムのsave_typeを取得
@@ -333,17 +377,15 @@ class Column():
             return result_1
 
         # 個別バリデーションレコード操作前
-        result_2 = self.before_iud_col_action(val, option)
+        result_2 = self.before_iud_col_action(option)
         if result_2[0] is not True:
             return result_2
         else:
             retBool = result_2[0]
             msg = result_2[1]
-            val = result_2[2]
-            parameter = result_2[3]
-            option = result_2[4]
+            option = result_2[2]
 
-        return retBool, msg, val, parameter, option
+        return retBool, msg, val, option
 
     # [maintenance] レコード操作後処理実施
     def after_iud_action(self, val='', option={}):
@@ -408,14 +450,14 @@ class Column():
         return retBool,
 
     # [maintenance] カラム個別処理 レコード操作前
-    def before_iud_col_action(self, val='', option={}):
+    def before_iud_col_action(self, option={}):
         """
             カラム個別処理  レコード操作前
             ARGS:
                 val:値
                 option:個別バリデーション,個別処理
             RETRUN:
-                ( retBool, msg, val, parameter, option, )
+                ( retBool, msg, option )
         """
         retBool = True
         msg = ''
@@ -425,16 +467,14 @@ class Column():
         if exec_config is not None:
             if exec_config is not None:
                 exec_func = importlib.import_module(external_validate_path)
-                eval_str = 'exec_func.{}(self.objdbca, self.objtable, val, parameter, option)'.format(exec_config)
+                eval_str = 'exec_func.{}(self.objdbca, self.objtable, option)'.format(exec_config)
                 tmp_exec = eval(eval_str)
                 if tmp_exec[0] is not True:
                     retBool = False
                     msg = tmp_exec[1]
                 else:
-                    val = tmp_exec[2]
-                    parameter = tmp_exec[3]
-                    option['parameter'] = parameter
-        return retBool, msg, val, parameter, option,
+                    option = tmp_exec[2]
+        return retBool, msg, option,
 
     # [maintenance] カラムクラスの個別処理 レコード操作後
     def after_iud_common_action(self, val='', option={}):
@@ -470,16 +510,15 @@ class Column():
         if exec_config is not None:
             if exec_config is not None:
                 exec_func = importlib.import_module(external_validate_path)
-                eval_str = 'exec_func.{}(self.objdbca, self.objtable, val, parameter, option)'.format(exec_config)
+                eval_str = 'exec_func.{}(self.objdbca, self.objtable, option)'.format(exec_config)
                 tmp_exec = eval(eval_str)
                 if tmp_exec[0] is not True:
                     retBool = False
                     msg = tmp_exec[1]
                 else:
-                    parameter = tmp_exec[2]
-                    parameter = tmp_exec[3]
-                    option['parameter'] = parameter
-        return retBool, msg, val, parameter, option,
+                    option = tmp_exec[2]
+                    
+        return retBool, msg, option,
     
     # [maintenance] カラム個別処理 レコード操作後の状態回復処理
     def after_iud_restore_action(self, val="", option={}):
@@ -540,10 +579,17 @@ class Column():
                     where_str = where_str + " and `{}` <> %s ".format(primary_key_list[0])
                     bind_value_list.append(option.get('uuid'))
 
-            result = self.objdbca.table_count(self.table_name, where_str, bind_value_list)
-            if result != 0:
+            result = self.objdbca.table_select(self.table_name, where_str, bind_value_list)
+            tmp_uuids =[]
+            if len(result) != 0:
+                for tmp_rows in result:
+                    tmp_uuids.append(tmp_rows.get(primary_key_list[0]))
                 retBool = False
                 msg = '{}({}):一意制約'.format(self.rest_key_name, val)
+                status_code = '200-00208'
+                str_uuids = ', '.join(map(str, tmp_uuids))
+                msg_args = [self.rest_key_name, str_uuids]
+                msg = g.appmsg.get_api_message(status_code, msg_args)
                 return retBool, msg
         return retBool,
 
