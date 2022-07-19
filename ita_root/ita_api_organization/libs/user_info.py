@@ -12,12 +12,10 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import os
 from common_libs.common import *  # noqa: F403
 from flask import g
+from libs.organization_common import check_auth_menu
 
-# ####メモ：あとでutil.pyを使うため不要になる
-import base64
 
 def collect_menu_group_panels(objdbca):
     """
@@ -28,37 +26,52 @@ def collect_menu_group_panels(objdbca):
             panels_data
     """
     
-    # ####メモ：必要なものは？
-    # メニューグループIDとパネル画像をbase64エンコードかけたもの。
-    
     # テーブル名
+    t_common_menu = 'T_COMN_MENU'
     t_common_menu_group = 'T_COMN_MENU_GROUP'
     
     # 変数定義
-    user_id = g.USER_ID
-    # lang = g.LANGUAGE
+    workspace_id = g.get('WORKSPACE_ID')
+    menu_group_list_id = '10102'  # 「メニューグループ管理」メニューのID
+    column_name_rest = 'menu_group_icon'  # カラム名
     
-    # ####メモ：現状ユーザIDとロールと取得可能メニューについての結びつけを行う機能が未実装のため、すべてのメニューグループ・メニューをリターンする処理とする。
-    #     　　：最終的には対象のユーザが取得可能なメニューグループ・メニューのみに絞る処理の実装が必要。
+    # 『メニュー管理』テーブルからメニューの一覧を取得
+    ret = objdbca.table_select(t_common_menu, 'WHERE DISUSE_FLAG = %s ORDER BY MENU_GROUP_ID ASC, DISP_SEQ ASC', [0])
+    
+    menu_groups = []
+    for recode in ret:
+        # メニューに対する権限があるかどうかをチェック
+        menu_id = recode.get('MENU_ID')
+        role_check = check_auth_menu(menu_id)
+        if not role_check:
+            continue
+        
+        # 権限のあるメニューのメニューグループを格納
+        menu_group_id = recode.get('MENU_GROUP_ID')
+        menu_groups.append(menu_group_id)
+        
+    # 重複を除外
+    menu_groups = list(set(menu_groups))
     
     # 『メニューグループ管理』テーブルからメニューグループの一覧を取得
     ret = objdbca.table_select(t_common_menu_group, 'WHERE DISUSE_FLAG = %s ORDER BY DISP_SEQ ASC', [0])
-    # ####メモ：操作可能なメニューグループが0件の場合もあるため、空の場合のエラー処理は必要なし。
     
     panels_data = {}
     for recode in ret:
+        # メニューグループに権限のあるメニューが1つもない場合は除外
         menu_group_id = recode.get('MENU_GROUP_ID')
-        icon = recode.get('MENU_GROUP_ICON')
+        if menu_group_id not in menu_groups:
+            continue
         
-        # ####メモ：画像データは一時的に以下に格納している。
-        # /workspace/ita_root/test/MENU_GROUP_ICON/{menu_group_id}/
-        # ####メモ：最終的なデータの格納先は、以下のようなディレクトリに対象のファイルが格納される想定。
-        # /strorage/{organization_id}/{workspace_id}/uploadfiles/{menu_id}/{uuid}/{column_rest_name}/
-        icon_path = "/workspace/ita_root/test/MENU_GROUP_ICON/"
-        target_file = icon_path + menu_group_id + "/" + icon
+        # 対象ファイルの格納先を取得
+        file_name = recode.get('MENU_GROUP_ICON')
+        file_paths = get_upload_file_path(workspace_id, menu_group_list_id, menu_group_id, column_name_rest, file_name, '')  # noqa: F405
+        print(file_paths)
         
         # 対象ファイルをbase64エンコード
-        encoded = file_encode(target_file)  # noqa: F405
+        encoded = file_encode(file_paths.get('file_path'))  # noqa: F405
+        if not encoded:
+            encoded = None
         
         panels_data[menu_group_id] = encoded
     
@@ -82,8 +95,8 @@ def collect_user_auth(objdbca):
     # ロールとワークスペースはそれぞれID/NAMEと持ちたいかも。その場合、[{"id": "xxx", "name": "yyy"}, {"id": "xxx", "name": "yyy"}]というような構造にする？
     
     # 変数定義
-    user_id = g.USER_ID
-    # lang = g.LANGUAGE
+    user_id = g.get('USER_ID')
+    # lang = g.get('LANGUAGE')
     
     # ユーザ名を取得
     # ####メモ：共通認証基盤側からユーザ名を取得する処理
@@ -120,29 +133,26 @@ def collect_menus(objdbca):
     t_common_menu_group = 'T_COMN_MENU_GROUP'
     
     # 変数定義
-    user_id = g.USER_ID
-    lang = g.LANGUAGE
-    
-    # ####メモ：現状ユーザIDとロールと取得可能メニューについての結びつけを行う機能が未実装のため、すべてのメニューグループ・メニューをリターンする処理とする。
-    #     　　：最終的には対象のユーザが取得可能なメニューグループ・メニューのみに絞る処理の実装が必要。
+    lang = g.get('LANGUAGE')
     
     # 『メニュー管理』テーブルからメニューの一覧を取得
     ret = objdbca.table_select(t_common_menu, 'WHERE DISUSE_FLAG = %s ORDER BY MENU_GROUP_ID ASC, DISP_SEQ ASC', [0])
-    # ####メモ：操作可能なメニューが0件の場合もあるため、空の場合のエラー処理は必要なし。
-    # if not ret:
-    #     log_msg_args = [""]
-    #     api_msg_args = [""]
-    #     raise AppException("200-0000X", log_msg_args, api_msg_args)  # noqa: F405
     
     # メニューグループごとのメニュー一覧を作成
     menus = {}
     for recode in ret:
+        # メニューに対する権限があるかどうかをチェック
+        menu_id = recode.get('MENU_ID')
+        role_check = check_auth_menu(menu_id)
+        if not role_check:
+            continue
+        
         menu_group_id = recode.get('MENU_GROUP_ID')
         if menu_group_id not in menus:
             menus[menu_group_id] = []
         
         add_menu = {}
-        add_menu['id'] = recode.get('MENU_ID')
+        add_menu['id'] = menu_id
         add_menu['menu_name'] = recode.get('MENU_NAME_' + lang.upper())
         add_menu['menu_name_rest'] = recode.get('MENU_NAME_REST')
         add_menu['disp_seq'] = recode.get('DISP_SEQ')
@@ -150,23 +160,23 @@ def collect_menus(objdbca):
     
     # 『メニューグループ管理』テーブルからメニューグループの一覧を取得
     ret = objdbca.table_select(t_common_menu_group, 'WHERE DISUSE_FLAG = %s ORDER BY DISP_SEQ ASC', [0])
-    # ####メモ：操作可能なメニューグループが0件の場合もあるため、空の場合のエラー処理は必要なし。
-    # if not ret:
-    #     log_msg_args = [""]
-    #     api_msg_args = [""]
-    #     raise AppException("200-0000X", log_msg_args, api_msg_args)  # noqa: F405
     
     # メニューグループの一覧を作成し、メニュー一覧も格納する
     menu_group_list = []
     for recode in ret:
-        add_menu_group = {}
-        parent_menu_group_id = recode.get('PARENT_MENU_GROUP_ID')
+        # メニューグループに権限のあるメニューが1つもない場合は除外
         menu_group_id = recode.get('MENU_GROUP_ID')
-        add_menu_group['parent_id'] = parent_menu_group_id
+        target_menus = menus.get(menu_group_id)
+        if not target_menus:
+            continue
+        
+        add_menu_group = {}
+        add_menu_group['parent_id'] = recode.get('PARENT_MENU_GROUP_ID')
         add_menu_group['id'] = menu_group_id
         add_menu_group['menu_group_name'] = recode.get('MENU_GROUP_NAME_' + lang.upper())
         add_menu_group['disp_seq'] = recode.get('DISP_SEQ')
-        add_menu_group['menus'] = menus[menu_group_id]
+        add_menu_group['menus'] = target_menus
+        
         menu_group_list.append(add_menu_group)
     
     menus_data = {
