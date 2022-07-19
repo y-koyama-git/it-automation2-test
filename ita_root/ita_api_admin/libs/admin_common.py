@@ -16,7 +16,7 @@ admin common function module
 """
 from flask import request, g
 import os
-import ast
+import base64
 
 from common_libs.common.exception import AppException
 from common_libs.common.logger import AppLog
@@ -35,7 +35,9 @@ def before_request_handler():
 
         # request-header check
         user_id = request.headers.get("User-Id")
-        roles = ast.literal_eval(request.headers.get("Roles"))
+        roles_org = request.headers.get("Roles")
+        roles_decode = base64.b64decode(roles_org.encode()).decode("utf-8")
+        roles = roles_decode.split("\n")
         if user_id is None or roles is None or type(roles) is not list:
             raise AppException("400-00001", ["User-Id or Roles"], ["User-Id or Roles"])
 

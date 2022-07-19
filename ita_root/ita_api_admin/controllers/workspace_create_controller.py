@@ -135,13 +135,20 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
 
         # insert initial data of workspace-db
         with open("sql/workspace_master.sql", "r") as f:
-            file = f.read()
-            file = file.replace('__ROLE_ID__', role_id)
-
-            sql_list = file.split(";\n")
+            sql_list = f.read().split(";\n")
             for sql in sql_list:
-                if re.fullmatch(r'[\s\n\r]*', sql) is None:
-                    ws_db.sql_execute(sql)
+                if re.fullmatch(r'[\s\n\r]*', sql):
+                    continue
+
+                prepared_list = []
+                trg_count = sql.count('__ROLE_ID__')
+                if trg_count > 0:
+                    prepared_list = list(map(lambda a: role_id, range(trg_count)))
+                    sql = ws_db.prepared_val_escape(sql).replace('\'__ROLE_ID__\'', '%s')
+                    # print(sql)
+                    # print(prepared_list)
+
+                ws_db.sql_execute(sql, prepared_list)
         g.applogger.debug("executed sql/workspace_master.sql")
 
         # register workspace-db connect infomation
