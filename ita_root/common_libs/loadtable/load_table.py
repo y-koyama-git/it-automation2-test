@@ -1020,7 +1020,7 @@ class loadTable():
             if cmd_type != CMD_REGISTER:
                 tmp_rows = self.get_target_rows(target_uuid)
                 
-                if len(tmp_rows) == 1:
+                if len(tmp_rows) != 1:
                     status_code = '200-00205'
                     msg_args = [target_uuid]
                     msg = g.appmsg.get_api_message(status_code, msg_args)
