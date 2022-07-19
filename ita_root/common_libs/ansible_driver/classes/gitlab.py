@@ -1,3 +1,19 @@
+# Copyright 2022 NEC Corporation#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+"""
+GitLab connection agnet module for Ansible Automation Controller
+"""
 from flask import g
 import requests  # noqa F401
 import os
@@ -14,6 +30,9 @@ class GitLabAgent:
     __token = ""
 
     def __init__(self):
+        """
+        constructor
+        """
         host = os.environ.get('GITLAB_HOST')
         port = os.environ.get('GITLAB_PORT')
         self.__api_base_url = "http://{}:{}/api/v4/".format(host, port)
@@ -27,6 +46,17 @@ class GitLabAgent:
             self.__token = g.gitlab_connect_info.get('GITLAB_TOKEN')
 
     def send_api(self, method, resource, data=None, get_params=None):
+        """
+        request gitlab RESTAPI
+
+        Arguments:
+            method: get or post or put or delete
+            resource: url resource
+            data: request body
+            get_params: get query paramater
+        Returns:
+            http response
+        """
         url = self.__api_base_url + resource
         headers = {
             "PRIVATE-TOKEN": self.__token,
@@ -107,7 +137,8 @@ class GitLabAgent:
             "name": project_name,
             # "path": project_path,
             "visibility": "private",
-            "emails_disabled": True
+            "emails_disabled": True,
+            "initialize_with_readme	": True  # Allows you to immediately clone this project’s repository. Skip this if you plan to push up an existing repository.  # noqa E501
         }
 
         return self.send_api(method="post", resource="projects", data=payload)

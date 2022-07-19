@@ -1,3 +1,16 @@
+# Copyright 2022 NEC Corporation#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 from flask import Flask, g
 from dotenv import load_dotenv  # python-dotenv
 import traceback
@@ -28,6 +41,9 @@ def main():
 
 
 def wrapper_job():
+    '''
+    backyard job wrapper
+    '''
     # create app log instance and message class instance
     g.applogger = AppLog()
     g.appmsg = MessageTemplate()
@@ -42,8 +58,8 @@ def wrapper_job():
         g.applogger.set_level("DEBUG")
 
         organization_id = organization_info['ORGANIZATION_ID']
-        g.ORGANIZATION_ID = organization_id
 
+        g.ORGANIZATION_ID = organization_id
         # database connect info
         g.db_connect_info = {}
         g.db_connect_info["ORGDB_HOST"] = organization_info["DB_HOST"]
@@ -69,6 +85,12 @@ def wrapper_job():
 
 
 def organization_job(organization_id):
+    '''
+    job for organization unit
+    
+    Argument:
+        organization_id
+    '''
     org_db = DBConnectOrg(organization_id)  # noqa: F405
     g.applogger.debug("ORG_DB:{} can be connected".format(organization_id))
 
@@ -79,8 +101,8 @@ def organization_job(organization_id):
         g.applogger.set_level("DEBUG")
 
         workspace_id = workspace_info['WORKSPACE_ID']
-        g.WORKSPACE_ID = workspace_id
 
+        g.WORKSPACE_ID = workspace_id
         g.db_connect_info["WSDB_HOST"] = workspace_info["DB_HOST"]
         g.db_connect_info["WSDB_PORT"] = str(workspace_info["DB_PORT"])
         g.db_connect_info["WSDB_USER"] = workspace_info["DB_USER"]
