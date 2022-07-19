@@ -19,6 +19,41 @@ from common_libs.common import *  # noqa: F403
 from common_libs.loadtable import *
 
 
+def rest_count(objdbca, menu, filter_parameter):
+    """
+        メニューの件数取得
+        ARGS:
+            objdbca:DB接クラス  DBConnectWs()
+            menu: メニュー string
+            filter_parameter: 検索条件  {}
+            lang: 言語情報 ja / en
+            mode: 本体 / 履歴
+        RETRUN:
+            statusCode, {}, msg
+    """
+
+    role_check = True
+    if not role_check:
+        # ####メモ：401を意図的に返したいので最終的に自作Exceptionクラスに渡す。引数のルールは別途決める必要あり。
+        status_code = '401-00001'
+        msg = g.appmsg.get_api_message(status_code, [menu])
+        raise Exception(msg, status_code)
+
+    mode = 'count'
+    objmenu = load_table.loadTable(objdbca, menu)
+    if objmenu.get_objtable() is False:
+        log_msg_args = ["not menu or table"]
+        api_msg_args = ["not menu or table"]
+        raise AppException("401-00001", log_msg_args, api_msg_args) # noqa: F405
+
+    status_code, result, msg = objmenu.rest_filter(filter_parameter, mode)
+    if status_code != '000-00000':
+        log_msg_args = [msg]
+        api_msg_args = [msg]
+        raise AppException(status_code, log_msg_args, api_msg_args)
+    
+    return result
+
 def rest_filter(objdbca, menu, filter_parameter):
     """
         メニューのレコード取得

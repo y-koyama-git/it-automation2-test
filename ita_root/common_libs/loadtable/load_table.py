@@ -684,7 +684,7 @@ class loadTable():
             column_list, primary_key_list = self.objdbca.table_columns_get(self.get_table_name())
             
             # テーブル本体
-            if mode in ['nomal', 'excel']:
+            if mode in ['nomal', 'excel', 'count']:
                 table_name = self.get_table_name()
                 # parameter check
                 if isinstance(parameter, dict):
@@ -723,7 +723,7 @@ class loadTable():
                 if sort_key is not None:
                     str_orderby = ''
                     where_str = where_str + str_orderby
-            elif mode in ['jnl', 'excel_jnl']:
+            elif mode in ['jnl', 'excel_jnl', 'count_jnl']:
                 # 履歴テーブル
                 where_str = ''
                 bind_value_list = []
@@ -753,20 +753,25 @@ class loadTable():
                     str_orderby = ''
                     where_str = where_str + str_orderby
 
-            # データ取得
-            tmp_result = self.objdbca.table_select(table_name, where_str, bind_value_list)
+            if mode in ['nomal', 'excel', 'jnl', 'excel_jnl']:
+                # データ取得
+                tmp_result = self.objdbca.table_select(table_name, where_str, bind_value_list)
 
-            # RESTパラメータへキー変換
-            for rows in tmp_result:
-                target_uuid = rows.get(primary_key_list[0])
-                target_uuid_jnl = rows.get(COLNAME_JNL_SEQ_NO)
-                rest_parameter, rest_file = self.convert_colname_restkey(rows, target_uuid, target_uuid_jnl, mode)
-                tmp_data = {}
-                tmp_data.setdefault(REST_PARAMETER_KEYNAME, rest_parameter)
-                if mode != 'excel' or mode != 'excel_jnl':
-                    tmp_data.setdefault(REST_FILE_KEYNAME, rest_file)
-                result_list.append(tmp_data)
-                
+                # RESTパラメータへキー変換
+                for rows in tmp_result:
+                    target_uuid = rows.get(primary_key_list[0])
+                    target_uuid_jnl = rows.get(COLNAME_JNL_SEQ_NO)
+                    rest_parameter, rest_file = self.convert_colname_restkey(rows, target_uuid, target_uuid_jnl, mode)
+                    tmp_data = {}
+                    tmp_data.setdefault(REST_PARAMETER_KEYNAME, rest_parameter)
+                    if mode != 'excel' or mode != 'excel_jnl':
+                        tmp_data.setdefault(REST_FILE_KEYNAME, rest_file)
+                    result_list.append(tmp_data)
+            elif mode in ['count', 'count_jnl']: 
+                # 件数取得
+                tmp_result = self.objdbca.table_count(table_name, where_str, bind_value_list)
+                result_list = tmp_result
+
         except Exception as e:
             print(e)
             if len(e.args) == 2:
