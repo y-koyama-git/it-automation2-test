@@ -18,6 +18,16 @@ tags:
   description: Excelの取得・操作
 - name: User Info
   description: ユーザ情報の取得
+- name: System Info
+  description: ITAの情報取得
+- name: Menu Create
+  description: メニュー作成機能
+- name: Conductor Controll
+  description: Conductorの作業実行・作業状態確認・緊急停止・予約取消・保留解除
+- name: Driver Controll
+  description: Driverの作業実行・作業状態確認・緊急停止・予約取消
+- name: Compare Controll
+  description: 比較情報取得・比較の実行
 paths:
   /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/info/:
     get:
@@ -1092,6 +1102,31 @@ components:
         TD_IHP: {}
         PAGE_NO: 0
         UNIQUE_VAL: {}
+    COLUMN_GROUP_INFO:
+      type: object
+      additionalProperties:
+        type: object
+        properties:
+          column_group_id:
+            type: string
+          column_group_name:
+            type: string
+          parent_column_group_id:
+            type: string
+          parent_column_group_name:
+            type: string
+          columns:
+            type: array
+            items: {}
+        example:
+          parent_column_group_name: parent_column_group_name
+          columns:
+          - ""
+          - ""
+          parent_column_group_id: parent_column_group_id
+          column_group_id: column_group_id
+          column_group_name: column_group_name
+      description: "カラムグループの並び順でg1, g2, g3...というkey名に格納される"
     COLUMN_INFO:
       type: object
       additionalProperties:
@@ -1194,7 +1229,7 @@ components:
           column_type: 0
           column_group_name: column_group_name
           ref_sort_conditions: ref_sort_conditions
-      description: column_name_restがkeyになる
+      description: "column_disp_seqの順番で、c1, c2, c3...というkey名に格納される"
     MENU_INFO:
       type: object
       properties:
@@ -1207,6 +1242,12 @@ components:
         menu_group_name:
           type: string
           description: メニューグループの名称
+        parent_menu_group_id:
+          type: string
+          description: 親メニューグループID
+        parent_menu_group_name:
+          type: string
+          description: 親メニューグループの名称
         menu_id:
           type: string
           description: メニューID
@@ -1278,19 +1319,21 @@ components:
         row_insert_flag: true
         privilege: 2
         row_disuse_flag: true
-        sort_key: sort_key
         table_name: table_name
-        menu_group_id: menu_group_id
-        xls_print_limit: 3
-        menu_info: menu_info
+        parent_menu_group_name: parent_menu_group_name
         menu_name: menu_name
-        inherit: true
         menu_group_name: menu_group_name
         auto_filter_flg: true
         menu_id: menu_id
         view_name: view_name
-        login_necessity: true
         web_print_confirm: 9
+        sort_key: sort_key
+        parent_menu_group_id: parent_menu_group_id
+        menu_group_id: menu_group_id
+        xls_print_limit: 3
+        menu_info: menu_info
+        inherit: true
+        login_necessity: true
     ERROR_TEMPLATE:
       type: object
       properties:
@@ -1333,6 +1376,15 @@ components:
       example:
         result: 000-00000
         data:
+          column_group_info:
+            key:
+              parent_column_group_name: parent_column_group_name
+              columns:
+              - ""
+              - ""
+              parent_column_group_id: parent_column_group_id
+              column_group_id: column_group_id
+              column_group_name: column_group_name
           menu_info:
             sheet_type: sheet_type
             history_table_flag: true
@@ -1344,19 +1396,21 @@ components:
             row_insert_flag: true
             privilege: 2
             row_disuse_flag: true
-            sort_key: sort_key
             table_name: table_name
-            menu_group_id: menu_group_id
-            xls_print_limit: 3
-            menu_info: menu_info
+            parent_menu_group_name: parent_menu_group_name
             menu_name: menu_name
-            inherit: true
             menu_group_name: menu_group_name
             auto_filter_flg: true
             menu_id: menu_id
             view_name: view_name
-            login_necessity: true
             web_print_confirm: 9
+            sort_key: sort_key
+            parent_menu_group_id: parent_menu_group_id
+            menu_group_id: menu_group_id
+            xls_print_limit: 3
+            menu_info: menu_info
+            inherit: true
+            login_necessity: true
           column_info:
             key:
               initial_value: initial_value
@@ -1638,11 +1692,22 @@ components:
     inline_response_200_data:
       type: object
       properties:
+        column_group_info:
+          $ref: '#/components/schemas/COLUMN_GROUP_INFO'
         column_info:
           $ref: '#/components/schemas/COLUMN_INFO'
         menu_info:
           $ref: '#/components/schemas/MENU_INFO'
       example:
+        column_group_info:
+          key:
+            parent_column_group_name: parent_column_group_name
+            columns:
+            - ""
+            - ""
+            parent_column_group_id: parent_column_group_id
+            column_group_id: column_group_id
+            column_group_name: column_group_name
         menu_info:
           sheet_type: sheet_type
           history_table_flag: true
@@ -1654,19 +1719,21 @@ components:
           row_insert_flag: true
           privilege: 2
           row_disuse_flag: true
-          sort_key: sort_key
           table_name: table_name
-          menu_group_id: menu_group_id
-          xls_print_limit: 3
-          menu_info: menu_info
+          parent_menu_group_name: parent_menu_group_name
           menu_name: menu_name
-          inherit: true
           menu_group_name: menu_group_name
           auto_filter_flg: true
           menu_id: menu_id
           view_name: view_name
-          login_necessity: true
           web_print_confirm: 9
+          sort_key: sort_key
+          parent_menu_group_id: parent_menu_group_id
+          menu_group_id: menu_group_id
+          xls_print_limit: 3
+          menu_info: menu_info
+          inherit: true
+          login_necessity: true
         column_info:
           key:
             initial_value: initial_value
