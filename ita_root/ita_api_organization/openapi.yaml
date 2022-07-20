@@ -68,6 +68,8 @@ paths:
                   data:
                     type: object
                     properties:
+                      column_group_info:
+                        $ref: '#/components/schemas/COLUMN_GROUP_INFO'
                       column_info:
                         $ref: '#/components/schemas/COLUMN_INFO'
                       menu_info:
@@ -1228,8 +1230,24 @@ components:
           type: object
         UNIQUE_VAL:
           type: object
+    COLUMN_GROUP_INFO:
+      description: カラムグループの並び順でg1, g2, g3...というkey名に格納される
+      additionalProperties:
+        type: object
+        properties:
+          column_group_id:
+            type: string
+          column_group_name:
+            type: string
+          parent_column_group_id:
+            type: string
+          parent_column_group_name:
+            type: string
+          columns:
+            type: array
+            items: {}
     COLUMN_INFO:
-      description: column_name_restがkeyになる
+      description: column_disp_seqの順番で、c1, c2, c3...というkey名に格納される
       additionalProperties:
         type: object
         properties:
@@ -1316,6 +1334,12 @@ components:
           type: string
         menu_group_name:
           description: メニューグループの名称
+          type: string
+        parent_menu_group_id:
+          description: 親メニューグループID
+          type: string
+        parent_menu_group_name:
+          description: 親メニューグループの名称
           type: string
         menu_id:
           description: メニューID
