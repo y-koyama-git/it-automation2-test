@@ -135,3 +135,6 @@ class AnscConst:
     DF_TowerProjectPath = "/var/lib/awx/projects"
     # Tower Exastro専用 Project Path
     DF_TowerExastroProjectPath = "/var/lib/exastro"
+
+    LC_RUN_MODE_STD = "0"      # 標準
+    LC_RUN_MODE_VARFILE = "1"  # 変数定義ファイルの構造チェック
