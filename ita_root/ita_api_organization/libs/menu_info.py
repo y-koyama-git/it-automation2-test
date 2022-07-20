@@ -154,6 +154,7 @@ def collect_menu_info(objdbca, menu):
     
     column_info_data = {}
     tmp_column_group = {}
+    column_group_parent_of_child = {}  # カラムグループの親子関係があるとき、子の一番大きい親を結びつける
     for count, recode in enumerate(ret, 1):
         # json形式のレコードは改行を削除
         validate_option = recode.get('VALIDATE_OPTION')
@@ -200,20 +201,21 @@ def collect_menu_info(objdbca, menu):
             'before_validate_register': before_validate_register,
             'after_validate_register': after_validate_register
         }
-        col_count = 'c{}'.format(count)
-        column_info_data[col_count] = detail
+        col_num = 'c{}'.format(count)
+        column_info_data[col_num] = detail
         
-        # ####メモ：縦メニュー用の考慮がされていないため、修正が必要。
+        # ####メモ：縦メニュー用の考慮がされていないため、最終的な修正が必要。
         # カラムグループ管理用配列に追加
         if column_group_id:
             if column_group_id not in tmp_column_group:
                 tmp_column_group[column_group_id] = []
             
-            tmp_column_group[column_group_id].append(col_count)
+            tmp_column_group[column_group_id].append(col_num)
             
-            # カラムグループの親をたどり格納する。
+            # カラムグループの親をたどり格納
             end_flag = False
             target_column_group_id = column_group_id
+            first_column_group_id = column_group_id
             loop_count = 0
             while not end_flag:
                 for target in column_group_list.values():
@@ -230,6 +232,7 @@ def collect_menu_info(objdbca, menu):
                             tmp_column_group[parent_column_group_id].append(target_column_group_id)
                         
                         target_column_group_id = parent_column_group_id
+                        column_group_parent_of_child[first_column_group_id] = parent_column_group_id
                 
                 # ループ数が100を超えたら無限ループの可能性が高いため強制終了
                 loop_count += 1
@@ -265,7 +268,31 @@ def collect_menu_info(objdbca, menu):
             add_data['parent_column_group_name'] = None
         
         column_group_info_data[key_to_id[group_id]] = add_data
+    
+    # menu_info_dataに大元のカラムの並び順を追加
+    # ####メモ：縦メニュー用の考慮がされていないため、最終的な修正が必要。
+    columns = []
+    for col_num, col_data in column_info_data.items():
+        column_group_id = col_data['column_group_id']
+        if not column_group_id:
+            # カラムグループが無い場合はcol_num(c1, c2, c3...)を格納
+            columns.append(col_num)
+            continue
         
+        if column_group_id in column_group_parent_of_child:
+            # 大親のカラムグループIDをg番号(g1, g2, g3...)に変換した値を格納
+            parent_column_group_id = column_group_parent_of_child.get(column_group_id)
+            if key_to_id[parent_column_group_id] not in columns:
+                columns.append(key_to_id[parent_column_group_id])
+            continue
+        else:
+            # カラムグループIDをg番号(g1, g2, g3...)に変換した値を格納
+            if key_to_id[column_group_id] not in columns:
+                columns.append(key_to_id[column_group_id])
+            continue
+    
+    menu_info_data['columns'] = columns
+    
     info_data = {
         'menu_info': menu_info_data,
         'column_info': column_info_data,

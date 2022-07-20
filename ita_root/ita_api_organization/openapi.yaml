@@ -1401,6 +1401,10 @@ components:
         privilege:
           description: メニューに対する権限
           type: integer
+        columns:
+          description: メニュー表示用のカラムおよびカラムグループの並び順
+          type: array
+          items: {}
     ERROR_TEMPLATE:
       type: object
       properties:
