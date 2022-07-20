@@ -1308,12 +1308,19 @@ components:
         privilege:
           type: integer
           description: メニューに対する権限
+        columns:
+          type: array
+          description: メニュー表示用のカラムおよびカラムグループの並び順
+          items: {}
       example:
         sheet_type: sheet_type
         history_table_flag: true
         row_update_flag: true
         web_print_limit: 7
         initial_filter_flg: true
+        columns:
+        - ""
+        - ""
         row_reuse_flag: true
         vertical: true
         row_insert_flag: true
@@ -1391,6 +1398,9 @@ components:
             row_update_flag: true
             web_print_limit: 7
             initial_filter_flg: true
+            columns:
+            - ""
+            - ""
             row_reuse_flag: true
             vertical: true
             row_insert_flag: true
@@ -1714,6 +1724,9 @@ components:
           row_update_flag: true
           web_print_limit: 7
           initial_filter_flg: true
+          columns:
+          - ""
+          - ""
           row_reuse_flag: true
           vertical: true
           row_insert_flag: true
