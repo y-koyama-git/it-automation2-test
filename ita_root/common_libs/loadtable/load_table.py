@@ -814,8 +814,7 @@ class loadTable():
         #  登録/更新/廃止/復活 処理
         try:
             # if cmd_type is None:
-            cmd_type = parameters.get('maintenance_type')
-
+            cmd_type = parameters.get('type')
             # トランザクション開始
             self.objdbca.db_transaction_start()
 
@@ -918,7 +917,7 @@ class loadTable():
                 tmp_result = self.objdbca.table_lock([self.get_table_name()])
 
             for tmp_parameters in list_parameters:
-                cmd_type = tmp_parameters.get("maintenance_type")
+                cmd_type = tmp_parameters.get("type")
                 
                 parameters = tmp_parameters
 
