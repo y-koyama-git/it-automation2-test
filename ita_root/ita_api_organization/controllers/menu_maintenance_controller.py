@@ -52,7 +52,7 @@ def maintenance_register(organization_id, workspace_id, menu, body=None):  # noq
     if connexion.request.is_json:
         body = dict(connexion.request.get_json())
         parameter = body
-        parameter.setdefault('maintenance_type', cmd_type)
+        parameter.setdefault('type', cmd_type)
 
     result_data = menu_maintenance.rest_maintenance(objdbca, menu, parameter, target_uuid)
     return result_data,
@@ -87,7 +87,7 @@ def maintenance_update(organization_id, workspace_id, menu, uuid, body=None):  #
     if connexion.request.is_json:
         body = dict(connexion.request.get_json())
         parameter = body
-        parameter.setdefault('maintenance_type', cmd_type)
+        parameter.setdefault('type', cmd_type)
 
     result_data = menu_maintenance.rest_maintenance(objdbca, menu, parameter, target_uuid)
     return result_data,

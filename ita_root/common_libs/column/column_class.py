@@ -357,7 +357,15 @@ class Column():
                 self.cmd_type
         """
         return self.cmd_type
-    
+
+    def get_file_upload_place(self):
+        """
+            file_upload_placeを取得
+            RETRUN:
+                string / None
+        """
+        return self.get_objcol().get('FILE_UPLOAD_PLACE')
+
     ###
     # [maintenance] レコード操作前処理実施
     def before_iud_action(self, val='', option={}):
