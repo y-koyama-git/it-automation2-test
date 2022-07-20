@@ -35,7 +35,7 @@ class GitLabAgent:
         """
         host = os.environ.get('GITLAB_HOST')
         port = os.environ.get('GITLAB_PORT')
-        self.__api_base_url = "http://{}:{}/api/v4/".format(host, port)
+        self.__api_base_url = "http://{}:{}/api/v4".format(host, port)
 
         organization_id = g.get('ORGANIZATION_ID')
         if not organization_id:
@@ -45,7 +45,7 @@ class GitLabAgent:
             # backyard
             self.__token = g.gitlab_connect_info.get('GITLAB_TOKEN')
 
-    def send_api(self, method, resource, data=None, get_params=None):
+    def send_api(self, method, resource, data=None, get_params=None, as_row=False):
         """
         request gitlab RESTAPI
 
@@ -54,8 +54,9 @@ class GitLabAgent:
             resource: url resource
             data: request body
             get_params: get query paramater
+            as_row: whether return response-object or not
         Returns:
-            http response
+            http response body OR boolean OR response-object
         """
         url = self.__api_base_url + resource
         headers = {
@@ -64,6 +65,9 @@ class GitLabAgent:
         }
 
         response = eval('requests.{}'.format(method.lower()))(url, headers=headers, params=get_params, data=json.dumps(data))
+        if as_row is True:
+            return response
+
         if response.headers.get('Content-Type') == 'application/json':
             if 200 <= response.status_code < 299:
                 res = response.json()
@@ -84,7 +88,19 @@ class GitLabAgent:
                 err_msg = "{}:{} paramas={}, data={} -> {}:{}".format(method, resource, get_params, data, response.status_code, response.text)
                 raise AppException("999-00004", [err_msg])
 
-    def get_user(self, username=""):
+    def get_user_self(self):
+        # https://docs.gitlab.com/ee/api/users.html#for-normal-users-1
+
+        res = self.send_api(method="get", resource="/user")
+        return res
+
+    def get_user_by_id(self, user_id):
+        # 未使用中
+        # https://docs.gitlab.com/ee/api/users.html#single-user
+
+        return self.send_api(method="get", resource="/users/{}".format(user_id))
+
+    def get_user_by_username(self, username=""):
         # https://docs.gitlab.com/ee/api/users.html#list-users
         if not username:
             params = {}
@@ -93,7 +109,7 @@ class GitLabAgent:
                 "username": username
             }
 
-        return self.send_api(method="get", resource="users", get_params=params)
+        return self.send_api(method="get", resource="/users", get_params=params)
 
     def create_user(self, username):
         # https://docs.gitlab.com/ee/api/users.html#user-creation
@@ -109,7 +125,8 @@ class GitLabAgent:
             "skip_confirmation": True
         }
 
-        return self.send_api(method="post", resource="users", data=payload)
+        res = self.send_api(method="post", resource="/users", data=payload)
+        return res
 
     def delete_user(self, user_id):
         # https://docs.gitlab.com/ee/api/users.html#user-deletion
@@ -118,7 +135,7 @@ class GitLabAgent:
             'hard_delete': True
         }
 
-        return self.send_api(method="delete", resource="users/{}".format(user_id), data=payload)
+        return self.send_api(method="delete", resource="/users/{}".format(user_id), data=payload)
 
     def create_personal_access_tokens(self, user_id, username):
         # https://docs.gitlab.com/ee/api/users.html#create-a-personal-access-token
@@ -129,16 +146,28 @@ class GitLabAgent:
             "scopes": ["api"]
         }
 
-        return self.send_api(method="post", resource="users/{}/personal_access_tokens".format(user_id), data=payload)
+        res = self.send_api(method="post", resource="/users/{}/personal_access_tokens".format(user_id), data=payload)
+        return res.get('token')
 
-    def create_project(self, project_name):
+    def get_project_by_user_id(self, user_id):
+        # https://docs.gitlab.com/ee/api/projects.html#list-user-projects
+
+        return self.send_api(method="get", resource="/users/{}/projects".format(user_id))
+
+    def create_project(self, project_name, tag_list=[]):
         # https://docs.gitlab.com/ee/api/projects.html#create-project
         payload = {
             "name": project_name,
             # "path": project_path,
             "visibility": "private",
             "emails_disabled": True,
-            "initialize_with_readme	": True  # Allows you to immediately clone this project’s repository. Skip this if you plan to push up an existing repository.  # noqa E501
+            "initialize_with_readme	": True,  # Allows you to immediately clone this project’s repository. Skip this if you plan to push up an existing repository.  # noqa E501
+            "tag_list": tag_list
         }
 
-        return self.send_api(method="post", resource="projects", data=payload)
+        return self.send_api(method="post", resource="/projects", data=payload)
+
+    def delete_project(self, project_id):
+        # https://docs.gitlab.com/ee/api/projects.html#delete-project
+
+        return self.send_api(method="delete", resource="/projects/{}".format(project_id))

@@ -86,6 +86,10 @@ def before_request_handler():
         g.db_connect_info["ORGDB_PASSWORD"] = orgdb_connect_info["DB_PASSWORD"]
         g.db_connect_info["ORGDB_ROOT_PASSWORD"] = orgdb_connect_info["DB_ROOT_PASSWORD"]
         g.db_connect_info["ORGDB_DATADBASE"] = orgdb_connect_info["DB_DATADBASE"]
+        # gitlab connect info
+        g.gitlab_connect_info = {}
+        g.gitlab_connect_info["GITLAB_USER"] = orgdb_connect_info["GITLAB_USER"]
+        g.gitlab_connect_info["GITLAB_TOKEN"] = orgdb_connect_info["GITLAB_TOKEN"]
 
         # initialize setting workspcae-db connect_info and connect check
         org_db = DBConnectOrg()  # noqa: F405
