@@ -40,7 +40,12 @@ def get_filter_count(organization_id, workspace_id, menu):  # noqa: E501
 
     :rtype: InlineResponse2004
     """
-    return 'do some magic!',
+     # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+    
+    filter_parameter = {}
+    result_data = menu_filter.rest_count(objdbca, menu, filter_parameter)
+    return result_data,
 
 
 @api_filter
@@ -139,6 +144,14 @@ def post_filter_count(organization_id, workspace_id, menu, body=None):  # noqa: 
 
     :rtype: InlineResponse2005
     """
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+    
+    filter_parameter = {}
     if connexion.request.is_json:
-        body = Object.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
+        body = dict(connexion.request.get_json())
+        filter_parameter = body
+        
+    # メニューのカラム情報を取得
+    result_data = menu_filter.rest_count(objdbca, menu, filter_parameter)
+    return result_data,

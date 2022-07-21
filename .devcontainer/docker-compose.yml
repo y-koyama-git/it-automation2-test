@@ -40,6 +40,9 @@ services:
       - DB_PASSWORD=password
       - DB_ROOT_PASSWORD=password
       - STORAGEPATH=/storage/
+      - GITLAB_HOST=10.197.18.183
+      - GITLAB_PORT=40080
+      - GITLAB_ROOT_TOKEN=mzsQj8VU_zcSoSZsSX__
   ita-web-server:
     build:
       dockerfile: ./ita_root/ita_web_server/Dockerfile

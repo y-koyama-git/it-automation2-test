@@ -224,11 +224,11 @@ def get_upload_file_path(workspace_id, menu_id, uuid, column_name_rest, file_nam
         filepath
     """
     organization_id = g.get("ORGANIZATION_ID")
-    file_path = "/storage/{}/{}/uploadfiles/{}/{}/{}/{}".format(organization_id, workspace_id, uuid, menu_id, column_name_rest, file_name)
+    file_path = "/storage/{}/{}/uploadfiles/{}/{}/{}/{}".format(organization_id, workspace_id, menu_id, column_name_rest, uuid, file_name)
     old_file_path = ""
     if uuid_jnl is not None:
         if len(uuid_jnl) > 0:
-            old_file_path = "/storage/{}/{}/uploadfiles/{}/{}/{}/old/{}/{}".format(organization_id, workspace_id, uuid, menu_id, column_name_rest, uuid_jnl, file_name)  # noqa: E501
+            old_file_path = "/storage/{}/{}/uploadfiles/{}/{}/{}/old/{}/{}".format(organization_id, workspace_id, menu_id, column_name_rest, uuid, uuid_jnl, file_name)  # noqa: E501
 
     return {"file_path": file_path, "old_file_path": old_file_path}
 

@@ -23,6 +23,7 @@ import shutil
 from common_libs.api import api_filter
 from common_libs.common.dbconnect import *  # noqa: F403
 from common_libs.common.util import ky_encrypt
+from common_libs.ansible_driver.classes.gitlab import GitLabAgent
 
 
 @api_filter
@@ -38,8 +39,6 @@ def organization_create(body, organization_id):  # noqa: E501
 
     :rtype: InlineResponse200
     """
-    g.ORGANIZATION_ID = organization_id
-
     common_db = DBConnectCommon()  # noqa: F405
     connect_info = common_db.get_orgdb_connect_info(organization_id)
     if connect_info:
@@ -50,29 +49,29 @@ def organization_create(body, organization_id):  # noqa: E501
     organization_dir = strage_path + organization_id + "/"
     if not os.path.isdir(organization_dir):
         os.makedirs(organization_dir)
+        g.applogger.debug("made organization_dir")
     else:
         return '', "ALREADY EXISTS"
 
     try:
         org_root_db = None
+        gitlab_agent = None
 
-        user_name, user_password = common_db.userinfo_generate("ORG")
-        org_db_name = user_name
+        # make organization-db connect infomation
+        username, user_password = common_db.userinfo_generate("ORG")
+        org_db_name = username
 
-        # register organization-db connect infomation
         data = {
             'ORGANIZATION_ID': organization_id,
             'DB_HOST': os.environ.get('DB_HOST'),
             'DB_PORT': int(os.environ.get('DB_PORT')),
-            'DB_USER': user_name,
+            'DB_USER': username,
             'DB_PASSWORD': ky_encrypt(user_password),
             'DB_DATADBASE': org_db_name,
             'DB_ROOT_PASSWORD': ky_encrypt(os.environ.get('DB_ROOT_PASSWORD')),
             'DISUSE_FLAG': 0,
             'LAST_UPDATE_USER': g.get('USER_ID')
         }
-        common_db.db_transaction_start()
-        common_db.table_insert("T_COMN_ORGANIZATION_DB_INFO", data, "PRIMARY_KEY")
 
         g.db_connect_info = {}
         g.db_connect_info["ORGDB_HOST"] = data['DB_HOST']
@@ -85,13 +84,25 @@ def organization_create(body, organization_id):  # noqa: E501
         # create workspace-databse
         org_root_db.database_create(org_db_name)
         # create workspace-user and grant user privileges
-        org_root_db.user_create(user_name, user_password, org_db_name)
+        org_root_db.user_create(username, user_password, org_db_name)
+        g.applogger.debug("created db and db-user")
 
         # connect organization-db
         org_db = DBConnectOrg(organization_id)  # noqa: F405
         # create table of organization-db
         org_db.sqlfile_execute("sql/organization.sql")
+        g.applogger.debug("executed sql/organization.sql")
 
+        # make gitlab user and token value
+        gitlab_agent = GitLabAgent()
+        res = gitlab_agent.create_user(username)
+        g.applogger.debug("GitLab create_user : {}".format(res))
+        data["GITLAB_USER"] = res['username']
+        data["GITLAB_TOKEN"] = gitlab_agent.create_personal_access_tokens(res['id'], res['username'])
+
+        # register organization-db connect infomation and gitlab connect infomation
+        common_db.db_transaction_start()
+        common_db.table_insert("T_COMN_ORGANIZATION_DB_INFO", data, "PRIMARY_KEY")
         common_db.db_commit()
     except Exception as e:
         shutil.rmtree(organization_dir)
@@ -99,7 +110,12 @@ def organization_create(body, organization_id):  # noqa: E501
 
         if org_root_db:
             org_root_db.database_drop(org_db_name)
-            org_root_db.user_drop(user_name)
+            org_root_db.user_drop(username)
+
+        if gitlab_agent:
+            user_list = gitlab_agent.get_user_by_username(username)
+            for user in user_list:
+                gitlab_agent.delete_user(user['id'])
 
         raise Exception(e)
 
@@ -117,9 +133,6 @@ def organization_delete(organization_id):  # noqa: E501
 
     :rtype: InlineResponse200
     """
-    # get organization_id
-    g.ORGANIZATION_ID = organization_id
-
     common_db = DBConnectCommon()  # noqa: F405
     connect_info = common_db.get_orgdb_connect_info(organization_id)
     if connect_info is False:
@@ -165,6 +178,16 @@ def organization_delete(organization_id):  # noqa: E501
     org_root_db.database_drop(connect_info['DB_DATADBASE'])
     org_root_db.user_drop(connect_info['DB_USER'])
     org_root_db.db_disconnect()
+
+    # delete gitlab user and projects
+    gitlab_agent = GitLabAgent()
+    user_list = gitlab_agent.get_user_by_username(connect_info['GITLAB_USER'])
+    for user in user_list:
+        gitlab_user_id = user['id']
+        projects = gitlab_agent.get_project_by_user_id(gitlab_user_id)
+        for project in projects:
+            gitlab_agent.delete_project(project['id'])
+        gitlab_agent.delete_user(gitlab_user_id)
 
     # disuse org-db connect infomation
     data = {

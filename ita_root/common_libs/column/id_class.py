@@ -97,10 +97,10 @@ class IdColumn(Column):
         
         return retBool,
 
-    # [load_table] 値をID連携先のIDへ変換
-    def convert_value_id(self, val=''):
+    # [load_table] 値を入力用の値へ変換
+    def convert_value_input(self, val=''):
         """
-            値をIDに変換
+            値を入力用の値へ変換
             ARGS:
                 val:値
             RETRUN:
@@ -108,35 +108,36 @@ class IdColumn(Column):
         """
         retBool = True
         msg = ''
-        try:
-            user_env = g.LANGUAGE.upper()
-            table_name = self.get_objcol().get("REF_TABLE_NAME")
-            
-            # 連携先のテーブルが言語別のカラムを持つか判定
-            ref_malti_lang = self.get_objcol().get("REF_MULTI_LANG")
-            if ref_malti_lang == '1':
-                ref_col_name = "{}_{}".format(self.get_objcol().get("REF_COL_NAME"), user_env)
-            else:
-                ref_col_name = "{}".format(self.get_objcol().get("REF_COL_NAME"))
-            where_str = "WHERE {} = %s".format(ref_col_name)
-            bind_value_list = [val]
-            return_values = self.objdbca.table_select(table_name, where_str, bind_value_list)
-            if len(return_values) == 1:
-                ref_pkey_name = "{}".format(self.get_objcol().get("REF_PKEY_NAME"))
-                val = return_values[0].get(ref_pkey_name)
-            else:
-                raise Exception('')
-        except Exception as e:
-            print(table_name, where_str, bind_value_list)
-            retBool = False
-            msg = 'refテーブルにデータが存在しません。'
+        if val is not None:
+            try:
+                user_env = g.LANGUAGE.upper()
+                table_name = self.get_objcol().get("REF_TABLE_NAME")
+                
+                # 連携先のテーブルが言語別のカラムを持つか判定
+                ref_malti_lang = self.get_objcol().get("REF_MULTI_LANG")
+                if ref_malti_lang == '1':
+                    ref_col_name = "{}_{}".format(self.get_objcol().get("REF_COL_NAME"), user_env)
+                else:
+                    ref_col_name = "{}".format(self.get_objcol().get("REF_COL_NAME"))
+                where_str = "WHERE {} = %s".format(ref_col_name)
+                bind_value_list = [val]
+                return_values = self.objdbca.table_select(table_name, where_str, bind_value_list)
+                if len(return_values) == 1:
+                    ref_pkey_name = "{}".format(self.get_objcol().get("REF_PKEY_NAME"))
+                    val = return_values[0].get(ref_pkey_name)
+                else:
+                    raise Exception('')
+            except Exception as e:
+                print(table_name, where_str, bind_value_list)
+                retBool = False
+                msg = 'refテーブルにデータが存在しません。'
 
         return retBool, msg, val,
 
-    # [load_table] 値をID連携先のIDへ変換
-    def convert_id_value(self, val=''):
+    # [load_table] 値を出力用の値へ変換
+    def convert_value_output(self, val=''):
         """
-            IDを値に変換
+            値を出力用の値へ変換
             ARGS:
                 val:値
             RETRUN:

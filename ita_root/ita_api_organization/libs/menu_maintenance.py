@@ -40,14 +40,23 @@ def rest_maintenance(objdbca, menu, parameter, target_uuid):
     mode = 'nomal'
     objmenu = load_table.loadTable(objdbca, menu)
     if objmenu.get_objtable() is False:
-        log_msg_args = ["not menu or table"]
-        api_msg_args = ["not menu or table"]
-        raise AppException("401-00001", log_msg_args, api_msg_args) # noqa: F405
+        status_code = "401-00003"
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException(status_code, log_msg_args, api_msg_args)
 
     status_code, result, msg = objmenu.rest_maintenance(parameter, target_uuid)
     if status_code != '000-00000':
-        log_msg_args = [msg]
-        api_msg_args = [msg]
+        if status_code is None:
+            status_code = '999-99999'
+        elif len(status_code) == 0:
+            status_code = '999-99999'
+        if isinstance(msg,list):
+            log_msg_args = msg
+            api_msg_args = msg
+        else:
+            log_msg_args = [msg]
+            api_msg_args = [msg] 
         raise AppException(status_code, log_msg_args, api_msg_args)
 
     return result

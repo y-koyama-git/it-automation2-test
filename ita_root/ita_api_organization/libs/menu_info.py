@@ -91,13 +91,20 @@ def collect_menu_info(objdbca, menu):
         api_msg_args = [menu]
         raise AppException("200-00003", log_msg_args, api_msg_args)  # noqa: F405
     
-    # ####メモ：最終的にはPARENT_MENU_GROUP_IDがある場合の考慮をする必要あり。
     menu_group_name = ret[0].get('MENU_GROUP_NAME_' + lang.upper())
+    parent_menu_group_id = ret[0].get('PARENT_MENU_GROUP_ID')
+    parent_menu_group_name = None
+    if parent_menu_group_id:
+        ret = objdbca.table_select(t_common_menu_group, 'WHERE MENU_GROUP_ID = %s AND DISUSE_FLAG = %s', [parent_menu_group_id, 0])
+        if ret:
+            parent_menu_group_name = ret[0].get('MENU_GROUP_NAME_' + lang.upper())
     
     menu_info_data = {
         'menu_info': menu_info,
         'menu_group_id': menu_group_id,
         'menu_group_name': menu_group_name,
+        'parent_menu_group_id': parent_menu_group_id,
+        'parent_menu_group_name': parent_menu_group_name,
         'menu_id': menu_id,
         'menu_name': menu_name,
         'sheet_type': sheet_type,
@@ -131,17 +138,24 @@ def collect_menu_info(objdbca, menu):
     column_group_list = {}
     if ret:
         for recode in ret:
-            column_group_list[recode.get('COL_GROUP_ID')] = recode.get('COL_GROUP_NAME_' + lang.upper())
-        
+            add_data = {
+                "column_group_id": recode.get('COL_GROUP_ID'),
+                "column_group_name": recode.get('COL_GROUP_NAME_' + lang.upper()),
+                "parent_column_group_id": recode.get('PA_COL_GROUP_ID')
+            }
+            column_group_list[recode.get('COL_GROUP_ID')] = add_data
+    
     # 『メニュー-カラム紐付管理』テーブルから対象のデータを取得
-    ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
+    ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s ORDER BY COLUMN_DISP_SEQ ASC', [menu_id, 0])
     if not ret:
         log_msg_args = [menu]
         api_msg_args = [menu]
         raise AppException("200-00004", log_msg_args, api_msg_args)  # noqa: F405
     
     column_info_data = {}
-    for recode in ret:
+    tmp_column_group = {}
+    column_group_parent_of_child = {}  # カラムグループの親子関係があるとき、子の一番大きい親を結びつける
+    for count, recode in enumerate(ret, 1):
         # json形式のレコードは改行を削除
         validate_option = recode.get('VALIDATE_OPTION')
         if type(validate_option) is str:
@@ -159,7 +173,7 @@ def collect_menu_info(objdbca, menu):
         column_group_id = recode.get('COL_GROUP_ID')
         column_group_name = ''
         if column_group_id:
-            column_group_name = column_group_list.get(column_group_id)
+            column_group_name = column_group_list.get(column_group_id).get('column_group_name')
         
         detail = {
             'column_id': recode.get('COLUMN_DEFINITION_ID'),
@@ -187,12 +201,102 @@ def collect_menu_info(objdbca, menu):
             'before_validate_register': before_validate_register,
             'after_validate_register': after_validate_register
         }
+        col_num = 'c{}'.format(count)
+        column_info_data[col_num] = detail
         
-        column_info_data[recode.get('COLUMN_NAME_REST')] = detail
-
+        # ####メモ：縦メニュー用の考慮がされていないため、最終的な修正が必要。
+        # カラムグループ管理用配列に追加
+        if column_group_id:
+            if column_group_id not in tmp_column_group:
+                tmp_column_group[column_group_id] = []
+            
+            tmp_column_group[column_group_id].append(col_num)
+            
+            # カラムグループの親をたどり格納
+            end_flag = False
+            target_column_group_id = column_group_id
+            first_column_group_id = column_group_id
+            loop_count = 0
+            while not end_flag:
+                for target in column_group_list.values():
+                    if target.get('column_group_id') == target_column_group_id:
+                        parent_column_group_id = target.get('parent_column_group_id')
+                        if not parent_column_group_id:
+                            end_flag = True
+                            break
+                        
+                        if parent_column_group_id not in tmp_column_group:
+                            tmp_column_group[parent_column_group_id] = []
+                        
+                        if target_column_group_id not in tmp_column_group[parent_column_group_id]:
+                            tmp_column_group[parent_column_group_id].append(target_column_group_id)
+                        
+                        target_column_group_id = parent_column_group_id
+                        column_group_parent_of_child[first_column_group_id] = parent_column_group_id
+                
+                # ループ数が100を超えたら無限ループの可能性が高いため強制終了
+                loop_count += 1
+                if loop_count > 100:
+                    end_flag = True
+    
+    # カラムグループIDと対応のg番号配列を作成
+    key_to_id = {}
+    group_num = 1
+    for group_id, value_list in tmp_column_group.items():
+        key_to_id[group_id] = 'g' + str(group_num)
+        group_num += 1
+    
+    # カラムグループ管理用配列について、カラムグループIDをg1,g2,g3...に変換し、idやnameを格納する。
+    column_group_info_data = {}
+    for group_id, value_list in tmp_column_group.items():
+        add_data = {}
+        columns = []
+        for col in value_list:
+            if col in key_to_id:
+                columns.append(key_to_id[col])
+            else:
+                columns.append(col)
+        
+        add_data['columns'] = columns
+        add_data['column_group_id'] = group_id
+        add_data['column_group_name'] = column_group_list.get(group_id).get('column_group_name')
+        parent_id = column_group_list.get(group_id).get('parent_column_group_id')
+        add_data['parent_column_group_id'] = parent_id
+        if parent_id:
+            add_data['parent_column_group_name'] = column_group_list.get(parent_id).get('column_group_name')
+        else:
+            add_data['parent_column_group_name'] = None
+        
+        column_group_info_data[key_to_id[group_id]] = add_data
+    
+    # menu_info_dataに大元のカラムの並び順を追加
+    # ####メモ：縦メニュー用の考慮がされていないため、最終的な修正が必要。
+    columns = []
+    for col_num, col_data in column_info_data.items():
+        column_group_id = col_data['column_group_id']
+        if not column_group_id:
+            # カラムグループが無い場合はcol_num(c1, c2, c3...)を格納
+            columns.append(col_num)
+            continue
+        
+        if column_group_id in column_group_parent_of_child:
+            # 大親のカラムグループIDをg番号(g1, g2, g3...)に変換した値を格納
+            parent_column_group_id = column_group_parent_of_child.get(column_group_id)
+            if key_to_id[parent_column_group_id] not in columns:
+                columns.append(key_to_id[parent_column_group_id])
+            continue
+        else:
+            # カラムグループIDをg番号(g1, g2, g3...)に変換した値を格納
+            if key_to_id[column_group_id] not in columns:
+                columns.append(key_to_id[column_group_id])
+            continue
+    
+    menu_info_data['columns'] = columns
+    
     info_data = {
         'menu_info': menu_info_data,
-        'column_info': column_info_data
+        'column_info': column_info_data,
+        'column_group_info': column_group_info_data
     }
     
     return info_data

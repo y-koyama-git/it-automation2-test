@@ -545,7 +545,9 @@ class DBConnectCommon:
             or
             get failure: (bool)False
         """
-        if "db_connect_info" not in g or "ORGDB_DATADBASE" not in g.db_connect_info:
+        isnot_register_db_connect_info = "db_connect_info" not in g or "ORGDB_DATADBASE" not in g.db_connect_info
+        isnot_same_organization = g.get('ORGANIZATION_ID') and g.get('ORGANIZATION_ID') != organization_id
+        if isnot_register_db_connect_info or isnot_same_organization:
             where = "WHERE `ORGANIZATION_ID`=%s and `DISUSE_FLAG`=0 LIMIT 1"
             data_list = self.table_select("T_COMN_ORGANIZATION_DB_INFO", where, [organization_id])
 

@@ -71,9 +71,9 @@ class Column():
             # 初期値を返却
             set_default_value
             # 値をID連携先のIDへ変換
-            convert_value_id
+            convert_value_input
             # 値をID連携先のIDへ変換
-            convert_id_value
+            convert_value_output
 
     """
 
@@ -113,7 +113,10 @@ class Column():
         
         self.cmd_type = cmd_type
 
-        
+        # デフォルト処理名
+        self.encrypt_name = 'ky_encrypt'
+        self.decrypt_name = 'ky_decrypt'
+
     # self 設定、取得関連
     def set_objtable(self, objtable):
         """
@@ -139,7 +142,39 @@ class Column():
         """
         menu_id = self.get_objtable().get('MENUINFO').get('MENU_ID')
         return menu_id
-    
+
+    def set_encrypt_name(self, encrypt_name):
+        """
+            encrypt_nameを設定
+            ARGS:
+                table_name
+        """
+        self.encrypt_name = encrypt_name
+
+    def get_encrypt_name(self):
+        """
+            encrypt_nameを取得
+            RETRUN:
+                self.encrypt_name
+        """
+        return self.encrypt_name
+
+    def set_decrypt_name(self, decrypt_name):
+        """
+            decrypt_nameを設定
+            ARGS:
+                table_name
+        """
+        self.decrypt_name = decrypt_name
+
+    def get_decrypt_name(self):
+        """
+            decrypt_nameを取得
+            RETRUN:
+                self.decrypt_name
+        """
+        return self.decrypt_name
+
     def set_table_name(self, table_name):
         """
             テーブル名を設定
@@ -203,6 +238,22 @@ class Column():
                 {}
         """
         return self.get_objcols().get(self.get_rest_key_name())
+
+    def set_cmd_type(self, cmd_type):
+        """
+            cmd_typeを設定
+            ARGS:
+                cmd_type
+        """
+        self.cmd_type = cmd_type
+        
+    def get_save_type(self):
+        """
+            単一カラムのsave_typeを取得
+            RETRUN:
+                {}
+        """
+        return self.get_objcol().get('SAVE_TYPE')
 
     def get_label(self):
         """
@@ -306,7 +357,15 @@ class Column():
                 self.cmd_type
         """
         return self.cmd_type
-    
+
+    def get_file_upload_place(self):
+        """
+            file_upload_placeを取得
+            RETRUN:
+                string / None
+        """
+        return self.get_objcol().get('FILE_UPLOAD_PLACE')
+
     ###
     # [maintenance] レコード操作前処理実施
     def before_iud_action(self, val='', option={}):
@@ -315,7 +374,7 @@ class Column():
             ARGS:
                 val:値
             RETRUN:
-                ( True / False , メッセージ )
+                (  retBool, msg, val, parameter, option )
         """
         retBool = True
         msg = ''
@@ -326,16 +385,15 @@ class Column():
             return result_1
 
         # 個別バリデーションレコード操作前
-        result_2 = self.before_iud_col_action(val, option)
+        result_2 = self.before_iud_col_action(option)
         if result_2[0] is not True:
             return result_2
         else:
             retBool = result_2[0]
             msg = result_2[1]
-            parameter = result_2[2]
-            option = result_2[3]
+            option = result_2[2]
 
-        return retBool, msg, parameter, option
+        return retBool, msg, val, option
 
     # [maintenance] レコード操作後処理実施
     def after_iud_action(self, val='', option={}):
@@ -400,38 +458,31 @@ class Column():
         return retBool,
 
     # [maintenance] カラム個別処理 レコード操作前
-    def before_iud_col_action(self, val='', option={}):
+    def before_iud_col_action(self, option={}):
         """
             カラム個別処理  レコード操作前
             ARGS:
                 val:値
                 option:個別バリデーション,個別処理
             RETRUN:
-                ( True / False , メッセージ )
+                ( retBool, msg, option )
         """
         retBool = True
         msg = ''
         exec_config = self.get_call_before_valid_info()
         parameter = option.get('parameter')
-        # exec_config = 'common_libs.validate'
+        external_validate_path = 'common_libs.validate.valid_{}'.format(self.get_menu())
         if exec_config is not None:
             if exec_config is not None:
-                """
-                # exec_func = importlib.import_module(exec_config)
-                # eval_str = 'exec_func.main_func(self.objdbca, val, parameter, option)'
-                # exec_func = importlib.import_module(exec_config)
-                # eval_str = 'exec_func.valid.external_valid()'
-                eval_str = 'validate_10102.valid.external_valid()'
+                exec_func = importlib.import_module(external_validate_path)
+                eval_str = 'exec_func.{}(self.objdbca, self.objtable, option)'.format(exec_config)
                 tmp_exec = eval(eval_str)
-
                 if tmp_exec[0] is not True:
                     retBool = False
                     msg = tmp_exec[1]
                 else:
-                    parameter = tmp_exec[2]
-                    option['parameter'] = parameter
-                """
-        return retBool, msg, parameter, option,
+                    option = tmp_exec[2]
+        return retBool, msg, option,
 
     # [maintenance] カラムクラスの個別処理 レコード操作後
     def after_iud_common_action(self, val='', option={}):
@@ -457,24 +508,26 @@ class Column():
                 val:値
                 option:個別処理
             RETRUN:
-                retBool, msg, parameter, option
+                retBool, msg, val, parameter, option,
         """
         retBool = True
         msg = ''
         exec_config = self.get_call_after_valid_info()
         parameter = option.get('parameter')
+        external_validate_path = 'common_libs.validate.valid_{}'.format(self.get_menu_id())
         if exec_config is not None:
-            func_name = exec_config.get("func_name")
-            eval_str = '{}(self.objdbca, val, parameter, option)'.format(func_name)
-            tmp_exec = eval(eval_str)
-        if tmp_exec[0] is not True:
-            retBool = False
-            msg = tmp_exec[1]
-        else:
-            parameter = tmp_exec[2]
-            option['parameter'] = parameter
-        return retBool, msg, parameter, option,
-
+            if exec_config is not None:
+                exec_func = importlib.import_module(external_validate_path)
+                eval_str = 'exec_func.{}(self.objdbca, self.objtable, option)'.format(exec_config)
+                tmp_exec = eval(eval_str)
+                if tmp_exec[0] is not True:
+                    retBool = False
+                    msg = tmp_exec[1]
+                else:
+                    option = tmp_exec[2]
+                    
+        return retBool, msg, option,
+    
     # [maintenance] カラム個別処理 レコード操作後の状態回復処理
     def after_iud_restore_action(self, val="", option={}):
         """
@@ -534,10 +587,17 @@ class Column():
                     where_str = where_str + " and `{}` <> %s ".format(primary_key_list[0])
                     bind_value_list.append(option.get('uuid'))
 
-            result = self.objdbca.table_count(self.table_name, where_str, bind_value_list)
-            if result != 0:
+            result = self.objdbca.table_select(self.table_name, where_str, bind_value_list)
+            tmp_uuids =[]
+            if len(result) != 0:
+                for tmp_rows in result:
+                    tmp_uuids.append(tmp_rows.get(primary_key_list[0]))
                 retBool = False
                 msg = '{}({}):一意制約'.format(self.rest_key_name, val)
+                status_code = '200-00208'
+                str_uuids = ', '.join(map(str, tmp_uuids))
+                msg_args = [self.rest_key_name, str_uuids]
+                msg = g.appmsg.get_api_message(status_code, msg_args)
                 return retBool, msg
         return retBool,
 
@@ -582,7 +642,7 @@ class Column():
         return default_val
 
     # [load_table] 値をID連携先のIDへ変換
-    def convert_value_id(self, val=''):
+    def convert_value_input(self, val=''):
         """
             値をIDに変換
             ARGS:
@@ -595,7 +655,7 @@ class Column():
         return retBool, msg, val
 
     # [load_table] 値をID連携先のIDへ変換
-    def convert_id_value(self, val=''):
+    def convert_value_output(self, val=''):
         """
             IDを値に変換
             ARGS:
@@ -651,80 +711,122 @@ class Column():
         """
 
         result = {}
-
+        save_type = self.get_save_type()
         if search_mode == "LIST":
-            # tmp_conf = search_conf.get(search_mode)
             tmp_conf = search_conf
             listno = 0
-            # bindkey = "__{}__{}".format(self.get_col_name(),listno)
-            # bindvalue = "{}".format(",".join(map(str, tmp_conf)))
             bindkeys = []
             bindvalues = {}
-            
-            for bindvalue in tmp_conf:
-                bindkey = "__{}__{}".format(self.get_col_name(), listno)
-                bindkeys.append(bindkey)
-                bindvalues.setdefault(bindkey, bindvalue)
-                listno = +1
+            str_where = ''
+            conjunction = ''
+            if save_type == 'JSON':
+                for bindvalue in tmp_conf:
+                    tmp_result = self.convert_value_input(bindvalue)
+                    if tmp_result[0] is True:
+                        bindvalue = tmp_result[2]
+                    if len(str_where) != 0:
+                        conjunction = 'or'
+                    str_where = str_where + ' ' + conjunction + ' JSON_CONTAINS(`{}`, \'"{}"\', "$.{}")'.format(
+                            self.get_col_name(),
+                            bindvalue,
+                            self.get_rest_key_name()
+                    )
+                if len(str_where) != 0:
+                    str_where = '(' + str_where + ')'
+            else:
+                for bindvalue in tmp_conf:
+                    tmp_result = self.convert_value_input(bindvalue)
+                    if tmp_result[0] is True:
+                        bindvalue = tmp_result[2]
 
-            bindkey = "{}".format(",".join(map(str, bindkeys)))
-            str_where = " `{col_name}` IN ( {bindkey} ) ".format(
-                col_name=self.get_col_name(),
-                bindkey=bindkey
-            )
+                    bindkey = "__{}__{}".format(self.get_col_name(), listno)
+                    bindkeys.append(bindkey)
+                    bindvalues.setdefault(bindkey, bindvalue)
+                    listno = +1
+
+                bindkey = "{}".format(",".join(map(str, bindkeys)))
+                str_where = " `{col_name}` IN ( {bindkey} ) ".format(
+                    col_name=self.get_col_name(),
+                    bindkey=bindkey
+                )
             result.setdefault("bindkey", bindkeys)
             result.setdefault("bindvalue", bindvalues)
             result.setdefault("where", str_where)
 
-        elif search_mode == "NORMAL":
-            # bindvalue = search_conf.get(search_mode)
+        elif search_mode == "NORMAL":            # bindvalue = search_conf.get(search_mode)
             bindvalue = search_conf
-
-            bindkey = "__{}__".format(self.get_col_name())
-            str_where = " `{col_name}` LIKE {bindkey} ".format(
-                col_name=self.get_col_name(),
-                bindkey=bindkey,
-            )
+            tmp_result = self.convert_value_input(bindvalue)
+            if tmp_result[0] is True:
+                bindvalue = tmp_result[2]
+            if save_type == 'JSON':
+                bindkey = "__{}__".format(self.get_col_name())
+                str_where = ' JSON_UNQUOTE(JSON_EXTRACT(`{}`,"$.{}")) LIKE  {} '.format(self.get_col_name(), self.get_rest_key_name(), bindkey)
+            else:
+                bindkey = "__{}__".format(self.get_col_name())
+                str_where = " `{col_name}` LIKE {bindkey} ".format(
+                    col_name=self.get_col_name(),
+                    bindkey=bindkey,
+                )
             result.setdefault("bindkey", bindkey)
             result.setdefault("bindvalue", {bindkey: "%{}%".format(bindvalue)})
             result.setdefault("where", str_where)
 
         elif search_mode == "RANGE":
-            # tmp_conf = search_conf.get(search_mode)
             tmp_conf = search_conf
             bindkeys = []
             bindvalues = {}
-            start_val = tmp_conf.get('START')
-            end_val = tmp_conf.get('END')
-            bindkey_s = "__{}_S__".format(self.get_col_name())
-            bindkey_e = "__{}_E__".format(self.get_col_name())
-            if start_val is not None and end_val is not None:
-                if len(start_val) > 0 and len(end_val) > 0:
-                    str_where = " `{col_name}` >= {bindkey_s} and `{col_name}` <= {bindkey_e} ".format(
-                        col_name=self.get_col_name(),
-                        bindkey_s=bindkey_s,
-                        bindkey_e=bindkey_e,
-                    )
-                    bindkeys.append(bindkey_s)
-                    bindkeys.append(bindkey_e)
-                    bindvalues.setdefault(bindkey_s, start_val)
-                    bindvalues.setdefault(bindkey_e, end_val)
+            if save_type == 'JSON':
+                start_val = tmp_conf.get('START')
+                end_val = tmp_conf.get('END')
+                bindkey_s = "__{}_S__".format(self.get_col_name())
+                bindkey_e = "__{}_E__".format(self.get_col_name())
+                str_where_s = ''
+                str_where_e = ''
+                if start_val is not None:
+                    str_where_s = ' JSON_UNQUOTE(JSON_EXTRACT(`{}`,"$.{}")) >=  {} '.format(self.get_col_name(), self.get_rest_key_name(), bindkey_s)
+                if end_val is not None:
+                    str_where_e = ' JSON_UNQUOTE(JSON_EXTRACT(`{}`,"$.{}")) <=  {} '.format(self.get_col_name(), self.get_rest_key_name(), bindkey_e)
+                if len(str_where_e) != 0 and len(str_where_e) != 0:
+                    conjunction = 'and'
+                else:
+                    conjunction = ''
+                str_where = '(' + str_where_s + conjunction + str_where_e + ')'
+                bindkeys.append(bindkey_s)
+                bindkeys.append(bindkey_e)
+                bindvalues.setdefault(bindkey_s, start_val)
+                bindvalues.setdefault(bindkey_e, end_val)
+            else:
+                start_val = tmp_conf.get('START')
+                end_val = tmp_conf.get('END')
+                bindkey_s = "__{}_S__".format(self.get_col_name())
+                bindkey_e = "__{}_E__".format(self.get_col_name())
+                if start_val is not None and end_val is not None:
+                    if len(start_val) > 0 and len(end_val) > 0:
+                        str_where = " `{col_name}` >= {bindkey_s} and `{col_name}` <= {bindkey_e} ".format(
+                            col_name=self.get_col_name(),
+                            bindkey_s=bindkey_s,
+                            bindkey_e=bindkey_e,
+                        )
+                        bindkeys.append(bindkey_s)
+                        bindkeys.append(bindkey_e)
+                        bindvalues.setdefault(bindkey_s, start_val)
+                        bindvalues.setdefault(bindkey_e, end_val)
 
-                elif len(start_val) > 0 and len(end_val) == 0:
-                    str_where = " `{col_name}` >= {bindkey_s} ".format(
-                        col_name=self.get_col_name(),
-                        bindkey_s=bindkey_s,
-                    )
-                    bindkeys.append(bindkey_s)
-                    bindvalues.setdefault(bindkey_s, start_val)
+                    elif len(start_val) > 0 and len(end_val) == 0:
+                        str_where = " `{col_name}` >= {bindkey_s} ".format(
+                            col_name=self.get_col_name(),
+                            bindkey_s=bindkey_s,
+                        )
+                        bindkeys.append(bindkey_s)
+                        bindvalues.setdefault(bindkey_s, start_val)
 
-                elif len(end_val) > 0 and len(start_val) == 0:
-                    str_where = " `{col_name}` <= {bindkey_e} ".format(
-                        col_name=self.get_col_name(),
-                        bindkey_e=bindkey_e,
-                    )
-                    bindkeys.append(bindkey_e)
-                    bindvalues.setdefault(bindkey_e, end_val)
+                    elif len(end_val) > 0 and len(start_val) == 0:
+                        str_where = " `{col_name}` <= {bindkey_e} ".format(
+                            col_name=self.get_col_name(),
+                            bindkey_e=bindkey_e,
+                        )
+                        bindkeys.append(bindkey_e)
+                        bindvalues.setdefault(bindkey_e, end_val)
 
             result.setdefault("bindkey", bindkeys)
             result.setdefault("bindvalue", bindvalues)
