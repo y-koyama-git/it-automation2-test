@@ -133,6 +133,39 @@ class Column():
                 self.objtable
         """
         return self.objtable
+    # column_listの設定,取得
+    def set_column_list(self, column_list):
+        """
+            column_listの設定
+            ARGS:
+                column_list
+        """
+        self.column_list = column_list
+
+    def get_column_list(self):
+        """
+            column_listの取得
+            RETUEN:
+                self.column_list
+        """
+        return self.column_list
+
+    # primary_keyの設定,取得
+    def set_primary_key(self, primary_key):
+        """
+            column_listの設定
+            ARGS:
+                primary_key
+        """
+        self.primary_key = primary_key
+
+    def get_primary_key(self):
+        """
+            primary_keyの取得
+            RETUEN:
+                self.primary_key
+        """
+        return self.primary_key
     
     def get_menu(self):
         """
