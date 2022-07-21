@@ -24,7 +24,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
 """
 
 
-class IdColumn(Column):
+class IDColumn(Column):
     """
     テキスト系クラス共通処理
     """
