@@ -13,8 +13,22 @@ def get_AnsibleDriverTmpPath():
       Returns:
         Ansible用tmpバス
     """
-    return "{}{}/{}/{}".format(os.environ["PYTHONPATH"], g.get('ORGANIZATION_ID'), g.get('WORKSPACE_ID'), "tmp/driver/ansible")
+    return getDataRelayStorageDir() + "/tmp/driver/ansible"
 
+def getFileupLoadColumnPath(menuid, Column):
+    """
+      Ansible用tmpバスを取得する。
+      Arguments:
+        なし
+      Returns:
+        Ansible用tmpバス
+    """
+    return getDataRelayStorageDir() + "/uploadfiles/{}/{}".format(menuid,Column)
+
+
+def getDataRelayStorageDir():
+    return "{}{}/{}".format(os.environ["PYTHONPATH"], g.get('ORGANIZATION_ID'), g.get('WORKSPACE_ID'))
+  
 
 def getInputDataTempDir(EcecuteNo, DriverName):
     """
