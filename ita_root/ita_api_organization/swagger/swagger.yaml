@@ -1084,6 +1084,298 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.user_info_controller
+  /api/{organization_id}/workspaces/{workspace_id}/ita/create/execute/:
+    post:
+      tags:
+      - Create Menu
+      description: メニュー作成実行
+      operationId: execute_create_menu
+      parameters:
+      - name: organization_id
+        in: path
+        description: OrganizationID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: path
+        description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: 作成対象のメニュー定義一覧IDを指定（複数指定可）
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_9'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+      x-openapi-router-controller: controllers.create_menu_controller
+  /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/execute/:
+    post:
+      tags:
+      - Create Menu
+      description: メニュー定義および作成の実行
+      operationId: define_and_execute_create_menu
+      parameters:
+      - name: organization_id
+        in: path
+        description: OrganizationID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: path
+        description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: メニュー定義用パラメータ
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_9'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+      x-openapi-router-controller: controllers.create_menu_controller
+  /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/:
+    get:
+      tags:
+      - Create Menu
+      description: メニュー定義・作成(新規)用の情報取得
+      operationId: get_create_menu_data
+      parameters:
+      - name: organization_id
+        in: path
+        description: OrganizationID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: path
+        description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_9'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+      x-openapi-router-controller: controllers.create_menu_controller
+  /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/menu/{create_menu_id}:
+    get:
+      tags:
+      - Create Menu
+      description: メニュー定義・作成(既存)用の情報取得
+      operationId: get_exist_create_menu_data
+      parameters:
+      - name: organization_id
+        in: path
+        description: OrganizationID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: path
+        description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: create_menu_id
+        in: path
+        description: Create menu ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_9'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+      x-openapi-router-controller: controllers.create_menu_controller
+  /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/pulldown/initial/{column_name}:
+    get:
+      tags:
+      - Create Menu
+      description: 「プルダウン選択」項目で選択した対象の「初期値」候補一覧取得
+      operationId: get_pulldown_initial
+      parameters:
+      - name: organization_id
+        in: path
+        description: OrganizationID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: path
+        description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: column_name
+        in: path
+        description: 「プルダウン選択」項目のカラム名(rest用)
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_9'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+      x-openapi-router-controller: controllers.create_menu_controller
+  /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/reference/item/{column_name}:
+    get:
+      tags:
+      - Create Menu
+      description: 「プルダウン選択」項目で選択した対象の「参照項目」候補一覧取得
+      operationId: get_reference_item
+      parameters:
+      - name: organization_id
+        in: path
+        description: OrganizationID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: path
+        description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: column_name
+        in: path
+        description: 「プルダウン選択」項目のカラム名(rest用)
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_9'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+      x-openapi-router-controller: controllers.create_menu_controller
 components:
   schemas:
     TABLE:
@@ -1686,6 +1978,20 @@ components:
         data:
           key: data
         message: SUCCESS
+    inline_response_200_9:
+      type: object
+      properties:
+        result:
+          type: string
+          example: 000-00000
+        data:
+          type: boolean
+        message:
+          type: string
+      example:
+        result: 000-00000
+        data: true
+        message: message
     MAINTENANCE_PARAMETERS_parameter:
       type: object
       properties:
