@@ -11,23 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 import re
-
-import os
-import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
 
 from column_class import Column
 
-"""
-カラムクラス個別処理(NumColumn)
-"""
-class NumColumn(Column) :
-    """
-    数値系クラス共通処理
-    """
 
+class FloatColumn(Column):
+    """
+    カラムクラス個別処理(NumColumn)
+    """
     def __init__(self, objdbca, objtable, rest_key_name, cmd_type):
         # カラムクラス名
         self.class_name = self.__class__.__name__
@@ -78,6 +70,16 @@ class NumColumn(Column) :
         min_num = None
         # 閾値(最大値)
         max_num = None
+        preg_match = r'^((-[1-9])?[0-9]{0,}|-0)(\.[0-9]{0,})?$'
+
+        if preg_match is not None:
+            if len(preg_match) != 0:
+                patarn = re.compile(preg_match, re.DOTALL)
+                tmp_result = patarn.fullmatch(str(val))
+                if tmp_result is None:
+                    retBool = False
+                    msg = "正規表現エラー (閾値:{},値{})[{}]".format(patarn, val, self.rest_key_name)
+                    return retBool, msg
 
         if val is not None:
             # カラムの設定を取得
@@ -86,9 +88,24 @@ class NumColumn(Column) :
                 if self.get_rest_key_name() in objcols:
                     dict_valid = self.get_dict_valid()
                     # 閾値(最小値)
-                    min_num = dict_valid.get('int_min')
+                    min_num = dict_valid.get('float_min')
                     # 閾値(最大値)
-                    max_num = dict_valid.get('int_max')
+                    max_num = dict_valid.get('float_max')
+                    # 閾値(桁数）
+                    max_digit = dict_valid.get('float_digit')
+
+            # ドットを抜いた桁数を比較
+            if max_digit is not None:
+                srt_val = str(val)
+                if "." in srt_val:
+                    srt_val = srt_val.rstrip("0")
+                    vlen = int(len(srt_val))
+                    if "." in srt_val or "-" in srt_val:
+                        vlen -= 1
+                        if max_digit < vlen:
+                            retBool = False
+                            msg = "上限桁数を超えています。({}<{})[{}]".format(max_digit, vlen, self.rest_key_name)
+                            return retBool, msg
 
             if min_num is None and max_num is None:
                 # 最小値、最大値閾値無し

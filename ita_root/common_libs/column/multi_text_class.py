@@ -14,7 +14,6 @@
 
 import re
 
-# import text_column_class
 from text_column_class import TextColumn
 
 """
@@ -48,3 +47,24 @@ class MultiTextColumn(TextColumn):
             msg = "正規表現エラー (閾値:{},値{})[{}]".format(pattern, val, self.rest_key_name)
             return retBool, msg
         return retBool,
+
+    def convert_value_input(self, val=''):
+        """
+            値を暗号化
+            ARGS:
+                val:値
+            RETRUN:
+                retBool, msg, val
+        """
+        retBool = True
+        msg = ''
+        
+        # CrLfがあったらLfへ統一する
+        if val is not None:
+            if len(val) > 0:
+                val = re.sub("\r\n|\r", "\n", val)
+            else:
+                retBool = False
+                msg = '値がありません'
+
+        return retBool, msg, val

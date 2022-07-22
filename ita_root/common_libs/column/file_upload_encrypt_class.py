@@ -83,7 +83,11 @@ class FileUploadEncryptColumn(FileUploadColumn):
         rest_name = self.get_rest_key_name()
 
         # ファイルパス取得
-        path = get_upload_file_path(workspace_id, menu_id, uuid, rest_name, val, uuid_jnl)  # noqa: F405
+        ret = self.get_file_upload_place()
+        if not ret:
+            path = get_upload_file_path(workspace_id, menu_id, uuid, rest_name, val, uuid_jnl)   # noqa:F405
+        else:
+            path = get_upload_file_path_specify(workspace_id, ret, uuid, val, uuid_jnl)   # noqa:F405
         dir_path = path["file_path"]
         old_dir_path = path["old_file_path"]
                 
