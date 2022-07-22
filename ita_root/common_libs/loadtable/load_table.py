@@ -336,7 +336,7 @@ class loadTable():
                         str_order_by = ''
 
                     query_str = textwrap.dedent("""
-                        SELECT * FROM {table_name}
+                        SELECT * FROM `{table_name}`
                         WHERE DISUSE_FLAG <> 1
                         {order_by}
                     """).format(table_name=ref_table_name, order_by=str_order_by).strip()
@@ -687,7 +687,7 @@ class loadTable():
         column_list, primary_key_list = self.objdbca.table_columns_get(self.get_table_name())
         primary_key = primary_key_list[0]
         query_str = textwrap.dedent("""
-            SELECT * FROM {table_name}
+            SELECT * FROM `{table_name}`
             WHERE {primary_key} = %s
             ORDER BY LAST_UPDATE_TIMESTAMP DESC
             LIMIT 1
@@ -709,7 +709,7 @@ class loadTable():
         column_list, primary_key_list = self.objdbca.table_columns_get(self.get_table_name())
         primary_key = primary_key_list[0]
         query_str = textwrap.dedent("""
-            SELECT * FROM {table_name}
+            SELECT * FROM `{table_name}`
             WHERE {primary_key} = %s
             ORDER BY LAST_UPDATE_TIMESTAMP DESC
         """).format(table_name=table_name, primary_key=primary_key).strip()
@@ -730,7 +730,7 @@ class loadTable():
         column_list = self.get_column_list()
         primary_key = self.get_primary_key()
         query_str = textwrap.dedent("""
-            SELECT * FROM {table_name}
+            SELECT * FROM `{table_name}`
             WHERE {primary_key} = %s
             ORDER BY LAST_UPDATE_TIMESTAMP DESC
             LIMIT 1
