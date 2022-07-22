@@ -17,6 +17,7 @@
     "200-00209": "Contains items other than those that can be used.({})",
     "200-00210": "The execution type is invalid.({})",
     "200-00211": "last_update_date_time is invalid ({})",
+    "200-00212": "The input parameter key is invalid. ({})",
     "200-99999": "{}",
     "400-00001": "Request-Header({}) is Invalid",
     "400-00002": "Request-Body({}) is Invalid",
