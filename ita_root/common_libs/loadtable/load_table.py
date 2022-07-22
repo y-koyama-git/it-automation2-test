@@ -1066,7 +1066,7 @@ class loadTable():
         return status_code, result, msg,
 
     # [maintenance]:メニューのレコード操作
-    def exec_maintenance(self, parameters, target_uuid, cmd_type):
+    def exec_maintenance(self, parameters, target_uuid='', cmd_type=''):
         """
             RESTAPI[filter]:メニューのレコード操作
             ARGS:
@@ -1470,19 +1470,20 @@ class loadTable():
                     if isinstance(col_val, datetime.datetime):
                         col_val = '{}'.format(col_val.strftime('%Y/%m/%d %H:%M:%S.%f'))
 
-                    if self.get_col_class_name(rest_key) in ['IdColumn', 'LastUpdateUserColumn', 'LinkIDColumn', 'LinkIDColumn']:
-                        objcolumn = self.get_columnclass(rest_key)
-                        # ID → VALUE 変換処理不要ならVALUE変更無し
-                        tmp_exec = objcolumn.convert_value_output(col_val)
-                        if tmp_exec[0] is True:
-                            col_val = tmp_exec[2]
-                            
-                    if self.get_col_class_name(rest_key) in ['PasswordColumn', 'SensitiveSingleTextColumn', 'SensitiveMultiTextColumn']:
-                        if mode in ['input']:
+                    objcolumn = self.get_columnclass(rest_key)
+                    # ID → VALUE 変換処理不要ならVALUE変更無し
+                    tmp_exec = objcolumn.convert_value_output(col_val)
+                    if tmp_exec[0] is True:
+                        col_val = tmp_exec[2]
+
+                    # 内部処理用
+                    if mode in ['input']:
+                        if self.get_col_class_name(rest_key) in ['PasswordColumn', 'SensitiveSingleTextColumn', 'SensitiveMultiTextColumn']:
                             objcolumn = self.get_columnclass(rest_key)
                             col_val = util.ky_decrypt(col_val)
 
                     rest_parameter.setdefault(rest_key, col_val)
+
                     if mode not in ['excel', 'excel_jnl']:
                         if self.get_col_class_name(rest_key) == 'FileUploadColumn':
                             objcolumn = self.get_columnclass(rest_key)
