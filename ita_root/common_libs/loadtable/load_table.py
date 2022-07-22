@@ -1796,7 +1796,7 @@ class loadTable():
         # 不正なキーがある場合エラー
         if len(err_keys) != 0:
             err_keys = ",".join(map(str, err_keys))
-            status_code = '200-00201'
+            status_code = '200-00212'
             msg_args = [err_keys]
             msg = g.appmsg.get_api_message(status_code, msg_args)
             dict_msg = {
