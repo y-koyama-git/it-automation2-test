@@ -44,6 +44,8 @@ RUN dnf install -y \
 &&  groupadd $GROUPNAME \
 &&  useradd -m -s /bin/bash -g $GROUPNAME $USERNAME
 
+RUN mkdir /storage
+
 #
 # Build for development
 #   Specify options when creating this image: --target develop_build
@@ -95,5 +97,3 @@ COPY ./ita_root/common_libs/ $APP_PATH/common_libs/
 COPY ./ita_root/messages/ $APP_PATH/messages/
 
 CMD ["httpd","-D","FOREGROUND"]
-
-RUN mkdir /storage
