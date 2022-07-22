@@ -261,7 +261,7 @@ class DBConnectCommon:
             table data list: list(tuple)
         """
         where_str = " {}".format(where_str) if where_str else ""
-        sql = "SELECT * FROM {}{}".format(table_name, where_str)
+        sql = "SELECT * FROM `{}`{}".format(table_name, where_str)
         data_list = self.sql_execute(sql, bind_value_list)
 
         return data_list
