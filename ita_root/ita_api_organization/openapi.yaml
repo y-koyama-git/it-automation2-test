@@ -1219,9 +1219,9 @@ paths:
   /api/{organization_id}/workspaces/{workspace_id}/ita/create/execute/:
     post:
       tags:
-        - Create Menu
+        - Menu Create
       description: メニュー作成実行
-      operationId: executeCreateMenu
+      operationId: executeMenuCreate
       parameters:
         - name: organization_id
           in: path
@@ -1271,9 +1271,9 @@ paths:
   /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/execute/:
     post:
       tags:
-        - Create Menu
+        - Menu Create
       description: メニュー定義および作成の実行
-      operationId: defineAndExecuteCreateMenu
+      operationId: defineAndExecuteMenuCreate
       parameters:
         - name: organization_id
           in: path
@@ -1323,9 +1323,9 @@ paths:
   /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/:
     get:
       tags:
-        - Create Menu
+        - Menu Create
       description: メニュー定義・作成(新規)用の情報取得
-      operationId: getCreateMenuData
+      operationId: getMenuCreateData
       parameters:
         - name: organization_id
           in: path
@@ -1367,12 +1367,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
 
-  /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/menu/{create_menu_id}:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/menu/{menu_create_id}:
     get:
       tags:
-        - Create Menu
+        - Menu Create
       description: メニュー定義・作成(既存)用の情報取得
-      operationId: getExistCreateMenuData
+      operationId: getExistMenuCreateData
       parameters:
         - name: organization_id
           in: path
@@ -1386,9 +1386,9 @@ paths:
           required: true
           schema:
             type: string
-        - name: create_menu_id
+        - name: menu_create_id
           in: path
-          description: Create menu ID
+          description: Menu create ID
           required: true
           schema:
             type: string
@@ -1423,7 +1423,7 @@ paths:
   /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/pulldown/initial/{column_name}:
     get:
       tags:
-        - Create Menu
+        - Menu Create
       description: 「プルダウン選択」項目で選択した対象の「初期値」候補一覧取得
       operationId: getPulldownInitial
       parameters:
@@ -1476,7 +1476,7 @@ paths:
   /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/reference/item/{column_name}:
     get:
       tags:
-        - Create Menu
+        - Menu Create
       description: 「プルダウン選択」項目で選択した対象の「参照項目」候補一覧取得
       operationId: getReferenceItem
       parameters:

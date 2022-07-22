@@ -16,8 +16,8 @@ import connexion
 import six
 
 
-def define_and_execute_create_menu(organization_id, workspace_id, body=None):  # noqa: E501
-    """define_and_execute_create_menu
+def define_and_execute_menu_create(organization_id, workspace_id, body=None):  # noqa: E501
+    """define_and_execute_menu_create
 
     メニュー定義および作成の実行 # noqa: E501
 
@@ -35,8 +35,8 @@ def define_and_execute_create_menu(organization_id, workspace_id, body=None):  #
     return 'do some magic!'
 
 
-def execute_create_menu(organization_id, workspace_id, body=None):  # noqa: E501
-    """execute_create_menu
+def execute_menu_create(organization_id, workspace_id, body=None):  # noqa: E501
+    """execute_menu_create
 
     メニュー作成実行 # noqa: E501
 
@@ -54,23 +54,8 @@ def execute_create_menu(organization_id, workspace_id, body=None):  # noqa: E501
     return 'do some magic!'
 
 
-def get_create_menu_data(organization_id, workspace_id):  # noqa: E501
-    """get_create_menu_data
-
-    メニュー定義・作成(新規)用の情報取得 # noqa: E501
-
-    :param organization_id: OrganizationID
-    :type organization_id: str
-    :param workspace_id: WorkspaceID
-    :type workspace_id: str
-
-    :rtype: InlineResponse2009
-    """
-    return 'do some magic!'
-
-
-def get_exist_create_menu_data(organization_id, workspace_id, create_menu_id):  # noqa: E501
-    """get_exist_create_menu_data
+def get_exist_menu_create_data(organization_id, workspace_id, menu_create_id):  # noqa: E501
+    """get_exist_menu_create_data
 
     メニュー定義・作成(既存)用の情報取得 # noqa: E501
 
@@ -78,8 +63,23 @@ def get_exist_create_menu_data(organization_id, workspace_id, create_menu_id):  
     :type organization_id: str
     :param workspace_id: WorkspaceID
     :type workspace_id: str
-    :param create_menu_id: Create menu ID
-    :type create_menu_id: str
+    :param menu_create_id: Menu create ID
+    :type menu_create_id: str
+
+    :rtype: InlineResponse2009
+    """
+    return 'do some magic!'
+
+
+def get_menu_create_data(organization_id, workspace_id):  # noqa: E501
+    """get_menu_create_data
+
+    メニュー定義・作成(新規)用の情報取得 # noqa: E501
+
+    :param organization_id: OrganizationID
+    :type organization_id: str
+    :param workspace_id: WorkspaceID
+    :type workspace_id: str
 
     :rtype: InlineResponse2009
     """
