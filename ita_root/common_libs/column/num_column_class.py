@@ -23,7 +23,9 @@ from column_class import Column
 """
 カラムクラス個別処理(NumColumn)
 """
-class NumColumn(Column) :
+
+
+class NumColumn(Column):
     """
     数値系クラス共通処理
     """
@@ -98,9 +100,9 @@ class NumColumn(Column) :
                 if min_num < val < max_num:
                     retBool = True
                 else:
-                    # retBool = False
+                    retBool = False
                     msg = "範囲外({}<{}<{})[{}]".format(min_num, val, max_num, self.rest_key_name)
-                    # return retBool, msg
+                    return retBool, msg
 
             elif min_num is not None:
                 # 最小値閾値あり
