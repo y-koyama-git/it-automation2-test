@@ -1087,9 +1087,9 @@ paths:
   /api/{organization_id}/workspaces/{workspace_id}/ita/create/execute/:
     post:
       tags:
-      - Create Menu
+      - Menu Create
       description: メニュー作成実行
-      operationId: execute_create_menu
+      operationId: execute_menu_create
       parameters:
       - name: organization_id
         in: path
@@ -1131,13 +1131,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
-      x-openapi-router-controller: controllers.create_menu_controller
+      x-openapi-router-controller: controllers.menu_create_controller
   /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/execute/:
     post:
       tags:
-      - Create Menu
+      - Menu Create
       description: メニュー定義および作成の実行
-      operationId: define_and_execute_create_menu
+      operationId: define_and_execute_menu_create
       parameters:
       - name: organization_id
         in: path
@@ -1179,13 +1179,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
-      x-openapi-router-controller: controllers.create_menu_controller
+      x-openapi-router-controller: controllers.menu_create_controller
   /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/:
     get:
       tags:
-      - Create Menu
+      - Menu Create
       description: メニュー定義・作成(新規)用の情報取得
-      operationId: get_create_menu_data
+      operationId: get_menu_create_data
       parameters:
       - name: organization_id
         in: path
@@ -1222,13 +1222,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
-      x-openapi-router-controller: controllers.create_menu_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/menu/{create_menu_id}:
+      x-openapi-router-controller: controllers.menu_create_controller
+  /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/menu/{menu_create_id}:
     get:
       tags:
-      - Create Menu
+      - Menu Create
       description: メニュー定義・作成(既存)用の情報取得
-      operationId: get_exist_create_menu_data
+      operationId: get_exist_menu_create_data
       parameters:
       - name: organization_id
         in: path
@@ -1246,9 +1246,9 @@ paths:
         explode: false
         schema:
           type: string
-      - name: create_menu_id
+      - name: menu_create_id
         in: path
-        description: Create menu ID
+        description: Menu create ID
         required: true
         style: simple
         explode: false
@@ -1273,11 +1273,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
-      x-openapi-router-controller: controllers.create_menu_controller
+      x-openapi-router-controller: controllers.menu_create_controller
   /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/pulldown/initial/{column_name}:
     get:
       tags:
-      - Create Menu
+      - Menu Create
       description: 「プルダウン選択」項目で選択した対象の「初期値」候補一覧取得
       operationId: get_pulldown_initial
       parameters:
@@ -1324,11 +1324,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
-      x-openapi-router-controller: controllers.create_menu_controller
+      x-openapi-router-controller: controllers.menu_create_controller
   /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/reference/item/{column_name}:
     get:
       tags:
-      - Create Menu
+      - Menu Create
       description: 「プルダウン選択」項目で選択した対象の「参照項目」候補一覧取得
       operationId: get_reference_item
       parameters:
@@ -1375,7 +1375,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
-      x-openapi-router-controller: controllers.create_menu_controller
+      x-openapi-router-controller: controllers.menu_create_controller
 components:
   schemas:
     TABLE:
