@@ -103,7 +103,7 @@ class AnsibleCommonLibs():
         
         return True, in_cpf_key, in_cpf_file_name
 
-    def chk_cpf_vars_master_reg(ina_cpf_vars_list):
+    def chk_cpf_vars_master_reg(self, ina_cpf_vars_list):
         """
         CPF変数がファイル管理に登録されているか判定
         
@@ -129,14 +129,14 @@ class AnsibleCommonLibs():
                     for cpf_var_name, dummy in cpf_var_name_list.items():
                         
                         # CPF変数名からファイル管理とPkeyを取得する。
-                        ret = get_cpf_vars_master(cpf_var_name)
+                        ret = self.get_cpf_vars_master(cpf_var_name)
                         
                         # CPF変数名が未登録の場合
                         if ret[1] == "":
                             if in_errmsg != "":
                                 in_errmsg = in_errmsg + "\n"
                             
-                            in_errmsg = in_errmsg + ams.AnsibleMakeMessage(get_run_mode(), "MSG-10408", [role_name, tgt_file, line_no, cpf_var_name])
+                            in_errmsg = in_errmsg + ams.AnsibleMakeMessage(self.get_run_mode(), "MSG-10408", [role_name, tgt_file, line_no, cpf_var_name])
                             bool_ret = False
                             break
                         else:
@@ -145,7 +145,7 @@ class AnsibleCommonLibs():
                                 if in_errmsg != "":
                                     in_errmsg = in_errmsg + "\n"
                             
-                                in_errmsg = in_errmsg + ams.AnsibleMakeMessage(get_run_mode(), "MSG-10409", [role_name, tgt_file, line_no, cpf_var_name])
+                                in_errmsg = in_errmsg + ams.AnsibleMakeMessage(self.get_run_mode(), "MSG-10409", [role_name, tgt_file, line_no, cpf_var_name])
                                 bool_ret = False
                                 continue
                         
@@ -171,8 +171,7 @@ class AnsibleCommonLibs():
                 break
 
         return bool_ret, tmp_ina_cpf_vars_list, in_errmsg
-
-        
+    
     def get_tpf_vars_master(in_tpf_var_name):
         """
         テンプレート管理の情報をデータベースより取得する。
@@ -201,7 +200,7 @@ class AnsibleCommonLibs():
         
         return True, ina_row
     
-    def chk_tpf_vars_master_reg(ina_tpf_vars_list):
+    def chk_tpf_vars_master_reg(self, ina_tpf_vars_list):
         """
         TPF変数がテンプレート管理に登録されているか判定
         
@@ -226,7 +225,7 @@ class AnsibleCommonLibs():
             for tgt_file, line_no_list in tgt_file_list.items():
                 for line_no, tpf_var_name_list in line_no_list.items():
                     for tpf_var_name, dummy in tpf_var_name_list.items():
-                        ret = get_tpf_vars_master(tpf_var_name)
+                        ret = self.get_tpf_vars_master(tpf_var_name)
                         
                         tpf_key = ""
                         tpf_file_name = ""
@@ -246,7 +245,7 @@ class AnsibleCommonLibs():
                             if in_errmsg != "":
                                 in_errmsg = in_errmsg + "\n"
                             
-                            in_errmsg = in_errmsg + ams.AnsibleMakeMessage(get_run_mode(), "MSG-10559", [role_name, tgt_file, line_no, tpf_var_name])
+                            in_errmsg = in_errmsg + ams.AnsibleMakeMessage(self.get_run_mode(), "MSG-10559", [role_name, tgt_file, line_no, tpf_var_name])
                             bool_ret = False
                             continue
                         
@@ -255,7 +254,7 @@ class AnsibleCommonLibs():
                                 if in_errmsg != "":
                                     in_errmsg = in_errmsg + "\n"
                             
-                                in_errmsg = in_errmsg + ams.AnsibleMakeMessage(get_run_mode(), "MSG-10557", [role_name, tgt_file, line_no, tpf_var_name])
+                                in_errmsg = in_errmsg + ams.AnsibleMakeMessage(self.get_run_mode(), "MSG-10557", [role_name, tgt_file, line_no, tpf_var_name])
                                 bool_ret = False
                                 continue
                         
@@ -312,7 +311,7 @@ class AnsibleCommonLibs():
         
         return True, in_gbl_key
         
-    def chk_gbl_vars_master_reg(ina_gbl_vars_list):
+    def chk_gbl_vars_master_reg(self, ina_gbl_vars_list):
         """
         GBL変数がファイル管理に登録されているか判定
         
@@ -338,14 +337,14 @@ class AnsibleCommonLibs():
                 for line_no, gbl_var_name_list in line_no_list.items():
                     for gbl_var_name, dummy in gbl_var_name_list.items():
                         
-                        ret = get_gbl_vars_master(gbl_var_name)
+                        ret = self.get_gbl_vars_master(gbl_var_name)
                         
                         # GBL変数名が未登録の場合
                         if ret[1] == "":
                             if in_errmsg != "":
                                 in_errmsg = in_errmsg + "\n"
                             
-                            in_errmsg = in_errmsg + ams.AnsibleMakeMessage(get_run_mode(), "MSG-10571", [role_name, tgt_file, line_no, gbl_var_name])
+                            in_errmsg = in_errmsg + ams.AnsibleMakeMessage(self.get_run_mode(), "MSG-10571", [role_name, tgt_file, line_no, gbl_var_name])
                             bool_ret = False
                             break
                         
@@ -476,7 +475,7 @@ class AnsibleCommonLibs():
         
         data_list = WS_DB.sql_execute(in_sql, [])
         
-        ina_row = []
+        ina_row = {}
         for data in data_list:
             ina_row[data[in_key]] = data
         
