@@ -96,7 +96,7 @@ class WrappedStringReplaceAdmin:
             True(bool)
         """
         # Fillter定義されている変数も抜出すか判定
-        if FillterVars == True:
+        if FillterVars == 1:
             tailmarke = "([\s]}}|[\s]+\|)"
             reptailmarke = " }} |"
         else:
@@ -169,4 +169,4 @@ class WrappedStringReplaceAdmin:
                     if mt_varsArray.count(var_name_match) == 0:
                         mt_varsArray.append(var_name_match)
             # 予約変数　{{ 予約変数 | Fillter function }}　の抜き出し ---
-        return True
+        return True, mt_varsLineArray
