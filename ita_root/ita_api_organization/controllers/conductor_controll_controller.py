@@ -33,6 +33,38 @@ def get_conductor_class_data(organization_id, workspace_id, conductor_class_id):
     return 'do some magic!'
 
 
+def get_conductor_class_info(organization_id, workspace_id):  # noqa: E501
+    """get_conductor_class_info
+
+    ConductorClassの基本情報取得 # noqa: E501
+
+    :param organization_id: OrganizationID
+    :type organization_id: str
+    :param workspace_id: WorkspaceID
+    :type workspace_id: str
+
+    :rtype: InlineResponse20012
+    """
+    return 'do some magic!'
+
+
+def get_conductor_info(organization_id, workspace_id, conductor_instance_id):  # noqa: E501
+    """get_conductor_info
+
+    Conductorの基本情報取得 # noqa: E501
+
+    :param organization_id: OrganizationID
+    :type organization_id: str
+    :param workspace_id: WorkspaceID
+    :type workspace_id: str
+    :param conductor_instance_id: Conductor Instance ID
+    :type conductor_instance_id: str
+
+    :rtype: InlineResponse20012
+    """
+    return 'do some magic!'
+
+
 def get_conductor_instance_data(organization_id, workspace_id, conductor_instance_id):  # noqa: E501
     """get_conductor_instance_data
 
@@ -45,39 +77,7 @@ def get_conductor_instance_data(organization_id, workspace_id, conductor_instanc
     :param conductor_instance_id: Conductor Instance ID
     :type conductor_instance_id: str
 
-    :rtype: InlineResponse2006
-    """
-    return 'do some magic!'
-
-
-def get_conductor_use_list(organization_id, workspace_id, list_name):  # noqa: E501
-    """get_conductor_use_list
-
-    指定した対象の一覧を取得(Operation,Movment,Conductor) # noqa: E501
-
-    :param organization_id: OrganizationID
-    :type organization_id: str
-    :param workspace_id: WorkspaceID
-    :type workspace_id: str
-    :param list_name: TargetListName
-    :type list_name: str
-
-    :rtype: InlineResponse2006
-    """
-    return 'do some magic!'
-
-
-def get_conductor_use_lists(organization_id, workspace_id):  # noqa: E501
-    """get_conductor_use_lists
-
-    対象の一覧を取得(Operation,Movment,Conductor) # noqa: E501
-
-    :param organization_id: OrganizationID
-    :type organization_id: str
-    :param workspace_id: WorkspaceID
-    :type workspace_id: str
-
-    :rtype: InlineResponse2006
+    :rtype: InlineResponse20011
     """
     return 'do some magic!'
 
@@ -151,7 +151,7 @@ def post_conductor_excecute(organization_id, workspace_id, body=None):  # noqa: 
     :param body: 
     :type body: dict | bytes
 
-    :rtype: InlineResponse20012
+    :rtype: InlineResponse20011
     """
     if connexion.request.is_json:
         body = object.from_dict(connexion.request.get_json())  # noqa: E501
