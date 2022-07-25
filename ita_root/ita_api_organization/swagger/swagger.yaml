@@ -326,14 +326,14 @@ paths:
         content:
           application/json:
             schema:
-              description: 検索条件を設定
+              $ref: '#/components/schemas/filter_count_body'
       responses:
         "200":
           description: Success
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_5'
+                $ref: '#/components/schemas/inline_response_200_4'
         "401":
           description: Unauthorized
           content:
@@ -384,7 +384,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_4'
+                $ref: '#/components/schemas/inline_response_200_5'
         "401":
           description: Unauthorized
           content:
@@ -432,7 +432,7 @@ paths:
         content:
           application/json:
             schema:
-              description: 検索条件を設定
+              $ref: '#/components/schemas/menu_filter_body'
       responses:
         "200":
           description: Success
@@ -498,7 +498,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_4'
+                $ref: '#/components/schemas/inline_response_200_5'
         "401":
           description: Unauthorized
           content:
@@ -554,7 +554,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_5'
+                $ref: '#/components/schemas/inline_response_200_6'
         "401":
           description: Unauthorized
           content:
@@ -618,7 +618,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_5'
+                $ref: '#/components/schemas/inline_response_200_6'
         "401":
           description: Unauthorized
           content:
@@ -677,7 +677,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_5'
+                $ref: '#/components/schemas/inline_response_200_6'
         "401":
           description: Unauthorized
           content:
@@ -728,7 +728,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_4'
+                $ref: '#/components/schemas/inline_response_200_7'
         "401":
           description: Unauthorized
           content:
@@ -779,7 +779,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_4'
+                $ref: '#/components/schemas/inline_response_200_7'
         "401":
           description: Unauthorized
           content:
@@ -834,7 +834,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_4'
+                $ref: '#/components/schemas/inline_response_200_7'
         "401":
           description: Unauthorized
           content:
@@ -890,7 +890,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_4'
+                $ref: '#/components/schemas/inline_response_200_7'
         "401":
           description: Unauthorized
           content:
@@ -941,7 +941,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_4'
+                $ref: '#/components/schemas/inline_response_200_7'
         "401":
           description: Unauthorized
           content:
@@ -984,7 +984,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_6'
+                $ref: '#/components/schemas/inline_response_200_8'
         "401":
           description: Unauthorized
           content:
@@ -1027,7 +1027,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_7'
+                $ref: '#/components/schemas/inline_response_200_9'
         "401":
           description: Unauthorized
           content:
@@ -1070,7 +1070,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_8'
+                $ref: '#/components/schemas/inline_response_200_10'
         "401":
           description: Unauthorized
           content:
@@ -1118,7 +1118,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_9'
+                $ref: '#/components/schemas/inline_response_200_11'
         "401":
           description: Unauthorized
           content:
@@ -1166,7 +1166,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_9'
+                $ref: '#/components/schemas/inline_response_200_11'
         "401":
           description: Unauthorized
           content:
@@ -1209,7 +1209,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_9'
+                $ref: '#/components/schemas/inline_response_200_11'
         "401":
           description: Unauthorized
           content:
@@ -1260,7 +1260,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_9'
+                $ref: '#/components/schemas/inline_response_200_11'
         "401":
           description: Unauthorized
           content:
@@ -1311,7 +1311,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_9'
+                $ref: '#/components/schemas/inline_response_200_11'
         "401":
           description: Unauthorized
           content:
@@ -1362,7 +1362,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_9'
+                $ref: '#/components/schemas/inline_response_200_11'
         "401":
           description: Unauthorized
           content:
@@ -1376,6 +1376,518 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.menu_create_controller
+  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/class/{conductor_class_id}:
+    get:
+      tags:
+      - Conductor Controll
+      description: ConductorClassの情報取得
+      operationId: get_conductor_class_data
+      parameters:
+      - name: organization_id
+        in: path
+        description: OrganizationID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: path
+        description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: conductor_class_id
+        in: path
+        description: Conductor Class ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_11'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+      x-openapi-router-controller: controllers.conductor_controll_controller
+  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/class/list/:
+    get:
+      tags:
+      - Conductor Controll
+      description: "対象の一覧を取得(Operation,Movment,Conductor)"
+      operationId: get_conductor_use_lists
+      parameters:
+      - name: organization_id
+        in: path
+        description: OrganizationID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: path
+        description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_6'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+      x-openapi-router-controller: controllers.conductor_controll_controller
+  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/class/list/{list_name}:
+    get:
+      tags:
+      - Conductor Controll
+      description: "指定した対象の一覧を取得(Operation,Movment,Conductor)"
+      operationId: get_conductor_use_list
+      parameters:
+      - name: organization_id
+        in: path
+        description: OrganizationID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: path
+        description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: list_name
+        in: path
+        description: TargetListName
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_6'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+      x-openapi-router-controller: controllers.conductor_controll_controller
+  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/class/maintenance:
+    post:
+      tags:
+      - Conductor Controll
+      description: Conductorの新規登録
+      operationId: post_conductor_data
+      parameters:
+      - name: organization_id
+        in: path
+        description: OrganizationID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: path
+        description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: 登録するConductorの構成情報
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_11'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+      x-openapi-router-controller: controllers.conductor_controll_controller
+  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/class/maintenance/{conductor_class_id}:
+    patch:
+      tags:
+      - Conductor Controll
+      description: Conductorの更新
+      operationId: patch_conductor_data
+      parameters:
+      - name: organization_id
+        in: path
+        description: OrganizationID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: path
+        description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: conductor_class_id
+        in: path
+        description: Conductor Class ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: 登録するConductorの構成情報
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_11'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+      x-openapi-router-controller: controllers.conductor_controll_controller
+  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/execute:
+    post:
+      tags:
+      - Conductor Controll
+      description: Conductor作業実行
+      operationId: post_conductor_excecute
+      parameters:
+      - name: organization_id
+        in: path
+        description: OrganizationID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: path
+        description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: "実行するConductor,Operation情報"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_12'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+      x-openapi-router-controller: controllers.conductor_controll_controller
+  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/{conductor_instance_id}:
+    get:
+      tags:
+      - Conductor Controll
+      description: Conductor作業の情報取得
+      operationId: get_conductor_instance_data
+      parameters:
+      - name: organization_id
+        in: path
+        description: OrganizationID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: path
+        description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: conductor_instance_id
+        in: path
+        description: Conductor Instance ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_6'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+      x-openapi-router-controller: controllers.conductor_controll_controller
+  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/cancel/{conductor_instance_id}:
+    post:
+      tags:
+      - Conductor Controll
+      description: Conductor作業の予約取り消し
+      operationId: post_conductor_cansel
+      parameters:
+      - name: organization_id
+        in: path
+        description: OrganizationID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: path
+        description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: conductor_instance_id
+        in: path
+        description: Conductor Instance ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_11'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+      x-openapi-router-controller: controllers.conductor_controll_controller
+  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/scram/{conductor_instance_id}:
+    post:
+      tags:
+      - Conductor Controll
+      description: Conductor作業の緊急停止
+      operationId: post_conductor_scram
+      parameters:
+      - name: organization_id
+        in: path
+        description: OrganizationID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: path
+        description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: conductor_instance_id
+        in: path
+        description: Conductor Instance ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_11'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+      x-openapi-router-controller: controllers.conductor_controll_controller
+  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/relese/{conductor_instance_id}/{node_instance_id}:
+    post:
+      tags:
+      - Conductor Controll
+      description: Conductor作業の一時停止解除
+      operationId: post_conductor_rels_ase
+      parameters:
+      - name: organization_id
+        in: path
+        description: OrganizationID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: path
+        description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: conductor_instance_id
+        in: path
+        description: Conductor Instance ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: node_instance_id
+        in: path
+        description: Node Instance ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_11'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+      x-openapi-router-controller: controllers.conductor_controll_controller
 components:
   schemas:
     TABLE:
@@ -1641,6 +2153,28 @@ components:
           example: 001-002
         message:
           type: string
+    FILTER_REQUEST_PARAMETERS:
+      type: object
+      properties:
+        NORMAL:
+          type: string
+        LIST:
+          type: array
+          items: {}
+        RANGE:
+          $ref: '#/components/schemas/FILTER_REQUEST_PARAMETERS_RANGE'
+    FILTER_PARAMETERS:
+      type: object
+      properties:
+        parameter:
+          $ref: '#/components/schemas/FILTER_PARAMETERS_parameter'
+        file:
+          $ref: '#/components/schemas/FILTER_PARAMETERS_file'
+      example:
+        file:
+          rest_key_name: base64 encode file
+        parameter:
+          rest_key_name: rest_key_name
     MAINTENANCE_PARAMETER_P:
       type: object
       properties:
@@ -1656,9 +2190,9 @@ components:
       type: object
       properties:
         parameter:
-          $ref: '#/components/schemas/MAINTENANCE_PARAMETERS_parameter'
+          $ref: '#/components/schemas/FILTER_PARAMETERS_parameter'
         file:
-          $ref: '#/components/schemas/MAINTENANCE_PARAMETERS_file'
+          $ref: '#/components/schemas/FILTER_PARAMETERS_file'
         type:
           type: string
           example: Register/Update
@@ -1831,18 +2365,18 @@ components:
           type: string
           example: 000-00000
         data:
-          $ref: '#/components/schemas/inline_response_200_4_data'
+          type: number
         message:
           type: string
       example:
         result: 000-00000
-        data:
-          TABLE:
-            TD: {}
-            TD_IHP: {}
-            PAGE_NO: 0
-            UNIQUE_VAL: {}
+        data: 0.80082819046101150206595775671303272247314453125
         message: message
+    filter_count_body:
+      properties:
+        rest_key_name:
+          $ref: '#/components/schemas/FILTER_REQUEST_PARAMETERS'
+      description: 検索条件を設定
     inline_response_200_5:
       type: object
       properties:
@@ -1850,13 +2384,28 @@ components:
           type: string
           example: 000-00000
         data:
-          type: object
+          type: array
+          items:
+            $ref: '#/components/schemas/FILTER_PARAMETERS'
         message:
           type: string
       example:
         result: 000-00000
-        data: {}
+        data:
+        - file:
+            rest_key_name: base64 encode file
+          parameter:
+            rest_key_name: rest_key_name
+        - file:
+            rest_key_name: base64 encode file
+          parameter:
+            rest_key_name: rest_key_name
         message: message
+    menu_filter_body:
+      properties:
+        rest_key_name:
+          $ref: '#/components/schemas/FILTER_REQUEST_PARAMETERS'
+      description: 検索条件を設定
     menu_maintenance_body:
       properties:
         parameter:
@@ -1871,7 +2420,40 @@ components:
           type: string
           example: 000-00000
         data:
-          $ref: '#/components/schemas/inline_response_200_6_data'
+          type: object
+        message:
+          type: string
+      example:
+        result: 000-00000
+        data: {}
+        message: message
+    inline_response_200_7:
+      type: object
+      properties:
+        result:
+          type: string
+          example: 000-00000
+        data:
+          $ref: '#/components/schemas/inline_response_200_7_data'
+        message:
+          type: string
+      example:
+        result: 000-00000
+        data:
+          TABLE:
+            TD: {}
+            TD_IHP: {}
+            PAGE_NO: 0
+            UNIQUE_VAL: {}
+        message: message
+    inline_response_200_8:
+      type: object
+      properties:
+        result:
+          type: string
+          example: 000-00000
+        data:
+          $ref: '#/components/schemas/inline_response_200_8_data'
         message:
           type: string
           example: SUCCESS
@@ -1889,14 +2471,14 @@ components:
           - workspace2
           - workspace3
         message: SUCCESS
-    inline_response_200_7:
+    inline_response_200_9:
       type: object
       properties:
         result:
           type: string
           example: 000-00000
         data:
-          $ref: '#/components/schemas/inline_response_200_7_data'
+          $ref: '#/components/schemas/inline_response_200_9_data'
         message:
           type: string
           example: SUCCESS
@@ -1956,7 +2538,7 @@ components:
               menu_name: メニュー9
               menu_name_rest: menu_9
         message: SUCCESS
-    inline_response_200_8:
+    inline_response_200_10:
       type: object
       properties:
         result:
@@ -1978,7 +2560,7 @@ components:
         data:
           key: data
         message: SUCCESS
-    inline_response_200_9:
+    inline_response_200_11:
       type: object
       properties:
         result:
@@ -1992,19 +2574,43 @@ components:
         result: 000-00000
         data: true
         message: message
-    MAINTENANCE_PARAMETERS_parameter:
+    inline_response_200_12:
+      type: object
+      properties:
+        result:
+          type: string
+          example: 000-00000
+        data:
+          type: string
+        message:
+          type: string
+      example:
+        result: 000-00000
+        data: data
+        message: message
+    FILTER_REQUEST_PARAMETERS_RANGE:
+      type: object
+      properties:
+        START:
+          type: string
+        END:
+          type: string
+      example: null
+    FILTER_PARAMETERS_parameter:
       type: object
       properties:
         rest_key_name:
           type: string
-      example: null
-    MAINTENANCE_PARAMETERS_file:
+      example:
+        rest_key_name: rest_key_name
+    FILTER_PARAMETERS_file:
       type: object
       properties:
         rest_key_name:
           type: string
           example: base64 encode file
-      example: null
+      example:
+        rest_key_name: base64 encode file
     inline_response_200_data:
       type: object
       properties:
@@ -2079,7 +2685,7 @@ components:
             column_type: 0
             column_group_name: column_group_name
             ref_sort_conditions: ref_sort_conditions
-    inline_response_200_4_data:
+    inline_response_200_7_data:
       type: object
       properties:
         TABLE:
@@ -2090,7 +2696,7 @@ components:
           TD_IHP: {}
           PAGE_NO: 0
           UNIQUE_VAL: {}
-    inline_response_200_6_data:
+    inline_response_200_8_data:
       type: object
       properties:
         roles:
@@ -2118,7 +2724,7 @@ components:
         - workspace1
         - workspace2
         - workspace3
-    inline_response_200_7_data:
+    inline_response_200_9_data:
       type: object
       properties:
         menu_groups:
