@@ -22,8 +22,9 @@ from flask import g
 from pathlib import Path
 
 from common_libs.common.dbconnect import *
-from common_libs.ansible_driver.classes import *
-from ita_root.ita_api_admin.common_libs.ansible_driver.classes.AnsibleMakeMessage import AnsibleMakeMessage
+from .AnsibleMakeMessage import AnsibleMakeMessage
+from .AnscConstClass import AnscConst
+from .WrappedStringReplaceAdmin import WrappedStringReplaceAdmin
 
 
 class AnsibleCommonLibs():
@@ -44,34 +45,35 @@ class AnsibleCommonLibs():
     # 定数定義
     LV_RUN_MODE = ""
     WS_DB = None
-    LC_RUN_MODE_STD = "0"
-    LC_RUN_MODE_VARFILE = "1"
 
-    def __init__(self, run_mode=LC_RUN_MODE_STD):
-        self.LV_RUN_MODE = run_mode
+    def __init__(self, run_mode=AnscConst.LC_RUN_MODE_STD):
+        global LV_RUN_MODE
+        global WS_DB
+        LV_RUN_MODE = run_mode
         organization_id = g.get('ORGANIZATION_ID')
         workspace_id = g.get('WORKSPACE_ID')
-        self.WS_DB = DBConnectWs(workspace_id, organization_id)
+        WS_DB = DBConnectWs(workspace_id, organization_id)
 
-    def set_run_mode(self, run_mode):
+    def set_run_mode(run_mode):
         """
         処理モードを変数定義ファイルチェックに設定
 
         Arguments:
             run_mode: 処理モード　LC_RUN_MODE_STD/LC_RUN_MODE_VARFILE
         """
-        self.LV_RUN_MODE = run_mode
+        global LV_RUN_MODE
+        LV_RUN_MODE = run_mode
 
-    def get_run_mode(self):
+    def get_run_mode():
         """
         処理モード取得
 
         returns:
             処理モード　LC_RUN_MODE_STD/LC_RUN_MODE_VARFILE
         """
-        return self.LV_RUN_MODE
+        return LV_RUN_MODE
 
-    def get_cpf_vars_master(self, in_cpf_var_name):
+    def get_cpf_vars_master(in_cpf_var_name):
         """
         ファイル管理の情報をデータベースより取得する。
         
@@ -84,12 +86,13 @@ class AnsibleCommonLibs():
             in_cpf_file_name: ファイル格納変数
         """
         
+        global WS_DB
         in_cpf_key = ""
         in_cpf_file_name = ""
         
-        where = "WHERE  CONTENTS_FILE_VARS_NAME = " + in_cpf_var_name + " and DISUSE_FLAG = '0'"
+        where = "WHERE  CONTENTS_FILE_VARS_NAME = '" + in_cpf_var_name + "' and DISUSE_FLAG = '0'"
         
-        data_list = self.WS_DB.table_select("T_ANSC_CONTENTS_FILE", where, [])
+        data_list = WS_DB.table_select("T_ANSC_CONTENTS_FILE", where, [])
 
         if len(data_list) < 1:
             return True, in_cpf_key, in_cpf_file_name
@@ -109,18 +112,21 @@ class AnsibleCommonLibs():
 
         Returns:
             is success:(bool)
+            tmp_ina_cpf_vars_list: CPF変数リスト
+            in_errmsg: エラーメッセージ
         """
         bool_ret = True
         fatal_error = False
         in_errmsg = []
+        tmp_ina_cpf_vars_list = {}
         
         ams = AnsibleMakeMessage()
         
         # CPF変数がファイル管理に登録されているか判定
-        for tgt_file_list, role_name in ina_cpf_vars_list.items():
-            for line_no_list, tgt_file in tgt_file_list.items():
-                for cpf_var_name_list, line_no in line_no_list.items():
-                    for dummy, cpf_var_name in cpf_var_name_list.items():
+        for role_name, tgt_file_list in ina_cpf_vars_list.items():
+            for tgt_file, line_no_list in tgt_file_list.items():
+                for line_no, cpf_var_name_list in line_no_list.items():
+                    for cpf_var_name, dummy in cpf_var_name_list.items():
                         
                         # CPF変数名からファイル管理とPkeyを取得する。
                         ret = get_cpf_vars_master(cpf_var_name)
@@ -143,9 +149,17 @@ class AnsibleCommonLibs():
                                 bool_ret = False
                                 continue
                         
-                        ina_cpf_vars_list[role_name][tgt_file][line_no][cpf_var_name] = []
-                        ina_cpf_vars_list[role_name][tgt_file][line_no][cpf_var_name]['CONTENTS_FILE_ID'] = ret[1]
-                        ina_cpf_vars_list[role_name][tgt_file][line_no][cpf_var_name]['CONTENTS_FILE'] = ret[2]
+                        if role_name not in tmp_ina_cpf_vars_list:
+                            tmp_ina_cpf_vars_list[role_name] = {}
+                        if tgt_file not in tmp_ina_cpf_vars_list[role_name]:
+                            tmp_ina_cpf_vars_list[role_name][tgt_file] = {}
+                        if line_no not in tmp_ina_cpf_vars_list[role_name][tgt_file]:
+                            tmp_ina_cpf_vars_list[role_name][tgt_file][line_no] = {}
+                        if cpf_var_name not in tmp_ina_cpf_vars_list[role_name][tgt_file][line_no]:
+                            tmp_ina_cpf_vars_list[role_name][tgt_file][line_no][cpf_var_name] = {}
+
+                        tmp_ina_cpf_vars_list[role_name][tgt_file][line_no][cpf_var_name]['CONTENTS_FILE_ID'] = ret[1]
+                        tmp_ina_cpf_vars_list[role_name][tgt_file][line_no][cpf_var_name]['CONTENTS_FILE'] = ret[2]
                         
                     if fatal_error:
                         break
@@ -155,10 +169,11 @@ class AnsibleCommonLibs():
             
             if fatal_error:
                 break
+
+        return bool_ret, tmp_ina_cpf_vars_list, in_errmsg
+
         
-        return bool_ret
-        
-    def get_tpf_vars_master(self, in_tpf_var_name):
+    def get_tpf_vars_master(in_tpf_var_name):
         """
         テンプレート管理の情報をデータベースより取得する。
         
@@ -170,9 +185,11 @@ class AnsibleCommonLibs():
             ina_row: 登録情報
         """
         
+        global WS_DB
+        
         where = "WHERE  ANS_TEMPLATE_VARS_NAME = '" + in_tpf_var_name + "' AND DISUSE_FLAG = '0'"
         
-        data_list = self.WS_DB.table_select("T_ANSC_TEMPLATE_FILE", where, [])
+        data_list = WS_DB.table_select("T_ANSC_TEMPLATE_FILE", where, [])
         
         ina_row = []
         
@@ -193,29 +210,38 @@ class AnsibleCommonLibs():
 
         Returns:
             is success:(bool)
+            ina_tpf_vars_list: TPF変数リスト
+            in_errmsg: エラーメッセージ
         """
         
         bool_ret = True
         in_errmsg = ""
         fatal_error = False
+        tmp_ina_tpf_vars_list = {}
         
         ams = AnsibleMakeMessage()
         
-        # GBL変数にファイル管理に登録されているか判定
-        for tgt_file_list, role_name in ina_tpf_vars_list:
-            for line_no_list, tgt_file in tgt_file_list:
-                for tpf_var_name_list, line_no in line_no_list:
-                    for dummy, tpf_var_name in tpf_var_name_list:
+        # TPF変数にファイル管理に登録されているか判定
+        for role_name, tgt_file_list in ina_tpf_vars_list.items():
+            for tgt_file, line_no_list in tgt_file_list.items():
+                for line_no, tpf_var_name_list in line_no_list.items():
+                    for tpf_var_name, dummy in tpf_var_name_list.items():
                         ret = get_tpf_vars_master(tpf_var_name)
                         
-                        # TPF変数名が未登録の場合
                         tpf_key = ""
                         tpf_file_name = ""
+                        role_only_flag = ""
+                        vars_list = ""
+                        var_struct_anal_json_string = ""
                         
                         if len(ret[1]) != 0:
-                            tpf_key = ret[1]['ANS_TEMPLATE_ID']
-                            tpf_file_name = ret[1]['ANS_TEMPLATE_FILE']
+                            tpf_key = ret[1][0]['ANS_TEMPLATE_ID']
+                            tpf_file_name = ret[1][0]['ANS_TEMPLATE_FILE']
+                            role_only_flag = ret[1][0]['ROLE_ONLY_FLAG']
+                            vars_list = ret[1][0]['VARS_LIST']
+                            var_struct_anal_json_string = ret[1][0]['VARSTRUCT_ANAL_JSON_STRING_FILE']
                         
+                        # TPF変数名が未登録の場合
                         if tpf_key == "":
                             if in_errmsg != "":
                                 in_errmsg = in_errmsg + "\n"
@@ -233,12 +259,20 @@ class AnsibleCommonLibs():
                                 bool_ret = False
                                 continue
                         
-                        ina_tpf_vars_list[role_name][tgt_file][line_no][tpf_var_name] = []
-                        ina_tpf_vars_list[role_name][tgt_file][line_no][tpf_var_name]['CONTENTS_FILE_ID'] = tpf_key
-                        ina_tpf_vars_list[role_name][tgt_file][line_no][tpf_var_name]['CONTENTS_FILE'] = tpf_file_name
-                        ina_tpf_vars_list[role_name][tgt_file][line_no][tpf_var_name]['ROLE_ONLY_FLAG'] = ret[1]['ROLE_ONLY_FLAG']
-                        ina_tpf_vars_list[role_name][tgt_file][line_no][tpf_var_name]['VARS_LIST'] = ret[1]['VARS_LIST']
-                        ina_tpf_vars_list[role_name][tgt_file][line_no][tpf_var_name]['VAR_STRUCT_ANAL_JSON_STRING'] = ret[1]['VARSTRUCT_ANAL_JSON_STRING_FILE']
+                        if role_name not in tmp_ina_tpf_vars_list:
+                            tmp_ina_tpf_vars_list[role_name] = {}
+                        if tgt_file not in tmp_ina_tpf_vars_list[role_name]:
+                            tmp_ina_tpf_vars_list[role_name][tgt_file] = {}
+                        if line_no not in tmp_ina_tpf_vars_list[role_name][tgt_file]:
+                            tmp_ina_tpf_vars_list[role_name][tgt_file][line_no] = {}
+                        if tpf_var_name not in tmp_ina_tpf_vars_list[role_name][tgt_file][line_no]:
+                            tmp_ina_tpf_vars_list[role_name][tgt_file][line_no][tpf_var_name] = {}
+                        
+                        tmp_ina_tpf_vars_list[role_name][tgt_file][line_no][tpf_var_name]['CONTENTS_FILE_ID'] = tpf_key
+                        tmp_ina_tpf_vars_list[role_name][tgt_file][line_no][tpf_var_name]['CONTENTS_FILE'] = tpf_file_name
+                        tmp_ina_tpf_vars_list[role_name][tgt_file][line_no][tpf_var_name]['ROLE_ONLY_FLAG'] = role_only_flag
+                        tmp_ina_tpf_vars_list[role_name][tgt_file][line_no][tpf_var_name]['VARS_LIST'] = vars_list
+                        tmp_ina_tpf_vars_list[role_name][tgt_file][line_no][tpf_var_name]['VAR_STRUCT_ANAL_JSON_STRING'] = var_struct_anal_json_string
                         
                         if fatal_error:
                             break
@@ -249,26 +283,26 @@ class AnsibleCommonLibs():
                 if fatal_error:
                     break
                 
-            return bool_ret
+            return bool_ret, tmp_ina_tpf_vars_list, in_errmsg
     
-    def get_gbl_vars_master(self, in_gbl_var_name, in_gbl_key):
+    def get_gbl_vars_master(in_gbl_var_name):
         """
         グローバル管理の情報をデータベースより取得する。
         
         Arguments:
             in_gbl_var_name: GBL変数名
-            in_gbl_key: PKey格納変数
-
+    
         Returns:
             is success:(bool)
             in_gbl_key: PKey格納変数
         """
-
+    
+        global WS_DB
         in_gbl_key = ""
         
         where = "WHERE VARS_NAME = '" + in_gbl_var_name + "' AND DISUSE_FLAG = '0'"
         
-        data_list = self.WS_DB.table_select("T_ANSC_GLOBAL_VAR", where, [])
+        data_list = WS_DB.table_select("T_ANSC_GLOBAL_VAR", where, [])
         
         if len(data_list) < 1:
             return True, in_gbl_key
@@ -284,27 +318,29 @@ class AnsibleCommonLibs():
         
         Arguments:
             ina_gbl_vars_list: GBL変数リスト
-
+    
         Returns:
             is success:(bool)
+            ina_gbl_vars_list: GBL変数リスト
+            in_errmsg: エラーメッセージ
         """
         
         bool_ret = True
         fatal_error = False
         in_errmsg = ""
+        tmp_ina_gbl_vars_list = {}
         
         ams = AnsibleMakeMessage()
         
         # GBL変数にファイル管理に登録されているか判定
-        for tgt_file_list, role_name in ina_gbl_vars_list:
-            for line_no_list, tgt_file in tgt_file_list:
-                for gbl_var_name_list, line_no in line_no_list:
-                    for dummy, gbl_var_name in gbl_var_name_list:
-                        gbl_key = ""
+        for role_name, tgt_file_list in ina_gbl_vars_list.items():
+            for tgt_file, line_no_list in tgt_file_list.items():
+                for line_no, gbl_var_name_list in line_no_list.items():
+                    for gbl_var_name, dummy in gbl_var_name_list.items():
                         
                         ret = get_gbl_vars_master(gbl_var_name)
                         
-                        # CPF変数名が未登録の場合
+                        # GBL変数名が未登録の場合
                         if ret[1] == "":
                             if in_errmsg != "":
                                 in_errmsg = in_errmsg + "\n"
@@ -312,9 +348,17 @@ class AnsibleCommonLibs():
                             in_errmsg = in_errmsg + ams.AnsibleMakeMessage(get_run_mode(), "MSG-10571", [role_name, tgt_file, line_no, gbl_var_name])
                             bool_ret = False
                             break
-                            
-                        ina_gbl_vars_list[role_name][tgt_file][line_no][gbl_var_name] = []
-                        ina_gbl_vars_list[role_name][tgt_file][line_no][gbl_var_name]['CONTENTS_FILE_ID'] = gbl_key
+                        
+                        if role_name not in tmp_ina_gbl_vars_list:
+                            tmp_ina_gbl_vars_list[role_name] = {}
+                        if tgt_file not in tmp_ina_gbl_vars_list[role_name]:
+                            tmp_ina_gbl_vars_list[role_name][tgt_file] = {}
+                        if line_no not in tmp_ina_gbl_vars_list[role_name][tgt_file]:
+                            tmp_ina_gbl_vars_list[role_name][tgt_file][line_no] = {}
+                        if line_no not in tmp_ina_gbl_vars_list[role_name][tgt_file][line_no]:
+                            tmp_ina_gbl_vars_list[role_name][tgt_file][line_no][gbl_var_name] = {}
+    
+                        tmp_ina_gbl_vars_list[role_name][tgt_file][line_no][gbl_var_name]['CONTENTS_FILE_ID'] = ret[1]
                         
                     if fatal_error:
                         break
@@ -325,7 +369,7 @@ class AnsibleCommonLibs():
             if fatal_error:
                 break
         
-        return bool_ret
+        return bool_ret, ina_gbl_vars_list, in_errmsg
     
     def common_varss_aanalys(in_filename, out_filename, fillter_vars=False):
         """
@@ -353,21 +397,21 @@ class AnsibleCommonLibs():
         ret = wsra.SimpleFillterVerSearch("CPF_", playbook_data_string, vars_line_array, vars_array, local_vars, fillter_vars)
 
         cpf_vars_list = []
-        for vars_info, no in ret[0]:
+        for vars_info, no in ret[1]:
             for var_name, line_no in vars_info:
                 cpf_vars_list['dummy']['Upload file'][line_no][var_name] = 0
                 
         ret = wsra.SimpleFillterVerSearch("TPF_", playbook_data_string, vars_line_array, vars_array, local_vars, fillter_vars)
         
         tpf_vars_list = []
-        for vars_info, no in ret[0]:
+        for vars_info, no in ret[1]:
             for var_name, line_no in vars_info:
                 tpf_vars_list['dummy']['Upload file'][line_no][var_name] = 0
         
         ret = wsra.SimpleFillterVerSearch("GBL_", playbook_data_string, vars_line_array, vars_array, local_vars, fillter_vars)
         
         gbl_vars_list = []
-        for vars_info, no in ret[0]:
+        for vars_info, no in ret[1]:
             for var_name, line_no in vars_info:
                 gbl_vars_list['dummy']['Upload file'][line_no][var_name] = 0
         
@@ -417,23 +461,23 @@ class AnsibleCommonLibs():
         
         return ret_array
     
-    def select_db_recodes(self, in_sql, in_key):
+    def select_db_recodes(in_sql, in_key):
         """
         指定されたデータベースの全有効レコードを取得する。
         
         Arguments:
             in_sql: SQL
-            in_key: 登録レコードの配列のキー項目
 
         Returns:
-            is success:(bool)
-            ina_row: 登録レコードの配列
+            ina_row: 取得レコードの配列
         """
         
-        data_list = self.WS_DB.sql_execute(in_sql, [])
+        global WS_DB
+        
+        data_list = WS_DB.sql_execute(in_sql, [])
         
         ina_row = []
         for data in data_list:
             ina_row[data[in_key]] = data
         
-        return True, ina_row
+        return ina_row

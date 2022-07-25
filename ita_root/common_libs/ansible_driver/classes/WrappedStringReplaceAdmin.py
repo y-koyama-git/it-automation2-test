@@ -169,4 +169,4 @@ class WrappedStringReplaceAdmin:
                     if mt_varsArray.count(var_name_match) == 0:
                         mt_varsArray.append(var_name_match)
             # 予約変数　{{ 予約変数 | Fillter function }}　の抜き出し ---
-        return mt_varsLineArray
+        return True, mt_varsLineArray
