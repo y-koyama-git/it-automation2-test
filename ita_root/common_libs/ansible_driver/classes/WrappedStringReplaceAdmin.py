@@ -96,7 +96,7 @@ class WrappedStringReplaceAdmin:
             True(bool)
         """
         # Fillter定義されている変数も抜出すか判定
-        if FillterVars == True:
+        if FillterVars == 1:
             tailmarke = "([\s]}}|[\s]+\|)"
             reptailmarke = " }} |"
         else:
