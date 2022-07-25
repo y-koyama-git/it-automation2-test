@@ -18,6 +18,7 @@ import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
 
+from flask import g
 from column_class import Column
 
 """
@@ -82,43 +83,57 @@ class NumColumn(Column):
         max_num = None
 
         if val is not None:
-            # カラムの設定を取得
-            objcols = self.get_objcols()
-            if objcols is not None:
-                if self.get_rest_key_name() in objcols:
-                    dict_valid = self.get_dict_valid()
-                    # 閾値(最小値)
-                    min_num = dict_valid.get('int_min')
-                    # 閾値(最大値)
-                    max_num = dict_valid.get('int_max')
+            try:
+                val = int(val)
+                # カラムの設定を取得
+                objcols = self.get_objcols()
+                if objcols is not None:
+                    if self.get_rest_key_name() in objcols:
+                        dict_valid = self.get_dict_valid()
+                        # 閾値(最小値)
+                        min_num = dict_valid.get('int_min')
+                        # 閾値(最大値)
+                        max_num = dict_valid.get('int_max')
+                
+                if min_num is None and max_num is None:
+                    # 最小値、最大値閾値無し
+                    retBool = True
+                elif min_num is not None and max_num is not None:
+                    # 最小値、最大値閾値あり
+                    if min_num <= val <= max_num:
+                        retBool = True
+                    else:
+                        retBool = False
+                        status_code = '200-00214'
+                        msg_args = [self.get_rest_key_name(), min_num, max_num, val]
+                        msg = g.appmsg.get_api_message(status_code, msg_args)
+                        return retBool, msg
 
-            if min_num is None and max_num is None:
-                # 最小値、最大値閾値無し
-                retBool = True
-            elif min_num is not None and max_num is not None:
-                # 最小値、最大値閾値あり
-                if min_num < val < max_num:
-                    retBool = True
-                else:
-                    retBool = False
-                    msg = "範囲外({}<{}<{})[{}]".format(min_num, val, max_num, self.rest_key_name)
-                    return retBool, msg
-
-            elif min_num is not None:
-                # 最小値閾値あり
-                if min_num < val:
-                    retBool = True
-                else:
-                    retBool = False
-                    msg = "最小値以下({}<{})[{}]".format(min_num, val, self.rest_key_name)
-                    return retBool, msg
-            elif max_num is not None:
-                # 最大値閾値あり
-                if val < max_num:
-                    retBool = True
-                else:
-                    retBool = False
-                    msg = "最大値以上({}<{})[{}]".format(val, max_num, self.rest_key_name)
-                    return retBool, msg
+                elif min_num is not None:
+                    # 最小値閾値あり
+                    if min_num < val:
+                        retBool = True
+                    else:
+                        retBool = False
+                        status_code = '200-00215'
+                        msg_args = [self.get_rest_key_name(), min_num, val]
+                        msg = g.appmsg.get_api_message(status_code, msg_args)
+                        return retBool, msg
+                elif max_num is not None:
+                    # 最大値閾値あり
+                    if val < max_num:
+                        retBool = True
+                    else:
+                        retBool = False
+                        status_code = '200-00216'
+                        msg_args = [self.get_rest_key_name(), max_num, val]
+                        msg = g.appmsg.get_api_message(status_code, msg_args)
+                        return retBool, msg
+            except ValueError:
+                retBool = False
+                status_code = '200-00217'
+                msg_args = [self.get_rest_key_name(), val]
+                msg = g.appmsg.get_api_message(status_code, msg_args)
+                return retBool, msg
 
         return retBool,
