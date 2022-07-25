@@ -45,8 +45,6 @@ class Column():
                     after_iud_common_action :カラムクラスの処理
                     after_iud_col_action   :カラムの個別処理
 
-
-
             カラムクラス毎に行うバリデーション処理（クラスの継承でオーバライドさせる）
             check_basic_valid   ：カラムクラスのバリデーション処理
 
@@ -68,11 +66,9 @@ class Column():
         load_table.py関連
             # ID相互変換用のデータ生成
             get_convert_list
-            # 初期値を返却
-            set_default_value
-            # 値をID連携先のIDへ変換
+            # 内部処理用の値へ変換
             convert_value_input
-            # 値をID連携先のIDへ変換
+            #  出力用の値へ変換
             convert_value_output
 
     """
@@ -646,38 +642,26 @@ class Column():
         """
         retBool = True
         result = self.get_required()
+        msg = ''
 
-        if result == 1:
+        if result == "1":
             if val is None:
                 retBool = False
+                status_code = '200-00213'
+                msg_args = [self.get_rest_key_name()]
+                msg = g.appmsg.get_api_message(status_code, msg_args)
             elif len(val) == 0:
                 retBool = False
+                status_code = '200-00213'
+                msg_args = [self.get_rest_key_name()]
+                msg = g.appmsg.get_api_message(status_code, msg_args)
+                    
+        return retBool, msg,
 
-        return retBool,
-
-    # [load_table] 初期値の埋め込み
-    def set_default_value(self):
-        """
-            初期値の埋め込み
-            ARGS:
-                col_name:カラム名
-                val:値
-            RETRUN:
-                初期値
-        """
-
-        default_val = None
-
-        objcols = self.objtable.get('COLINFO')
-        if objcols is not None and self.get_col_name() is not None:
-            default_val = self.get_objcol().get('DEFAULT_VAL')
-
-        return default_val
-
-    # [load_table] 値をID連携先のIDへ変換
+    # [load_table] 内部処理用の値へ変換
     def convert_value_input(self, val=''):
         """
-            値をIDに変換
+            内部処理用の値へ変換
             ARGS:
                 val:値
             RETRUN:
@@ -687,10 +671,10 @@ class Column():
         msg = ''
         return retBool, msg, val
 
-    # [load_table] 値をID連携先のIDへ変換
+    # [load_table] 出力用の値へ変換
     def convert_value_output(self, val=''):
         """
-            IDを値に変換
+            出力用の値へ変換
             ARGS:
                 val:値
             RETRUN:
