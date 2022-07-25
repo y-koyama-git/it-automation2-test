@@ -404,12 +404,14 @@ def collect_pulldown_list(objdbca, menu):
         
         # ####メモ：現状、ソートコンディションを考慮していない。
         # ref_sort_conditions = recode.get('REF_SORT_CONDITIONS')
-        ret_2 = objdbca.table_select(ref_table_name, 'WHERE DISUSE_FLAG = %s', [0])
-        column_pulldown_list = {}
-        for recode_2 in ret_2:
-            column_pulldown_list[recode_2.get(ref_pkey_name)] = recode_2.get(ref_col_name)
         
-        pulldown_list[column_name_rest] = column_pulldown_list
+        if ref_table_name and ref_pkey_name and ref_col_name:
+            ret_2 = objdbca.table_select(ref_table_name, 'WHERE DISUSE_FLAG = %s', [0])
+            column_pulldown_list = {}
+            for recode_2 in ret_2:
+                column_pulldown_list[recode_2.get(ref_pkey_name)] = recode_2.get(ref_col_name)
+            
+            pulldown_list[column_name_rest] = column_pulldown_list
     
     return pulldown_list
 
