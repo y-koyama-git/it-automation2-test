@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Copyright 2022 NEC Corporation#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,14 +14,13 @@
 # limitations under the License.
 #
 
-#!/bin/sh
-
 while true
 do
     start_time=`date +%s`
     echo "backyard_init start = "`date "+%Y-%m-%d %H:%M:%S"` >> /exastro/app.log
 
-    python3 /exastro/backyard/backyard_init.py
+    cd /exastro
+    python3 backyard/backyard_init.py | tee -a /exastro/app.log
 
     echo "backyard_init end = "`date "+%Y-%m-%d %H:%M:%S"` >> /exastro/app.log
     end_time=`date +%s`
