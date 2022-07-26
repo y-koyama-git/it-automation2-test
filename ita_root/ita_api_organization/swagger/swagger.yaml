@@ -23,7 +23,7 @@ tags:
 - name: Menu Create
   description: メニュー作成機能
 - name: Conductor Controll
-  description: Conductorの作業実行・作業状態確認・緊急停止・予約取消・保留解除
+  description: Conductorの情報取得・操作
 - name: Driver Controll
   description: Driverの作業実行・作業状態確認・緊急停止・予約取消
 - name: Compare Controll
@@ -1726,8 +1726,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/cancel/{conductor_instance_id}:
-    post:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/{conductor_instance_id}/cancel:
+    patch:
       tags:
       - Conductor Controll
       description: Conductor作業の予約取り消し
@@ -1777,8 +1777,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/scram/{conductor_instance_id}:
-    post:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/{conductor_instance_id}/scram:
+    patch:
       tags:
       - Conductor Controll
       description: Conductor作業の緊急停止
@@ -1828,8 +1828,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/relese/{conductor_instance_id}/{node_instance_id}:
-    post:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/{conductor_instance_id}/{node_instance_id}/relese:
+    patch:
       tags:
       - Conductor Controll
       description: Conductor作業の一時停止解除
