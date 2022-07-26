@@ -16,7 +16,7 @@
         "cwd": "/exastro",
         "pathMappings": [
           {
-            "localRoot": "${workspaceFolder}/ita_root/ita_by_ansible_execute",
+            "localRoot": "${workspaceFolder}/ita_root/ita_by_ansible_legacy_role_vars_listup",
             "remoteRoot": "/exastro"
           },
         ],
@@ -40,7 +40,7 @@
         "cwd": "/exastro",
         "pathMappings": [
           {
-            "localRoot": "${workspaceFolder}/ita_root/ita_by_ansible_execute",
+            "localRoot": "${workspaceFolder}/ita_root/ita_by_ansible_legacy_role_vars_listup",
             "remoteRoot": "/exastro"
           },
         ],

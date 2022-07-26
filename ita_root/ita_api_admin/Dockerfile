@@ -44,8 +44,6 @@ RUN dnf install -y \
 &&  groupadd $GROUPNAME \
 &&  useradd -m -s /bin/bash -g $GROUPNAME $USERNAME
 
-RUN mkdir /storage
-
 #
 # Build for development
 #   Specify options when creating this image: --target develop_build
