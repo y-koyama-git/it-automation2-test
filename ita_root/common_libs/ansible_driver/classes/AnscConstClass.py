@@ -138,3 +138,24 @@ class AnscConst:
 
     LC_RUN_MODE_STD = "0"      # 標準
     LC_RUN_MODE_VARFILE = "1"  # 変数定義ファイルの構造チェック
+    
+    # ステータス定義(DBの値と同期させること)
+    NOT_YET = 1          # 未実行
+    PREPARE = 2          # 準備中
+    PROCESSING = 3       # 実行中
+    PROCESS_DELAYED = 4  # 実行中(遅延)
+    COMPLETE = 5         # 完了
+    FAILURE = 6          # 完了(異常)
+    EXCEPTION = 7        # 想定外エラー
+    SCRAM = 8            # 緊急停止
+    RESERVE = 9          # 未実行(予約中)
+    RESERVE_CANCEL = 10  # 予約取消
+
+    DRY_RUN = 2  # 実行モード(ドライラン=チェック)
+
+    # WINRM接続ポート デフォルト値
+    LC_WINRM_PORT = 5985
+
+    TOWER_VER35 = 1        # Towerバージョン3.5(以下)
+    TOWER_VER36 = 2        # Towerバージョン3.6(以上)
+    
