@@ -22,7 +22,7 @@ tags:
   - name: Menu Create
     description: メニュー作成機能
   - name: Conductor Controll
-    description: Conductorの作業実行・作業状態確認・緊急停止・予約取消・保留解除
+    description: Conductorの情報取得・操作
   - name: Driver Controll
     description: Driverの作業実行・作業状態確認・緊急停止・予約取消
   - name: Compare Controll
@@ -1530,7 +1530,58 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
 
-
+  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/class/info:
+    get:
+      tags:
+        - Conductor Controll
+      description: ConductorClassの基本情報取得
+      operationId: getConductorClassInfo
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    properties:
+                      list:
+                        $ref: '#/components/schemas/CONDUCTOR_INFO_LIST'
+                      dict:
+                        $ref: '#/components/schemas/CONDUCTOR_INFO_DICT'
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+                
   /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/class/{conductor_class_id}:
     get:
       tags:
@@ -1553,106 +1604,6 @@ paths:
         - name: conductor_class_id
           in: path
           description: Conductor Class ID
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Success
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  result:
-                    type: string
-                    example: 000-00000
-                  data:
-                    type: boolean
-                  message:
-                    type: string
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ERROR_TEMPLATE'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ERROR_TEMPLATE'
-
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/class/list/:
-    get:
-      tags:
-        - Conductor Controll
-      description: 対象の一覧を取得(Operation,Movment,Conductor)
-      operationId: getConductorUseLists
-      parameters:
-        - name: organization_id
-          in: path
-          description: OrganizationID
-          required: true
-          schema:
-            type: string
-        - name: workspace_id
-          in: path
-          description: WorkspaceID
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Success
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  result:
-                    type: string
-                    example: 000-00000
-                  data:
-                    type: boolean
-                  message:
-                    type: string
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ERROR_TEMPLATE'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ERROR_TEMPLATE'
-  
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/class/list/{list_name}:
-    get:
-      tags:
-        - Conductor Controll
-      description: 指定した対象の一覧を取得(Operation,Movment,Conductor)
-      operationId: getConductorUseList
-      parameters:
-        - name: organization_id
-          in: path
-          description: OrganizationID
-          required: true
-          schema:
-            type: string
-        - name: workspace_id
-          in: path
-          description: WorkspaceID
-          required: true
-          schema:
-            type: string
-        - name: list_name
-          in: path
-          description: TargetListName
           required: true
           schema:
             type: string
@@ -1741,7 +1692,7 @@ paths:
     patch:
       tags:
         - Conductor Controll
-      description: Conductorの新規登録
+      description: Conductorの更新
       operationId: patchConductorData
       parameters:
         - name: organization_id
@@ -1766,7 +1717,7 @@ paths:
         content:
           application/json:
             schema:
-              description: 登録するConductorの構成情報
+              description: 更新するConductorの構成情報
               type: object
       responses:
         '200':
@@ -1819,8 +1770,18 @@ paths:
         content:
           application/json:
             schema:
-              description: 登録するConductorの構成情報
+              description: 作業実行するConductorの構成情報
               type: object
+              properties:
+                conductor_class_id: 
+                  type: string
+                operation_id: 
+                  type: string
+                schedule_date: 
+                  type: string
+                  example: "YYYY/MM/DD hh:mm"
+                conductor_data:
+                  type: object
       responses:
         '200':
           description: Success
@@ -1834,6 +1795,65 @@ paths:
                     example: 000-00000
                   data:
                     type: boolean
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/info/{conductor_instance_id}:
+    get:
+      tags:
+        - Conductor Controll
+      description: Conductorの基本情報取得
+      operationId: getConductorInfo
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: conductor_instance_id
+          in: path
+          description: Conductor Instance ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    properties:
+                      list:
+                        $ref: '#/components/schemas/CONDUCTOR_INFO_LIST'
+                      dict:
+                        $ref: '#/components/schemas/CONDUCTOR_INFO_DICT'
                   message:
                     type: string
         '401':
@@ -1902,8 +1922,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
 
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/cancel/{conductor_instance_id}:
-    post:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/{conductor_instance_id}/cancel:
+    patch:
       tags:
         - Conductor Controll
       description: Conductor作業の予約取り消し
@@ -1955,8 +1975,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
 
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/scram/{conductor_instance_id}:
-    post:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/{conductor_instance_id}/scram:
+    patch:
       tags:
         - Conductor Controll
       description: Conductor作業の緊急停止
@@ -2008,8 +2028,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
 
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/relese/{conductor_instance_id}/{node_instance_id}:
-    post:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/{conductor_instance_id}/{node_instance_id}/relese:
+    patch:
       tags:
         - Conductor Controll
       description: Conductor作業の一時停止解除
@@ -2320,3 +2340,101 @@ components:
         type:
           type: string
           example: Register/Update
+  
+    CONDUCTOR_INFO_LIST:
+      type: object
+      properties:
+        conductor_status:
+          type: array
+          items: {}
+          example:
+            [
+              {
+                id: "string",
+                name: "string"
+              }
+            ]
+        node_status:
+          type: array
+          items: {}
+          example:
+            [
+              {
+                id: "string",
+                name: "string"
+              }
+            ]
+        node_type:
+          type: array
+          items: {}
+          example:
+            [
+              {
+                id: "string",
+                name: "string"
+              }
+            ]
+        movement:
+          type: array
+          items: {}
+          example:
+            [
+              {
+                id: "string",
+                name: "string"
+              }
+            ]
+        operation:
+          type: array
+          items: {}
+          example:
+            [
+              {
+                id: "string",
+                name: "string"
+              }
+            ]
+        conductors:
+          type: array
+          items: {}
+          example:
+            [
+              {
+                id: "string",
+                name: "string"
+              }
+            ]
+    
+    CONDUCTOR_INFO_DICT:
+      type: object
+      properties:
+        conductor_status:
+          items: {}
+          example: 
+            "status_id1" : "status_name1"
+            "status_id2" : "status_name2"
+        node_status:
+          items: {}
+          example: 
+            "status_id1" : "status_name1"
+            "status_id2" : "status_name2"
+        node_type:
+          items: {}
+          example: 
+            "node_type_id1" : "node_type_name1"
+            "node_type_id2" : "node_type_name2"
+        movement:
+          items: {}
+          example: 
+            "movement_id1" : "movement_name1"
+            "movement_id2" : "movement_name2"
+        operation:
+          items: {}
+          example: 
+            "operation_id1" : "operation_name1"
+            "operation_id2" : "operation_name2"
+        conductor:
+          items: {}
+          example: 
+            "conductor_id1" : "conductor_name1"
+            "conductor_id2" : "conductor_name2"

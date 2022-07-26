@@ -23,7 +23,7 @@ tags:
 - name: Menu Create
   description: メニュー作成機能
 - name: Conductor Controll
-  description: Conductorの作業実行・作業状態確認・緊急停止・予約取消・保留解除
+  description: Conductorの情報取得・操作
 - name: Driver Controll
   description: Driverの作業実行・作業状態確認・緊急停止・予約取消
 - name: Compare Controll
@@ -1376,6 +1376,49 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.menu_create_controller
+  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/class/info:
+    get:
+      tags:
+      - Conductor Controll
+      description: ConductorClassの基本情報取得
+      operationId: get_conductor_class_info
+      parameters:
+      - name: organization_id
+        in: path
+        description: OrganizationID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: path
+        description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_12'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+      x-openapi-router-controller: controllers.conductor_controll_controller
   /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/class/{conductor_class_id}:
     get:
       tags:
@@ -1414,100 +1457,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/inline_response_200_11'
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ERROR_TEMPLATE'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ERROR_TEMPLATE'
-      x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/class/list/:
-    get:
-      tags:
-      - Conductor Controll
-      description: "対象の一覧を取得(Operation,Movment,Conductor)"
-      operationId: get_conductor_use_lists
-      parameters:
-      - name: organization_id
-        in: path
-        description: OrganizationID
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-      - name: workspace_id
-        in: path
-        description: WorkspaceID
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-      responses:
-        "200":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/inline_response_200_6'
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ERROR_TEMPLATE'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ERROR_TEMPLATE'
-      x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/class/list/{list_name}:
-    get:
-      tags:
-      - Conductor Controll
-      description: "指定した対象の一覧を取得(Operation,Movment,Conductor)"
-      operationId: get_conductor_use_list
-      parameters:
-      - name: organization_id
-        in: path
-        description: OrganizationID
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-      - name: workspace_id
-        in: path
-        description: WorkspaceID
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-      - name: list_name
-        in: path
-        description: TargetListName
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-      responses:
-        "200":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/inline_response_200_6'
         "401":
           description: Unauthorized
           content:
@@ -1606,7 +1555,7 @@ paths:
           application/json:
             schema:
               type: object
-              description: 登録するConductorの構成情報
+              description: 更新するConductorの構成情報
       responses:
         "200":
           description: Success
@@ -1654,8 +1603,58 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              description: "実行するConductor,Operation情報"
+              $ref: '#/components/schemas/conductor_execute_body'
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_11'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+      x-openapi-router-controller: controllers.conductor_controll_controller
+  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/info/{conductor_instance_id}:
+    get:
+      tags:
+      - Conductor Controll
+      description: Conductorの基本情報取得
+      operationId: get_conductor_info
+      parameters:
+      - name: organization_id
+        in: path
+        description: OrganizationID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: path
+        description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: conductor_instance_id
+        in: path
+        description: Conductor Instance ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
       responses:
         "200":
           description: Success
@@ -1713,7 +1712,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_6'
+                $ref: '#/components/schemas/inline_response_200_11'
         "401":
           description: Unauthorized
           content:
@@ -1727,8 +1726,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/cancel/{conductor_instance_id}:
-    post:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/{conductor_instance_id}/cancel:
+    patch:
       tags:
       - Conductor Controll
       description: Conductor作業の予約取り消し
@@ -1778,8 +1777,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/scram/{conductor_instance_id}:
-    post:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/{conductor_instance_id}/scram:
+    patch:
       tags:
       - Conductor Controll
       description: Conductor作業の緊急停止
@@ -1829,8 +1828,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/relese/{conductor_instance_id}/{node_instance_id}:
-    post:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/{conductor_instance_id}/{node_instance_id}/relese:
+    patch:
       tags:
       - Conductor Controll
       description: Conductor作業の一時停止解除
@@ -2196,6 +2195,122 @@ components:
         type:
           type: string
           example: Register/Update
+    CONDUCTOR_INFO_LIST:
+      type: object
+      properties:
+        conductor_status:
+          type: array
+          example:
+          - id: string
+            name: string
+          items: {}
+        node_status:
+          type: array
+          example:
+          - id: string
+            name: string
+          items: {}
+        node_type:
+          type: array
+          example:
+          - id: string
+            name: string
+          items: {}
+        movement:
+          type: array
+          example:
+          - id: string
+            name: string
+          items: {}
+        operation:
+          type: array
+          example:
+          - id: string
+            name: string
+          items: {}
+        conductors:
+          type: array
+          example:
+          - id: string
+            name: string
+          items: {}
+      example:
+        node_status:
+        - id: string
+          name: string
+        node_type:
+        - id: string
+          name: string
+        conductor_status:
+        - id: string
+          name: string
+        movement:
+        - id: string
+          name: string
+        operation:
+        - id: string
+          name: string
+        conductors:
+        - id: string
+          name: string
+    CONDUCTOR_INFO_DICT:
+      type: object
+      properties:
+        conductor_status:
+          type: array
+          example:
+            status_id1: status_name1
+            status_id2: status_name2
+          items: {}
+        node_status:
+          type: array
+          example:
+            status_id1: status_name1
+            status_id2: status_name2
+          items: {}
+        node_type:
+          type: array
+          example:
+            node_type_id1: node_type_name1
+            node_type_id2: node_type_name2
+          items: {}
+        movement:
+          type: array
+          example:
+            movement_id1: movement_name1
+            movement_id2: movement_name2
+          items: {}
+        operation:
+          type: array
+          example:
+            operation_id1: operation_name1
+            operation_id2: operation_name2
+          items: {}
+        conductor:
+          type: array
+          example:
+            conductor_id1: conductor_name1
+            conductor_id2: conductor_name2
+          items: {}
+      example:
+        node_status:
+          status_id1: status_name1
+          status_id2: status_name2
+        node_type:
+          node_type_id1: node_type_name1
+          node_type_id2: node_type_name2
+        conductor_status:
+          status_id1: status_name1
+          status_id2: status_name2
+        movement:
+          movement_id1: movement_name1
+          movement_id2: movement_name2
+        operation:
+          operation_id1: operation_name1
+          operation_id2: operation_name2
+        conductor:
+          conductor_id1: conductor_name1
+          conductor_id2: conductor_name2
     inline_response_200:
       type: object
       properties:
@@ -2581,13 +2696,64 @@ components:
           type: string
           example: 000-00000
         data:
-          type: string
+          $ref: '#/components/schemas/inline_response_200_12_data'
         message:
           type: string
       example:
         result: 000-00000
-        data: data
+        data:
+          dict:
+            node_status:
+              status_id1: status_name1
+              status_id2: status_name2
+            node_type:
+              node_type_id1: node_type_name1
+              node_type_id2: node_type_name2
+            conductor_status:
+              status_id1: status_name1
+              status_id2: status_name2
+            movement:
+              movement_id1: movement_name1
+              movement_id2: movement_name2
+            operation:
+              operation_id1: operation_name1
+              operation_id2: operation_name2
+            conductor:
+              conductor_id1: conductor_name1
+              conductor_id2: conductor_name2
+          list:
+            node_status:
+            - id: string
+              name: string
+            node_type:
+            - id: string
+              name: string
+            conductor_status:
+            - id: string
+              name: string
+            movement:
+            - id: string
+              name: string
+            operation:
+            - id: string
+              name: string
+            conductors:
+            - id: string
+              name: string
         message: message
+    conductor_execute_body:
+      type: object
+      properties:
+        conductor_class_id:
+          type: string
+        operation_id:
+          type: string
+        schedule_date:
+          type: string
+          example: YYYY/MM/DD hh:mm
+        conductor_data:
+          type: object
+      description: 作業実行するConductorの構成情報
     FILTER_REQUEST_PARAMETERS_RANGE:
       type: object
       properties:
@@ -2833,4 +2999,50 @@ components:
             id: "10109"
             menu_name: メニュー9
             menu_name_rest: menu_9
+    inline_response_200_12_data:
+      type: object
+      properties:
+        list:
+          $ref: '#/components/schemas/CONDUCTOR_INFO_LIST'
+        dict:
+          $ref: '#/components/schemas/CONDUCTOR_INFO_DICT'
+      example:
+        dict:
+          node_status:
+            status_id1: status_name1
+            status_id2: status_name2
+          node_type:
+            node_type_id1: node_type_name1
+            node_type_id2: node_type_name2
+          conductor_status:
+            status_id1: status_name1
+            status_id2: status_name2
+          movement:
+            movement_id1: movement_name1
+            movement_id2: movement_name2
+          operation:
+            operation_id1: operation_name1
+            operation_id2: operation_name2
+          conductor:
+            conductor_id1: conductor_name1
+            conductor_id2: conductor_name2
+        list:
+          node_status:
+          - id: string
+            name: string
+          node_type:
+          - id: string
+            name: string
+          conductor_status:
+          - id: string
+            name: string
+          movement:
+          - id: string
+            name: string
+          operation:
+          - id: string
+            name: string
+          conductors:
+          - id: string
+            name: string
 
