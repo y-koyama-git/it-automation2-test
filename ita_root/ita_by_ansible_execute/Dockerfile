@@ -81,5 +81,5 @@ COPY ./ita_root/common_libs/ $APP_PATH/common_libs/
 COPY ./ita_root/messages/ $APP_PATH/messages/
 COPY ./ita_root/backyard/ $APP_PATH/backyard/
 
-# # ENTRYPOINT ["/exastro/backyard/entrypoint.sh"]
-# ENTRYPOINT ["/exastro/entrypoint.sh"]
+
+ENTRYPOINT ["backyard/entrypoint.sh"]
