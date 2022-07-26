@@ -20,8 +20,6 @@ ARG APP_PATH=/exastro
 
 RUN dnf install -y \
     gcc \
-    httpd \
-    httpd-devel \
     python39 \
     python39-devel \
     python39-mod_wsgi \
@@ -31,16 +29,11 @@ RUN dnf install -y \
 &&  pip3.9 install --upgrade pip setuptools \
 &&  pip3.9 install \
     Flask \
-    connexion \
-    six \
     requests \
     pyyaml \
     pytz \
-    markdown \
     pymysql \
     python-dotenv \
-&&  pip3.9 install \
-    connexion[swagger-ui] \
 &&  groupadd $GROUPNAME \
 &&  useradd -m -s /bin/bash -g $GROUPNAME $USERNAME
 
@@ -70,14 +63,10 @@ RUN mkdir ~/.config
 
 WORKDIR $APP_PATH
 
-COPY ./ita_root/ita_api_organization/config/httpd.conf/httpd.conf /etc/httpd/conf/httpd.conf
-COPY ./ita_root/ita_api_organization/config/httpd.conf/wsgi.conf /etc/httpd/conf.d/wsgi.conf
-
-COPY ./ita_root/ita_api_organization/ $APP_PATH/
+COPY ./ita_root/ita_by_create_menu/ $APP_PATH/
 COPY ./ita_root/common_libs/ $APP_PATH/common_libs/
 COPY ./ita_root/messages/ $APP_PATH/messages/
-
-CMD ["sudo","-E","httpd","-D","FOREGROUND"]
+COPY ./ita_root/backyard/ $APP_PATH/backyard/
 
 #
 # Build for production
@@ -87,11 +76,7 @@ FROM    common_build
 USER $USERNAME
 WORKDIR $APP_PATH
 
-COPY ./ita_root/ita_api_organization/httpd.conf/httpd.conf /etc/httpd/conf/httpd.conf
-COPY ./ita_root/ita_api_organization/httpd.conf/wsgi.conf /etc/httpd/conf.d/wsgi.conf
-
-COPY ./ita_root/ita_api_organization/ $APP_PATH/
+COPY ./ita_root/ita_by_create_menu/ $APP_PATH/
 COPY ./ita_root/common_libs/ $APP_PATH/common_libs/
 COPY ./ita_root/messages/ $APP_PATH/messages/
-
-CMD ["httpd","-D","FOREGROUND"]
+COPY ./ita_root/backyard/ $APP_PATH/backyard/

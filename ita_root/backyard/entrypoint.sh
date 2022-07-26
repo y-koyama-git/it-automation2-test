@@ -12,3 +12,19 @@
 # limitations under the License.
 #
 
+#!/bin/sh
+
+while true
+do
+    start_time=`date +%s`
+    echo "backyard_init start = "`date "+%Y-%m-%d %H:%M:%S"` >> /exastro/app.log
+
+    python3 /exastro/backyard/backyard_init.py
+
+    echo "backyard_init end = "`date "+%Y-%m-%d %H:%M:%S"` >> /exastro/app.log
+    end_time=`date +%s`
+    run_time=$((end_time - start_time))
+    echo "backyard_init execute-time = "$run_time >> /exastro/app.log
+
+    sleep 10
+done
