@@ -113,7 +113,7 @@ def organization_job(organization_id):
         g.applogger.debug("WS_DB:{} can be connected".format(workspace_id))
 
         # set log-level for user setting
-        g.applogger.set_user_setting(ws_db)
+        # g.applogger.set_user_setting(ws_db)
         ws_db.db_disconnect()
 
         # job for workspace
