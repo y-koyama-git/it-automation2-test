@@ -71,13 +71,9 @@ class GitLabAgent:
 
         g.applogger.debug('gitlab api request: url={}:{}, headers={}, params={}, data={}'.format(method, resource, headers, get_params, data_json))
         response = eval('requests.{}'.format(method.lower()))(url, headers=headers, params=get_params, data=data_json)
-        
-        if as_row is True:
-            g.applogger.debug('gitlab api response: url={}:{} -> {}:{}'.format(method, resource, response.status_code, response.text))
-            return response
 
         if response.headers.get('Content-Type') == 'application/json':
-            if 200 <= response.status_code < 299:
+            if 200 <= response.status_code < 400:
                 res = response.json()
 
                 if "error" in res:
@@ -85,13 +81,17 @@ class GitLabAgent:
                     raise AppException("999-00004", [err_msg])
                 else:
                     g.applogger.debug('gitlab api response: url={}:{} -> {}:{}'.format(method, resource, response.status_code, res))
+                    if as_row is True:
+                        return response
                     return res
             else:
                 err_msg = "{}:{} -> {}:{}".format(method, resource, response.status_code, response.text)
                 raise AppException("999-00004", [err_msg])
         else:
-            if 200 <= response.status_code < 299:
+            if 200 <= response.status_code < 400:
                 g.applogger.debug('gitlab api response: url={}:{} -> {}:{}'.format(method, resource, response.status_code, response.text))
+                if as_row is True:
+                    return response
                 return True
             else:
                 err_msg = "{}:{} -> {}:{}".format(method, resource, response.status_code, response.text)
@@ -169,10 +169,14 @@ class GitLabAgent:
         res = self.send_api(method="post", resource="/users/{}/personal_access_tokens".format(user_id), data=payload)
         return res.get('token')
 
-    def get_project_by_user_id(self, user_id):
+    def get_project_by_user_id(self, user_id, page=1):
         # https://docs.gitlab.com/ee/api/projects.html#list-user-projects
+        get_params = {
+            "page": page,
+            "per_page": 100
+        }
 
-        return self.send_api(method="get", resource="/users/{}/projects".format(user_id))
+        return self.send_api(method="get", resource="/users/{}/projects".format(user_id), get_params=get_params, as_row=True)
 
     def get_project_by_name(self, project_name):
         """
@@ -183,15 +187,26 @@ class GitLabAgent:
         Returns:
             (json)http response body
         """
-        res = False
         user = self.get_user_self()
         if user:
-            project_list = self.get_project_by_user_id(user['id'])
-            for project in project_list:
-                if project['path'] == project_name:
-                    return project
+            is_get_all = False
+            next_page = 1
+            while is_get_all is False:
+                response = self.get_project_by_user_id(user['id'], next_page)
+                project_list = response.json()
+                for project in project_list:
+                    if project['path'] == project_name:
+                        is_get_all = True
+                        return project
 
-        return res
+                current_page = response.headers.get('X-Page')
+                total_pages = response.headers.get('X-Total-Pages')
+                if current_page == total_pages:
+                    is_get_all = True
+                else:
+                    next_page = response.headers.get('X-Next-Page')
+
+        return False
 
     def create_project(self, project_name):
         # https://docs.gitlab.com/ee/api/projects.html#create-project
