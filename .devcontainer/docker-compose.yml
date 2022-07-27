@@ -72,7 +72,13 @@ services:
   #   build:
   #     dockerfile: ./ita_root/ita_by_ansible_execute/Dockerfile
   #     context: ../.
+  #     args:
+  #       - HTTP_PROXY=${HTTP_PROXY}
+  #       - http_proxy=${HTTP_PROXY}
+  #       - HTTPS_PROXY=${HTTPS_PROXY}
+  #       - https_proxy=${HTTPS_PROXY}
   #   environment:
+  #     - EXECUTE_INTERVAL=10
   #     - PYTHONPATH=/exastro/
   #     - DEFAULT_LANGUAGE=en
   #     - DB_HOST=ita-mariadb
@@ -89,6 +95,11 @@ services:
   #   build:
   #     dockerfile: ./ita_root/ita_by_ansible_legacy_role_vars_listup/Dockerfile
   #     context: ../.
+  #     args:
+  #       - HTTP_PROXY=${HTTP_PROXY}
+  #       - http_proxy=${HTTP_PROXY}
+  #       - HTTPS_PROXY=${HTTPS_PROXY}
+  #       - https_proxy=${HTTPS_PROXY}
   #   environment:
   #     - PYTHONPATH=/exastro/
   #     - DEFAULT_LANGUAGE=en
@@ -106,6 +117,11 @@ services:
   #   build:
   #     dockerfile: ./ita_root/ita_by_ansible_towermaster_sync/Dockerfile
   #     context: ../.
+  #     args:
+  #       - HTTP_PROXY=${HTTP_PROXY}
+  #       - http_proxy=${HTTP_PROXY}
+  #       - HTTPS_PROXY=${HTTPS_PROXY}
+  #       - https_proxy=${HTTPS_PROXY}
   #   environment:
   #     - PYTHONPATH=/exastro/
   #     - DEFAULT_LANGUAGE=en
@@ -123,6 +139,11 @@ services:
   #   build:
   #     dockerfile: ./ita_root/ita_by_conductor_synchronize/Dockerfile
   #     context: ../.
+  #     args:
+  #       - HTTP_PROXY=${HTTP_PROXY}
+  #       - http_proxy=${HTTP_PROXY}
+  #       - HTTPS_PROXY=${HTTPS_PROXY}
+  #       - https_proxy=${HTTPS_PROXY}
   #   environment:
   #     - PYTHONPATH=/exastro/
   #     - DEFAULT_LANGUAGE=en
@@ -140,6 +161,11 @@ services:
   #   build:
   #     dockerfile: ./ita_root/ita_by_create_menu/Dockerfile
   #     context: ../.
+  #     args:
+  #       - HTTP_PROXY=${HTTP_PROXY}
+  #       - http_proxy=${HTTP_PROXY}
+  #       - HTTPS_PROXY=${HTTPS_PROXY}
+  #       - https_proxy=${HTTPS_PROXY}
   #   environment:
   #     - PYTHONPATH=/exastro/
   #     - DEFAULT_LANGUAGE=en

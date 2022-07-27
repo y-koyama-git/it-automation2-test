@@ -108,6 +108,12 @@ services:
   #     - ../.volumes/storage:/storage
   #   environment:
   #     - FLASK_ENV=development
+  #     # - HTTP_PROXY=${HTTP_PROXY}
+  #     # - http_proxy=${HTTP_PROXY}
+  #     # - HTTPS_PROXY=${HTTPS_PROXY}
+  #     # - https_proxy=${HTTPS_PROXY}
+  #     - NO_PROXY=localhost,127.0.0.1,ita-api-organization,ita-api-admin,ita-web-server
+  #     - no_proxy=localhost,127.0.0.1,ita-api-organization,ita-api-admin,ita-web-server
   #     - SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
   #     - SSL_CERT_DIR=/etc/ssl/certs
   #     - NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
@@ -134,6 +140,12 @@ services:
   #     - ../.volumes/storage:/storage
   #   environment:
   #     - FLASK_ENV=development
+  #     # - HTTP_PROXY=${HTTP_PROXY}
+  #     # - http_proxy=${HTTP_PROXY}
+  #     # - HTTPS_PROXY=${HTTPS_PROXY}
+  #     # - https_proxy=${HTTPS_PROXY}
+  #     - NO_PROXY=localhost,127.0.0.1,ita-api-organization,ita-api-admin,ita-web-server
+  #     - no_proxy=localhost,127.0.0.1,ita-api-organization,ita-api-admin,ita-web-server
   #     - SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
   #     - SSL_CERT_DIR=/etc/ssl/certs
   #     - NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
@@ -160,6 +172,12 @@ services:
   #     - ../.volumes/storage:/storage
   #   environment:
   #     - FLASK_ENV=development
+  #     # - HTTP_PROXY=${HTTP_PROXY}
+  #     # - http_proxy=${HTTP_PROXY}
+  #     # - HTTPS_PROXY=${HTTPS_PROXY}
+  #     # - https_proxy=${HTTPS_PROXY}
+  #     - NO_PROXY=localhost,127.0.0.1,ita-api-organization,ita-api-admin,ita-web-server
+  #     - no_proxy=localhost,127.0.0.1,ita-api-organization,ita-api-admin,ita-web-server
   #     - SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
   #     - SSL_CERT_DIR=/etc/ssl/certs
   #     - NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
@@ -186,6 +204,12 @@ services:
   #     - ../.volumes/storage:/storage
   #   environment:
   #     - FLASK_ENV=development
+  #     # - HTTP_PROXY=${HTTP_PROXY}
+  #     # - http_proxy=${HTTP_PROXY}
+  #     # - HTTPS_PROXY=${HTTPS_PROXY}
+  #     # - https_proxy=${HTTPS_PROXY}
+  #     - NO_PROXY=localhost,127.0.0.1,ita-api-organization,ita-api-admin,ita-web-server
+  #     - no_proxy=localhost,127.0.0.1,ita-api-organization,ita-api-admin,ita-web-server
   #     - SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
   #     - SSL_CERT_DIR=/etc/ssl/certs
   #     - NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
@@ -212,6 +236,12 @@ services:
   #     - ../.volumes/storage:/storage
   #   environment:
   #     - FLASK_ENV=development
+  #     # - HTTP_PROXY=${HTTP_PROXY}
+  #     # - http_proxy=${HTTP_PROXY}
+  #     # - HTTPS_PROXY=${HTTPS_PROXY}
+  #     # - https_proxy=${HTTPS_PROXY}
+  #     - NO_PROXY=localhost,127.0.0.1,ita-api-organization,ita-api-admin,ita-web-server
+  #     - no_proxy=localhost,127.0.0.1,ita-api-organization,ita-api-admin,ita-web-server
   #     - SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
   #     - SSL_CERT_DIR=/etc/ssl/certs
   #     - NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
