@@ -14,18 +14,21 @@
 # limitations under the License.
 #
 
+set -eu
+
 while true
 do
-    start_time=`date +%s`
-    echo "backyard_init start = "`date "+%Y-%m-%d %H:%M:%S"` >> /exastro/app.log
+    # start_time=`date +%s`
+    # echo "backyard_init start = "`date "+%Y-%m-%d %H:%M:%S"` >> /exastro/app.log
 
     cd /exastro
-    python3 backyard/backyard_init.py | tee -a /exastro/app.log
+    # python3 backyard/backyard_init.py | tee -a /exastro/app.log
+    python3 backyard/backyard_init.py
 
-    echo "backyard_init end = "`date "+%Y-%m-%d %H:%M:%S"` >> /exastro/app.log
-    end_time=`date +%s`
-    run_time=$((end_time - start_time))
-    echo "backyard_init execute-time = "$run_time >> /exastro/app.log
+    # echo "backyard_init end = "`date "+%Y-%m-%d %H:%M:%S"` >> /exastro/app.log
+    # end_time=`date +%s`
+    # run_time=$((end_time - start_time))
+    # echo "backyard_init execute-time = "$run_time >> /exastro/app.log
 
-    sleep 10
+    sleep $EXECUTE_INTERVAL
 done

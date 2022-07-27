@@ -101,6 +101,7 @@ services:
   #       - HTTPS_PROXY=${HTTPS_PROXY}
   #       - https_proxy=${HTTPS_PROXY}
   #   environment:
+  #     - EXECUTE_INTERVAL=10
   #     - PYTHONPATH=/exastro/
   #     - DEFAULT_LANGUAGE=en
   #     - DB_HOST=ita-mariadb
@@ -123,6 +124,7 @@ services:
   #       - HTTPS_PROXY=${HTTPS_PROXY}
   #       - https_proxy=${HTTPS_PROXY}
   #   environment:
+  #     - EXECUTE_INTERVAL=10
   #     - PYTHONPATH=/exastro/
   #     - DEFAULT_LANGUAGE=en
   #     - DB_HOST=ita-mariadb
@@ -145,6 +147,7 @@ services:
   #       - HTTPS_PROXY=${HTTPS_PROXY}
   #       - https_proxy=${HTTPS_PROXY}
   #   environment:
+  #     - EXECUTE_INTERVAL=10
   #     - PYTHONPATH=/exastro/
   #     - DEFAULT_LANGUAGE=en
   #     - DB_HOST=ita-mariadb
@@ -167,6 +170,7 @@ services:
   #       - HTTPS_PROXY=${HTTPS_PROXY}
   #       - https_proxy=${HTTPS_PROXY}
   #   environment:
+  #     - EXECUTE_INTERVAL=10
   #     - PYTHONPATH=/exastro/
   #     - DEFAULT_LANGUAGE=en
   #     - DB_HOST=ita-mariadb
