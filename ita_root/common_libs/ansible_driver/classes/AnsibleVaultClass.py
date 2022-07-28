@@ -90,7 +90,6 @@ class AnsibleVault:
         # CR+LFをLFに置換
         value = value.replace("\r\n", "\n")
 
-
         # ansibel-vault パスワードファイル生成
         vault_value_file = "{}/ansible_vault_value_{}".format(get_AnsibleDriverTmpPath(), os.getpid())
         
@@ -158,3 +157,21 @@ class AnsibleVault:
             result = False
         return result, mt_encode_value
 
+
+    def setValutPasswdIndento(val, indento):
+        """
+          ansible-vaulで暗号化された文字列に所定のインデントを付加
+          Arguments:
+            val: 暗号化された文字列
+            indento: 所定のインデント文字列
+          Returns:
+            暗号化された文字列に所定のインデントを付加した文字列
+        """
+        edit_val = ""
+        array_list = val.split("\n")
+        for line in array_list:
+            if edit_val == "":
+                edit_val = line
+            else:
+                edit_val += "\n" + indento + line
+        return edit_val
