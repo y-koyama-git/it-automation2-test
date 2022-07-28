@@ -1927,7 +1927,7 @@ paths:
       tags:
         - Conductor Controll
       description: Conductor作業の予約取り消し
-      operationId: postConductorCansel
+      operationId: patchConductorCansel
       parameters:
         - name: organization_id
           in: path
@@ -1980,7 +1980,7 @@ paths:
       tags:
         - Conductor Controll
       description: Conductor作業の緊急停止
-      operationId: postConductorScram
+      operationId: patchConductorScram
       parameters:
         - name: organization_id
           in: path
@@ -2033,7 +2033,7 @@ paths:
       tags:
         - Conductor Controll
       description: Conductor作業の一時停止解除
-      operationId: postConductorRelsAse
+      operationId: patchConductorRelese
       parameters:
         - name: organization_id
           in: path
@@ -2072,6 +2072,114 @@ paths:
                     example: 000-00000
                   data:
                     type: boolean
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+  
+  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/{conductor_instance_id}/input_data/:
+    get:
+      tags:
+        - Conductor Controll
+      description: Conductor作業の投入データ
+      operationId: getConductorInputData
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: conductor_instance_id
+          in: path
+          description: Conductor Instance ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: string
+                    example: "All movement input data zip base64 string"
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+  
+  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/{conductor_instance_id}/result_data/:
+    get:
+      tags:
+        - Conductor Controll
+      description: Conductor作業の結果データ
+      operationId: getConductorResultData
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: conductor_instance_id
+          in: path
+          description: Conductor Instance ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: string
+                    example: "All movement result data zip base64 string"
                   message:
                     type: string
         '401':

@@ -65,10 +65,61 @@ def get_conductor_info(organization_id, workspace_id, conductor_instance_id):  #
     return 'do some magic!'
 
 
+def get_conductor_input_data(organization_id, workspace_id, conductor_instance_id):  # noqa: E501
+    """get_conductor_input_data
+
+    Conductor作業の投入データ # noqa: E501
+
+    :param organization_id: OrganizationID
+    :type organization_id: str
+    :param workspace_id: WorkspaceID
+    :type workspace_id: str
+    :param conductor_instance_id: Conductor Instance ID
+    :type conductor_instance_id: str
+
+    :rtype: InlineResponse20013
+    """
+    return 'do some magic!'
+
+
 def get_conductor_instance_data(organization_id, workspace_id, conductor_instance_id):  # noqa: E501
     """get_conductor_instance_data
 
     Conductor作業の情報取得 # noqa: E501
+
+    :param organization_id: OrganizationID
+    :type organization_id: str
+    :param workspace_id: WorkspaceID
+    :type workspace_id: str
+    :param conductor_instance_id: Conductor Instance ID
+    :type conductor_instance_id: str
+
+    :rtype: InlineResponse20011
+    """
+    return 'do some magic!'
+
+
+def get_conductor_result_data(organization_id, workspace_id, conductor_instance_id):  # noqa: E501
+    """get_conductor_result_data
+
+    Conductor作業の結果データ # noqa: E501
+
+    :param organization_id: OrganizationID
+    :type organization_id: str
+    :param workspace_id: WorkspaceID
+    :type workspace_id: str
+    :param conductor_instance_id: Conductor Instance ID
+    :type conductor_instance_id: str
+
+    :rtype: InlineResponse20014
+    """
+    return 'do some magic!'
+
+
+def patch_conductor_cansel(organization_id, workspace_id, conductor_instance_id):  # noqa: E501
+    """patch_conductor_cansel
+
+    Conductor作業の予約取り消し # noqa: E501
 
     :param organization_id: OrganizationID
     :type organization_id: str
@@ -103,10 +154,29 @@ def patch_conductor_data(organization_id, workspace_id, conductor_class_id, body
     return 'do some magic!'
 
 
-def post_conductor_cansel(organization_id, workspace_id, conductor_instance_id):  # noqa: E501
-    """post_conductor_cansel
+def patch_conductor_relese(organization_id, workspace_id, conductor_instance_id, node_instance_id):  # noqa: E501
+    """patch_conductor_relese
 
-    Conductor作業の予約取り消し # noqa: E501
+    Conductor作業の一時停止解除 # noqa: E501
+
+    :param organization_id: OrganizationID
+    :type organization_id: str
+    :param workspace_id: WorkspaceID
+    :type workspace_id: str
+    :param conductor_instance_id: Conductor Instance ID
+    :type conductor_instance_id: str
+    :param node_instance_id: Node Instance ID
+    :type node_instance_id: str
+
+    :rtype: InlineResponse20011
+    """
+    return 'do some magic!'
+
+
+def patch_conductor_scram(organization_id, workspace_id, conductor_instance_id):  # noqa: E501
+    """patch_conductor_scram
+
+    Conductor作業の緊急停止 # noqa: E501
 
     :param organization_id: OrganizationID
     :type organization_id: str
@@ -154,41 +224,5 @@ def post_conductor_excecute(organization_id, workspace_id, body=None):  # noqa: 
     :rtype: InlineResponse20011
     """
     if connexion.request.is_json:
-        body = object.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
-
-
-def post_conductor_rels_ase(organization_id, workspace_id, conductor_instance_id, node_instance_id):  # noqa: E501
-    """post_conductor_rels_ase
-
-    Conductor作業の一時停止解除 # noqa: E501
-
-    :param organization_id: OrganizationID
-    :type organization_id: str
-    :param workspace_id: WorkspaceID
-    :type workspace_id: str
-    :param conductor_instance_id: Conductor Instance ID
-    :type conductor_instance_id: str
-    :param node_instance_id: Node Instance ID
-    :type node_instance_id: str
-
-    :rtype: InlineResponse20011
-    """
-    return 'do some magic!'
-
-
-def post_conductor_scram(organization_id, workspace_id, conductor_instance_id):  # noqa: E501
-    """post_conductor_scram
-
-    Conductor作業の緊急停止 # noqa: E501
-
-    :param organization_id: OrganizationID
-    :type organization_id: str
-    :param workspace_id: WorkspaceID
-    :type workspace_id: str
-    :param conductor_instance_id: Conductor Instance ID
-    :type conductor_instance_id: str
-
-    :rtype: InlineResponse20011
-    """
+        body = ConductorExecuteBody.from_dict(connexion.request.get_json())  # noqa: E501
     return 'do some magic!'

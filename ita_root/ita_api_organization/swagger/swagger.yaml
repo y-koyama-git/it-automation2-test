@@ -1731,7 +1731,7 @@ paths:
       tags:
       - Conductor Controll
       description: Conductor作業の予約取り消し
-      operationId: post_conductor_cansel
+      operationId: patch_conductor_cansel
       parameters:
       - name: organization_id
         in: path
@@ -1782,7 +1782,7 @@ paths:
       tags:
       - Conductor Controll
       description: Conductor作業の緊急停止
-      operationId: post_conductor_scram
+      operationId: patch_conductor_scram
       parameters:
       - name: organization_id
         in: path
@@ -1833,7 +1833,7 @@ paths:
       tags:
       - Conductor Controll
       description: Conductor作業の一時停止解除
-      operationId: post_conductor_rels_ase
+      operationId: patch_conductor_relese
       parameters:
       - name: organization_id
         in: path
@@ -1874,6 +1874,108 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/inline_response_200_11'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+      x-openapi-router-controller: controllers.conductor_controll_controller
+  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/{conductor_instance_id}/input_data/:
+    get:
+      tags:
+      - Conductor Controll
+      description: Conductor作業の投入データ
+      operationId: get_conductor_input_data
+      parameters:
+      - name: organization_id
+        in: path
+        description: OrganizationID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: path
+        description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: conductor_instance_id
+        in: path
+        description: Conductor Instance ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_13'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+      x-openapi-router-controller: controllers.conductor_controll_controller
+  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/{conductor_instance_id}/result_data/:
+    get:
+      tags:
+      - Conductor Controll
+      description: Conductor作業の結果データ
+      operationId: get_conductor_result_data
+      parameters:
+      - name: organization_id
+        in: path
+        description: OrganizationID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: path
+        description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: conductor_instance_id
+        in: path
+        description: Conductor Instance ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_14'
         "401":
           description: Unauthorized
           content:
@@ -2754,6 +2856,36 @@ components:
         conductor_data:
           type: object
       description: 作業実行するConductorの構成情報
+    inline_response_200_13:
+      type: object
+      properties:
+        result:
+          type: string
+          example: 000-00000
+        data:
+          type: string
+          example: All movement input data zip base64 string
+        message:
+          type: string
+      example:
+        result: 000-00000
+        data: All movement input data zip base64 string
+        message: message
+    inline_response_200_14:
+      type: object
+      properties:
+        result:
+          type: string
+          example: 000-00000
+        data:
+          type: string
+          example: All movement result data zip base64 string
+        message:
+          type: string
+      example:
+        result: 000-00000
+        data: All movement result data zip base64 string
+        message: message
     FILTER_REQUEST_PARAMETERS_RANGE:
       type: object
       properties:
