@@ -271,6 +271,8 @@ CREATE TABLE T_COMN_COLUMN_GROUP
     PA_COL_GROUP_ID                 VARCHAR(40),                                -- 親カラムグループ
     COL_GROUP_NAME_JA               VARCHAR(255),                               -- カラムグループ名(ja)
     COL_GROUP_NAME_EN               VARCHAR(255),                               -- カラムグループ名(en)
+    FULL_COL_GROUP_NAME_JA          TEXT,                                       -- フルカラムグループ名(ja)
+    FULL_COL_GROUP_NAME_EN          TEXT,                                       -- フルカラムグループ名(en)
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1),                                 -- 廃止フラグ
     LAST_UPDATE_TIMESTAMP           DATETIME(6),                                -- 最終更新日時
@@ -287,6 +289,8 @@ CREATE TABLE T_COMN_COLUMN_GROUP_JNL
     PA_COL_GROUP_ID                 VARCHAR(40),                                -- 親カラムグループ
     COL_GROUP_NAME_JA               VARCHAR(255),                               -- カラムグループ名(ja)
     COL_GROUP_NAME_EN               VARCHAR(255),                               -- カラムグループ名(en)
+    FULL_COL_GROUP_NAME_JA          TEXT,                                       -- フルカラムグループ名(ja)
+    FULL_COL_GROUP_NAME_EN          TEXT,                                       -- フルカラムグループ名(en)
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1),                                 -- 廃止フラグ
     LAST_UPDATE_TIMESTAMP           DATETIME(6),                                -- 最終更新日時
