@@ -1111,7 +1111,7 @@ paths:
         content:
           application/json:
             schema:
-              description: 作成対象のメニュー定義一覧IDを指定（複数指定可）
+              description: 作成対象のメニュー定義一覧IDを指定(複数指定可)
       responses:
         "200":
           description: Success
@@ -1223,7 +1223,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.menu_create_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/menu/{menu_create_id}:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/{menu_create}/:
     get:
       tags:
       - Menu Create
@@ -1246,9 +1246,9 @@ paths:
         explode: false
         schema:
           type: string
-      - name: menu_create_id
+      - name: menu_create
         in: path
-        description: Menu create ID
+        description: 「メニュー定義一覧」の「メニュー名(REST)」
         required: true
         style: simple
         explode: false
@@ -1274,7 +1274,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.menu_create_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/pulldown/initial/{column_name}:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/pulldown/initial/{menu}/{column}/:
     get:
       tags:
       - Menu Create
@@ -1297,9 +1297,17 @@ paths:
         explode: false
         schema:
           type: string
-      - name: column_name
+      - name: menu
         in: path
-        description: 「プルダウン選択」項目のカラム名(rest用)
+        description: 「プルダウン選択」で指定した対象のメニュー名(rest用)
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: column
+        in: path
+        description: 「プルダウン選択」で指定した対象のカラム名(rest用)
         required: true
         style: simple
         explode: false
@@ -1325,7 +1333,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.menu_create_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/reference/item/{column_name}:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/reference/item/{menu}/{column}/:
     get:
       tags:
       - Menu Create
@@ -1348,9 +1356,17 @@ paths:
         explode: false
         schema:
           type: string
-      - name: column_name
+      - name: menu
         in: path
-        description: 「プルダウン選択」項目のカラム名(rest用)
+        description: 「プルダウン選択」で指定した対象のメニュー名(rest用)
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: column
+        in: path
+        description: 「プルダウン選択」で指定した対象のカラム名(rest用)
         required: true
         style: simple
         explode: false
