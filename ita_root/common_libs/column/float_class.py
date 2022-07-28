@@ -13,7 +13,7 @@
 #
 import re
 
-from column_class import Column
+from .column_class import Column
 
 
 class FloatColumn(Column):

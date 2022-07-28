@@ -15,7 +15,7 @@ import os
 import base64
 from flask import g
 
-from file_upload_class import FileUploadColumn
+from .file_upload_class import FileUploadColumn
 from common_libs.common import *  # noqa: F403
 
 

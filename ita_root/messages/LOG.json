@@ -23,6 +23,7 @@
     "200-00215": "{} is less than or equal to the minimum value (minimum value: {}, input value: {})",
     "200-00216": "{} is greater than or equal to the maximum value (maximum value: {}, input value: {})",
     "200-00217": "{} is not an integer value.( input value: {})",
+    "200-00218": "{}の入力値が参照先({})にありません。(入力値:{})",
     "200-99999": "{}",
     "400-00001": "Request-Header({}) is Invalid",
     "400-00002": "Request-Body({}) is Invalid",
@@ -37,5 +38,7 @@
     "999-99999": "{}",
     "BKY-00001": "[sample] Common backyard error",
     "BKY-10001": "[sample] Ansible backyard error",
-    "BKY-20001": "[sample] Create Menu backyard error"
+    "BKY-20001": "[sample] Create Menu backyard error",
+    "MSG-00001": "Failed to exchange ID. ({})"
+
 }

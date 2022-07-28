@@ -13,7 +13,7 @@
 #
 from flask import g
 
-from multi_text_class import MultiTextColumn
+from .multi_text_class import MultiTextColumn
 
 
 class LastUpdateUserColumn(MultiTextColumn):

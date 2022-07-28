@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from multi_text_class import MultiTextColumn
+from .multi_text_class import MultiTextColumn
 from common_libs.common import *  # noqa: F403
 
 
@@ -68,7 +68,7 @@ class SensitiveMultiTextColumn(MultiTextColumn):
         msg = ''
 
         if val is not None:
-            if len(val) > 0:
+            if len(val) >= 0:
                 retBool, msg, val = super().convert_value_input(val)
                 val = ky_encrypt(val)  # noqa: F405
             else:

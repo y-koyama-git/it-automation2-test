@@ -14,7 +14,7 @@
 
 import re
 
-from text_column_class import TextColumn
+from .text_column_class import TextColumn
 
 """
 カラムクラス個別処理(MultiText)
@@ -61,7 +61,7 @@ class MultiTextColumn(TextColumn):
         
         # CrLfがあったらLfへ統一する
         if val is not None:
-            if len(val) > 0:
+            if len(val) >= 0:
                 val = re.sub("\r\n|\r", "\n", val)
             else:
                 retBool = False

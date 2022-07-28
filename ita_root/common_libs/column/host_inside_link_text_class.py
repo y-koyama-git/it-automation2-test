@@ -12,7 +12,7 @@
 # limitations under the License.
 #
 
-from single_text_class import SingleTextColumn
+from .single_text_class import SingleTextColumn
 
 
 class HostInsideLinkTextColumn(SingleTextColumn):

@@ -13,7 +13,7 @@
 #
 
 from datetime import datetime
-from date_column_class import DateColumn
+from .date_column_class import DateColumn
 
 
 class DateTimeColumn(DateColumn):
