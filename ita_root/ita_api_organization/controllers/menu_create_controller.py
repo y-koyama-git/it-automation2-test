@@ -28,7 +28,7 @@ def define_and_execute_menu_create(organization_id, workspace_id, body=None):  #
     :param body: 
     :type body: dict | bytes
 
-    :rtype: InlineResponse2009
+    :rtype: InlineResponse20011
     """
     if connexion.request.is_json:
         body = Object.from_dict(connexion.request.get_json())  # noqa: E501
@@ -47,14 +47,14 @@ def execute_menu_create(organization_id, workspace_id, body=None):  # noqa: E501
     :param body: 
     :type body: dict | bytes
 
-    :rtype: InlineResponse2009
+    :rtype: InlineResponse20011
     """
     if connexion.request.is_json:
         body = Object.from_dict(connexion.request.get_json())  # noqa: E501
     return 'do some magic!'
 
 
-def get_exist_menu_create_data(organization_id, workspace_id, menu_create_id):  # noqa: E501
+def get_exist_menu_create_data(organization_id, workspace_id, menu_create):  # noqa: E501
     """get_exist_menu_create_data
 
     メニュー定義・作成(既存)用の情報取得 # noqa: E501
@@ -63,10 +63,10 @@ def get_exist_menu_create_data(organization_id, workspace_id, menu_create_id):  
     :type organization_id: str
     :param workspace_id: WorkspaceID
     :type workspace_id: str
-    :param menu_create_id: Menu create ID
-    :type menu_create_id: str
+    :param menu_create: 「メニュー定義一覧」の「メニュー名(REST)」
+    :type menu_create: str
 
-    :rtype: InlineResponse2009
+    :rtype: InlineResponse20011
     """
     return 'do some magic!'
 
@@ -81,12 +81,12 @@ def get_menu_create_data(organization_id, workspace_id):  # noqa: E501
     :param workspace_id: WorkspaceID
     :type workspace_id: str
 
-    :rtype: InlineResponse2009
+    :rtype: InlineResponse20011
     """
     return 'do some magic!'
 
 
-def get_pulldown_initial(organization_id, workspace_id, column_name):  # noqa: E501
+def get_pulldown_initial(organization_id, workspace_id, menu, column):  # noqa: E501
     """get_pulldown_initial
 
     「プルダウン選択」項目で選択した対象の「初期値」候補一覧取得 # noqa: E501
@@ -95,15 +95,17 @@ def get_pulldown_initial(organization_id, workspace_id, column_name):  # noqa: E
     :type organization_id: str
     :param workspace_id: WorkspaceID
     :type workspace_id: str
-    :param column_name: 「プルダウン選択」項目のカラム名(rest用)
-    :type column_name: str
+    :param menu: 「プルダウン選択」で指定した対象のメニュー名(rest用)
+    :type menu: str
+    :param column: 「プルダウン選択」で指定した対象のカラム名(rest用)
+    :type column: str
 
-    :rtype: InlineResponse2009
+    :rtype: InlineResponse20011
     """
     return 'do some magic!'
 
 
-def get_reference_item(organization_id, workspace_id, column_name):  # noqa: E501
+def get_reference_item(organization_id, workspace_id, menu, column):  # noqa: E501
     """get_reference_item
 
     「プルダウン選択」項目で選択した対象の「参照項目」候補一覧取得 # noqa: E501
@@ -112,9 +114,11 @@ def get_reference_item(organization_id, workspace_id, column_name):  # noqa: E50
     :type organization_id: str
     :param workspace_id: WorkspaceID
     :type workspace_id: str
-    :param column_name: 「プルダウン選択」項目のカラム名(rest用)
-    :type column_name: str
+    :param menu: 「プルダウン選択」で指定した対象のメニュー名(rest用)
+    :type menu: str
+    :param column: 「プルダウン選択」で指定した対象のカラム名(rest用)
+    :type column: str
 
-    :rtype: InlineResponse2009
+    :rtype: InlineResponse20011
     """
     return 'do some magic!'
