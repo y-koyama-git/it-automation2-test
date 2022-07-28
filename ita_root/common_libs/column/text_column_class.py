@@ -16,9 +16,8 @@ import re
 
 import os
 import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
 
-from column_class import Column
+from .column_class import Column
 
 """
 カラムクラス個別処理(TextColumn)

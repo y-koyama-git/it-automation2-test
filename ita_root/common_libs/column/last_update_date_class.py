@@ -13,7 +13,7 @@
 #
 from datetime import datetime
 
-from date_time_class import DateTimeColumn
+from .date_time_class import DateTimeColumn
 
 
 class LastUpdateDateColumn(DateTimeColumn):

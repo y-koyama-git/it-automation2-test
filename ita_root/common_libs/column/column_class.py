@@ -15,7 +15,7 @@
 import json
 from flask import g
 import importlib
-# from common_libs.validate import *
+
 
 """
 カラムクラス共通処理(カラム)
@@ -650,7 +650,7 @@ class Column():
                 status_code = '200-00213'
                 msg_args = [self.get_rest_key_name()]
                 msg = g.appmsg.get_api_message(status_code, msg_args)
-            elif len(val) == 0:
+            elif len(str(val)) == 0:
                 retBool = False
                 status_code = '200-00213'
                 msg_args = [self.get_rest_key_name()]

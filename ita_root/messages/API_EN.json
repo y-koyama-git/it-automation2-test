@@ -23,6 +23,7 @@
     "200-00215": "{} is less than or equal to the minimum value (minimum value: {}, input value: {})",
     "200-00216": "{} is greater than or equal to the maximum value (maximum value: {}, input value: {})",
     "200-00217": "{} is not an integer value.( input value: {})",
+    "200-00218": "{}の入力値が参照先({})にありません。(入力値:{})",
     "200-99999": "{}",
     "400-00001": "Request-Header({}) is Invalid",
     "400-00002": "Request-Body({}) is Invalid",
@@ -34,5 +35,6 @@
     "999-00002": "System Error",
     "999-00003": "System Error",
     "999-00004": "System Error",
-    "999-99999": "System Error"
+    "999-99999": "System Error",
+    "MSG-00001": "Failed to exchange ID. ({})"
 }

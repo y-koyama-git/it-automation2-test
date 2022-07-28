@@ -12,7 +12,7 @@
 # limitations under the License.
 #
 
-from text_column_class import TextColumn
+from .text_column_class import TextColumn
 
 
 class LinkIDColumn(TextColumn):

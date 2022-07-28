@@ -21,6 +21,7 @@ import textwrap
 import random
 import json
 import importlib
+import traceback
 
 from flask import g
 from common_libs.column import *
@@ -854,15 +855,9 @@ class loadTable():
                 result_list = tmp_result
 
         except Exception as e:
-            print(e)
-            if len(e.args) == 2:
-                status_code = '{}'.format(e.args[0])
-                msg_args = '{}'.format(e.args[1])
-                msg = g.appmsg.get_api_message(status_code, [msg_args])
-            else:
-                status_code = '999-99999'
-                msg_args = '{}'.format(*e.args)
-                msg = g.appmsg.get_api_message(status_code, [msg_args])
+            status_code = '999-99999'
+            type_, value, traceback_ = sys.exc_info()
+            msg = ['{}'.format(traceback.format_exception(type_, value, traceback_))]
         finally:
             # print(result_list)
             result = result_list
@@ -948,15 +943,10 @@ class loadTable():
         except Exception as e:
             # ロールバック トランザクション終了
             self.objdbca.db_transaction_end(False)
-            print(e)
-            if len(e.args) == 2:
-                status_code = '{}'.format(e.args[0])
-                msg_args = '{}'.format(e.args[1])
-                msg = g.appmsg.get_api_message(status_code, [msg_args])
-            else:
-                status_code = '999-99999'
-                msg_args = '{}'.format(*e.args)
-                msg = g.appmsg.get_api_message(status_code, [msg_args])
+            status_code = '999-99999'
+            type_, value, traceback_ = sys.exc_info()
+            msg = ['{}'.format(traceback.format_exception(type_, value, traceback_))]
+            
         finally:
             result = tmp_data
         return status_code, result, msg,
@@ -1052,15 +1042,9 @@ class loadTable():
         except Exception as e:
             # ロールバック トランザクション終了
             self.objdbca.db_transaction_end(False)
-            print(e)
-            if len(e.args) == 2:
-                status_code = '{}'.format(e.args[0])
-                msg_args = '{}'.format(e.args[1])
-                msg = g.appmsg.get_api_message(status_code, [msg_args])
-            else:
-                status_code = '999-99999'
-                msg_args = '{}'.format(*e.args)
-                msg = g.appmsg.get_api_message(status_code, [msg_args])
+            status_code = '999-99999'
+            type_, value, traceback_ = sys.exc_info()
+            msg = ['{}'.format(traceback.format_exception(type_, value, traceback_))]
         finally:
             result = tmp_data
         return status_code, result, msg,
@@ -1392,9 +1376,18 @@ class loadTable():
                 self.set_message(dict_msg, MSG_LEVEL_ERROR)
 
         except Exception as e:
-            print(e)
             retBool = False
-            result = e
+            status_code = '999-99999'
+            type_, value, traceback_ = sys.exc_info()
+            msg_args = ['{}'.format(traceback.format_exception(type_, value, traceback_))]
+            msg = g.appmsg.get_api_message(status_code, msg_args)
+            dict_msg = {
+                'status_code': status_code,
+                'msg_args': msg_args,
+                'msg': msg,
+            }
+            if self.get_message_count(MSG_CODE) == 0:
+                self.set_message(dict_msg, MSG_LEVEL_ERROR, status_code)
 
         return retBool, result
 

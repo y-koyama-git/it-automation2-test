@@ -12,7 +12,7 @@
 # limitations under the License.
 #
 
-from multi_text_class import MultiTextColumn
+from .multi_text_class import MultiTextColumn
 
 
 class NoteColumn(MultiTextColumn):

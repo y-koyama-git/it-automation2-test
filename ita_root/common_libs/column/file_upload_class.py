@@ -15,7 +15,7 @@ import re
 import os
 import base64
 from flask import g
-from column_class import Column
+from .column_class import Column
 from common_libs.common import *  # noqa: F403
 
 

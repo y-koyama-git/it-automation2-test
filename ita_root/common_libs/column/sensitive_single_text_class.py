@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from single_text_class import SingleTextColumn
+from .single_text_class import SingleTextColumn
 from common_libs.common import *  # noqa: F403
 
 
