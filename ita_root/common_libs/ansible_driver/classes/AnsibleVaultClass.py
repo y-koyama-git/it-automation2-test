@@ -58,7 +58,7 @@ class AnsibleVault:
         os.remove(self.VaultPasswordFilePath)
 
 
-    def Vault(self, ansible_path, exec_user, password_file, value, mt_encode_value, indento, engine_virtualenv_path, passwdFileDel=True):
+    def Vault(self, ansible_path, exec_user, password_file, value, indento, engine_virtualenv_path, passwdFileDel=True):
         """
           ansible-vaultで指定文字列を暗号化
           Arguments:
@@ -66,12 +66,11 @@ class AnsibleVault:
             exec_user:              実行ユーザー(非コンテナ環境用)
             password_file:          ansible-vaultパスワードファイルパス
             value:                  暗号化したい文字列
-            mt_encode_value:        暗号化された文字列
             indento:                暗号化された文字列に付与するインデント
             engine_virtualenv_path: 仮想環境パス(非コンテナ環境用)
             passwdFileDel:          ansible-vaultパスワードファイルの削除有無
           Returns:
-            True/False, mt_encode_value
+            True/False, mt_encode_value: 暗号化された文字列
         """
         result = True
         mt_encode_value = ""
@@ -156,7 +155,6 @@ class AnsibleVault:
         if ret.returncode != 0:
             result = False
         return result, mt_encode_value
-
 
     def setValutPasswdIndento(val, indento):
         """
