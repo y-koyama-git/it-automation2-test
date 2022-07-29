@@ -1243,7 +1243,7 @@ paths:
         content:
           application/json:
             schema:
-              description: 作成対象のメニュー定義一覧IDを指定（複数指定可）
+              description: 作成対象のメニュー定義一覧IDを指定(複数指定可)
       responses:
         '200':
           description: Success
@@ -1371,7 +1371,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
 
-  /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/menu/{menu_create_id}:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/{menu_create}/:
     get:
       tags:
         - Menu Create
@@ -1390,9 +1390,9 @@ paths:
           required: true
           schema:
             type: string
-        - name: menu_create_id
+        - name: menu_create
           in: path
-          description: Menu create ID
+          description: 「メニュー定義一覧」の「メニュー名(REST)」
           required: true
           schema:
             type: string
@@ -1424,7 +1424,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
 
-  /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/pulldown/initial/{column_name}:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/pulldown/initial/{menu}/{column}/:
     get:
       tags:
         - Menu Create
@@ -1443,9 +1443,15 @@ paths:
           required: true
           schema:
             type: string
-        - name: column_name
+        - name: menu
           in: path
-          description: 「プルダウン選択」項目のカラム名(rest用)
+          description: 「プルダウン選択」で指定した対象のメニュー名(rest用)
+          required: true
+          schema:
+            type: string
+        - name: column
+          in: path
+          description: 「プルダウン選択」で指定した対象のカラム名(rest用)
           required: true
           schema:
             type: string
@@ -1477,7 +1483,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
 
-  /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/reference/item/{column_name}:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/reference/item/{menu}/{column}/:
     get:
       tags:
         - Menu Create
@@ -1496,9 +1502,15 @@ paths:
           required: true
           schema:
             type: string
-        - name: column_name
+        - name: menu
           in: path
-          description: 「プルダウン選択」項目のカラム名(rest用)
+          description: 「プルダウン選択」で指定した対象のメニュー名(rest用)
+          required: true
+          schema:
+            type: string
+        - name: column
+          in: path
+          description: 「プルダウン選択」で指定した対象のカラム名(rest用)
           required: true
           schema:
             type: string
@@ -1906,7 +1918,12 @@ paths:
                     type: string
                     example: 000-00000
                   data:
-                    type: boolean
+                    type: object
+                    properties:
+                      conductor:
+                        $ref: '#/components/schemas/CONDUCTOR_RESULT'
+                      node:
+                        $ref: '#/components/schemas/NODE_RESULT'
                   message:
                     type: string
         '401':
@@ -2420,6 +2437,7 @@ components:
             rest_key_name:
               type: string
               example: base64 encode file
+
     MAINTENANCE_PARAMETER_P:
       type: object
       properties:
@@ -2546,3 +2564,89 @@ components:
           example: 
             "conductor_id1" : "conductor_name1"
             "conductor_id2" : "conductor_name2"
+
+    CONDUCTOR_RESULT:
+      type: object
+      properties:
+        conductor_instance_id:
+          type: string
+          example: ConductorインスタンスID
+        conductor_name:
+          type: string
+          example: Conductor名
+        status_id:
+          type: string
+          example: ステータスID
+        execution_user:
+          type: string
+          example: 作業実行ユーザー
+        abort_execute_flag:
+          type: string
+          example: 緊急停止フラグ
+        operation_id:
+          type: string
+          example: オペレーションID
+        operation_name:
+          type: string
+          example: オペレーション名
+        time_book:
+          type: string
+          example: 予約日時
+        time_start:
+          type: string
+          example: 開始日時
+        time_end:
+          type: string
+          example: 終了日時
+        execution_log:
+          type: string
+          example: 実行ログ
+        remarks:
+          type: string
+          example: 備考
+
+    NODE_RESULT:
+      type: object
+      properties:
+        node_name:
+          type: object
+          properties:
+            node_instance_id:
+              type: string
+              example: NodeインスタンスID
+            node_name:
+              type: string
+              example: Node名
+            node_type:
+              type: string
+              example: Node種別
+            status_id:
+              type: string
+              example: ステータスID
+            status_file:
+              type: string
+              example: ステータスファイル
+            skip:
+              type: string
+              example: スキップ
+            remarks:
+              type: string
+              example: 備考
+            time_start:
+              type: string
+              example: 開始日時
+            time_end:
+              type: string
+              example: 終了日時
+            operation_id:
+              type: string
+              example: オペレーションID
+            operation_name:
+              type: string
+              example: オペレーション名
+            jump:
+              type: object
+              example: {
+                "menu_id": メニューID,
+                "execution_id": 作業ID
+              }

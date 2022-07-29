@@ -925,7 +925,7 @@ class loadTable():
                         if len(msg) == 0:
                             msg = tmp_msg
                         else:
-                            msg = msg + '\n' + tmp_msg
+                            msg = msg + '\n' + '{}'.format(tmp_msg)
                     elif tmp_status_code is not None:
                         if len(messagelist) == 1:
                             tmp_status_code = messagelist[0].get('status_code')
@@ -1024,7 +1024,7 @@ class loadTable():
                         if len(msg) == 0:
                             msg = tmp_msg
                         else:
-                            msg = msg + '\n' + tmp_msg
+                            msg = msg + '\n' + '{}'.format(tmp_msg)
                     elif tmp_status_code is not None:
                         if len(messagelist) == 1:
                             tmp_status_code = messagelist[0].get('status_code')
@@ -1684,10 +1684,38 @@ class loadTable():
                 current_parameter:現状の最終更新日時
                 lastupdatetime_parameter:パラメータ内の最終更新日時
         """
-
-        lastupdatetime_current = current_parameter.get('last_update_date_time')
-        lastupdatetime_parameter = entry_parameter.get('last_update_date_time')
-        if lastupdatetime_parameter is None:
+        try:
+            lastupdatetime_current = current_parameter.get('last_update_date_time')
+            lastupdatetime_parameter = entry_parameter.get('last_update_date_time')
+            if lastupdatetime_parameter is None:
+                status_code = '200-00211'
+                msg_args = [lastupdatetime_parameter]
+                msg = g.appmsg.get_api_message(status_code, msg_args)
+                dict_msg = {
+                    'status_code': status_code,
+                    'msg_args': msg_args,
+                    'msg': msg,
+                }
+                self.set_message(dict_msg, MSG_LEVEL_ERROR)
+            else:
+                lastupdatetime_current = lastupdatetime_current.replace('-', '/')
+                lastupdatetime_parameter = lastupdatetime_parameter.replace('-', '/')
+                lastupdatetime_current = datetime.datetime.strptime(lastupdatetime_current, '%Y/%m/%d %H:%M:%S.%f')
+                lastupdatetime_parameter = datetime.datetime.strptime(lastupdatetime_parameter, '%Y/%m/%d %H:%M:%S.%f')
+                
+                # 更新系の追い越し判定
+                if lastupdatetime_current != lastupdatetime_parameter:
+                    # if (lastupdatetime_current < lastupdatetime_parameter) is False:
+                    status_code = '200-00203'
+                    msg_args = [target_uuid]
+                    msg = g.appmsg.get_api_message(status_code, msg_args)
+                    dict_msg = {
+                        'status_code': status_code,
+                        'msg_args': msg_args,
+                        'msg': msg,
+                    }
+                    self.set_message(dict_msg, MSG_LEVEL_ERROR)
+        except ValueError as msg_args:
             status_code = '200-00211'
             msg_args = [lastupdatetime_parameter]
             msg = g.appmsg.get_api_message(status_code, msg_args)
@@ -1697,24 +1725,6 @@ class loadTable():
                 'msg': msg,
             }
             self.set_message(dict_msg, MSG_LEVEL_ERROR)
-        else:
-            lastupdatetime_current = lastupdatetime_current.replace('-', '/')
-            lastupdatetime_parameter = lastupdatetime_parameter.replace('-', '/')
-            lastupdatetime_current = datetime.datetime.strptime(lastupdatetime_current, '%Y/%m/%d %H:%M:%S.%f')
-            lastupdatetime_parameter = datetime.datetime.strptime(lastupdatetime_parameter, '%Y/%m/%d %H:%M:%S.%f')
-            
-            # 更新系の追い越し判定
-            if lastupdatetime_current != lastupdatetime_parameter:
-                # if (lastupdatetime_current < lastupdatetime_parameter) is False:
-                status_code = '200-00203'
-                msg_args = [target_uuid]
-                msg = g.appmsg.get_api_message(status_code, msg_args)
-                dict_msg = {
-                    'status_code': status_code,
-                    'msg_args': msg_args,
-                    'msg': msg,
-                }
-                self.set_message(dict_msg, MSG_LEVEL_ERROR)
             
     def convert_cmd_type(self, cmd_type, target_uuid, row_data, entry_parameter):
         """
