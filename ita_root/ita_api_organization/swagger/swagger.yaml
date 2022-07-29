@@ -1392,7 +1392,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.menu_create_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/class/info:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/class/info:
     get:
       tags:
       - Conductor Controll
@@ -1410,6 +1410,14 @@ paths:
       - name: workspace_id
         in: path
         description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: menu
+        in: path
+        description: メニュー名
         required: true
         style: simple
         explode: false
@@ -1435,7 +1443,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/class/{conductor_class_id}:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/class/{conductor_class_id}:
     get:
       tags:
       - Conductor Controll
@@ -1453,6 +1461,14 @@ paths:
       - name: workspace_id
         in: path
         description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: menu
+        in: path
+        description: メニュー名
         required: true
         style: simple
         explode: false
@@ -1486,7 +1502,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/class/maintenance:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/class/maintenance:
     post:
       tags:
       - Conductor Controll
@@ -1504,6 +1520,14 @@ paths:
       - name: workspace_id
         in: path
         description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: menu
+        in: path
+        description: メニュー名
         required: true
         style: simple
         explode: false
@@ -1535,7 +1559,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/class/maintenance/{conductor_class_id}:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/class/maintenance/{conductor_class_id}:
     patch:
       tags:
       - Conductor Controll
@@ -1553,6 +1577,14 @@ paths:
       - name: workspace_id
         in: path
         description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: menu
+        in: path
+        description: メニュー名
         required: true
         style: simple
         explode: false
@@ -1592,7 +1624,253 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/execute:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/execute/info:
+    get:
+      tags:
+      - Conductor Controll
+      description: "Conductor,Operationのメニューの基本情報および項目情報を取得する"
+      operationId: get_conductor_execute_info
+      parameters:
+      - name: organization_id
+        in: path
+        description: OrganizationID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: path
+        description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: menu
+        in: path
+        description: メニュー名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_13'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+      x-openapi-router-controller: controllers.conductor_controll_controller
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/execute/filter/count/{target}:
+    post:
+      tags:
+      - Conductor Controll
+      description: "Conductor,Operationを対象に、検索条件を指定し、レコードの件数する"
+      operationId: post_execute_filter_count
+      parameters:
+      - name: organization_id
+        in: path
+        description: OrganizationID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: path
+        description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: menu
+        in: path
+        description: メニュー名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: target
+        in: path
+        description: conductor_list or operation_list
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/count_target_body'
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_4'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+      x-openapi-router-controller: controllers.conductor_controll_controller
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/execute/filter/{target}:
+    post:
+      tags:
+      - Conductor Controll
+      description: "Conductor,Operationを対象に、検索条件を指定し、レコードを取得する"
+      operationId: post_execute_filter
+      parameters:
+      - name: organization_id
+        in: path
+        description: OrganizationID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: path
+        description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: menu
+        in: path
+        description: メニュー名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: target
+        in: path
+        description: conductor_list or operation_list
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/filter_target_body'
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_5'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+      x-openapi-router-controller: controllers.conductor_controll_controller
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/execute/filter/{target}/search/candidates/{column}:
+    get:
+      tags:
+      - Conductor Controll
+      description: 表示フィルタで利用するプルダウン検索の候補一覧を取得する
+      operationId: get_execute_search_candidates
+      parameters:
+      - name: organization_id
+        in: path
+        description: OrganizationID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: path
+        description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: menu
+        in: path
+        description: メニュー名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: target
+        in: path
+        description: conductor_list or operation_list
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: column
+        in: path
+        description: REST用項目名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_3'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+      x-openapi-router-controller: controllers.conductor_controll_controller
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/execute:
     post:
       tags:
       - Conductor Controll
@@ -1610,6 +1888,14 @@ paths:
       - name: workspace_id
         in: path
         description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: menu
+        in: path
+        description: メニュー名
         required: true
         style: simple
         explode: false
@@ -1640,7 +1926,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/info/{conductor_instance_id}:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/info/{conductor_instance_id}:
     get:
       tags:
       - Conductor Controll
@@ -1658,6 +1944,14 @@ paths:
       - name: workspace_id
         in: path
         description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: menu
+        in: path
+        description: メニュー名
         required: true
         style: simple
         explode: false
@@ -1691,7 +1985,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/{conductor_instance_id}:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/{conductor_instance_id}:
     get:
       tags:
       - Conductor Controll
@@ -1714,6 +2008,14 @@ paths:
         explode: false
         schema:
           type: string
+      - name: menu
+        in: path
+        description: メニュー名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
       - name: conductor_instance_id
         in: path
         description: Conductor Instance ID
@@ -1728,7 +2030,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_13'
+                $ref: '#/components/schemas/inline_response_200_14'
         "401":
           description: Unauthorized
           content:
@@ -1742,7 +2044,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/{conductor_instance_id}/cancel:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/{conductor_instance_id}/cancel:
     patch:
       tags:
       - Conductor Controll
@@ -1765,6 +2067,14 @@ paths:
         explode: false
         schema:
           type: string
+      - name: menu
+        in: path
+        description: メニュー名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
       - name: conductor_instance_id
         in: path
         description: Conductor Instance ID
@@ -1793,7 +2103,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/{conductor_instance_id}/scram:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/{conductor_instance_id}/scram:
     patch:
       tags:
       - Conductor Controll
@@ -1816,6 +2126,14 @@ paths:
         explode: false
         schema:
           type: string
+      - name: menu
+        in: path
+        description: メニュー名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
       - name: conductor_instance_id
         in: path
         description: Conductor Instance ID
@@ -1844,8 +2162,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/{conductor_instance_id}/{node_instance_id}/relese:
-    patch:
+  ? /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/{conductor_instance_id}/node/{node_instance_id}/relese
+  : patch:
       tags:
       - Conductor Controll
       description: Conductor作業の一時停止解除
@@ -1862,6 +2180,14 @@ paths:
       - name: workspace_id
         in: path
         description: WorkspaceID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: menu
+        in: path
+        description: メニュー名
         required: true
         style: simple
         explode: false
@@ -1903,7 +2229,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/{conductor_instance_id}/input_data/:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/{conductor_instance_id}/input_data/:
     get:
       tags:
       - Conductor Controll
@@ -1926,6 +2252,14 @@ paths:
         explode: false
         schema:
           type: string
+      - name: menu
+        in: path
+        description: メニュー名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
       - name: conductor_instance_id
         in: path
         description: Conductor Instance ID
@@ -1940,7 +2274,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_14'
+                $ref: '#/components/schemas/inline_response_200_15'
         "401":
           description: Unauthorized
           content:
@@ -1954,7 +2288,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/{conductor_instance_id}/result_data/:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/{conductor_instance_id}/result_data/:
     get:
       tags:
       - Conductor Controll
@@ -1977,6 +2311,14 @@ paths:
         explode: false
         schema:
           type: string
+      - name: menu
+        in: path
+        description: メニュー名
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
       - name: conductor_instance_id
         in: path
         description: Conductor Instance ID
@@ -1991,7 +2333,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_15'
+                $ref: '#/components/schemas/inline_response_200_16'
         "401":
           description: Unauthorized
           content:
@@ -2932,6 +3274,96 @@ components:
             - id: string
               name: string
         message: message
+    inline_response_200_13:
+      type: object
+      properties:
+        result:
+          type: string
+          example: 000-00000
+        data:
+          $ref: '#/components/schemas/inline_response_200_13_data'
+        message:
+          type: string
+      example:
+        result: 000-00000
+        data:
+          operation_list: null
+          conductor_list:
+            column_group_info:
+              key:
+                parent_column_group_name: parent_column_group_name
+                columns:
+                - ""
+                - ""
+                parent_column_group_id: parent_column_group_id
+                column_group_id: column_group_id
+                column_group_name: column_group_name
+            menu_info:
+              sheet_type: sheet_type
+              history_table_flag: true
+              row_update_flag: true
+              web_print_limit: 7
+              initial_filter_flg: true
+              columns:
+              - ""
+              - ""
+              row_reuse_flag: true
+              vertical: true
+              row_insert_flag: true
+              privilege: 2
+              row_disuse_flag: true
+              table_name: table_name
+              parent_menu_group_name: parent_menu_group_name
+              menu_name: menu_name
+              menu_group_name: menu_group_name
+              auto_filter_flg: true
+              menu_id: menu_id
+              view_name: view_name
+              web_print_confirm: 9
+              sort_key: sort_key
+              parent_menu_group_id: parent_menu_group_id
+              menu_group_id: menu_group_id
+              xls_print_limit: 3
+              menu_info: menu_info
+              inherit: true
+              login_necessity: true
+            column_info:
+              key:
+                initial_value: initial_value
+                column_disp_seq: 6
+                required_item: 2
+                ref_table_name: ref_table_name
+                save_type: save_type
+                column_name: column_name
+                unique_item: 5
+                description: description
+                input_item: 5
+                before_validate_register: {}
+                col_name: col_name
+                column_name_rest: column_name_rest
+                column_id: column_id
+                ref_multi_lang: ref_multi_lang
+                validate_option: {}
+                ref_pkey_name: ref_pkey_name
+                auto_input: 1
+                view_item: view_item
+                ref_col_name: ref_col_name
+                column_group_id: column_group_id
+                after_validate_register: {}
+                column_type: 0
+                column_group_name: column_group_name
+                ref_sort_conditions: ref_sort_conditions
+        message: message
+    count_target_body:
+      properties:
+        rest_key_name:
+          $ref: '#/components/schemas/FILTER_REQUEST_PARAMETERS'
+      description: 検索条件を設定
+    filter_target_body:
+      properties:
+        rest_key_name:
+          $ref: '#/components/schemas/FILTER_REQUEST_PARAMETERS'
+      description: 検索条件を設定
     conductor_execute_body:
       type: object
       properties:
@@ -2945,14 +3377,14 @@ components:
         conductor_data:
           type: object
       description: 作業実行するConductorの構成情報
-    inline_response_200_13:
+    inline_response_200_14:
       type: object
       properties:
         result:
           type: string
           example: 000-00000
         data:
-          $ref: '#/components/schemas/inline_response_200_13_data'
+          $ref: '#/components/schemas/inline_response_200_14_data'
         message:
           type: string
       example:
@@ -2987,8 +3419,9 @@ components:
             time_book: 予約日時
             remarks: 備考
             conductor_instance_id: ConductorインスタンスID
+          conductor_class: {}
         message: message
-    inline_response_200_14:
+    inline_response_200_15:
       type: object
       properties:
         result:
@@ -3003,7 +3436,7 @@ components:
         result: 000-00000
         data: All movement input data zip base64 string
         message: message
-    inline_response_200_15:
+    inline_response_200_16:
       type: object
       properties:
         result:
@@ -3368,6 +3801,82 @@ components:
     inline_response_200_13_data:
       type: object
       properties:
+        conductor_list:
+          $ref: '#/components/schemas/inline_response_200_data'
+        operation_list:
+          $ref: '#/components/schemas/inline_response_200_data'
+      example:
+        operation_list: null
+        conductor_list:
+          column_group_info:
+            key:
+              parent_column_group_name: parent_column_group_name
+              columns:
+              - ""
+              - ""
+              parent_column_group_id: parent_column_group_id
+              column_group_id: column_group_id
+              column_group_name: column_group_name
+          menu_info:
+            sheet_type: sheet_type
+            history_table_flag: true
+            row_update_flag: true
+            web_print_limit: 7
+            initial_filter_flg: true
+            columns:
+            - ""
+            - ""
+            row_reuse_flag: true
+            vertical: true
+            row_insert_flag: true
+            privilege: 2
+            row_disuse_flag: true
+            table_name: table_name
+            parent_menu_group_name: parent_menu_group_name
+            menu_name: menu_name
+            menu_group_name: menu_group_name
+            auto_filter_flg: true
+            menu_id: menu_id
+            view_name: view_name
+            web_print_confirm: 9
+            sort_key: sort_key
+            parent_menu_group_id: parent_menu_group_id
+            menu_group_id: menu_group_id
+            xls_print_limit: 3
+            menu_info: menu_info
+            inherit: true
+            login_necessity: true
+          column_info:
+            key:
+              initial_value: initial_value
+              column_disp_seq: 6
+              required_item: 2
+              ref_table_name: ref_table_name
+              save_type: save_type
+              column_name: column_name
+              unique_item: 5
+              description: description
+              input_item: 5
+              before_validate_register: {}
+              col_name: col_name
+              column_name_rest: column_name_rest
+              column_id: column_id
+              ref_multi_lang: ref_multi_lang
+              validate_option: {}
+              ref_pkey_name: ref_pkey_name
+              auto_input: 1
+              view_item: view_item
+              ref_col_name: ref_col_name
+              column_group_id: column_group_id
+              after_validate_register: {}
+              column_type: 0
+              column_group_name: column_group_name
+              ref_sort_conditions: ref_sort_conditions
+    inline_response_200_14_data:
+      type: object
+      properties:
+        conductor_class:
+          type: object
         conductor:
           $ref: '#/components/schemas/CONDUCTOR_RESULT'
         node:
@@ -3402,4 +3911,5 @@ components:
           time_book: 予約日時
           remarks: 備考
           conductor_instance_id: ConductorインスタンスID
+        conductor_class: {}
 
