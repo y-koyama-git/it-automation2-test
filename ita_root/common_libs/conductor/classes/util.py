@@ -21,6 +21,8 @@ class ConductorCommonLibs():
     node_datas = {}
     edge_datas = {}
 
+    _node_type_list = ['start', 'end', 'movement', 'call', 'parallel-branch', 'conditional-branch', 'merge', 'pause', 'status-file-branch']
+
     def __init__(self):
         pass
 
@@ -42,12 +44,7 @@ class ConductorCommonLibs():
         if res_chk_conductor[0] is False:
             return False, err_code, res_chk_conductor[1]
 
-        # check whether node is conneted
-        res_chk_connected_nodes = self.chk_connected_nodes(self.node_datas)
-        if res_chk_connected_nodes[0] is False:
-            return False, err_code, res_chk_connected_nodes[1]
-
-        # check node block
+        # check node block and whether node is conneted
         res_chk_node = self.chk_node(self.node_datas)
         if res_chk_node[0] is False:
             return False, err_code, res_chk_node[1]
@@ -115,7 +112,7 @@ class ConductorCommonLibs():
         if is_exist_edge is False:
             err_msg_args.append('edge')
         if is_exist_extra is True:
-            err_msg_args.append('extra')
+            err_msg_args.append('extra block is existed')
 
         if len(err_msg_args) != 0:
             return False, [','.join(err_msg_args)]
@@ -200,9 +197,9 @@ class ConductorCommonLibs():
         else:
             return True,
 
-    def chk_connected_nodes(self, c_data={}):
+    def chk_node(self, c_data={}):
         """
-        check whether node is conneted
+        check node block and whether node is conneted
 
         Arguments:
             c_data: node_datas in conductor infomation(dict)
@@ -213,54 +210,90 @@ class ConductorCommonLibs():
         """
         err_msg_args = []
 
-        # make c_data only node-data and make check-node-id-list
+        # check node block and make chk_node_id_list
         chk_node_id_list = []
         for key, block_1 in dict(c_data).items():
-            chk_node_id_list.append(block_1['id'])
-
-        # check
-        for key, value in c_data.items():
             block_err_msg_args = []
 
-            if 'terminal' in value:
-                for terminalname, terminalnameinfo in value['terminal'].items():
-                    if 'targetNode' in terminalnameinfo:
-                        if not terminalnameinfo['targetNode']:
-                            block_err_msg_args.append('targetNode in terminal.{} is empty'.format(terminalname))
-                        else:
-                            if terminalnameinfo['targetNode'] not in chk_node_id_list:
-                                block_err_msg_args.append('targetNode in terminal.{} is invalid'.format(terminalname))
-                    else:
-                        block_err_msg_args.append('targetNode in terminal.{} not found'.format(terminalname))
-
-                    if 'edge' in terminalnameinfo:
-                        if not terminalnameinfo['edge']:
-                            block_err_msg_args.append('edge in terminal.{} is empty'.format(terminalname))
-                    else:
-                        block_err_msg_args.append('edge in terminal.{} not found'.format(terminalname))
+            if 'id' not in block_1:
+                block_err_msg_args.append('id')
             else:
-                block_err_msg_args.append('terminal not found')
+                val = block_1['id']
+                if not re.fullmatch(r'node-\d{1,}', val):
+                    block_err_msg_args.append('id')
+
+            if 'type' not in block_1:
+                block_err_msg_args.append('type')
+            else:
+                val = block_1['type']
+                if val not in self._node_type_list:
+                    block_err_msg_args.append('type')
+
+            if 'terminal' not in block_1:
+                block_err_msg_args.append('terminal')
+            else:
+                val = block_1['terminal']
+                if not val:
+                    block_err_msg_args.append('terminal')
+
+            if 'x' not in block_1:
+                block_err_msg_args.append('x')
+            else:
+                val = block_1['x']
+                if type(val) is not int:
+                    block_err_msg_args.append('x')
+
+            if 'y' not in block_1:
+                block_err_msg_args.append('y')
+            else:
+                val = block_1['y']
+                if type(val) is not int:
+                    block_err_msg_args.append('y')
+
+            if 'w' not in block_1:
+                block_err_msg_args.append('w')
+            else:
+                val = block_1['w']
+                if type(val) is not int:
+                    block_err_msg_args.append('w')
+
+            if 'h' not in block_1:
+                block_err_msg_args.append('h')
+            else:
+                val = block_1['h']
+                if type(val) is not int:
+                    block_err_msg_args.append('h')
 
             if len(block_err_msg_args) != 0:
                 err_msg_args.append(key + '(' + ','.join(block_err_msg_args) + ')')
+            else:
+                chk_node_id_list.append(block_1['id'])
 
         if len(err_msg_args) != 0:
             return False, [','.join(err_msg_args)]
-        else:
-            return True,
 
-    def chk_node(self, c_data={}):
-        """
-        check node block
+        # check whether node is conneted
+        for key, value in c_data.items():
+            block_err_msg_args = []
 
-        Arguments:
-            c_data: node_datas in conductor infomation(dict)
-        Returns:
-            (tuple)
-            - retBool (bool)
-            - err msg args (list)
-        """
-        err_msg_args = []
+            for terminalname, terminalnameinfo in value['terminal'].items():
+                if 'targetNode' in terminalnameinfo:
+                    if not terminalnameinfo['targetNode']:
+                        block_err_msg_args.append('targetNode in terminal.{} is empty'.format(terminalname))
+                    else:
+                        if terminalnameinfo['targetNode'] not in chk_node_id_list:
+                            block_err_msg_args.append('targetNode in terminal.{} is invalid'.format(terminalname))
+                else:
+                    block_err_msg_args.append('targetNode in terminal.{} not found'.format(terminalname))
+
+                if 'edge' in terminalnameinfo:
+                    if not terminalnameinfo['edge']:
+                        block_err_msg_args.append('edge in terminal.{} is empty'.format(terminalname))
+                else:
+                    block_err_msg_args.append('edge in terminal.{} not found'.format(terminalname))
+
+            if len(block_err_msg_args) != 0:
+                err_msg_args.append(key + '(' + ','.join(block_err_msg_args) + ')')
 
         if len(err_msg_args) != 0:
             return False, [','.join(err_msg_args)]
