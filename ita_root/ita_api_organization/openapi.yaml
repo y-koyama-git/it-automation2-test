@@ -1918,7 +1918,12 @@ paths:
                     type: string
                     example: 000-00000
                   data:
-                    type: boolean
+                    type: object
+                    properties:
+                      conductor:
+                        $ref: '#/components/schemas/CONDUCTOR_RESULT'
+                      node:
+                        $ref: '#/components/schemas/NODE_RESULT'
                   message:
                     type: string
         '401':
@@ -2432,6 +2437,7 @@ components:
             rest_key_name:
               type: string
               example: base64 encode file
+
     MAINTENANCE_PARAMETER_P:
       type: object
       properties:
@@ -2558,3 +2564,89 @@ components:
           example: 
             "conductor_id1" : "conductor_name1"
             "conductor_id2" : "conductor_name2"
+
+    CONDUCTOR_RESULT:
+      type: object
+      properties:
+        conductor_instance_id:
+          type: string
+          example: ConductorインスタンスID
+        conductor_name:
+          type: string
+          example: Conductor名
+        status_id:
+          type: string
+          example: ステータスID
+        execution_user:
+          type: string
+          example: 作業実行ユーザー
+        abort_execute_flag:
+          type: string
+          example: 緊急停止フラグ
+        operation_id:
+          type: string
+          example: オペレーションID
+        operation_name:
+          type: string
+          example: オペレーション名
+        time_book:
+          type: string
+          example: 予約日時
+        time_start:
+          type: string
+          example: 開始日時
+        time_end:
+          type: string
+          example: 終了日時
+        execution_log:
+          type: string
+          example: 実行ログ
+        remarks:
+          type: string
+          example: 備考
+
+    NODE_RESULT:
+      type: object
+      properties:
+        node_name:
+          type: object
+          properties:
+            node_instance_id:
+              type: string
+              example: NodeインスタンスID
+            node_name:
+              type: string
+              example: Node名
+            node_type:
+              type: string
+              example: Node種別
+            status_id:
+              type: string
+              example: ステータスID
+            status_file:
+              type: string
+              example: ステータスファイル
+            skip:
+              type: string
+              example: スキップ
+            remarks:
+              type: string
+              example: 備考
+            time_start:
+              type: string
+              example: 開始日時
+            time_end:
+              type: string
+              example: 終了日時
+            operation_id:
+              type: string
+              example: オペレーションID
+            operation_name:
+              type: string
+              example: オペレーション名
+            jump:
+              type: object
+              example: {
+                "menu_id": メニューID,
+                "execution_id": 作業ID
+              }
