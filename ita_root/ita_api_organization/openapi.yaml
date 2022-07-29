@@ -1542,7 +1542,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
 
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/class/info:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/class/info:
     get:
       tags:
         - Conductor Controll
@@ -1558,6 +1558,12 @@ paths:
         - name: workspace_id
           in: path
           description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
           required: true
           schema:
             type: string
@@ -1593,8 +1599,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
-                
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/class/{conductor_class_id}:
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/class/{conductor_class_id}:
     get:
       tags:
         - Conductor Controll
@@ -1610,6 +1616,12 @@ paths:
         - name: workspace_id
           in: path
           description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
           required: true
           schema:
             type: string
@@ -1647,7 +1659,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
 
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/class/maintenance:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/class/maintenance:
     post:
       tags:
         - Conductor Controll
@@ -1663,6 +1675,12 @@ paths:
         - name: workspace_id
           in: path
           description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
           required: true
           schema:
             type: string
@@ -1700,7 +1718,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
 
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/class/maintenance/{conductor_class_id}:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/class/maintenance/{conductor_class_id}:
     patch:
       tags:
         - Conductor Controll
@@ -1716,6 +1734,12 @@ paths:
         - name: workspace_id
           in: path
           description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
           required: true
           schema:
             type: string
@@ -1759,7 +1783,282 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE' 
 
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/execute:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/execute/info:
+    get:
+      tags:
+        - Conductor Controll
+      description: Conductor,Operationのメニューの基本情報および項目情報を取得する
+      operationId: getConductorExecuteInfo
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    properties:
+                      conductor_list:
+                        type: object
+                        properties:
+                          column_group_info:
+                            $ref: '#/components/schemas/COLUMN_GROUP_INFO'
+                          column_info:
+                            $ref: '#/components/schemas/COLUMN_INFO'
+                          menu_info:
+                            $ref: '#/components/schemas/MENU_INFO'
+                      operation_list:
+                        type: object
+                        properties:
+                          column_group_info:
+                            $ref: '#/components/schemas/COLUMN_GROUP_INFO'
+                          column_info:
+                            $ref: '#/components/schemas/COLUMN_INFO'
+                          menu_info:
+                            $ref: '#/components/schemas/MENU_INFO'
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/execute/filter/count/{target}:
+    post:
+      tags:
+        - Conductor Controll
+      description: Conductor,Operationを対象に、検索条件を指定し、レコードの件数する
+      operationId: postExecuteFilterCount
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+        - name: target
+          in: path
+          description: conductor_list or operation_list
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: 検索条件を設定
+              properties:
+                rest_key_name:
+                  $ref: '#/components/schemas/FILTER_REQUEST_PARAMETERS'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: number
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/execute/filter/{target}:
+    post:
+      tags:
+        - Conductor Controll
+      description: Conductor,Operationを対象に、検索条件を指定し、レコードを取得する
+      operationId: postExecuteFilter
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+        - name: target
+          in: path
+          description: conductor_list or operation_list
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: 検索条件を設定
+              properties:
+                rest_key_name:
+                  $ref: '#/components/schemas/FILTER_REQUEST_PARAMETERS'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    items: {
+                      $ref: '#/components/schemas/FILTER_PARAMETERS',
+                    }
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/execute/filter/{target}/search/candidates/{column}:
+    get:
+      tags:
+        - Conductor Controll
+      description: 表示フィルタで利用するプルダウン検索の候補一覧を取得する
+      operationId: getExecuteSearchCandidates
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+        - name: target
+          in: path
+          description: conductor_list or operation_list
+          required: true
+          schema:
+            type: string
+        - name: column
+          in: path
+          description: REST用項目名
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    items: {}
+                    example: {"id1": "name1", "id2": "name2", "id3": "name3"}
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/execute:
     post:
       tags:
         - Conductor Controll
@@ -1775,6 +2074,12 @@ paths:
         - name: workspace_id
           in: path
           description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
           required: true
           schema:
             type: string
@@ -1822,8 +2127,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
 
-
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/info/{conductor_instance_id}:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/info/{conductor_instance_id}:
     get:
       tags:
         - Conductor Controll
@@ -1839,6 +2143,12 @@ paths:
         - name: workspace_id
           in: path
           description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
           required: true
           schema:
             type: string
@@ -1881,7 +2191,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
 
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/{conductor_instance_id}:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/{conductor_instance_id}:
     get:
       tags:
         - Conductor Controll
@@ -1897,6 +2207,12 @@ paths:
         - name: workspace_id
           in: path
           description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
           required: true
           schema:
             type: string
@@ -1920,6 +2236,8 @@ paths:
                   data:
                     type: object
                     properties:
+                      conductor_class:
+                        type: object
                       conductor:
                         $ref: '#/components/schemas/CONDUCTOR_RESULT'
                       node:
@@ -1939,7 +2257,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
 
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/{conductor_instance_id}/cancel:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/{conductor_instance_id}/cancel:
     patch:
       tags:
         - Conductor Controll
@@ -1958,6 +2276,12 @@ paths:
           required: true
           schema:
             type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
         - name: conductor_instance_id
           in: path
           description: Conductor Instance ID
@@ -1992,7 +2316,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
 
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/{conductor_instance_id}/scram:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/{conductor_instance_id}/scram:
     patch:
       tags:
         - Conductor Controll
@@ -2011,6 +2335,12 @@ paths:
           required: true
           schema:
             type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
         - name: conductor_instance_id
           in: path
           description: Conductor Instance ID
@@ -2045,7 +2375,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
 
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/{conductor_instance_id}/{node_instance_id}/relese:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/{conductor_instance_id}/node/{node_instance_id}/relese:
     patch:
       tags:
         - Conductor Controll
@@ -2061,6 +2391,12 @@ paths:
         - name: workspace_id
           in: path
           description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
           required: true
           schema:
             type: string
@@ -2103,8 +2439,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
-  
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/{conductor_instance_id}/input_data/:
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/{conductor_instance_id}/input_data/:
     get:
       tags:
         - Conductor Controll
@@ -2120,6 +2456,12 @@ paths:
         - name: workspace_id
           in: path
           description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
           required: true
           schema:
             type: string
@@ -2157,8 +2499,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
-  
-  /api/{organization_id}/workspaces/{workspace_id}/ita/conductor/{conductor_instance_id}/result_data/:
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/{conductor_instance_id}/result_data/:
     get:
       tags:
         - Conductor Controll
@@ -2174,6 +2516,12 @@ paths:
         - name: workspace_id
           in: path
           description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
           required: true
           schema:
             type: string
@@ -2211,6 +2559,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
+
 components:
   schemas:
     TABLE:
