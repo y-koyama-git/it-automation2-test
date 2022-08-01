@@ -215,8 +215,8 @@ def check_sheet_type(menu, sheet_type_list, wsdb_istc=None):
         raise AppException("200-00002", log_msg_args, api_msg_args)  # noqa: F405
 
     if sheet_type_list and menu_table_link_record[0].get('SHEET_TYPE') not in sheet_type_list:
-            log_msg_args = [menu]
-            api_msg_args = [menu]
-            raise AppException("200-00007", log_msg_args, api_msg_args)  # noqa: F405
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException("200-00007", log_msg_args, api_msg_args)  # noqa: F405
 
     return menu_table_link_record
