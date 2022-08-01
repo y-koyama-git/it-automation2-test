@@ -19,6 +19,7 @@ from libs.organization_common import check_menu_info
 from libs.organization_common import check_auth_menu
 from libs.organization_common import check_sheet_type
 
+
 def collect_menu_info(objdbca, menu):
     """
         メニュー情報の取得
