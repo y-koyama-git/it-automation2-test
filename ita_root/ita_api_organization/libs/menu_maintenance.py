@@ -18,6 +18,10 @@ from flask import g
 from common_libs.common import *  # noqa: F403
 from common_libs.loadtable import *
 
+from libs.organization_common import check_menu_info
+from libs.organization_common import check_auth_menu
+from libs.organization_common import check_sheet_type
+
 def rest_maintenance(objdbca, menu, parameter, target_uuid):
     """
         メニューのレコード登録/更新(更新/廃止/復活)
@@ -30,12 +34,18 @@ def rest_maintenance(objdbca, menu, parameter, target_uuid):
         RETRUN:
             statusCode, {}, msg
     """
-    role_check = True
-    if not role_check:
-        # ####メモ：401を意図的に返したいので最終的に自作Exceptionクラスに渡す。引数のルールは別途決める必要あり。
-        status_code = '401-00001'
-        msg = g.appmsg.get_api_message(status_code, [menu])
-        raise Exception(msg, status_code)
+
+    # メニューに対するロール権限をチェック
+    privilege = check_auth_menu(menu, objdbca)
+    if privilege == '2':
+        status_code = "401-00001"
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException(status_code, log_msg_args, api_msg_args)
+    
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['0', '1', '2', '3', '4']
+    menu_table_link_record = check_sheet_type(menu, sheet_type_list, objdbca)
 
     mode = 'nomal'
     objmenu = load_table.loadTable(objdbca, menu)

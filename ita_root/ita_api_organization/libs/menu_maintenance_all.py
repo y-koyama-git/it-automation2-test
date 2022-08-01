@@ -34,13 +34,17 @@ def rest_maintenance_all(objdbca, menu, parameters):
     
     result_data = {}
 
-    role_check = True
-    if not role_check:
-        # ####メモ：401を意図的に返したいので最終的に自作Exceptionクラスに渡す。引数のルールは別途決める必要あり。
-        status_code = '401-00001'
-        msg = g.appmsg.get_api_message(status_code, [menu])
-        raise Exception(msg, status_code)
-
+    # メニューに対するロール権限をチェック
+    privilege = check_auth_menu(menu, objdbca)
+    if privilege == '2':
+        status_code = "401-00001"
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException(status_code, log_msg_args, api_msg_args)
+    
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['0', '1', '2', '3', '4']
+    menu_table_link_record = check_sheet_type(menu, sheet_type_list, objdbca)
 
     objmenu = load_table.loadTable(objdbca, menu)
     if objmenu.get_objtable() is False:
