@@ -18,6 +18,10 @@ from flask import g
 from common_libs.common import *  # noqa: F403
 from common_libs.loadtable import *
 
+from libs.organization_common import check_menu_info
+from libs.organization_common import check_auth_menu
+from libs.organization_common import check_sheet_type
+
 
 def rest_maintenance_all(objdbca, menu, parameters):
     """
