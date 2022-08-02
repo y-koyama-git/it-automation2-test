@@ -39,6 +39,5 @@
     "MSG-00001": "Failed to exchange ID. ({})",
     "BKY-00001": "[sample] Common backyard error",
     "BKY-10001": "[sample] Ansible backyard error",
-    "BKY-20001": "[sample] Create Menu backyard error",
-
+    "BKY-20001": "[sample] Create Menu backyard error"
 }
