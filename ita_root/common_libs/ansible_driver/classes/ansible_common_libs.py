@@ -44,15 +44,10 @@ class AnsibleCommonLibs():
     
     # 定数定義
     LV_RUN_MODE = ""
-    WS_DB = None
 
     def __init__(self, run_mode=AnscConst.LC_RUN_MODE_STD):
         global LV_RUN_MODE
-        global WS_DB
         LV_RUN_MODE = run_mode
-        organization_id = g.get('ORGANIZATION_ID')
-        workspace_id = g.get('WORKSPACE_ID')
-        WS_DB = DBConnectWs(workspace_id, organization_id)
 
     def set_run_mode(run_mode):
         """
@@ -73,12 +68,13 @@ class AnsibleCommonLibs():
         """
         return LV_RUN_MODE
 
-    def get_cpf_vars_master(in_cpf_var_name):
+    def get_cpf_vars_master(in_cpf_var_name, WS_DB):
         """
         ファイル管理の情報をデータベースより取得する。
         
         Arguments:
             in_cpf_var_name: CPF変数名
+            WS_DB: WorkspaceDBインスタンス
 
         Returns:
             is success:(bool)
@@ -86,7 +82,6 @@ class AnsibleCommonLibs():
             in_cpf_file_name: ファイル格納変数
         """
         
-        global WS_DB
         in_cpf_key = ""
         in_cpf_file_name = ""
         
@@ -103,12 +98,13 @@ class AnsibleCommonLibs():
         
         return True, in_cpf_key, in_cpf_file_name
 
-    def chk_cpf_vars_master_reg(self, ina_cpf_vars_list):
+    def chk_cpf_vars_master_reg(self, ina_cpf_vars_list, WS_DB):
         """
         CPF変数がファイル管理に登録されているか判定
         
         Arguments:
             ina_cpf_vars_list: CPF変数リスト
+            WS_DB: WorkspaceDBインスタンス
 
         Returns:
             is success:(bool)
@@ -129,7 +125,7 @@ class AnsibleCommonLibs():
                     for cpf_var_name, dummy in cpf_var_name_list.items():
                         
                         # CPF変数名からファイル管理とPkeyを取得する。
-                        ret = self.get_cpf_vars_master(cpf_var_name)
+                        ret = self.get_cpf_vars_master(cpf_var_name, WS_DB)
                         
                         # CPF変数名が未登録の場合
                         if ret[1] == "":
@@ -172,19 +168,18 @@ class AnsibleCommonLibs():
 
         return bool_ret, tmp_ina_cpf_vars_list, in_errmsg
     
-    def get_tpf_vars_master(in_tpf_var_name):
+    def get_tpf_vars_master(in_tpf_var_name, WS_DB):
         """
         テンプレート管理の情報をデータベースより取得する。
         
         Arguments:
             in_cpf_var_name: TPF変数名
+            WS_DB: WorkspaceDBインスタンス
 
         Returns:
             is success:(bool)
             ina_row: 登録情報
         """
-        
-        global WS_DB
         
         where = "WHERE  ANS_TEMPLATE_VARS_NAME = '" + in_tpf_var_name + "' AND DISUSE_FLAG = '0'"
         
@@ -200,12 +195,13 @@ class AnsibleCommonLibs():
         
         return True, ina_row
     
-    def chk_tpf_vars_master_reg(self, ina_tpf_vars_list):
+    def chk_tpf_vars_master_reg(self, ina_tpf_vars_list, WS_DB):
         """
         TPF変数がテンプレート管理に登録されているか判定
         
         Arguments:
             ina_tpf_vars_list: TPF変数リスト
+            WS_DB: WorkspaceDBインスタンス
 
         Returns:
             is success:(bool)
@@ -225,7 +221,7 @@ class AnsibleCommonLibs():
             for tgt_file, line_no_list in tgt_file_list.items():
                 for line_no, tpf_var_name_list in line_no_list.items():
                     for tpf_var_name, dummy in tpf_var_name_list.items():
-                        ret = self.get_tpf_vars_master(tpf_var_name)
+                        ret = self.get_tpf_vars_master(tpf_var_name, WS_DB)
                         
                         tpf_key = ""
                         tpf_file_name = ""
@@ -238,7 +234,7 @@ class AnsibleCommonLibs():
                             tpf_file_name = ret[1][0]['ANS_TEMPLATE_FILE']
                             role_only_flag = ret[1][0]['ROLE_ONLY_FLAG']
                             vars_list = ret[1][0]['VARS_LIST']
-                            var_struct_anal_json_string = ret[1][0]['VARSTRUCT_ANAL_JSON_STRING_FILE']
+                            var_struct_anal_json_string = ret[1][0]['VARSTRUCT_ANAL_JSON_STRING']
                         
                         # TPF変数名が未登録の場合
                         if tpf_key == "":
@@ -284,19 +280,19 @@ class AnsibleCommonLibs():
                 
             return bool_ret, tmp_ina_tpf_vars_list, in_errmsg
     
-    def get_gbl_vars_master(in_gbl_var_name):
+    def get_gbl_vars_master(in_gbl_var_name, WS_DB):
         """
         グローバル管理の情報をデータベースより取得する。
         
         Arguments:
             in_gbl_var_name: GBL変数名
+            WS_DB: WorkspaceDBインスタンス
     
         Returns:
             is success:(bool)
             in_gbl_key: PKey格納変数
         """
-    
-        global WS_DB
+
         in_gbl_key = ""
         
         where = "WHERE VARS_NAME = '" + in_gbl_var_name + "' AND DISUSE_FLAG = '0'"
@@ -311,12 +307,13 @@ class AnsibleCommonLibs():
         
         return True, in_gbl_key
         
-    def chk_gbl_vars_master_reg(self, ina_gbl_vars_list):
+    def chk_gbl_vars_master_reg(self, ina_gbl_vars_list, WS_DB):
         """
         GBL変数がファイル管理に登録されているか判定
         
         Arguments:
             ina_gbl_vars_list: GBL変数リスト
+            WS_DB: WorkspaceDBインスタンス
     
         Returns:
             is success:(bool)
@@ -337,7 +334,7 @@ class AnsibleCommonLibs():
                 for line_no, gbl_var_name_list in line_no_list.items():
                     for gbl_var_name, dummy in gbl_var_name_list.items():
                         
-                        ret = self.get_gbl_vars_master(gbl_var_name)
+                        ret = self.get_gbl_vars_master(gbl_var_name, WS_DB)
                         
                         # GBL変数名が未登録の場合
                         if ret[1] == "":
@@ -460,18 +457,18 @@ class AnsibleCommonLibs():
         
         return ret_array
     
-    def select_db_recodes(in_sql, in_key):
+    def select_db_recodes(in_sql, in_key, WS_DB):
         """
         指定されたデータベースの全有効レコードを取得する。
         
         Arguments:
             in_sql: SQL
+            in_key: 登録レコードの配列のキー項目
+            WS_DB: WorkspaceDBインスタンス
 
         Returns:
             ina_row: 取得レコードの配列
         """
-        
-        global WS_DB
         
         data_list = WS_DB.sql_execute(in_sql, [])
         
