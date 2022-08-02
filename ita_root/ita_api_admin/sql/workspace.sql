@@ -125,6 +125,7 @@ CREATE TABLE T_COMN_MENU_TABLE_LINK
     MENU_ID                         VARCHAR(40),                                -- メニュー
     TABLE_NAME                      VARCHAR(255),                               -- テーブル名
     VIEW_NAME                       VARCHAR(255),                               -- ビュー名
+    PK_COLUMN_NAME_REST             VARCHAR(255),                               -- PK項目名(REST）
     MENU_INFO_JA                    TEXT,                                       -- 説明(ja)
     MENU_INFO_EN                    TEXT,                                       -- 説明(en)
     SHEET_TYPE                      VARCHAR(2),                                 -- シートタイプ
@@ -156,6 +157,7 @@ CREATE TABLE T_COMN_MENU_TABLE_LINK_JNL
     MENU_ID                         VARCHAR(40),                                -- メニュー
     TABLE_NAME                      VARCHAR(255),                               -- テーブル名
     VIEW_NAME                       VARCHAR(255),                               -- ビュー名
+    PK_COLUMN_NAME_REST             VARCHAR(255),                               -- PK項目名(REST）
     MENU_INFO_JA                    TEXT,                                       -- 説明(ja)
     MENU_INFO_EN                    TEXT,                                       -- 説明(en)
     SHEET_TYPE                      VARCHAR(2),                                 -- シートタイプ

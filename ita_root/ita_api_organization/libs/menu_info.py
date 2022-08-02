@@ -63,6 +63,7 @@ def collect_menu_info(objdbca, menu):
     history_table_flag = menu_table_link_record[0].get('HISTORY_TABLE_FLAG')
     table_name = menu_table_link_record[0].get('TABLE_NAME')
     view_name = menu_table_link_record[0].get('VIEW_NAME')
+    pk_column_name_rest = menu_table_link_record[0].get('PK_COLUMN_NAME_REST')
     inherit = menu_table_link_record[0].get('INHERIT')
     vertical = menu_table_link_record[0].get('VERTICAL')
     row_insert_flag = menu_table_link_record[0].get('ROW_INSERT_FLAG')
@@ -97,6 +98,7 @@ def collect_menu_info(objdbca, menu):
         'history_table_flag': history_table_flag,
         'table_name': table_name,
         'view_name': view_name,
+        'pk_column_name_rest': pk_column_name_rest,
         'inherit': inherit,
         'vertical': vertical,
         'row_insert_flag': row_insert_flag,
