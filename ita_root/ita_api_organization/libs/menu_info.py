@@ -122,13 +122,15 @@ def collect_menu_info(objdbca, menu):
         column_class_master[recode.get('COLUMN_CLASS_ID')] = recode.get('COLUMN_CLASS_NAME')
     
     # 『カラムグループ管理』テーブルからカラムグループ一覧を取得
-    ret = objdbca.table_select(t_common_column_group, 'WHERE DISUSE_FLAG = %s', [0])
     column_group_list = {}
+    ret = objdbca.table_select(t_common_column_group, 'WHERE DISUSE_FLAG = %s', [0])
+    col_group_recode_count = len(ret)  # 「カラムグループ管理」のレコード数を格納
     if ret:
         for recode in ret:
             add_data = {
                 "column_group_id": recode.get('COL_GROUP_ID'),
                 "column_group_name": recode.get('COL_GROUP_NAME_' + lang.upper()),
+                "full_column_group_name": recode.get('FULL_COL_GROUP_NAME_' + lang.upper()),
                 "parent_column_group_id": recode.get('PA_COL_GROUP_ID')
             }
             column_group_list[recode.get('COL_GROUP_ID')] = add_data
@@ -157,10 +159,12 @@ def collect_menu_info(objdbca, menu):
                 after_validate_register = after_validate_register.replace('\n', '')
             
             # カラムグループIDがあればカラムグループ名を取得
+            column_group_name = None
             column_group_id = recode.get('COL_GROUP_ID')
-            column_group_name = ''
             if column_group_id:
-                column_group_name = column_group_list.get(column_group_id).get('column_group_name')
+                target_data = column_group_list.get(column_group_id)
+                if target_data:
+                    column_group_name = target_data.get('full_column_group_name')
             
             detail = {
                 'column_id': recode.get('COLUMN_DEFINITION_ID'),
@@ -204,6 +208,7 @@ def collect_menu_info(objdbca, menu):
                 target_column_group_id = column_group_id
                 first_column_group_id = column_group_id
                 loop_count = 0
+                max_loop = int(col_group_recode_count) ** 2  # 「カラムグループ作成情報」のレコード数の二乗がループ回数の上限
                 while not end_flag:
                     for target in column_group_list.values():
                         if target.get('column_group_id') == target_column_group_id:
@@ -221,15 +226,15 @@ def collect_menu_info(objdbca, menu):
                             target_column_group_id = parent_column_group_id
                             column_group_parent_of_child[first_column_group_id] = parent_column_group_id
                     
-                    # ループ数が100を超えたら無限ループの可能性が高いため強制終了
+                    # ループ数がmax_loopを超えたら無限ループの可能性が高いため強制終了
                     loop_count += 1
-                    if loop_count > 100:
+                    if loop_count > max_loop:
                         end_flag = True
         
         # カラムグループIDと対応のg番号配列を作成
         key_to_id = {}
         group_num = 1
-        for group_id, value_list in tmp_column_group.items():
+        for group_id in tmp_column_group.keys():
             key_to_id[group_id] = 'g' + str(group_num)
             group_num += 1
         
@@ -245,13 +250,16 @@ def collect_menu_info(objdbca, menu):
             
             add_data['columns'] = columns
             add_data['column_group_id'] = group_id
-            add_data['column_group_name'] = column_group_list.get(group_id).get('column_group_name')
-            parent_id = column_group_list.get(group_id).get('parent_column_group_id')
-            add_data['parent_column_group_id'] = parent_id
-            if parent_id:
-                add_data['parent_column_group_name'] = column_group_list.get(parent_id).get('column_group_name')
-            else:
-                add_data['parent_column_group_name'] = None
+            add_data['column_group_name'] = None
+            add_data['parent_column_group_id'] = None
+            add_data['parent_column_group_name'] = None
+            target_data = column_group_list.get(group_id)
+            if target_data:
+                add_data['column_group_name'] = target_data.get('column_group_name')
+                parent_id = target_data.get('parent_column_group_id')
+                if parent_id:
+                    add_data['parent_column_group_id'] = parent_id
+                    add_data['parent_column_group_name'] = column_group_list.get(parent_id).get('column_group_name')
             
             column_group_info_data[key_to_id[group_id]] = add_data
         
