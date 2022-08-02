@@ -15,7 +15,7 @@
 import re
 
 # import text_column_class
-from text_column_class import TextColumn
+from .text_column_class import TextColumn
 
 """
 カラムクラス個別処理(SingleText)

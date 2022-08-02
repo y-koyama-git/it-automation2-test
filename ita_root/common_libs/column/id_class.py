@@ -17,14 +17,14 @@ import sys
 from flask import g
 
 # import column_class
-from column_class import Column
-sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
+from .column_class import Column
+
 """
 カラムクラス個別処理(Id)
 """
 
 
-class IdColumn(Column):
+class IDColumn(Column):
     """
     テキスト系クラス共通処理
     """
@@ -92,7 +92,9 @@ class IdColumn(Column):
         # 返却値が存在するか確認
         if len(return_values) == 0:
             retBool = False
-            msg = 'refテーブルにデータが存在しません。'
+            status_code = '200-00218'
+            msg_args = [self.get_rest_key_name(),table_name, val]
+            msg = g.appmsg.get_api_message(status_code, msg_args)
             return retBool, msg
         
         return retBool,
@@ -128,9 +130,10 @@ class IdColumn(Column):
                 else:
                     raise Exception('')
             except Exception as e:
-                print(table_name, where_str, bind_value_list)
                 retBool = False
-                msg = 'refテーブルにデータが存在しません。'
+                status_code = '200-00218'
+                msg_args = [self.get_rest_key_name(),table_name, val]
+                msg = g.appmsg.get_api_message(status_code, msg_args)
 
         return retBool, msg, val,
 
@@ -166,6 +169,8 @@ class IdColumn(Column):
                 else:
                     raise Exception()
             except Exception as e:
-                val = 'ID変換失敗({})'.format(val)
-
+                status_code = 'MSG-00001'
+                msg_args = [val]
+                val = g.appmsg.get_api_message(status_code, msg_args)
+                
         return retBool, msg, val,

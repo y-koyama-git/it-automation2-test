@@ -6,6 +6,7 @@ CREATE TABLE T_COMN_MENU_GROUP
     MENU_GROUP_NAME_JA              VARCHAR(255),                               -- メニューグループ名(ja)
     MENU_GROUP_NAME_EN              VARCHAR(255),                               -- メニューグループ名(en)
     MENU_GROUP_ICON                 VARCHAR(255),                               -- パネル用画像
+    MENU_CREATE_TARGET_FLAG         VARCHAR(2),                                 -- メニュー作成利用フラグ
     DISP_SEQ                        INT,                                        -- 表示順序
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1)  ,                               -- 廃止フラグ
@@ -24,6 +25,7 @@ CREATE TABLE T_COMN_MENU_GROUP_JNL
     MENU_GROUP_NAME_JA              VARCHAR(255),                               -- メニューグループ名(ja)
     MENU_GROUP_NAME_EN              VARCHAR(255),                               -- メニューグループ名(en)
     MENU_GROUP_ICON                 VARCHAR(255),                               -- パネル用画像
+    MENU_CREATE_TARGET_FLAG         VARCHAR(2),                                 -- メニュー作成利用フラグ
     DISP_SEQ                        INT,                                        -- 表示順序
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1)  ,                               -- 廃止フラグ
@@ -133,6 +135,7 @@ CREATE TABLE T_COMN_MENU_TABLE_LINK
     ROW_UPDATE_FLAG                 VARCHAR(2),                                 -- 更新許可フラグ
     ROW_DISUSE_FLAG                 VARCHAR(2),                                 -- 廃止許可フラグ
     ROW_REUSE_FLAG                  VARCHAR(2),                                 -- 復活許可フラグ
+    SUBSTITUTION_VALUE_LINK_FLAG    VARCHAR(2),                                 -- 代入値自動登録対象フラグ
     LOCK_TABLE                      TEXT,                                       -- ロック対象テーブル
     UNIQUE_CONSTRAINT               TEXT,                                       -- 組み合わせ一意制約
     BEFORE_VALIDATE_REGISTER        TEXT,                                       -- 個別バリデーション前
@@ -163,6 +166,7 @@ CREATE TABLE T_COMN_MENU_TABLE_LINK_JNL
     ROW_UPDATE_FLAG                 VARCHAR(2),                                 -- 更新許可フラグ
     ROW_DISUSE_FLAG                 VARCHAR(2),                                 -- 廃止許可フラグ
     ROW_REUSE_FLAG                  VARCHAR(2),                                 -- 復活許可フラグ
+    SUBSTITUTION_VALUE_LINK_FLAG    VARCHAR(2),                                 -- 代入値自動登録対象フラグ
     LOCK_TABLE                      TEXT,                                       -- ロック対象テーブル
     UNIQUE_CONSTRAINT               TEXT,                                       -- 組み合わせ一意制約
     BEFORE_VALIDATE_REGISTER        TEXT,                                       -- 個別バリデーション前
@@ -267,6 +271,8 @@ CREATE TABLE T_COMN_COLUMN_GROUP
     PA_COL_GROUP_ID                 VARCHAR(40),                                -- 親カラムグループ
     COL_GROUP_NAME_JA               VARCHAR(255),                               -- カラムグループ名(ja)
     COL_GROUP_NAME_EN               VARCHAR(255),                               -- カラムグループ名(en)
+    FULL_COL_GROUP_NAME_JA          TEXT,                                       -- フルカラムグループ名(ja)
+    FULL_COL_GROUP_NAME_EN          TEXT,                                       -- フルカラムグループ名(en)
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1),                                 -- 廃止フラグ
     LAST_UPDATE_TIMESTAMP           DATETIME(6),                                -- 最終更新日時
@@ -283,6 +289,8 @@ CREATE TABLE T_COMN_COLUMN_GROUP_JNL
     PA_COL_GROUP_ID                 VARCHAR(40),                                -- 親カラムグループ
     COL_GROUP_NAME_JA               VARCHAR(255),                               -- カラムグループ名(ja)
     COL_GROUP_NAME_EN               VARCHAR(255),                               -- カラムグループ名(en)
+    FULL_COL_GROUP_NAME_JA          TEXT,                                       -- フルカラムグループ名(ja)
+    FULL_COL_GROUP_NAME_EN          TEXT,                                       -- フルカラムグループ名(en)
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1),                                 -- 廃止フラグ
     LAST_UPDATE_TIMESTAMP           DATETIME(6),                                -- 最終更新日時
@@ -447,7 +455,7 @@ CREATE TABLE T_COMN_COLUMN_CLASS
     COLUMN_CLASS_NAME               VARCHAR(255),                               -- カラムクラス名
     COLUMN_CLASS_DISP_NAME_JA       VARCHAR(255),                               -- カラムクラス表示名(ja)
     COLUMN_CLASS_DISP_NAME_EN       VARCHAR(255),                               -- カラムクラス表示名(en)
-    CREATE_MENU_TARGET              VARCHAR(1),                                 -- メニュー作成対象フラグ
+    MENU_CREATE_TARGET_FLAG         VARCHAR(1),                                 -- メニュー作成対象フラグ
     DISP_SEQ                        INT,                                        -- 表示順序
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1),                                 -- 廃止フラグ
@@ -465,6 +473,7 @@ CREATE TABLE T_COMN_SHEET_TYPE
     SHEET_TYPE_NAME_ID              VARCHAR(2),                                 -- 主キー
     SHEET_TYPE_NAME_JA              VARCHAR(255),                               -- シートタイプ名(ja)
     SHEET_TYPE_NAME_EN              VARCHAR(255),                               -- シートタイプ名(en)
+    MENU_CREATE_TARGET_FLAG         VARCHAR(1),                                 -- メニュー作成利用フラグ
     DISP_SEQ                        INT,                                        -- 表示順序
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1),                                 -- 廃止フラグ

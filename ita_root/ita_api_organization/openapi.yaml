@@ -22,11 +22,9 @@ tags:
   - name: Menu Create
     description: メニュー作成機能
   - name: Conductor Controll
-    description: Conductorの作業実行・作業状態確認・緊急停止・予約取消・保留解除
+    description: Conductorの情報取得・操作
   - name: Driver Controll
-    description: Driverの作業実行・作業状態確認・緊急停止・予約取消
-  - name: Compare Controll
-    description: 比較情報取得・比較の実行
+    description: Driverの情報取得・操作
 
 paths:
   /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/info/:
@@ -297,10 +295,7 @@ paths:
                     type: string
                     example: 000-00000
                   data:
-                    type: object
-                    properties:
-                      TABLE:
-                       $ref: '#/components/schemas/TABLE'
+                    type: number
                   message:
                     type: string
         '401':
@@ -344,6 +339,9 @@ paths:
           application/json:
             schema:
               description: 検索条件を設定
+              properties:
+                rest_key_name:
+                  $ref: '#/components/schemas/FILTER_REQUEST_PARAMETERS'
       responses:
         '200':
           description: Success
@@ -356,7 +354,7 @@ paths:
                     type: string
                     example: 000-00000
                   data:
-                    type: object
+                    type: number
                   message:
                     type: string
         '401':
@@ -409,10 +407,9 @@ paths:
                     type: string
                     example: 000-00000
                   data:
-                    type: object
-                    properties:
-                      TABLE:
-                       $ref: '#/components/schemas/TABLE'
+                    items: {
+                      $ref: '#/components/schemas/FILTER_PARAMETERS',
+                    }
                   message:
                     type: string
         '401':
@@ -456,6 +453,10 @@ paths:
           application/json:
             schema:
               description: 検索条件を設定
+              properties:
+                rest_key_name:
+                  $ref: '#/components/schemas/FILTER_REQUEST_PARAMETERS'
+
       responses:
         '200':
           description: Success
@@ -468,7 +469,9 @@ paths:
                     type: string
                     example: 000-00000
                   data:
-                    type: object
+                    items: {
+                      $ref: '#/components/schemas/FILTER_PARAMETERS',
+                    }
                   message:
                     type: string
         '401':
@@ -527,10 +530,9 @@ paths:
                     type: string
                     example: 000-00000
                   data:
-                    type: object
-                    properties:
-                      TABLE:
-                       $ref: '#/components/schemas/TABLE'
+                    items: {
+                      $ref: '#/components/schemas/FILTER_PARAMETERS',
+                    }
                   message:
                     type: string
         '401':
@@ -1216,6 +1218,2005 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
+  /api/{organization_id}/workspaces/{workspace_id}/ita/create/execute/:
+    post:
+      tags:
+        - Menu Create
+      description: メニュー作成実行
+      operationId: executeMenuCreate
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: 作成対象のメニュー定義一覧IDを指定(複数指定可)
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: boolean
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/execute/:
+    post:
+      tags:
+        - Menu Create
+      description: メニュー定義および作成の実行
+      operationId: defineAndExecuteMenuCreate
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: メニュー定義用パラメータ
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: boolean
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/:
+    get:
+      tags:
+        - Menu Create
+      description: メニュー定義・作成(新規)用の情報取得
+      operationId: getMenuCreateData
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: boolean
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/{menu_create}/:
+    get:
+      tags:
+        - Menu Create
+      description: メニュー定義・作成(既存)用の情報取得
+      operationId: getExistMenuCreateData
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu_create
+          in: path
+          description: 「メニュー定義一覧」の「メニュー名(REST)」
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: boolean
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/pulldown/initial/{menu}/{column}/:
+    get:
+      tags:
+        - Menu Create
+      description: 「プルダウン選択」項目で選択した対象の「初期値」候補一覧取得
+      operationId: getPulldownInitial
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: 「プルダウン選択」で指定した対象のメニュー名(rest用)
+          required: true
+          schema:
+            type: string
+        - name: column
+          in: path
+          description: 「プルダウン選択」で指定した対象のカラム名(rest用)
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: boolean
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/create/define/reference/item/{menu}/{column}/:
+    get:
+      tags:
+        - Menu Create
+      description: 「プルダウン選択」項目で選択した対象の「参照項目」候補一覧取得
+      operationId: getReferenceItem
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: 「プルダウン選択」で指定した対象のメニュー名(rest用)
+          required: true
+          schema:
+            type: string
+        - name: column
+          in: path
+          description: 「プルダウン選択」で指定した対象のカラム名(rest用)
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: boolean
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/class/info:
+    get:
+      tags:
+        - Conductor Controll
+      description: ConductorClassの基本情報取得
+      operationId: getConductorClassInfo
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    properties:
+                      list:
+                        $ref: '#/components/schemas/CONDUCTOR_INFO_LIST'
+                      dict:
+                        $ref: '#/components/schemas/CONDUCTOR_INFO_DICT'
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/class/{conductor_class_id}:
+    get:
+      tags:
+        - Conductor Controll
+      description: ConductorClassの情報取得
+      operationId: getConductorClassData
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+        - name: conductor_class_id
+          in: path
+          description: Conductor Class ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: boolean
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/class/maintenance:
+    post:
+      tags:
+        - Conductor Controll
+      description: Conductorの新規登録
+      operationId: postConductorData
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: 登録するConductorの構成情報
+              type: object
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: boolean
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/class/maintenance/{conductor_class_id}:
+    patch:
+      tags:
+        - Conductor Controll
+      description: Conductorの更新
+      operationId: patchConductorData
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+        - name: conductor_class_id
+          in: path
+          description: Conductor Class ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: 更新するConductorの構成情報
+              type: object
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: boolean
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE' 
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/execute/info:
+    get:
+      tags:
+        - Conductor Controll
+      description: Conductor,Operationのメニューの基本情報および項目情報を取得する
+      operationId: getConductorExecuteInfo
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    properties:
+                      conductor_list:
+                        type: object
+                        properties:
+                          column_group_info:
+                            $ref: '#/components/schemas/COLUMN_GROUP_INFO'
+                          column_info:
+                            $ref: '#/components/schemas/COLUMN_INFO'
+                          menu_info:
+                            $ref: '#/components/schemas/MENU_INFO'
+                      operation_list:
+                        type: object
+                        properties:
+                          column_group_info:
+                            $ref: '#/components/schemas/COLUMN_GROUP_INFO'
+                          column_info:
+                            $ref: '#/components/schemas/COLUMN_INFO'
+                          menu_info:
+                            $ref: '#/components/schemas/MENU_INFO'
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/execute/filter/count/{target}:
+    post:
+      tags:
+        - Conductor Controll
+      description: Conductor,Operationを対象に、検索条件を指定し、レコードの件数する
+      operationId: postExecuteFilterCount
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+        - name: target
+          in: path
+          description: conductor_list or operation_list
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: 検索条件を設定
+              properties:
+                rest_key_name:
+                  $ref: '#/components/schemas/FILTER_REQUEST_PARAMETERS'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: number
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/execute/filter/{target}:
+    post:
+      tags:
+        - Conductor Controll
+      description: Conductor,Operationを対象に、検索条件を指定し、レコードを取得する
+      operationId: postExecuteFilter
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+        - name: target
+          in: path
+          description: conductor_list or operation_list
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: 検索条件を設定
+              properties:
+                rest_key_name:
+                  $ref: '#/components/schemas/FILTER_REQUEST_PARAMETERS'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    items: {
+                      $ref: '#/components/schemas/FILTER_PARAMETERS',
+                    }
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/execute/filter/{target}/search/candidates/{column}:
+    get:
+      tags:
+        - Conductor Controll
+      description: 表示フィルタで利用するプルダウン検索の候補一覧を取得する
+      operationId: getExecuteSearchCandidates
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+        - name: target
+          in: path
+          description: conductor_list or operation_list
+          required: true
+          schema:
+            type: string
+        - name: column
+          in: path
+          description: REST用項目名
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    items: {}
+                    example: {"id1": "name1", "id2": "name2", "id3": "name3"}
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/execute:
+    post:
+      tags:
+        - Conductor Controll
+      description: Conductor作業実行
+      operationId: postConductorExcecute
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: 作業実行するConductorの構成情報
+              type: object
+              properties:
+                conductor_class_id: 
+                  type: string
+                operation_id: 
+                  type: string
+                schedule_date: 
+                  type: string
+                  example: "YYYY/MM/DD hh:mm"
+                conductor_data:
+                  type: object
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: boolean
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/info/{conductor_instance_id}:
+    get:
+      tags:
+        - Conductor Controll
+      description: Conductorの基本情報取得
+      operationId: getConductorInfo
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+        - name: conductor_instance_id
+          in: path
+          description: Conductor Instance ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    properties:
+                      list:
+                        $ref: '#/components/schemas/CONDUCTOR_INFO_LIST'
+                      dict:
+                        $ref: '#/components/schemas/CONDUCTOR_INFO_DICT'
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/{conductor_instance_id}:
+    get:
+      tags:
+        - Conductor Controll
+      description: Conductor作業の情報取得
+      operationId: getConductorInstanceData
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+        - name: conductor_instance_id
+          in: path
+          description: Conductor Instance ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    properties:
+                      conductor_class:
+                        type: object
+                      conductor:
+                        $ref: '#/components/schemas/CONDUCTOR_RESULT'
+                      node:
+                        $ref: '#/components/schemas/NODE_RESULT'
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/{conductor_instance_id}/cancel:
+    patch:
+      tags:
+        - Conductor Controll
+      description: Conductor作業の予約取り消し
+      operationId: patchConductorCansel
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+        - name: conductor_instance_id
+          in: path
+          description: Conductor Instance ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: boolean
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/{conductor_instance_id}/scram:
+    patch:
+      tags:
+        - Conductor Controll
+      description: Conductor作業の緊急停止
+      operationId: patchConductorScram
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+        - name: conductor_instance_id
+          in: path
+          description: Conductor Instance ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: boolean
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/{conductor_instance_id}/node/{node_instance_id}/relese:
+    patch:
+      tags:
+        - Conductor Controll
+      description: Conductor作業の一時停止解除
+      operationId: patchConductorRelese
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+        - name: conductor_instance_id
+          in: path
+          description: Conductor Instance ID
+          required: true
+          schema:
+            type: string
+        - name: node_instance_id
+          in: path
+          description: Node Instance ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: boolean
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/{conductor_instance_id}/input_data/:
+    get:
+      tags:
+        - Conductor Controll
+      description: Conductor作業の投入データ
+      operationId: getConductorInputData
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+        - name: conductor_instance_id
+          in: path
+          description: Conductor Instance ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: string
+                    example: "All movement input data zip base64 string"
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/{conductor_instance_id}/result_data/:
+    get:
+      tags:
+        - Conductor Controll
+      description: Conductor作業の結果データ
+      operationId: getConductorResultData
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+        - name: conductor_instance_id
+          in: path
+          description: Conductor Instance ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: string
+                    example: "All movement result data zip base64 string"
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  # Driver Controll
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/driver/execute:
+    post:
+      tags:
+        - Driver Controll
+      description: Driver作業実行
+      operationId: postDriverExcecute
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: 作業実行するDriverの構成情報
+              type: object
+              properties:
+                movement_id: 
+                  type: string
+                operation_id: 
+                  type: string
+                schedule_date: 
+                  type: string
+                  example: "YYYY/MM/DD hh:mm"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    example: {execution_no: string}
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/driver/execute_dry_run:
+    post:
+      tags:
+        - Driver Controll
+      description: |
+        Driver作業実行（ドライラン）</br>
+        AnsibleDriverの場合はDryRun、TerraformDriverの場合はPlanのみの実行を行う
+      operationId: postDriverExecuteDryRun
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: 作業実行するDriverの構成情報
+              type: object
+              properties:
+                movement_id: 
+                  type: string
+                operation_id: 
+                  type: string
+                schedule_date: 
+                  type: string
+                  example: "YYYY/MM/DD hh:mm"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    example: {execution_no: string}
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/driver/execute_check_parameter:
+    post:
+      tags:
+        - Driver Controll
+      description: Driver作業実行(実行時に使用するパラメータ確認)
+      operationId: postDriverExecuteCheckParameter
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: 作業実行するDriverの構成情報
+              type: object
+              properties:
+                movement_id: 
+                  type: string
+                operation_id: 
+                  type: string
+                schedule_date: 
+                  type: string
+                  example: "YYYY/MM/DD hh:mm"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    example: {execution_no: string}
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/driver/{execution_no}:
+    get:
+      tags:
+        - Driver Controll
+      description: Driver作業実行の状態取得
+      operationId: getDriverExecuteData
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+        - name: execution_no
+          in: path
+          description: 実行No
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: boolean
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/driver/{execution_no}/cancel:
+    patch:
+      tags:
+        - Driver Controll
+      description: Driver作業実行の予約取消
+      operationId: postDriverCancel
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+        - name: execution_no
+          in: path
+          description: 実行No
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: boolean
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/driver/{execution_no}/scram:
+    patch:
+      tags:
+        - Driver Controll
+      description: Driver作業実行の緊急停止
+      operationId: postDriverScram
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+        - name: execution_no
+          in: path
+          description: 実行No
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: boolean
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/driver/execute/info:
+    get:
+      tags:
+        - Driver Controll
+      description: Movement,Operationのメニューの基本情報および項目情報を取得する
+      operationId: getDriverExecuteInfo
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    properties:
+                      movement_list:
+                        type: object
+                        properties:
+                          column_group_info:
+                            $ref: '#/components/schemas/COLUMN_GROUP_INFO'
+                          column_info:
+                            $ref: '#/components/schemas/COLUMN_INFO'
+                          menu_info:
+                            $ref: '#/components/schemas/MENU_INFO'
+                      operation_list:
+                        type: object
+                        properties:
+                          column_group_info:
+                            $ref: '#/components/schemas/COLUMN_GROUP_INFO'
+                          column_info:
+                            $ref: '#/components/schemas/COLUMN_INFO'
+                          menu_info:
+                            $ref: '#/components/schemas/MENU_INFO'
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/driver/execute/filter/count/{target}:
+    post:
+      tags:
+        - Driver Controll
+      description: Movement,Operationを対象に、検索条件を指定し、レコードの件数する
+      operationId: postDriverExecuteFilterCount
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+        - name: target
+          in: path
+          description: movement_list or operation_list
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: 検索条件を設定
+              properties:
+                rest_key_name:
+                  $ref: '#/components/schemas/FILTER_REQUEST_PARAMETERS'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: number
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/driver/execute/filter/{target}:
+    post:
+      tags:
+        - Driver Controll
+      description: Movement,Operationを対象に、検索条件を指定し、レコードを取得する
+      operationId: postDriverExecuteFilter
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+        - name: target
+          in: path
+          description: movement_list or operation_list
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: 検索条件を設定
+              properties:
+                rest_key_name:
+                  $ref: '#/components/schemas/FILTER_REQUEST_PARAMETERS'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    items: {
+                      $ref: '#/components/schemas/FILTER_PARAMETERS',
+                    }
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/driver/execute/filter/{target}/search/candidates/{column}:
+    get:
+      tags:
+        - Driver Controll
+      description: 表示フィルタで利用するプルダウン検索の候補一覧を取得する
+      operationId: getDriverExecuteSearchCandidates
+      parameters:
+        - name: organization_id
+          in: path
+          description: OrganizationID
+          required: true
+          schema:
+            type: string
+        - name: workspace_id
+          in: path
+          description: WorkspaceID
+          required: true
+          schema:
+            type: string
+        - name: menu
+          in: path
+          description: メニュー名
+          required: true
+          schema:
+            type: string
+        - name: target
+          in: path
+          description: movement_list or operation_list
+          required: true
+          schema:
+            type: string
+        - name: column
+          in: path
+          description: REST用項目名
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: 000-00000
+                  data:
+                    type: object
+                    items: {}
+                    example: {"id1": "name1", "id2": "name2", "id3": "name3"}
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERROR_TEMPLATE'
+
 
 components:
   schemas:
@@ -1413,6 +3414,37 @@ components:
           example: 001-002
         message:
           type: string
+
+    FILTER_REQUEST_PARAMETERS:
+      type: object
+      properties:
+        NORMAL:
+          type: string
+        LIST:
+          items: {}
+        RANGE:
+          type: object
+          properties:
+            START:
+              type: string
+            END:
+              type: string
+  
+    FILTER_PARAMETERS:
+      type: object
+      properties:
+        parameter:
+          type: object
+          properties:
+            rest_key_name:
+              type: string
+        file:
+          type: object
+          properties:
+            rest_key_name:
+              type: string
+              example: base64 encode file
+
     MAINTENANCE_PARAMETER_P:
       type: object
       properties:
@@ -1441,3 +3473,187 @@ components:
         type:
           type: string
           example: Register/Update
+  
+    CONDUCTOR_INFO_LIST:
+      type: object
+      properties:
+        conductor_status:
+          type: array
+          items: {}
+          example:
+            [
+              {
+                id: "string",
+                name: "string"
+              }
+            ]
+        node_status:
+          type: array
+          items: {}
+          example:
+            [
+              {
+                id: "string",
+                name: "string"
+              }
+            ]
+        node_type:
+          type: array
+          items: {}
+          example:
+            [
+              {
+                id: "string",
+                name: "string"
+              }
+            ]
+        movement:
+          type: array
+          items: {}
+          example:
+            [
+              {
+                id: "string",
+                name: "string"
+              }
+            ]
+        operation:
+          type: array
+          items: {}
+          example:
+            [
+              {
+                id: "string",
+                name: "string"
+              }
+            ]
+        conductors:
+          type: array
+          items: {}
+          example:
+            [
+              {
+                id: "string",
+                name: "string"
+              }
+            ]
+    
+    CONDUCTOR_INFO_DICT:
+      type: object
+      properties:
+        conductor_status:
+          items: {}
+          example: 
+            "status_id1" : "status_name1"
+            "status_id2" : "status_name2"
+        node_status:
+          items: {}
+          example: 
+            "status_id1" : "status_name1"
+            "status_id2" : "status_name2"
+        node_type:
+          items: {}
+          example: 
+            "node_type_id1" : "node_type_name1"
+            "node_type_id2" : "node_type_name2"
+        movement:
+          items: {}
+          example: 
+            "movement_id1" : "movement_name1"
+            "movement_id2" : "movement_name2"
+        operation:
+          items: {}
+          example: 
+            "operation_id1" : "operation_name1"
+            "operation_id2" : "operation_name2"
+        conductor:
+          items: {}
+          example: 
+            "conductor_id1" : "conductor_name1"
+            "conductor_id2" : "conductor_name2"
+
+    CONDUCTOR_RESULT:
+      type: object
+      properties:
+        conductor_instance_id:
+          type: string
+          example: ConductorインスタンスID
+        conductor_name:
+          type: string
+          example: Conductor名
+        status_id:
+          type: string
+          example: ステータスID
+        execution_user:
+          type: string
+          example: 作業実行ユーザー
+        abort_execute_flag:
+          type: string
+          example: 緊急停止フラグ
+        operation_id:
+          type: string
+          example: オペレーションID
+        operation_name:
+          type: string
+          example: オペレーション名
+        time_book:
+          type: string
+          example: 予約日時
+        time_start:
+          type: string
+          example: 開始日時
+        time_end:
+          type: string
+          example: 終了日時
+        execution_log:
+          type: string
+          example: 実行ログ
+        remarks:
+          type: string
+          example: 備考
+
+    NODE_RESULT:
+      type: object
+      properties:
+        node_name:
+          type: object
+          properties:
+            node_instance_id:
+              type: string
+              example: NodeインスタンスID
+            node_name:
+              type: string
+              example: Node名
+            node_type:
+              type: string
+              example: Node種別
+            status_id:
+              type: string
+              example: ステータスID
+            status_file:
+              type: string
+              example: ステータスファイル
+            skip:
+              type: string
+              example: スキップ
+            remarks:
+              type: string
+              example: 備考
+            time_start:
+              type: string
+              example: 開始日時
+            time_end:
+              type: string
+              example: 終了日時
+            operation_id:
+              type: string
+              example: オペレーションID
+            operation_name:
+              type: string
+              example: オペレーション名
+            jump:
+              type: object
+              example: {
+                "menu_id": メニューID,
+                "execution_id": 作業ID
+              }

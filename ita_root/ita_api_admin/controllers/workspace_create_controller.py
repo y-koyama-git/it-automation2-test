@@ -65,8 +65,6 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
 
         # make storage directory for workspace job
         dir_list = [
-            ['driver'],
-            ['driver', 'ansible'],
             ['driver', 'ansible', 'legacy'],
             ['driver', 'ansible', 'pioneer'],
             ['driver', 'ansible', 'legacy_role'],
@@ -74,6 +72,7 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
             ['driver', 'conductor'],
             ['driver', 'terraform'],
             ['uploadfiles'],
+            ['tmp', 'driver', 'ansible'],
         ]
         for dir in dir_list:
             abs_dir = workspace_dir + "/".join(dir)

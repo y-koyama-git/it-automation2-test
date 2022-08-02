@@ -233,6 +233,29 @@ def get_upload_file_path(workspace_id, menu_id, uuid, column_name_rest, file_nam
     return {"file_path": file_path, "old_file_path": old_file_path}
 
 
+def get_upload_file_path_specify(workspace_id, place, uuid, file_name, uuid_jnl):
+    """
+    Get filepath
+
+    Arguments:
+        workspace_id: workspace_id
+        place: Target file place
+        uuid: uuid
+        file_name: Target file name
+        uuid_jnl: uuid_jnl
+    Returns:
+        filepath
+    """
+    organization_id = g.get("ORGANIZATION_ID")
+    file_path = "/storage/{}/{}{}/{}/{}".format(organization_id, workspace_id, place, uuid, file_name)
+    old_file_path = ""
+    if uuid_jnl is not None:
+        if len(uuid_jnl) > 0:
+            old_file_path = "/storage/{}/{}{}/{}/old/{}/{}".format(organization_id, workspace_id, place, uuid, uuid_jnl, file_name)  # noqa: E501
+
+    return {"file_path": file_path, "old_file_path": old_file_path}
+
+
 def upload_file(file_path, text):
     """
     Upload a file

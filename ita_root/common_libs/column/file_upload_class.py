@@ -15,7 +15,7 @@ import re
 import os
 import base64
 from flask import g
-from column_class import Column
+from .column_class import Column
 from common_libs.common import *  # noqa: F403
 
 
@@ -161,7 +161,12 @@ class FileUploadColumn(Column):
         rest_name = self.get_rest_key_name()
 
         # ファイルパス取得
-        path = get_upload_file_path(workspace_id, menu_id, uuid, rest_name, val, uuid_jnl)  # noqa: F405
+        ret = self.get_file_upload_place()
+        if not ret:
+            path = get_upload_file_path(workspace_id, menu_id, uuid, rest_name, val, uuid_jnl)   # noqa:F405
+        else:
+            path = get_upload_file_path_specify(workspace_id, ret, uuid, val, uuid_jnl)   # noqa:F405
+
         dir_path = path["file_path"]
         old_dir_path = path["old_file_path"]
                 
@@ -217,7 +222,11 @@ class FileUploadColumn(Column):
         menu_id = self.get_menu()
         rest_name = self.get_rest_key_name()
 
-        path = get_upload_file_path(workspace_id, menu_id, target_uuid, rest_name, file_name, target_uuid_jnl)  # noqa: F405
+        ret = self.get_file_upload_place()
+        if not ret:
+            path = get_upload_file_path(workspace_id, menu_id, target_uuid, rest_name, file_name, target_uuid_jnl)   # noqa:F405
+        else:
+            path = get_upload_file_path_specify(workspace_id, ret, target_uuid, file_name, target_uuid_jnl)   # noqa:F405
         dir_path = path["file_path"]
         # ファイルの中身を読み込んでbase64に変換してreturn　読み込めなかったらFalse
         result = file_encode(dir_path)  # noqa: F405
@@ -246,7 +255,11 @@ class FileUploadColumn(Column):
         rest_name = self.get_rest_key_name()
 
         # 削除対象のold配下のファイルパス取得
-        path = get_upload_file_path(workspace_id, menu_id, uuid, rest_name, val, uuid_jnl)  # noqa: F405
+        ret = self.get_file_upload_place()
+        if not ret:
+            path = get_upload_file_path(workspace_id, menu_id, uuid, rest_name, val, uuid_jnl)   # noqa:F405
+        else:
+            path = get_upload_file_path_specify(workspace_id, ret, uuid, val, uuid_jnl)   # noqa:F405
         dir_path = path["file_path"]
         old_dir_path = path["old_file_path"]
 
@@ -271,7 +284,11 @@ class FileUploadColumn(Column):
                     # JNLのoldのファイルパス取得
                     jnl_id = jnlid.get('JOURNAL_SEQ_NO')
                     jnl_val = jnlid.get(self.get_col_name())
-                    tmp_recovery_path = get_upload_file_path(workspace_id, menu_id, uuid, rest_name, jnl_val, jnl_id)
+                    ret = self.get_file_upload_place()
+                    if not ret:
+                        tmp_recovery_path = get_upload_file_path(workspace_id, menu_id, uuid, rest_name, jnl_val, jnl_id)   # noqa:F405
+                    else:
+                        tmp_recovery_path = get_upload_file_path_specify(workspace_id, ret, uuid, jnl_val, jnl_id)   # noqa:F405
                     retmp_recovery_pathc = tmp_recovery_path.get('old_file_path')
                     if retmp_recovery_pathc is not None:
                         if os.path.isfile(retmp_recovery_pathc) is True:
