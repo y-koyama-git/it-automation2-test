@@ -137,14 +137,21 @@ def generate_secrets(length=16, punctuation=''):
     return secrets_val
 
 
-def get_timestamp():
+def get_timestamp(is_utc=True):
     """
     get timestamp
 
+    Args:
+        is_utc (bool):
+
     Returns:
-        (timestamp)2022-07-01 07:36:24.551751
+        2022-08-02T10:26:18.809Z
     """
-    return datetime.datetime.now()
+    timestamp = datetime.datetime.now()
+    if timestamp.strftime('%z') == "":
+        return timestamp.isoformat(timespec='milliseconds') + "Z"
+    else:
+        return timestamp.isoformat(timespec='milliseconds')
 
 
 def arrange_stacktrace_format(t):
