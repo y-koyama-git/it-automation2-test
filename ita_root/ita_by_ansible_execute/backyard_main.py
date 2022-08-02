@@ -13,8 +13,60 @@
 #
 from flask import g
 from common_libs.common.exception import AppException
-# import time
+from common_libs.ansible_driver.classes.gitlab import GitLabAgent
+import os
+
 
 def backyard_main(organization_id, workspace_id):
     print("backyard_main ita_by_ansible_execute called")
-    # time.sleep(1)
+
+    gitlab = GitLabAgent()
+
+    # # 確認用
+    # if organization_id == 'company_A' and workspace_id == 'prj_A':
+    #     pass
+    # else:
+    #     return
+
+    # 作業実行単位のループ
+    for job_no in range(21):
+        job_name = "job20220727-" + str(job_no)
+
+        try:
+            # make project
+            # プロジェクト名 = リポジトリ、ユニークの必要あり
+            project_name = job_name
+            # raise AppException('999-99999')  # 確認用
+            gitlab.create_project(project_name)
+            g.applogger.info("gitlab project({}) is made".format(project_name))
+
+            # clone
+            repositories_base_path = os.environ.get("STORAGEPATH") + "{}/{}/driver/ansible/git_repositories/".format(organization_id, workspace_id)
+            os.chdir(repositories_base_path)
+            http_repo_url = gitlab.get_http_repo_url(project_name)
+            os.system('git clone {}'.format(http_repo_url))
+
+            repositories_path = repositories_base_path + project_name
+            os.chdir(repositories_path)
+
+            # commit
+            print('commit')
+            os.system('touch a.txt')
+            os.system('git add a.txt')
+            os.system('git commit -m "First commit"')
+            
+            # push
+            print('push')
+            os.system('git push origin main')
+
+            # pull
+            print('pull')
+            os.system('git pull origin main')
+        except Exception as e:
+            # delete project
+            trg_project = gitlab.get_project_by_name(project_name)
+            if trg_project:
+                gitlab.delete_project(trg_project['id'])
+
+            # 作業実行単位のエラーでループを止めない場合はraiseしない
+            raise Exception(e)
