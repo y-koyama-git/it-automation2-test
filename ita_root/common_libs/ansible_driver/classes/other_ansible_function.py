@@ -25,16 +25,7 @@ class OtherAnsibleFunction():
     """
     Ansibleで使用するfunctionをまとめたクラス
     """
-    
-    # 定数定義
-    WS_DB = None
-    
-    def __init__():
-        global WS_DB
-        organization_id = g.get('ORGANIZATION_ID')
-        workspace_id = g.get('WORKSPACE_ID')
-        WS_DB = DBConnectWs(workspace_id, organization_id)
-    
+
     def chkSubstitutionValueListRecodedifference(BefInfo, AftInfo):
         """
         代入値管理・パラメータシートの具体値判定
@@ -79,7 +70,7 @@ class OtherAnsibleFunction():
 
         return diff, befFileDel, AftFileCpy
 
-    def chkSpecificsValueInput(arrayRegData, arrayVariant, UpLoadFile, DelFlag, ordMode, tgtTableName):
+    def chkSpecificsValueInput(arrayRegData, arrayVariant, UpLoadFile, DelFlag, ordMode, tgtTableName, WS_DB):
         retBool = False
         boolSystemErrorFlag = False
         retStrBody = g.appmsg.get_api_message("ITAANSIBLEH-ERR-55294")
