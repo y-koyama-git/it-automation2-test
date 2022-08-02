@@ -78,6 +78,7 @@ COLNAME_LOCK_TABLE = 'LOCK_TABLE'
 COLNAME_COLUMN_NAME_REST = 'COLUMN_NAME_REST'
 COLNAME_REQUIRED_ITEM = 'REQUIRED_ITEM'
 COLNAME_INPUT_ITEM = 'INPUT_ITEM'
+COLNAME_VIEW_ITEM = 'VIEW_ITEM'
 COLNAME_AUTO_INPUT = 'AUTO_INPUT'
 COLNAME_UNIQUE_CONSTRAINT = 'UNIQUE_CONSTRAINT'
 COLNAME_BEFORE_VALIDATE_REGISTER = 'BEFORE_VALIDATE_REGISTER'
@@ -92,6 +93,9 @@ REST_FILE_KEYNAME = 'file'
 SEARCH_MODE_NOMAL = 'NORMAL'
 SEARCH_MODE_LIST = 'LIST'
 SEARCH_MODE_RANGE = 'RANGE'
+
+REGISTER_DEFAULT_MENU = ['0', '1', '2', '3', '4']
+REGISTER_SET_PRYMARY_MENU = ['14']
 
 class loadTable():
     """
@@ -504,6 +508,14 @@ class loadTable():
                 {} or [] ?
         """
         return self.get_objtable().get(MENUINFO).get(COLNAME_SORT_KEY)
+    
+    def get_sheet_type(self):
+        """
+            シートタイプを取得
+            RETRUN:
+                {} or [] ?
+        """
+        return self.get_objtable().get(MENUINFO).get(COLNAME_SHEET_TYPE)
 
     def get_col_name(self, rest_key):
         """
@@ -859,7 +871,7 @@ class loadTable():
             type_, value, traceback_ = sys.exc_info()
             msg = ['{}'.format(traceback.format_exception(type_, value, traceback_))]
         finally:
-            # print(result_list)
+
             result = result_list
         return status_code, result, msg,
 
@@ -1066,6 +1078,9 @@ class loadTable():
 
             column_list = self.get_column_list()
             primary_key = self.get_primary_key()
+
+            sheet_type = self.get_sheet_type()
+
             # 各カラム単位の基本処理（前）、個別処理（前）を実施
             # REST用キーのパラメータ、ファイル(base64)
             entry_parameter = parameters.get(REST_PARAMETER_KEYNAME)
@@ -1083,8 +1098,8 @@ class loadTable():
                 cmd_type = parameters.get('type')
             # 実行種別簡易判定、補完 (パラメータ内にPK無し:登録,有:更新)
             target_uuid_key = self.get_rest_key(primary_key)
-            if target_uuid_key in parameters:
-                cmd_type = CMD_UPDATE
+            #if target_uuid_key in parameters:
+            #    cmd_type = CMD_UPDATE
 
             if cmd_type in [CMD_REGISTER, CMD_UPDATE, CMD_DISCARD, CMD_RESTORE]:
                 # テーブル情報（カラム、PK取得）
@@ -1266,10 +1281,14 @@ class loadTable():
                         return retBool, status_code, msg
                 # rest_key → カラム名に変換
                 colname_parameter = self.convert_restkey_colname(entry_parameter, current_row)
-
                 # 登録・更新処理
                 if cmd_type == CMD_REGISTER:
-                    result = self.objdbca.table_insert(self.get_table_name(), colname_parameter, primary_key)
+                    # INSERT時にID発番
+                    if sheet_type in REGISTER_DEFAULT_MENU:
+                        result = self.objdbca.table_insert(self.get_table_name(), colname_parameter, primary_key)
+                    # ID発番済み
+                    elif sheet_type in REGISTER_SET_PRYMARY_MENU:
+                        result = self.objdbca.table_insert_set_primary(self.get_table_name(), colname_parameter, primary_key, target_uuid)
                 elif cmd_type == CMD_UPDATE:
                     result = self.objdbca.table_update(self.get_table_name(), colname_parameter, primary_key)
                 elif cmd_type == CMD_DISCARD:
@@ -1457,7 +1476,7 @@ class loadTable():
                             rest_file.setdefault(jsonkey, file_data)
             else:
                 rest_key = self.get_rest_key(col_name)
-
+                view_item = self.get_objcol(rest_key).get(COLNAME_VIEW_ITEM)
                 if len(rest_key) > 0:
 
                     if isinstance(col_val, datetime.datetime):
@@ -1475,7 +1494,11 @@ class loadTable():
                             objcolumn = self.get_columnclass(rest_key)
                             col_val = util.ky_decrypt(col_val)
 
-                    rest_parameter.setdefault(rest_key, col_val)
+                    if mode in ['input']:
+                        rest_parameter.setdefault(rest_key, col_val)
+                    else:
+                        if view_item in '1':
+                            rest_parameter.setdefault(rest_key, col_val)
 
                     if mode not in ['excel', 'excel_jnl']:
                         if self.get_col_class_name(rest_key) == 'FileUploadColumn':
