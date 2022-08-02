@@ -451,7 +451,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.menu_filter_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/filter/journal/{uuid}:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/filter/journal/{uuid}/:
     get:
       tags:
       - Menu Filter
@@ -566,7 +566,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.menu_maintenance_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/maintenance/{uuid}:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/maintenance/{uuid}/:
     patch:
       tags:
       - Menu Maintenance
@@ -846,7 +846,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.menu_excel_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/excel/maintenance:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/excel/maintenance/:
     post:
       tags:
       - Menu Excel
@@ -1390,7 +1390,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.menu_create_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/class/info:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/class/info/:
     get:
       tags:
       - Conductor Controll
@@ -1441,7 +1441,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/class/{conductor_class_id}:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/class/{conductor_class_id}/:
     get:
       tags:
       - Conductor Controll
@@ -1500,7 +1500,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/class/maintenance:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/class/maintenance/:
     post:
       tags:
       - Conductor Controll
@@ -1557,7 +1557,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/class/maintenance/{conductor_class_id}:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/class/maintenance/{conductor_class_id}/:
     patch:
       tags:
       - Conductor Controll
@@ -1622,7 +1622,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/execute/info:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/execute/info/:
     get:
       tags:
       - Conductor Controll
@@ -1673,71 +1673,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/execute/filter/count/{target}:
-    post:
-      tags:
-      - Conductor Controll
-      description: "Conductor,Operationを対象に、検索条件を指定し、レコードの件数する"
-      operationId: post_execute_filter_count
-      parameters:
-      - name: organization_id
-        in: path
-        description: OrganizationID
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-      - name: workspace_id
-        in: path
-        description: WorkspaceID
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-      - name: menu
-        in: path
-        description: メニュー名
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-      - name: target
-        in: path
-        description: conductor_list or operation_list
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/count_target_body'
-      responses:
-        "200":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/inline_response_200_4'
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ERROR_TEMPLATE'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ERROR_TEMPLATE'
-      x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/execute/filter/{target}:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/execute/filter/{target}/:
     post:
       tags:
       - Conductor Controll
@@ -1801,7 +1737,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/execute/filter/{target}/search/candidates/{column}:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/execute/filter/{target}/search/candidates/{column}/:
     get:
       tags:
       - Conductor Controll
@@ -1868,7 +1804,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/execute:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/execute/:
     post:
       tags:
       - Conductor Controll
@@ -1924,7 +1860,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/info/{conductor_instance_id}:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/info/{conductor_instance_id}/:
     get:
       tags:
       - Conductor Controll
@@ -1983,7 +1919,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/{conductor_instance_id}:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/{conductor_instance_id}/:
     get:
       tags:
       - Conductor Controll
@@ -2042,7 +1978,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/{conductor_instance_id}/cancel:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/{conductor_instance_id}/cancel/:
     patch:
       tags:
       - Conductor Controll
@@ -2101,7 +2037,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/{conductor_instance_id}/scram:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/{conductor_instance_id}/scram/:
     patch:
       tags:
       - Conductor Controll
@@ -2160,7 +2096,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  ? /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/{conductor_instance_id}/node/{node_instance_id}/relese
+  ? /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/conductor/{conductor_instance_id}/node/{node_instance_id}/relese/
   : patch:
       tags:
       - Conductor Controll
@@ -2345,7 +2281,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.conductor_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/driver/execute:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/driver/execute/:
     post:
       tags:
       - Driver Controll
@@ -2401,7 +2337,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.driver_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/driver/execute_dry_run:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/driver/execute_dry_run/:
     post:
       tags:
       - Driver Controll
@@ -2459,7 +2395,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.driver_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/driver/execute_check_parameter:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/driver/execute_check_parameter/:
     post:
       tags:
       - Driver Controll
@@ -2515,7 +2451,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.driver_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/driver/{execution_no}:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/driver/{execution_no}/:
     get:
       tags:
       - Driver Controll
@@ -2574,7 +2510,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.driver_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/driver/{execution_no}/cancel:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/driver/{execution_no}/cancel/:
     patch:
       tags:
       - Driver Controll
@@ -2633,7 +2569,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.driver_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/driver/{execution_no}/scram:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/driver/{execution_no}/scram/:
     patch:
       tags:
       - Driver Controll
@@ -2692,7 +2628,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.driver_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/driver/execute/info:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/driver/execute/info/:
     get:
       tags:
       - Driver Controll
@@ -2743,71 +2679,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.driver_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/driver/execute/filter/count/{target}:
-    post:
-      tags:
-      - Driver Controll
-      description: "Movement,Operationを対象に、検索条件を指定し、レコードの件数する"
-      operationId: post_driver_execute_filter_count
-      parameters:
-      - name: organization_id
-        in: path
-        description: OrganizationID
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-      - name: workspace_id
-        in: path
-        description: WorkspaceID
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-      - name: menu
-        in: path
-        description: メニュー名
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-      - name: target
-        in: path
-        description: movement_list or operation_list
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/count_target_body_1'
-      responses:
-        "200":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/inline_response_200_4'
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ERROR_TEMPLATE'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ERROR_TEMPLATE'
-      x-openapi-router-controller: controllers.driver_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/driver/execute/filter/{target}:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/driver/execute/filter/{target}/:
     post:
       tags:
       - Driver Controll
@@ -2871,7 +2743,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ERROR_TEMPLATE'
       x-openapi-router-controller: controllers.driver_controll_controller
-  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/driver/execute/filter/{target}/search/candidates/{column}:
+  /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/driver/execute/filter/{target}/search/candidates/{column}/:
     get:
       tags:
       - Driver Controll
@@ -3120,6 +2992,9 @@ components:
         view_name:
           type: string
           description: ビュー名
+        pk_column_name_rest:
+          type: string
+          description: PK項目名(REST）
         inherit:
           type: boolean
           description: 継承フラグ
@@ -3188,6 +3063,7 @@ components:
         menu_id: menu_id
         view_name: view_name
         web_print_confirm: 9
+        pk_column_name_rest: pk_column_name_rest
         sort_key: sort_key
         parent_menu_group_id: parent_menu_group_id
         menu_group_id: menu_group_id
@@ -3479,6 +3355,7 @@ components:
             menu_id: menu_id
             view_name: view_name
             web_print_confirm: 9
+            pk_column_name_rest: pk_column_name_rest
             sort_key: sort_key
             parent_menu_group_id: parent_menu_group_id
             menu_group_id: menu_group_id
@@ -3911,6 +3788,7 @@ components:
               menu_id: menu_id
               view_name: view_name
               web_print_confirm: 9
+              pk_column_name_rest: pk_column_name_rest
               sort_key: sort_key
               parent_menu_group_id: parent_menu_group_id
               menu_group_id: menu_group_id
@@ -3945,11 +3823,6 @@ components:
                 column_group_name: column_group_name
                 ref_sort_conditions: ref_sort_conditions
         message: message
-    count_target_body:
-      properties:
-        rest_key_name:
-          $ref: '#/components/schemas/FILTER_REQUEST_PARAMETERS'
-      description: 検索条件を設定
     filter_target_body:
       properties:
         rest_key_name:
@@ -4138,6 +4011,7 @@ components:
               menu_id: menu_id
               view_name: view_name
               web_print_confirm: 9
+              pk_column_name_rest: pk_column_name_rest
               sort_key: sort_key
               parent_menu_group_id: parent_menu_group_id
               menu_group_id: menu_group_id
@@ -4172,11 +4046,6 @@ components:
                 column_group_name: column_group_name
                 ref_sort_conditions: ref_sort_conditions
         message: message
-    count_target_body_1:
-      properties:
-        rest_key_name:
-          $ref: '#/components/schemas/FILTER_REQUEST_PARAMETERS'
-      description: 検索条件を設定
     filter_target_body_1:
       properties:
         rest_key_name:
@@ -4302,6 +4171,7 @@ components:
           menu_id: menu_id
           view_name: view_name
           web_print_confirm: 9
+          pk_column_name_rest: pk_column_name_rest
           sort_key: sort_key
           parent_menu_group_id: parent_menu_group_id
           menu_group_id: menu_group_id
@@ -4570,6 +4440,7 @@ components:
             menu_id: menu_id
             view_name: view_name
             web_print_confirm: 9
+            pk_column_name_rest: pk_column_name_rest
             sort_key: sort_key
             parent_menu_group_id: parent_menu_group_id
             menu_group_id: menu_group_id
@@ -4684,6 +4555,7 @@ components:
             menu_id: menu_id
             view_name: view_name
             web_print_confirm: 9
+            pk_column_name_rest: pk_column_name_rest
             sort_key: sort_key
             parent_menu_group_id: parent_menu_group_id
             menu_group_id: menu_group_id
