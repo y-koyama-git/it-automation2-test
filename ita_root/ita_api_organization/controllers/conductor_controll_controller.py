@@ -19,6 +19,7 @@ from common_libs.common import *  # noqa: F403
 from libs import execute_info
 from common_libs.api import api_filter
 
+from libs import conductor_controll
 
 # Conductorクラス関連
 @api_filter
@@ -56,7 +57,12 @@ def get_conductor_class_data(organization_id, workspace_id, menu, conductor_clas
 
     :rtype: InlineResponse20011
     """
-    return 'do some magic!'
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+    
+    # メニューのカラム情報を取得
+    result_data = conductor_controll.get_conductor_data(objdbca, menu, conductor_class_id)
+    return result_data,
 
 
 @api_filter
@@ -76,9 +82,16 @@ def post_conductor_data(organization_id, workspace_id, menu, body=None):  # noqa
 
     :rtype: InlineResponse20011
     """
+    result_data = {}
+    conductor_data = {}
     if connexion.request.is_json:
-        body = dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
+        conductor_data = dict(connexion.request.get_json())  # noqa: E501
+
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+    
+    result_data = conductor_controll.conductor_maintenance(objdbca, menu, conductor_data)
+    return result_data,
 
 
 @api_filter
@@ -100,9 +113,16 @@ def patch_conductor_data(organization_id, workspace_id, menu, conductor_class_id
 
     :rtype: InlineResponse20011
     """
+    result_data = {}
+    conductor_data = {}
     if connexion.request.is_json:
-        body = dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
+        conductor_data = dict(connexion.request.get_json())  # noqa: E501
+
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+    
+    result_data = conductor_controll.conductor_maintenance(objdbca, menu, conductor_data, conductor_class_id)
+    return result_data,
 
 
 # 作業実行画面関連
@@ -128,7 +148,7 @@ def get_conductor_execute_info(organization_id, workspace_id, menu):  # noqa: E5
     # chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)
     
     # 作業実行関連のメニューの基本情報および項目情報の取得
-    target_menu = ["operation_list", "movement_list"] # "conductor_list"
+    target_menu = ["operation_list", "movement_list", "conductor_list"] # "conductor_list"
     data = execute_info.call_collect_menu_info(objdbca, target_menu)
     return data,
 

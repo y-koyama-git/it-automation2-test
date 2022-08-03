@@ -133,6 +133,7 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
         g.applogger.debug("executed sql/workspace.sql")
 
         # insert initial data of workspace-db
+        ws_db.db_transaction_start()
         with open("sql/workspace_master.sql", "r") as f:
             sql_list = f.read().split(";\n")
             for sql in sql_list:
@@ -149,6 +150,7 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
 
                 ws_db.sql_execute(sql, prepared_list)
         g.applogger.debug("executed sql/workspace_master.sql")
+        ws_db.db_commit()
 
         # register workspace-db connect infomation
         org_db.db_transaction_start()
@@ -156,6 +158,7 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
         org_db.db_commit()
     except Exception as e:
         shutil.rmtree(workspace_dir)
+        ws_db.db_rollback()
         org_db.db_rollback()
 
         if org_root_db:
