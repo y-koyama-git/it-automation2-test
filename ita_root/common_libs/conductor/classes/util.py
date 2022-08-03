@@ -85,10 +85,17 @@ class ConductorCommonLibs():
         if res_chk_conductor[0] is False:
             return False, err_code, res_chk_conductor[1]
 
-        # check node block and whether node is conneted
+        # check node block
         res_chk_node = self.chk_node(self.node_datas)
         if res_chk_node[0] is False:
             return False, err_code, res_chk_node[1]
+        else:
+            chk_node_id_list = res_chk_node[1]
+
+        # check node detail
+        res_chk_node_detail = self.chk_node_detail(self.node_datas, chk_node_id_list)
+        if res_chk_node_detail[0] is False:
+            return False, err_code, res_chk_node_detail[1]
 
         # check edge block
         res_chk_edge = self.chk_edge(self.edge_datas)
@@ -97,7 +104,7 @@ class ConductorCommonLibs():
 
         return True,
 
-    def chk_format(self, c_data={}):
+    def chk_format(self, c_data):
         """
         check format
 
@@ -155,7 +162,7 @@ class ConductorCommonLibs():
         else:
             return True,
 
-    def chk_config(self, c_data={}):
+    def chk_config(self, c_data):
         """
         check config block
 
@@ -191,7 +198,7 @@ class ConductorCommonLibs():
         else:
             return True,
 
-    def chk_conductor(self, c_data={}):
+    def chk_conductor(self, c_data):
         """
         check conductor block
 
@@ -233,7 +240,7 @@ class ConductorCommonLibs():
         else:
             return True,
 
-    def chk_node(self, c_data={}):
+    def chk_node(self, c_data):
         """
         check node block
 
@@ -246,8 +253,9 @@ class ConductorCommonLibs():
         """
         err_msg_args = []
 
-        # check node block and make chk_node_id_list
+        # check node block
         chk_node_id_list = []
+        chk_start_node = []
         for key, block_1 in c_data.items():
             block_err_msg_args = []
 
@@ -285,17 +293,17 @@ class ConductorCommonLibs():
                     if len(block2_err_msg_args) != 0:
                         block_err_msg_args.append(','.join(block2_err_msg_args) + ' in terminal.{}'.format(terminalname))
 
-            # if 'x' not in block_1 or type(block_1['x']) is not int:
-            #     block_err_msg_args.append('x')
+            if 'x' not in block_1 or type(block_1['x']) is not int:
+                block_err_msg_args.append('x')
 
-            # if 'y' not in block_1 or type(block_1['y']) is not int:
-            #     block_err_msg_args.append('y')
+            if 'y' not in block_1 or type(block_1['y']) is not int:
+                block_err_msg_args.append('y')
 
-            # if 'w' not in block_1 or type(block_1['w']) is not int:
-            #     block_err_msg_args.append('w')
+            if 'w' not in block_1 or type(block_1['w']) is not int:
+                block_err_msg_args.append('w')
 
-            # if 'h' not in block_1 or type(block_1['h']) is not int:
-            #     block_err_msg_args.append('h')
+            if 'h' not in block_1 or type(block_1['h']) is not int:
+                block_err_msg_args.append('h')
 
             if 'note' in block_1:
                 # noteの文字数チェック
@@ -306,20 +314,94 @@ class ConductorCommonLibs():
             else:
                 # make chk_node_id_list
                 chk_node_id_list.append(block_1['id'])
+                if block_1['type'] == 'start':
+                    chk_start_node.append(block_1['id'])
 
         if len(err_msg_args) != 0:
             return False, [','.join(err_msg_args)]
+        else:
+            if len(chk_start_node) != 1:
+                return False, ['node[type=start] is duplicate']
 
-        # check node detail
+            return True, chk_node_id_list
+
+    def chk_node_detail(self, c_data, chk_node_id_list):
+        """
+        check node detail
+
+        Arguments:
+            c_data: node_datas in conductor infomation(dict)
+        Returns:
+            (tuple)
+            - retBool (bool)
+            - err msg args (list)
+        """
         err_msg_args = []
         for key, block_1 in c_data.items():
             node_type = block_1['type']
 
             if node_type == 'end':
                 if 'end_type' not in block_1 or int(block_1['end_type']) not in [5, 7, 11]:
-                    err_msg_args.append('{}(end_type is invalid)'.format(key))
+                    err_msg_args.append('{}.end_type'.format(key))
                     continue
 
+            if node_type == 'movement':
+                block_err_msg_args = []
+
+                if 'movement_id' not in block_1 or not block_1['movement_id']:
+                    block_err_msg_args.append('movement_id')
+                    # db チェック
+
+                if 'movement_name' not in block_1 or not block_1['movement_name']:
+                    block_err_msg_args.append('movement_name')
+                    # db チェック
+
+                if 'skip_flg' not in block_1:
+                    block_err_msg_args.append('skip_flg')
+
+                if 'operation_id' not in block_1:
+                    block_err_msg_args.append('operation_id')
+                    # db チェック
+
+                if 'operation_name' not in block_1:
+                    block_err_msg_args.append('operation_name')
+                    # db チェック
+
+                if 'orchestra_id' not in block_1 or not block_1['orchestra_id']:
+                    block_err_msg_args.append('orchestra_id')
+                    # 設定値 チェック？？
+
+                if len(block_err_msg_args) != 0:
+                    err_msg_args.append('{}({})'.format(key, ','.join(block_err_msg_args)))
+                    continue
+
+            if node_type == 'call':
+                block_err_msg_args = []
+
+                if 'call_conductor_id' not in block_1 or not block_1['call_conductor_id']:
+                    block_err_msg_args.append('movement_id')
+                    # db チェック
+
+                if 'call_conductor_name' not in block_1 or not block_1['call_conductor_name']:
+                    block_err_msg_args.append('movement_name')
+                    # db チェック
+
+                if 'skip_flg' not in block_1:
+                    block_err_msg_args.append('skip_flg')
+
+                if 'operation_id' not in block_1:
+                    block_err_msg_args.append('operation_id')
+                    # db チェック
+
+                if 'operation_name' not in block_1:
+                    block_err_msg_args.append('operation_name')
+                    # db チェック
+
+                if len(block_err_msg_args) != 0:
+                    err_msg_args.append('{}({})'.format(key, ','.join(block_err_msg_args)))
+                    continue
+
+            # check node terminal
             res_chk_node_terminal = self.chk_node_terminal(node_type, block_1['terminal'], chk_node_id_list)
             if res_chk_node_terminal[0] is False:
                 err_msg_args.append('{}({})'.format(key, res_chk_node_terminal[1]))
@@ -367,7 +449,7 @@ class ConductorCommonLibs():
         if len(err_msg_args) != 0:
             return False, ','.join(err_msg_args)
 
-        # check 'conditional-branch' condition
+        # check 'conditional-branch' status id
         if node_type == 'conditional-branch':
             err_msg_args = []
             for terminalname, terminalinfo in terminal_blcok.items():
@@ -417,7 +499,7 @@ class ConductorCommonLibs():
 
         return True,
 
-    def chk_edge(self, c_data={}):
+    def chk_edge(self, c_data):
         """
         check edge block
 
@@ -483,13 +565,13 @@ class ConductorCommonLibs():
         else:
             return True,
 
-    def chk_call_loop(self, c_data={}):
+    def chk_call_loop(self, c_data):
         retCode = 'xxx-xxxxx'
         retMsgList = []
 
         return False, retCode, retMsgList
 
-    def chk_node_idlink(self, c_data={}):
+    def chk_node_idlink(self, c_data):
         retCode = 'xxx-xxxxx'
         retMsgList = []
 

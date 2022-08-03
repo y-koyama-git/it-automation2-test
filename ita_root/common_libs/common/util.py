@@ -141,6 +141,16 @@ def get_timestamp(is_utc=True):
     """
     get timestamp
 
+    Returns:
+        2022-07-01 07:36:24.551751
+    """
+    return datetime.datetime.now()
+
+
+def get_iso_datetime(is_utc=True):
+    """
+    get timestamp for api response format
+
     Args:
         is_utc (bool):
 
