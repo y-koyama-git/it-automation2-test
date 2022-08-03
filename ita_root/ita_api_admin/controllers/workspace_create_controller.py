@@ -129,11 +129,11 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
         g.db_connect_info["WSDB_DATADBASE"] = data["DB_DATADBASE"]
         ws_db = DBConnectWs(workspace_id, organization_id)  # noqa: F405
         # create table of workspace-db
-        ws_db.db_transaction_start()
         ws_db.sqlfile_execute("sql/workspace.sql")
         g.applogger.debug("executed sql/workspace.sql")
 
         # insert initial data of workspace-db
+        ws_db.db_transaction_start()
         with open("sql/workspace_master.sql", "r") as f:
             sql_list = f.read().split(";\n")
             for sql in sql_list:
@@ -150,6 +150,7 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
 
                 ws_db.sql_execute(sql, prepared_list)
         g.applogger.debug("executed sql/workspace_master.sql")
+        ws_db.db_commit()
 
         # register workspace-db connect infomation
         org_db.db_transaction_start()

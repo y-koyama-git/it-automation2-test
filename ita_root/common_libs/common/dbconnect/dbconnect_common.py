@@ -220,7 +220,7 @@ class DBConnectCommon:
         Arguments:
             db_cursor: db cursor
         """
-        if(os.environ.get("DEBUUG_SQL") != "1"):
+        if os.environ.get("DEBUUG_SQL") != "1":
             return
 
         print(db_cursor._last_executed)
@@ -244,7 +244,7 @@ class DBConnectCommon:
         for data in data_list:
             # print(data)
             column_list.append(data['Field'])
-            if(data['Key'] == 'PRI'):
+            if data['Key'] == 'PRI':
                 primary_key_list.append(data['Field'])
 
         return (column_list, primary_key_list)
@@ -307,7 +307,8 @@ class DBConnectCommon:
         for data in data_list:
             # auto set
             timestamp = str(get_timestamp())
-            data[primary_key_name] = str(self._uuid_create())
+            if primary_key_name not in data or not data[primary_key_name]:
+                data[primary_key_name] = str(self._uuid_create())
             data[self._COLUMN_NAME_TIMESTAMP] = timestamp
 
             # make sql statement
@@ -348,67 +349,6 @@ class DBConnectCommon:
 
         return data_list if is_last_res is True else is_last_res
 
-    def table_insert_set_primary(self, table_name, data_list, primary_key_name, primary_key_val, is_register_history=False):
-        """
-        insert table
-
-        Arguments:
-            data_list: data list for insert ex.[{"name":"なまえ", "number":"3"}]
-            primary_key_name: primary key column name
-            primary_key_val: primary key value (uuid)
-            is_register_history: (bool)is register history table
-        Returns:
-            table data list: list(tuple)
-            or
-            update failure: (bool)False
-        """
-        if isinstance(data_list, dict):
-            data_list = [data_list]
-
-        self.db_transaction_start()
-
-        is_last_res = True
-        for data in data_list:
-            # auto set
-            timestamp = str(get_timestamp())
-            data[primary_key_name] = str(primary_key_val)
-            data[self._COLUMN_NAME_TIMESTAMP] = timestamp
-
-            # make sql statement
-            column_list = list(data.keys())
-            prepared_list = list(map(lambda a: "%s", column_list))
-            value_list = list(data.values())
-
-            sql = "INSERT INTO `{}` ({}) VALUES ({})".format(table_name, ','.join(column_list), ','.join(prepared_list))
-            res = self.sql_execute(sql, value_list)
-            if res is False:
-                is_last_res = False
-                break
-
-            if is_register_history is False:
-                continue
-            # insert history table
-            history_table_name = table_name + "_JNL"
-            add_data = self._get_history_table_data("INSERT", timestamp)
-            # make history data
-            history_data = dict(data, **add_data)
-
-            # make sql statement
-            column_list = list(history_data.keys())
-            prepared_list = list(map(lambda a: "%s", column_list))
-            value_list = list(history_data.values())
-
-            sql = "INSERT INTO `{}` ({}) VALUES ({})".format(history_table_name, ','.join(column_list), ','.join(prepared_list))
-            # print(history_data)
-            # print(sql)
-            # print(value_list)
-            res = self.sql_execute(sql, value_list)
-            if res is False:
-                is_last_res = False
-                break
-
-        return data_list if is_last_res is True else is_last_res
-    
     def table_update(self, table_name, data_list, primary_key_name, is_register_history=False):
         """
         update table
