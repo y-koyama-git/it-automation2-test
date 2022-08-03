@@ -18,14 +18,14 @@ from flask import g, request
 import traceback
 
 from common_libs.common.exception import AppException
-from common_libs.common.util import get_timestamp, arrange_stacktrace_format
+from common_libs.common.util import get_iso_datetime, arrange_stacktrace_format
 
 api_timestamp = None
 
 
 def set_api_timestamp():
     global api_timestamp
-    api_timestamp = str(get_timestamp())
+    api_timestamp = str(get_iso_datetime())
 
 
 def get_api_timestamp():
