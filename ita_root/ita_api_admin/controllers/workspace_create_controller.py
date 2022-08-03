@@ -129,6 +129,7 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
         g.db_connect_info["WSDB_DATADBASE"] = data["DB_DATADBASE"]
         ws_db = DBConnectWs(workspace_id, organization_id)  # noqa: F405
         # create table of workspace-db
+        ws_db.db_transaction_start()
         ws_db.sqlfile_execute("sql/workspace.sql")
         g.applogger.debug("executed sql/workspace.sql")
 
@@ -156,6 +157,7 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
         org_db.db_commit()
     except Exception as e:
         shutil.rmtree(workspace_dir)
+        ws_db.db_rollback()
         org_db.db_rollback()
 
         if org_root_db:

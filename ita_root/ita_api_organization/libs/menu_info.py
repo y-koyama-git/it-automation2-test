@@ -14,7 +14,10 @@
 
 from common_libs.common import *  # noqa: F403
 from flask import g
+# from libs.organization_common import check_auth_menu
+from libs.organization_common import check_menu_info
 from libs.organization_common import check_auth_menu
+from libs.organization_common import check_sheet_type
 
 
 def collect_menu_info(objdbca, menu):
@@ -27,8 +30,6 @@ def collect_menu_info(objdbca, menu):
             info_data
     """
     # テーブル名
-    t_common_menu = 'T_COMN_MENU'
-    t_common_menu_table_link = 'T_COMN_MENU_TABLE_LINK'
     t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
     t_common_column_class = 'T_COMN_COLUMN_CLASS'
     t_common_column_group = 'T_COMN_COLUMN_GROUP'
@@ -38,51 +39,37 @@ def collect_menu_info(objdbca, menu):
     lang = g.LANGUAGE
     
     # 『メニュー管理』テーブルから対象のデータを取得
-    ret = objdbca.table_select(t_common_menu, 'WHERE MENU_NAME_REST = %s AND DISUSE_FLAG = %s', [menu, 0])
-    if not ret:
-        log_msg_args = [menu]
-        api_msg_args = [menu]
-        raise AppException("200-00001", log_msg_args, api_msg_args)  # noqa: F405
+    menu_record = check_menu_info(menu, objdbca)
+
+    menu_id = menu_record[0].get('MENU_ID')  # 対象メニューを特定するためのID
+    menu_group_id = menu_record[0].get('MENU_GROUP_ID')  # 対象メニューグループを特定するためのID
+    menu_name = menu_record[0].get('MENU_NAME_' + lang.upper())
+    login_necessity = menu_record[0].get('LOGIN_NECESSITY')
+    auto_filter_flg = menu_record[0].get('AUTOFILTER_FLG')
+    initial_filter_flg = menu_record[0].get('INITIAL_FILTER_FLG')
+    web_print_limit = menu_record[0].get('WEB_PRINT_LIMIT')
+    web_print_confirm = menu_record[0].get('WEB_PRINT_CONFIRM')
+    xls_print_limit = menu_record[0].get('XLS_PRINT_LIMIT')
+    sort_key = menu_record[0].get('SORT_KEY')
     
-    menu_id = ret[0].get('MENU_ID')  # 対象メニューを特定するためのID
-    menu_group_id = ret[0].get('MENU_GROUP_ID')  # 対象メニューグループを特定するためのID
-    menu_name = ret[0].get('MENU_NAME_' + lang.upper())
-    login_necessity = ret[0].get('LOGIN_NECESSITY')
-    auto_filter_flg = ret[0].get('AUTOFILTER_FLG')
-    initial_filter_flg = ret[0].get('INITIAL_FILTER_FLG')
-    web_print_limit = ret[0].get('WEB_PRINT_LIMIT')
-    web_print_confirm = ret[0].get('WEB_PRINT_CONFIRM')
-    xls_print_limit = ret[0].get('XLS_PRINT_LIMIT')
-    sort_key = ret[0].get('SORT_KEY')
+    # メニューに対するロール権限をチェック
+    privilege = check_auth_menu(menu, objdbca)
     
-    # メニューに対するロール権限をチェック（Falseなら権限エラー）
-    role_check = check_auth_menu(menu_id)
-    if not role_check:
-        log_msg_args = [menu]
-        api_msg_args = [menu]
-        raise AppException("401-00001", log_msg_args, api_msg_args)  # noqa: F405
-    
-    # check_auth_menuの戻り値をprivilegeの値として使用([1: メンテナンス可, 2: 閲覧のみ] ロールが複数あり混在する場合は1が優先される)
-    privilege = role_check
-    
-    # 『メニュー-テーブル紐付管理』テーブルから対象のデータを取得
-    ret = objdbca.table_select(t_common_menu_table_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
-    if not ret:
-        log_msg_args = [menu]
-        api_msg_args = [menu]
-        raise AppException("200-00002", log_msg_args, api_msg_args)  # noqa: F405
-    
-    menu_info = ret[0].get('MENU_INFO_' + lang.upper())
-    sheet_type = ret[0].get('SHEET_TYPE')
-    history_table_flag = ret[0].get('HISTORY_TABLE_FLAG')
-    table_name = ret[0].get('TABLE_NAME')
-    view_name = ret[0].get('VIEW_NAME')
-    inherit = ret[0].get('INHERIT')
-    vertical = ret[0].get('VERTICAL')
-    row_insert_flag = ret[0].get('ROW_INSERT_FLAG')
-    row_update_flag = ret[0].get('ROW_UPDATE_FLAG')
-    row_disuse_flag = ret[0].get('ROW_DISUSE_FLAG')
-    row_reuse_flag = ret[0].get('ROW_REUSE_FLAG')
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    menu_table_link_record = check_sheet_type(menu, False, objdbca)
+
+    menu_info = menu_table_link_record[0].get('MENU_INFO_' + lang.upper())
+    sheet_type = menu_table_link_record[0].get('SHEET_TYPE')
+    history_table_flag = menu_table_link_record[0].get('HISTORY_TABLE_FLAG')
+    table_name = menu_table_link_record[0].get('TABLE_NAME')
+    view_name = menu_table_link_record[0].get('VIEW_NAME')
+    pk_column_name_rest = menu_table_link_record[0].get('PK_COLUMN_NAME_REST')
+    inherit = menu_table_link_record[0].get('INHERIT')
+    vertical = menu_table_link_record[0].get('VERTICAL')
+    row_insert_flag = menu_table_link_record[0].get('ROW_INSERT_FLAG')
+    row_update_flag = menu_table_link_record[0].get('ROW_UPDATE_FLAG')
+    row_disuse_flag = menu_table_link_record[0].get('ROW_DISUSE_FLAG')
+    row_reuse_flag = menu_table_link_record[0].get('ROW_REUSE_FLAG')
     
     # 『メニューグループ管理』テーブルから対象のデータを取得
     ret = objdbca.table_select(t_common_menu_group, 'WHERE MENU_GROUP_ID = %s AND DISUSE_FLAG = %s', [menu_group_id, 0])
@@ -111,6 +98,7 @@ def collect_menu_info(objdbca, menu):
         'history_table_flag': history_table_flag,
         'table_name': table_name,
         'view_name': view_name,
+        'pk_column_name_rest': pk_column_name_rest,
         'inherit': inherit,
         'vertical': vertical,
         'row_insert_flag': row_insert_flag,
@@ -134,120 +122,169 @@ def collect_menu_info(objdbca, menu):
         column_class_master[recode.get('COLUMN_CLASS_ID')] = recode.get('COLUMN_CLASS_NAME')
     
     # 『カラムグループ管理』テーブルからカラムグループ一覧を取得
-    ret = objdbca.table_select(t_common_column_group, 'WHERE DISUSE_FLAG = %s', [0])
     column_group_list = {}
+    ret = objdbca.table_select(t_common_column_group, 'WHERE DISUSE_FLAG = %s', [0])
+    col_group_recode_count = len(ret)  # 「カラムグループ管理」のレコード数を格納
     if ret:
         for recode in ret:
             add_data = {
                 "column_group_id": recode.get('COL_GROUP_ID'),
                 "column_group_name": recode.get('COL_GROUP_NAME_' + lang.upper()),
+                "full_column_group_name": recode.get('FULL_COL_GROUP_NAME_' + lang.upper()),
                 "parent_column_group_id": recode.get('PA_COL_GROUP_ID')
             }
             column_group_list[recode.get('COL_GROUP_ID')] = add_data
     
     # 『メニュー-カラム紐付管理』テーブルから対象のデータを取得
     ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s ORDER BY COLUMN_DISP_SEQ ASC', [menu_id, 0])
-    if not ret:
-        log_msg_args = [menu]
-        api_msg_args = [menu]
-        raise AppException("200-00004", log_msg_args, api_msg_args)  # noqa: F405
     
     column_info_data = {}
     tmp_column_group = {}
     column_group_parent_of_child = {}  # カラムグループの親子関係があるとき、子の一番大きい親を結びつける
-    for count, recode in enumerate(ret, 1):
-        # json形式のレコードは改行を削除
-        validate_option = recode.get('VALIDATE_OPTION')
-        if type(validate_option) is str:
-            validate_option = validate_option.replace('\n', '')
-            
-        before_validate_register = recode.get('BEFORE_VALIDATE_REGISTER')
-        if type(before_validate_register) is str:
-            before_validate_register = before_validate_register.replace('\n', '')
-            
-        after_validate_register = recode.get('AFTER_VALIDATE_REGISTER')
-        if type(after_validate_register) is str:
-            after_validate_register = after_validate_register.replace('\n', '')
-        
-        # カラムグループIDがあればカラムグループ名を取得
-        column_group_id = recode.get('COL_GROUP_ID')
-        column_group_name = ''
-        if column_group_id:
-            column_group_name = column_group_list.get(column_group_id).get('column_group_name')
-        
-        detail = {
-            'column_id': recode.get('COLUMN_DEFINITION_ID'),
-            'column_name': recode.get('COLUMN_NAME_' + lang.upper()),
-            'column_name_rest': recode.get('COLUMN_NAME_REST'),
-            'column_group_id': column_group_id,
-            'column_group_name': column_group_name,
-            'column_type': column_class_master[recode.get('COLUMN_CLASS')],
-            'column_disp_seq': recode.get('COLUMN_DISP_SEQ'),
-            'description': recode.get('DESCRIPTION_' + lang.upper()),
-            'ref_table_name': recode.get('REF_TABLE_NAME'),
-            'ref_pkey_name': recode.get('REF_PKEY_NAME'),
-            'ref_col_name': recode.get('REF_COL_NAME'),
-            'ref_sort_conditions': recode.get('REF_SORT_CONDITIONS'),
-            'ref_multi_lang': recode.get('REF_MULTI_LANG'),
-            'col_name': recode.get('COL_NAME'),
-            'save_type': recode.get('SAVE_TYPE'),
-            'auto_input': recode.get('AUTO_INPUT'),
-            'input_item': recode.get('INPUT_ITEM'),
-            'view_item': recode.get('VIEW_ITEM'),
-            'unique_item': recode.get('UNIQUE_ITEM'),
-            'required_item': recode.get('REQUIRED_ITEM'),
-            'initial_value': recode.get('INITIAL_VALUE'),
-            'validate_option': validate_option,
-            'before_validate_register': before_validate_register,
-            'after_validate_register': after_validate_register
-        }
-        col_num = 'c{}'.format(count)
-        column_info_data[col_num] = detail
-        
-        # ####メモ：縦メニュー用の考慮がされていないため、最終的な修正が必要。
-        # カラムグループ管理用配列に追加
-        if column_group_id:
-            if column_group_id not in tmp_column_group:
-                tmp_column_group[column_group_id] = []
-            
-            tmp_column_group[column_group_id].append(col_num)
-            
-            # カラムグループの親をたどり格納
-            end_flag = False
-            target_column_group_id = column_group_id
-            first_column_group_id = column_group_id
-            loop_count = 0
-            while not end_flag:
-                for target in column_group_list.values():
-                    if target.get('column_group_id') == target_column_group_id:
-                        parent_column_group_id = target.get('parent_column_group_id')
-                        if not parent_column_group_id:
-                            end_flag = True
-                            break
-                        
-                        if parent_column_group_id not in tmp_column_group:
-                            tmp_column_group[parent_column_group_id] = []
-                        
-                        if target_column_group_id not in tmp_column_group[parent_column_group_id]:
-                            tmp_column_group[parent_column_group_id].append(target_column_group_id)
-                        
-                        target_column_group_id = parent_column_group_id
-                        column_group_parent_of_child[first_column_group_id] = parent_column_group_id
+    column_group_info_data = {}
+
+    if ret:
+        for count, recode in enumerate(ret, 1):
+            # json形式のレコードは改行を削除
+            validate_option = recode.get('VALIDATE_OPTION')
+            if type(validate_option) is str:
+                validate_option = validate_option.replace('\n', '')
                 
-                # ループ数が100を超えたら無限ループの可能性が高いため強制終了
-                loop_count += 1
-                if loop_count > 100:
-                    end_flag = True
+            before_validate_register = recode.get('BEFORE_VALIDATE_REGISTER')
+            if type(before_validate_register) is str:
+                before_validate_register = before_validate_register.replace('\n', '')
+                
+            after_validate_register = recode.get('AFTER_VALIDATE_REGISTER')
+            if type(after_validate_register) is str:
+                after_validate_register = after_validate_register.replace('\n', '')
+            
+            # カラムグループIDがあればカラムグループ名を取得
+            column_group_name = None
+            column_group_id = recode.get('COL_GROUP_ID')
+            if column_group_id:
+                target_data = column_group_list.get(column_group_id)
+                if target_data:
+                    column_group_name = target_data.get('full_column_group_name')
+            
+            detail = {
+                'column_id': recode.get('COLUMN_DEFINITION_ID'),
+                'column_name': recode.get('COLUMN_NAME_' + lang.upper()),
+                'column_name_rest': recode.get('COLUMN_NAME_REST'),
+                'column_group_id': column_group_id,
+                'column_group_name': column_group_name,
+                'column_type': column_class_master[recode.get('COLUMN_CLASS')],
+                'column_disp_seq': recode.get('COLUMN_DISP_SEQ'),
+                'description': recode.get('DESCRIPTION_' + lang.upper()),
+                'ref_table_name': recode.get('REF_TABLE_NAME'),
+                'ref_pkey_name': recode.get('REF_PKEY_NAME'),
+                'ref_col_name': recode.get('REF_COL_NAME'),
+                'ref_sort_conditions': recode.get('REF_SORT_CONDITIONS'),
+                'ref_multi_lang': recode.get('REF_MULTI_LANG'),
+                'col_name': recode.get('COL_NAME'),
+                'save_type': recode.get('SAVE_TYPE'),
+                'auto_input': recode.get('AUTO_INPUT'),
+                'input_item': recode.get('INPUT_ITEM'),
+                'view_item': recode.get('VIEW_ITEM'),
+                'unique_item': recode.get('UNIQUE_ITEM'),
+                'required_item': recode.get('REQUIRED_ITEM'),
+                'initial_value': recode.get('INITIAL_VALUE'),
+                'validate_option': validate_option,
+                'before_validate_register': before_validate_register,
+                'after_validate_register': after_validate_register
+            }
+            col_num = 'c{}'.format(count)
+            column_info_data[col_num] = detail
+            
+            # ####メモ：縦メニュー用の考慮がされていないため、最終的な修正が必要。
+            # カラムグループ利用があれば、カラムグループ管理用配列に追加
+            if column_group_id:
+                tmp_column_group, column_group_parent_of_child = add_tmp_column_group(column_group_list, col_group_recode_count, column_group_id, col_num, tmp_column_group, column_group_parent_of_child)  # noqa: E501
+        
+        # カラムグループ管理用配列について、カラムグループIDをg1,g2,g3...に変換し、idやnameを格納する。
+        print("添付カラムグループ")
+        print(tmp_column_group)
+        column_group_info_data, key_to_id = collect_column_group_sort_order(column_group_list, tmp_column_group, column_group_info_data)
+        
+        # 大元のカラムの並び順を作成し格納
+        # ####メモ：縦メニュー用の考慮がされていないため、最終的な修正が必要。
+        menu_info_data['columns'] = collect_parent_sord_order(column_info_data, column_group_parent_of_child, key_to_id)
     
+    info_data = {
+        'menu_info': menu_info_data,
+        'column_info': column_info_data,
+        'column_group_info': column_group_info_data
+    }
+    
+    return info_data
+
+
+def add_tmp_column_group(column_group_list, col_group_recode_count, column_group_id, col_num, tmp_column_group, column_group_parent_of_child):
+    """
+        カラムグループ管理用配列にカラムグループの親子関係の情報を格納する
+        ARGS:
+            column_group_list: カラムグループのレコード一覧
+            col_group_recode_count: カラムグループのレコード数
+            column_group_id: 対象のカラムグループID
+            col_num: カラムの並び順をc1, c2, c3...という名称に変換した値
+            tmp_colmn_group: カラムグループ管理用配列
+            column_group_parent_of_child: カラムグループの親子関係があるとき、子の一番大きい親を結びつけるための配列
+        RETRUN:
+            tmp_colmn_group, column_group_parent_of_child
+    """
+    if column_group_id not in tmp_column_group:
+        tmp_column_group[column_group_id] = []
+    
+    tmp_column_group[column_group_id].append(col_num)
+    
+    # カラムグループの親をたどり格納
+    end_flag = False
+    target_column_group_id = column_group_id
+    first_column_group_id = column_group_id
+    loop_count = 0
+    max_loop = int(col_group_recode_count) ** 2  # 「カラムグループ作成情報」のレコード数の二乗がループ回数の上限
+    while not end_flag:
+        for target in column_group_list.values():
+            if target.get('column_group_id') == target_column_group_id:
+                parent_column_group_id = target.get('parent_column_group_id')
+                if not parent_column_group_id:
+                    end_flag = True
+                    break
+                
+                if parent_column_group_id not in tmp_column_group:
+                    tmp_column_group[parent_column_group_id] = []
+                
+                if target_column_group_id not in tmp_column_group[parent_column_group_id]:
+                    tmp_column_group[parent_column_group_id].append(target_column_group_id)
+                
+                target_column_group_id = parent_column_group_id
+                column_group_parent_of_child[first_column_group_id] = parent_column_group_id
+        
+        # ループ数がmax_loopを超えたら無限ループの可能性が高いため強制終了
+        loop_count += 1
+        if loop_count > max_loop:
+            end_flag = True
+    
+    return tmp_column_group, column_group_parent_of_child
+
+
+def collect_column_group_sort_order(column_group_list, tmp_column_group, column_group_info_data):
+    """
+        カラムグループ管理用配列(tmp_column_group)を元に、カラムグループIDをg1,g2,g3...に変換し、idやnameを格納した配列を返す
+        ARGS:
+            column_group_list: カラムグループのレコード一覧
+            tmp_colmn_group: カラムグループ管理用配列
+            column_group_info_data: カラムグループ情報格納用配列
+        RETRUN:
+            column_group_info_data, key_to_id
+    """
     # カラムグループIDと対応のg番号配列を作成
     key_to_id = {}
     group_num = 1
-    for group_id, value_list in tmp_column_group.items():
+    for group_id in tmp_column_group.keys():
         key_to_id[group_id] = 'g' + str(group_num)
         group_num += 1
     
     # カラムグループ管理用配列について、カラムグループIDをg1,g2,g3...に変換し、idやnameを格納する。
-    column_group_info_data = {}
     for group_id, value_list in tmp_column_group.items():
         add_data = {}
         columns = []
@@ -259,18 +296,32 @@ def collect_menu_info(objdbca, menu):
         
         add_data['columns'] = columns
         add_data['column_group_id'] = group_id
-        add_data['column_group_name'] = column_group_list.get(group_id).get('column_group_name')
-        parent_id = column_group_list.get(group_id).get('parent_column_group_id')
-        add_data['parent_column_group_id'] = parent_id
-        if parent_id:
-            add_data['parent_column_group_name'] = column_group_list.get(parent_id).get('column_group_name')
-        else:
-            add_data['parent_column_group_name'] = None
+        add_data['column_group_name'] = None
+        add_data['parent_column_group_id'] = None
+        add_data['parent_column_group_name'] = None
+        target_data = column_group_list.get(group_id)
+        if target_data:
+            add_data['column_group_name'] = target_data.get('column_group_name')
+            parent_id = target_data.get('parent_column_group_id')
+            if parent_id:
+                add_data['parent_column_group_id'] = parent_id
+                add_data['parent_column_group_name'] = column_group_list.get(parent_id).get('column_group_name')
         
         column_group_info_data[key_to_id[group_id]] = add_data
     
-    # menu_info_dataに大元のカラムの並び順を追加
-    # ####メモ：縦メニュー用の考慮がされていないため、最終的な修正が必要。
+    return column_group_info_data, key_to_id
+
+
+def collect_parent_sord_order(column_info_data, column_group_parent_of_child, key_to_id):
+    """
+        大元のカラムの並び順を作成
+        ARGS:
+            column_info_data: 対象のカラム情報
+            column_group_parent_of_child: カラムグループの親子関係があるとき、子の一番大きい親を結びつけるための配列
+            key_to_id: カラムグループIDと対応のg番号配列
+        RETRUN:
+            columns
+    """
     columns = []
     for col_num, col_data in column_info_data.items():
         column_group_id = col_data['column_group_id']
@@ -290,16 +341,8 @@ def collect_menu_info(objdbca, menu):
             if key_to_id[column_group_id] not in columns:
                 columns.append(key_to_id[column_group_id])
             continue
-    
-    menu_info_data['columns'] = columns
-    
-    info_data = {
-        'menu_info': menu_info_data,
-        'column_info': column_info_data,
-        'column_group_info': column_group_info_data
-    }
-    
-    return info_data
+
+    return columns
 
 
 def collect_menu_column_list(objdbca, menu):
@@ -312,25 +355,19 @@ def collect_menu_column_list(objdbca, menu):
             column_list
     """
     # 変数定義
-    t_common_menu = 'T_COMN_MENU'
     t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
     
     # 『メニュー管理』テーブルから対象のデータを取得
-    ret = objdbca.table_select(t_common_menu, 'WHERE MENU_NAME_REST = %s AND DISUSE_FLAG = %s', [menu, 0])
-    if not ret:
-        log_msg_args = [menu]
-        api_msg_args = [menu]
-        raise AppException("200-00001", log_msg_args, api_msg_args)  # noqa: F405
+    menu_record = check_menu_info(menu, objdbca)
     
-    menu_id = ret[0].get('MENU_ID')  # 対象メニューを特定するためのID
+    menu_id = menu_record[0].get('MENU_ID')  # 対象メニューを特定するためのID
     
-    # メニューに対するロール権限をチェック（Falseなら権限エラー）
-    role_check = check_auth_menu(menu_id)
-    if not role_check:
-        log_msg_args = [menu]
-        api_msg_args = [menu]
-        raise AppException("401-00001", log_msg_args, api_msg_args)  # noqa: F405
+    # メニューに対するロール権限をチェック
+    privilege = check_auth_menu(menu, objdbca)
     
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    menu_table_link_record = check_sheet_type(menu, ["0", "1", "2", "3", "4"], objdbca)
+
     # 『メニュー-カラム紐付管理』テーブルから対象のデータを取得
     ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s ORDER BY COLUMN_DISP_SEQ ASC', [menu_id])
     if not ret:
@@ -355,7 +392,6 @@ def collect_pulldown_list(objdbca, menu):
             pulldown_list
     """
     # 変数定義
-    t_common_menu = 'T_COMN_MENU'
     t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
     t_common_column_class = 'T_COMN_COLUMN_CLASS'
     lang = g.LANGUAGE
@@ -367,20 +403,15 @@ def collect_pulldown_list(objdbca, menu):
         column_class_master[recode.get('COLUMN_CLASS_ID')] = recode.get('COLUMN_CLASS_NAME')
     
     # 『メニュー管理』テーブルから対象のデータを取得
-    ret = objdbca.table_select(t_common_menu, 'WHERE MENU_NAME_REST = %s AND DISUSE_FLAG = %s', [menu, 0])
-    if not ret:
-        log_msg_args = [menu]
-        api_msg_args = [menu]
-        raise AppException("200-00001", log_msg_args, api_msg_args)  # noqa: F405
+    menu_record = check_menu_info(menu, objdbca)
     
-    menu_id = ret[0].get('MENU_ID')  # 対象メニューを特定するためのID
+    menu_id = menu_record[0].get('MENU_ID')  # 対象メニューを特定するためのID
     
-    # メニューに対するロール権限をチェック（Falseなら権限エラー）
-    role_check = check_auth_menu(menu_id)
-    if not role_check:
-        log_msg_args = [menu]
-        api_msg_args = [menu]
-        raise AppException("401-00001", log_msg_args, api_msg_args)  # noqa: F405
+    # メニューに対するロール権限をチェック
+    privilege = check_auth_menu(menu, objdbca)
+    
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    menu_table_link_record = check_sheet_type(menu, ["0", "1", "2", "3", "4"], objdbca)
     
     # 『メニュー-カラム紐付管理』テーブルから対象のメニューのデータを取得
     ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
@@ -427,27 +458,22 @@ def collect_search_candidates(objdbca, menu, column):
             search_candidates
     """
     # 変数定義
-    t_common_menu = 'T_COMN_MENU'
-    t_common_menu_table_link = 'T_COMN_MENU_TABLE_LINK'
     t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
     lang = g.LANGUAGE
         
     # 『メニュー管理』テーブルから対象のデータを取得
-    ret = objdbca.table_select(t_common_menu, 'WHERE MENU_NAME_REST = %s AND DISUSE_FLAG = %s', [menu, 0])
-    if not ret:
-        log_msg_args = [menu]
-        api_msg_args = [menu]
-        raise AppException("200-00001", log_msg_args, api_msg_args)  # noqa: F405
+    menu_record = check_menu_info(menu, objdbca)
     
-    menu_id = ret[0].get('MENU_ID')  # 対象メニューを特定するためのID
+    menu_id = menu_record[0].get('MENU_ID')  # 対象メニューを特定するためのID
     
     # メニューに対するロール権限をチェック（Falseなら権限エラー）
-    role_check = check_auth_menu(menu_id)
-    if not role_check:
-        log_msg_args = [menu]
-        api_msg_args = [menu]
-        raise AppException("401-00001", log_msg_args, api_msg_args)  # noqa: F405
+    privilege = check_auth_menu(menu, objdbca)
 
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    menu_table_link_record = check_sheet_type(menu, ["0", "1", "2", "3", "4"], objdbca)
+    # 『メニュー-テーブル紐付管理』テーブルから対象のテーブル名を取得
+    table_name = menu_table_link_record[0].get('TABLE_NAME')
+    
     # 『メニュー-カラム紐付管理』テーブルから対象の項目のデータを取得
     ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND COLUMN_NAME_REST = %s AND DISUSE_FLAG = %s', [menu_id, column, 0])  # noqa: E501
     if not ret:
@@ -464,15 +490,6 @@ def collect_search_candidates(objdbca, menu, column):
     ref_col_name = ref_col_name = ret[0].get('REF_COL_NAME')
     if ref_multi_lang == "1":
         ref_col_name = ref_col_name + "_" + lang.upper()
-    
-    # 『メニュー-テーブル紐付管理』テーブルから対象のテーブル名を取得
-    ret = objdbca.table_select(t_common_menu_table_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
-    if not ret:
-        log_msg_args = [menu]
-        api_msg_args = [menu]
-        raise AppException("200-00002", log_msg_args, api_msg_args)  # noqa: F405
-    
-    table_name = ret[0].get('TABLE_NAME')
     
     # 対象のテーブルのカラム一覧を取得し、対象のカラムの有無を確認
     ret = objdbca.table_columns_get(table_name)

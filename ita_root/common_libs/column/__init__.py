@@ -21,4 +21,4 @@ from .mask_class import MaskColumn  # noqa: F401
 from .sensitive_single_text_class import SensitiveSingleTextColumn  # noqa: F401
 from .sensitive_multi_text_class import SensitiveMultiTextColumn  # noqa: F401
 from .appid_class import AppIDColumn  # noqa: F401
-# from .file_upload_class import JsonColumn
+from .json_column_class import JsonColumn # noqa: F401

@@ -17,6 +17,7 @@ organization common function module
 from flask import request, g
 import os
 import base64
+import textwrap
 
 from common_libs.common.dbconnect import *  # noqa: F403
 from common_libs.common.exception import AppException
@@ -120,15 +121,37 @@ def before_request_handler():
         return exception_response(e)
 
 
-def check_auth_menu(menu_id, wsdb_istc=None):
+def check_menu_info(menu, wsdb_istc=None):
+    """
+    check_menu_info
+
+    Arguments:
+        menu: menu_name_rest
+        wsdb_istc: (class)DBConnectWs Instance
+    Returns:
+        (dict)T_COMN_MENUの該当レコード
+    """
+    if not wsdb_istc:
+        wsdb_istc = DBConnectWs(g.get('WORKSPACE_ID'))  # noqa: F405
+
+    menu_record = wsdb_istc.table_select('T_COMN_MENU', 'WHERE `MENU_NAME_REST` = %s AND `DISUSE_FLAG` = %s', [menu, 0])
+    if not menu_record:
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException("200-00001", log_msg_args, api_msg_args)  # noqa: F405
+
+    return menu_record
+
+
+def check_auth_menu(menu, wsdb_istc=None):
     """
     check_auth_menu
 
     Arguments:
-        menu_id: menu_id
+        menu: menu_name_rest
         wsdb_istc: (class)DBConnectWs Instance
     Returns:
-        (str) PRIVILEGE value
+        (str) PRIVILEGE value [1: メンテナンス可, 2: 閲覧のみ]
     """
     if not wsdb_istc:
         wsdb_istc = DBConnectWs(g.get('WORKSPACE_ID'))  # noqa: F405
@@ -136,8 +159,16 @@ def check_auth_menu(menu_id, wsdb_istc=None):
     role_id_list = g.get('ROLES')
     prepared_list = list(map(lambda a: "%s", role_id_list))
 
-    where = 'WHERE `MENU_ID`=%s AND `ROLE_ID` in ({}) AND `DISUSE_FLAG`=0'.format(",".join(prepared_list))
-    data_list = wsdb_istc.table_select('T_COMN_ROLE_MENU_LINK', where, [menu_id, *role_id_list])
+    query_str = textwrap.dedent("""
+        SELECT * FROM `T_COMN_ROLE_MENU_LINK` TAB_A
+            LEFT JOIN `T_COMN_MENU` TAB_B ON ( TAB_A.`MENU_ID` = TAB_B.`MENU_ID`)
+        WHERE TAB_B.`MENU_NAME_REST` = %s AND
+              TAB_A.`ROLE_ID` in ({}) AND
+              TAB_A.`DISUSE_FLAG`='0' AND
+              TAB_B.`DISUSE_FLAG`='0'
+    """).strip().format(",".join(prepared_list))
+
+    data_list = wsdb_istc.sql_execute(query_str, [menu, *role_id_list])
 
     res = False
     for data in data_list:
@@ -146,4 +177,46 @@ def check_auth_menu(menu_id, wsdb_istc=None):
             return privilege
         res = privilege
 
+    if not res:
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException("401-00001", log_msg_args, api_msg_args)  # noqa: F405
+
     return res
+
+
+def check_sheet_type(menu, sheet_type_list, wsdb_istc=None):
+    """
+    check_sheet_type
+
+    Arguments:
+        menu: menu_name_rest
+        sheet_type_list: (list)許容するシートタイプのリスト,falseの場合はシートタイプのチェックを行わない
+        wsdb_istc: (class)DBConnectWs Instance
+    Returns:
+        (dict)T_COMN_MENU_TABLE_LINKの該当レコード
+    """
+    if not wsdb_istc:
+        wsdb_istc = DBConnectWs(g.get('WORKSPACE_ID'))  # noqa: F405
+
+    query_str = textwrap.dedent("""
+        SELECT * FROM `T_COMN_MENU_TABLE_LINK` TAB_A
+            LEFT JOIN `T_COMN_MENU` TAB_B ON ( TAB_A.`MENU_ID` = TAB_B.`MENU_ID`)
+        WHERE TAB_B.`MENU_NAME_REST` = %s AND
+              TAB_A.`DISUSE_FLAG`='0' AND
+              TAB_B.`DISUSE_FLAG`='0'
+    """).strip()
+
+    menu_table_link_record = wsdb_istc.sql_execute(query_str, [menu])
+
+    if not menu_table_link_record:
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException("200-00002", log_msg_args, api_msg_args)  # noqa: F405
+
+    if sheet_type_list and menu_table_link_record[0].get('SHEET_TYPE') not in sheet_type_list:
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException("200-00007", log_msg_args, api_msg_args)  # noqa: F405
+
+    return menu_table_link_record
