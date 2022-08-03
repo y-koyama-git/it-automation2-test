@@ -1283,12 +1283,7 @@ class loadTable():
                 colname_parameter = self.convert_restkey_colname(entry_parameter, current_row)
                 # 登録・更新処理
                 if cmd_type == CMD_REGISTER:
-                    # INSERT時にID発番
-                    if sheet_type in REGISTER_DEFAULT_MENU:
-                        result = self.objdbca.table_insert(self.get_table_name(), colname_parameter, primary_key)
-                    # ID発番済み
-                    elif sheet_type in REGISTER_SET_PRYMARY_MENU:
-                        result = self.objdbca.table_insert_set_primary(self.get_table_name(), colname_parameter, primary_key, target_uuid)
+                    result = self.objdbca.table_insert(self.get_table_name(), colname_parameter, primary_key)
                 elif cmd_type == CMD_UPDATE:
                     result = self.objdbca.table_update(self.get_table_name(), colname_parameter, primary_key)
                 elif cmd_type == CMD_DISCARD:
