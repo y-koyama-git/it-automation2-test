@@ -12,6 +12,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from flask import g
+from common_libs.common.dbconnect import DBConnectWs
 import re
 
 
@@ -21,9 +23,7 @@ class ConductorCommonLibs():
     node_datas = {}
     edge_datas = {}
 
-    _node_type_list = ['start', 'end', 'call', 'movement', 'parallel-branch', 'conditional-branch', 'merge', 'pause', 'status-file-branch']
-
-    _terminal_type_list = ['in', 'out']
+    _node_type_list = []
 
     _node_connect_point_condition = {
         'start': {
@@ -64,8 +64,42 @@ class ConductorCommonLibs():
         },
     }
 
-    def __init__(self):
-        pass
+    _node_end_type_list = []
+
+    _terminal_type_list = ['in', 'out']
+
+    _node_status_list = []
+
+    _orchestra_id_list = []
+
+    __db_istc = None
+
+    def __init__(self, wsdb_istc=None):
+        if not wsdb_istc:
+            wsdb_istc = DBConnectWs(g.get('WORKSPACE_ID'))  # noqa: F405
+        self.__db_istc = wsdb_istc
+
+        # set master list
+        data_list = wsdb_istc.table_select('T_COMN_CONDUCTOR_NODE', 'WHERE `DISUSE_FLAG`=0')
+        for data in data_list:
+            self._node_type_list.append(data['NODE_TYPE_ID'])
+        # print(self._node_type_list)
+
+        # 正常終了、異常終了、警告終了のみ許容
+        data_list = wsdb_istc.table_select('T_COMN_CONDUCTOR_STATUS', 'WHERE `DISUSE_FLAG`=0 and `STATUS_NAME_JA` like "%終了"')
+        for data in data_list:
+            self._node_end_type_list.append(data['STATUS_ID'])
+        # print(self._node_end_type_list)
+
+        data_list = wsdb_istc.table_select('T_COMN_CONDUCTOR_NODE_STATUS', 'WHERE `DISUSE_FLAG`=0')
+        for data in data_list:
+            self._node_status_list.append(data['STATUS_ID'])
+        # print(self._node_status_list)
+
+        data_list = wsdb_istc.table_select('T_COMN_ORCHESTRA', 'WHERE `DISUSE_FLAG`=0')
+        for data in data_list:
+            self._orchestra_id_list.append(data['ORCHESTRA_ID'])
+        # print(self._orchestra_id_list)
 
     def chk_format_all(self, c_all_data={}):
         err_code = 'xxx-xxxxxx'
@@ -91,6 +125,7 @@ class ConductorCommonLibs():
             return False, err_code, res_chk_node[1]
         else:
             chk_node_id_list = res_chk_node[1]
+            # print(chk_node_id_list)
 
         # check node detail
         res_chk_node_detail = self.chk_node_detail(self.node_datas, chk_node_id_list)
@@ -253,7 +288,6 @@ class ConductorCommonLibs():
         """
         err_msg_args = []
 
-        # check node block
         chk_node_id_list = []
         chk_start_node = []
         for key, block_1 in c_data.items():
@@ -268,30 +302,9 @@ class ConductorCommonLibs():
             if 'terminal' not in block_1 or not block_1['terminal']:
                 block_err_msg_args.append('terminal')
             else:
-                terminal_blcok = block_1['terminal']
-                for terminalname, terminalinfo in terminal_blcok.items():
-                    block2_err_msg_args = []
-
-                    if 'id' not in terminalinfo or not re.fullmatch(r'terminal-\d{1,}', terminalinfo['id']):
-                        block2_err_msg_args.append('id')
-
-                    if 'type' not in terminalinfo or terminalinfo['type'] not in self._terminal_type_list:
-                        block2_err_msg_args.append('type')
-
-                    if 'targetNode' not in terminalinfo or not terminalinfo['targetNode']:
-                        block2_err_msg_args.append('targetNode}')
-
-                    if 'edge' not in terminalinfo or not terminalinfo['edge']:
-                        block2_err_msg_args.append('edge')
-
-                    # if 'x' not in terminalinfo or type(terminalinfo['x']) is not int:
-                    #     block2_err_msg_args.append('x')
-
-                    # if 'y' not in terminalinfo or type(terminalinfo['y']) is not int:
-                    #     block2_err_msg_args.append('y')
-
-                    if len(block2_err_msg_args) != 0:
-                        block_err_msg_args.append(','.join(block2_err_msg_args) + ' in terminal.{}'.format(terminalname))
+                res_chk_terminal_block = self.chk_terminal_block(block_1['terminal'])
+                if res_chk_terminal_block[0] is False:
+                    block_err_msg_args.append(res_chk_terminal_block[1])
 
             if 'x' not in block_1 or type(block_1['x']) is not int:
                 block_err_msg_args.append('x')
@@ -314,6 +327,7 @@ class ConductorCommonLibs():
             else:
                 # make chk_node_id_list
                 chk_node_id_list.append(block_1['id'])
+                # check type=start
                 if block_1['type'] == 'start':
                     chk_start_node.append(block_1['id'])
 
@@ -324,6 +338,38 @@ class ConductorCommonLibs():
                 return False, ['node[type=start] is duplicate']
 
             return True, chk_node_id_list
+
+    def chk_terminal_block(self, terminal_blcok):
+        err_msg_args = []
+
+        for terminalname, terminalinfo in terminal_blcok.items():
+            block_err_msg_args = []
+
+            if 'id' not in terminalinfo or not re.fullmatch(r'terminal-\d{1,}', terminalinfo['id']):
+                block_err_msg_args.append('terminal.{}.id'.format(terminalname))
+
+            if 'type' not in terminalinfo or terminalinfo['type'] not in self._terminal_type_list:
+                block_err_msg_args.append('terminal.{}.type'.format(terminalname))
+
+            if 'targetNode' not in terminalinfo or not terminalinfo['targetNode']:
+                block_err_msg_args.append('terminal.{}.targetNode'.format(terminalname))
+
+            if 'edge' not in terminalinfo or not terminalinfo['edge']:
+                block_err_msg_args.append('terminal.{}.edge'.format(terminalname))
+
+            if 'x' not in terminalinfo or type(terminalinfo['x']) is not int:
+                block_err_msg_args.append('terminal.{}.x'.format(terminalname))
+
+            if 'y' not in terminalinfo or type(terminalinfo['y']) is not int:
+                block_err_msg_args.append('terminal.{}.y'.format(terminalname))
+
+            if len(block_err_msg_args) != 0:
+                err_msg_args.append(','.join(block_err_msg_args))
+
+        if len(err_msg_args) != 0:
+            return False, ','.join(err_msg_args)
+        else:
+            return True,
 
     def chk_node_detail(self, c_data, chk_node_id_list):
         """
@@ -341,70 +387,26 @@ class ConductorCommonLibs():
             node_type = block_1['type']
 
             if node_type == 'end':
-                if 'end_type' not in block_1 or int(block_1['end_type']) not in [5, 7, 11]:
+                if 'end_type' not in block_1 or block_1['end_type'] not in self._node_end_type_list:
                     err_msg_args.append('{}.end_type'.format(key))
                     continue
 
             if node_type == 'movement':
-                block_err_msg_args = []
-
-                if 'movement_id' not in block_1 or not block_1['movement_id']:
-                    block_err_msg_args.append('movement_id')
-                    # db チェック
-
-                if 'movement_name' not in block_1 or not block_1['movement_name']:
-                    block_err_msg_args.append('movement_name')
-                    # db チェック
-
-                if 'skip_flg' not in block_1:
-                    block_err_msg_args.append('skip_flg')
-
-                if 'operation_id' not in block_1:
-                    block_err_msg_args.append('operation_id')
-                    # db チェック
-
-                if 'operation_name' not in block_1:
-                    block_err_msg_args.append('operation_name')
-                    # db チェック
-
-                if 'orchestra_id' not in block_1 or not block_1['orchestra_id']:
-                    block_err_msg_args.append('orchestra_id')
-                    # 設定値 チェック？？
-
-                if len(block_err_msg_args) != 0:
-                    err_msg_args.append('{}({})'.format(key, ','.join(block_err_msg_args)))
+                res_chk_type_movement = self.chk_type_movement(block_1)
+                if res_chk_type_movement[0] is False:
+                    err_msg_args.append('{}({})'.format(key, res_chk_type_movement[1]))
                     continue
 
             if node_type == 'call':
-                block_err_msg_args = []
-
-                if 'call_conductor_id' not in block_1 or not block_1['call_conductor_id']:
-                    block_err_msg_args.append('movement_id')
-                    # db チェック
-
-                if 'call_conductor_name' not in block_1 or not block_1['call_conductor_name']:
-                    block_err_msg_args.append('movement_name')
-                    # db チェック
-
-                if 'skip_flg' not in block_1:
-                    block_err_msg_args.append('skip_flg')
-
-                if 'operation_id' not in block_1:
-                    block_err_msg_args.append('operation_id')
-                    # db チェック
-
-                if 'operation_name' not in block_1:
-                    block_err_msg_args.append('operation_name')
-                    # db チェック
-
-                if len(block_err_msg_args) != 0:
-                    err_msg_args.append('{}({})'.format(key, ','.join(block_err_msg_args)))
+                res_chk_type_call = self.chk_type_call(block_1)
+                if res_chk_type_call[0] is False:
+                    err_msg_args.append('{}({})'.format(key, res_chk_type_call[1]))
                     continue
 
-            # check node terminal
-            res_chk_node_terminal = self.chk_node_terminal(node_type, block_1['terminal'], chk_node_id_list)
-            if res_chk_node_terminal[0] is False:
-                err_msg_args.append('{}({})'.format(key, res_chk_node_terminal[1]))
+            # check node conditions
+            res_chk_node_conditions = self.chk_node_conditions(node_type, block_1['terminal'], chk_node_id_list)
+            if res_chk_node_conditions[0] is False:
+                err_msg_args.append('{}({})'.format(key, res_chk_node_conditions[1]))
                 continue
 
         if len(err_msg_args) != 0:
@@ -412,9 +414,66 @@ class ConductorCommonLibs():
         else:
             return True,
 
-    def chk_node_terminal(self, node_type, terminal_blcok, chk_node_id_list):
+    def chk_type_movement(self, node_blcok):
+        err_msg_args = []
+
+        if 'movement_id' not in node_blcok or not node_blcok['movement_id']:
+            err_msg_args.append('movement_id')
+            # db チェック
+
+        if 'movement_name' not in node_blcok or not node_blcok['movement_name']:
+            err_msg_args.append('movement_name')
+            # db チェック
+
+        if 'skip_flg' not in node_blcok:
+            err_msg_args.append('skip_flg')
+
+        if 'operation_id' not in node_blcok:
+            err_msg_args.append('operation_id')
+            # db チェック
+
+        if 'operation_name' not in node_blcok:
+            err_msg_args.append('operation_name')
+            # db チェック
+
+        if 'orchestra_id' not in node_blcok or node_blcok['orchestra_id'] not in self._orchestra_id_list:
+            err_msg_args.append('orchestra_id')
+
+        if len(err_msg_args) != 0:
+            return False, ','.join(err_msg_args)
+        else:
+            return True,
+
+    def chk_type_call(self, node_blcok):
+        err_msg_args = []
+
+        if 'call_conductor_id' not in node_blcok or not node_blcok['call_conductor_id']:
+            err_msg_args.append('call_conductor_id')
+            # db チェック
+
+        if 'call_conductor_name' not in node_blcok or not node_blcok['call_conductor_name']:
+            err_msg_args.append('call_conductor_name')
+            # db チェック
+
+        if 'skip_flg' not in node_blcok:
+            err_msg_args.append('skip_flg')
+
+        if 'operation_id' not in node_blcok:
+            err_msg_args.append('operation_id')
+            # db チェック
+
+        if 'operation_name' not in node_blcok:
+            err_msg_args.append('operation_name')
+            # db チェック
+
+        if len(err_msg_args) != 0:
+            return False, ','.join(err_msg_args)
+        else:
+            return True,
+
+    def chk_node_conditions(self, node_type, terminal_blcok, chk_node_id_list):
         """
-        check node terminal conditions
+        check node conditions
 
         Arguments:
             node_type: node type
@@ -435,7 +494,7 @@ class ConductorCommonLibs():
         for terminalname, terminalinfo in terminal_blcok.items():
             # check whether node is connected
             if terminalinfo['targetNode'] not in chk_node_id_list:
-                err_msg_args.append('targetNode not connected in terminal.{}'.format(terminalname))
+                err_msg_args.append('terminal.{}.targetNode not connected'.format(terminalname))
                 continue
 
             # check node connect point
@@ -443,7 +502,7 @@ class ConductorCommonLibs():
             target_node = terminalinfo['targetNode']
             target_node_type = self.node_datas[target_node]['type']
             if target_node_type not in connect_point_condition[terminal_type]:
-                err_msg_args.append('target_node-connect-point is invalid in terminal.{}'.format(terminalname))
+                err_msg_args.append('terminal.{}.target_node-connect-point is invalid'.format(terminalname))
                 continue
 
         if len(err_msg_args) != 0:
@@ -451,53 +510,88 @@ class ConductorCommonLibs():
 
         # check 'conditional-branch' status id
         if node_type == 'conditional-branch':
-            err_msg_args = []
-            for terminalname, terminalinfo in terminal_blcok.items():
-                if terminalinfo['type'] == 'out':
-                    if 'condition' not in terminalinfo or not terminalinfo['condition']:
-                        err_msg_args.append('condition is empty in terminal.{}'.format(terminalname))
-                        continue
+            res_chk_type_condtional_branch = self.chk_type_condtional_branch(terminal_blcok)
 
-            if len(err_msg_args) != 0:
-                return False, ','.join(err_msg_args)
+            if res_chk_type_condtional_branch[0] is False:
+                return False, res_chk_type_condtional_branch[1]
 
         # check 'status-file-branch' condition
         if node_type == 'status-file-branch':
-            err_msg_args = []
-            condition_val_list = []
-            condition_caseno_list = []
-            for terminalname, terminalinfo in terminal_blcok.items():
-                if terminalinfo['type'] == 'out':
-                    if 'case' not in terminalinfo or not terminalinfo['case']:
-                        err_msg_args.append('case is empty in terminal.{}'.format(terminalname))
-                        continue
-                    else:
-                        if terminalinfo['case'] == 'else':
-                            continue
+            res_chk_type_status_file_branch = self.chk_type_status_file_branch(terminal_blcok)
 
-                    if 'condition' not in terminalinfo or not terminalinfo['condition'] or not terminalinfo['condition'][0]:
-                        err_msg_args.append('condition is empty in terminal.{}'.format(terminalname))
-                        continue
-
-                    condtion_caseno = terminalinfo['case']
-                    condition_val = terminalinfo['condition'][0]
-
-                    if condtion_caseno not in condition_caseno_list:
-                        condition_caseno_list.append(condtion_caseno)
-                    else:
-                        err_msg_args.append('case is invalid in terminal.{}'.format(terminalname))
-                        continue
-
-                    if condition_val not in condition_val_list:
-                        condition_val_list.append(condition_val)
-                    else:
-                        err_msg_args.append('condition is duplicate in terminal.{}'.format(terminalname))
-                        continue
-
-            if len(err_msg_args) != 0:
-                return False, ','.join(err_msg_args)
+            if res_chk_type_status_file_branch[0] is False:
+                return False, res_chk_type_status_file_branch[1]
 
         return True,
+
+    def chk_type_condtional_branch(self, terminal_blcok):
+        err_msg_args = []
+
+        for terminalname, terminalinfo in terminal_blcok.items():
+            if terminalinfo['type'] == 'out':
+                if 'condition' not in terminalinfo or not terminalinfo['condition']:
+                    err_msg_args.append('terminal.{}.condition'.format(terminalname))
+                    continue
+
+                is_conditon_invalid = True
+                for condition in terminalinfo['condition']:
+                    if condition not in self._node_status_list:
+                        is_conditon_invalid = False
+                        err_msg_args.append('terminal.{}.condition'.format(terminalname))
+                        continue
+                if is_conditon_invalid is False:
+                    continue
+
+        if len(err_msg_args) != 0:
+            return False, ','.join(err_msg_args)
+        else:
+            return True,
+
+    def chk_type_status_file_branch(self, terminal_blcok):
+        err_msg_args = []
+        condition_val_list = []
+        condition_caseno_list = []
+        for terminalname, terminalinfo in terminal_blcok.items():
+            if terminalinfo['type'] == 'out':
+                if 'case' not in terminalinfo or not terminalinfo['case']:
+                    err_msg_args.append('terminal.{}.case'.format(terminalname))
+                    continue
+
+                if terminalinfo['case'] == 'else':
+                    continue
+
+                if 'condition' not in terminalinfo or not terminalinfo['condition'] or not terminalinfo['condition'][0]:
+                    err_msg_args.append('terminal.{}.condition'.format(terminalname))
+                    continue
+
+                is_conditon_invalid = True
+                for condition in terminalinfo['condition']:
+                    if condition not in self._node_status_list:
+                        is_conditon_invalid = False
+                        err_msg_args.append('terminal.{}.condition'.format(terminalname))
+                        continue
+                if is_conditon_invalid is False:
+                    continue
+
+                condtion_caseno = terminalinfo['case']
+                condition_val = terminalinfo['condition'][0]
+
+                if condtion_caseno not in condition_caseno_list:
+                    condition_caseno_list.append(condtion_caseno)
+                else:
+                    err_msg_args.append('terminal.{}.case is invalid'.format(terminalname))
+                    continue
+
+                if condition_val not in condition_val_list:
+                    condition_val_list.append(condition_val)
+                else:
+                    err_msg_args.append('terminal.{}.condition is duplicate'.format(terminalname))
+                    continue
+
+        if len(err_msg_args) != 0:
+            return False, ','.join(err_msg_args)
+        else:
+            return True,
 
     def chk_edge(self, c_data):
         """
