@@ -82,6 +82,10 @@ class AnscConst:
     DF_VAR_TYPE_GBL = "GBL"
     DF_VAR_TYPE_TPF = "TPF"
 
+    # 具体値 SENSITIVE設定値
+    DF_SENSITIVE_OFF = "0"    # False
+    DF_SENSITIVE_ON = "1"     # True
+
     # 正規表記でエスケープが必要な文字 $ ( ) * + - / ? ^ { | }
     # 親変数で許容する文字: xxx_[0-9a-zA-Z_]　  GBL/TPF
     VAR_parent_VarName = "/^(\s*)[0-9a-zA-Z_]*(\s*)$/"      # 通常の変数
