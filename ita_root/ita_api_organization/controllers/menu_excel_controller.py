@@ -32,7 +32,8 @@ from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.styles import PatternFill, Border, Side, Alignment
 from openpyxl.utils import get_column_letter
 from openpyxl.utils.cell import absolute_coordinate
-from common_libs.loadtable.load_table import loadTable
+# from common_libs.loadtable.load_table import loadTable
+from common_libs.loadtable import *
 
 @api_filter
 def get_excel_filter(organization_id, workspace_id, menu, body=None):  # noqa: E501
@@ -72,7 +73,7 @@ def get_excel_filter(organization_id, workspace_id, menu, body=None):  # noqa: E
         objdbca = DBConnectWs(workspace_id)  # noqa: F405
         
         # メニューのカラム情報を取得
-        objmenu = loadTable(objdbca, menu)
+        objmenu = load_table.loadTable(objdbca, menu)
         result_data = objmenu.rest_filter({})
 
         #### result_code,msg未対応
@@ -153,8 +154,6 @@ def get_excel_filter(organization_id, workspace_id, menu, body=None):  # noqa: E
         # ワークブックの新規作成と保存
         wb = Workbook()
         
-        # ワークシートの作成
-        # wb.create_sheet('Sheet1')
         # マスタ
         msg = g.appmsg.get_api_message('MSG-30012')
         wb.create_sheet(msg)
@@ -166,8 +165,7 @@ def get_excel_filter(organization_id, workspace_id, menu, body=None):  # noqa: E
         # 「マスタ」シートの名前の定義をメインのシートの入力規則で使用するため「マスタ」シートから作成する
         name_define_list = make_master_sheet(wb, objdbca, lang, retList_t_common_menu_column_link, column_class_master, menu_table_link_list)
         
-        # Sheet1を指定して編集
-        #ws = wb['Sheet1']
+        # シートを指定して編集
         ws = wb.active
         
         # ヘッダー部編集
@@ -290,7 +288,6 @@ def get_excel_filter(organization_id, workspace_id, menu, body=None):  # noqa: E
         # 固定部分
         ws = make_template(ws, startRow, font_bl, fill_gr, borderDash, depth)
         
-        # 
         # カラム位置調整用フラグ
         column_flg = False
         for i, dict_menu_column in enumerate(retList_t_common_menu_column_link):
@@ -317,6 +314,11 @@ def get_excel_filter(organization_id, workspace_id, menu, body=None):  # noqa: E
             column_len = len(str(column_name))
             adjusted_width = (int(column_len) + 2) * 1.2
             ws.column_dimensions[get_column_letter(column_num)].width = adjusted_width
+            
+            # 最終更新日時はマイクロ秒部分を見えないように幅を設定する
+            msg = g.appmsg.get_api_message('MSG-30017')
+            if column_name == msg:
+                ws.column_dimensions[get_column_letter(column_num)].width = 15.7
             
             # 登録
             # 更新
@@ -440,15 +442,12 @@ def get_excel_filter(organization_id, workspace_id, menu, body=None):  # noqa: E
                     startRow = startRow + 1
         
         # 空行追加処理
-        # blank_line = 11
         min_col = 1
         min_row = ws.max_row
         max_col = ws.max_column
         max_row = ws.max_row + 11
         shift_col = 0
         shift_row = 1
-        # for i in range(blank_line):
-        #     for j in range(ws.max_column):
         for col in range(min_col, max_col + 1):
             for row in range(min_row, max_row + 1):
                 # コピー元のコードを作成(column = 1, row = 1 → A1)
@@ -522,7 +521,7 @@ def get_excel_filter(organization_id, workspace_id, menu, body=None):  # noqa: E
         
         wb.save(file_path)  # noqa: E303
         
-        # 最終的にはファイルの場所を決めて絶対パスで指定する
+        # 編集してきたエクセルファイルをエンコードする
         wbEncode = file_encode(file_path)  # noqa: F405 F841
         # エンコード後wbは削除する
         os.remove(file_path)
