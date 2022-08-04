@@ -15,6 +15,7 @@
 from flask import g
 from common_libs.common.dbconnect import DBConnectWs
 import re
+import json
 
 
 class ConductorCommonLibs():
@@ -22,6 +23,8 @@ class ConductorCommonLibs():
     conductor_data = {}
     node_datas = {}
     edge_datas = {}
+
+    _node_id_list = []
 
     _node_type_list = []
 
@@ -72,12 +75,14 @@ class ConductorCommonLibs():
 
     _orchestra_id_list = []
 
-    __db_istc = None
+    _node_call_datas = {}
+
+    __db = None
 
     def __init__(self, wsdb_istc=None):
         if not wsdb_istc:
             wsdb_istc = DBConnectWs(g.get('WORKSPACE_ID'))  # noqa: F405
-        self.__db_istc = wsdb_istc
+        self.__db = wsdb_istc
 
         # set master list
         data_list = wsdb_istc.table_select('T_COMN_CONDUCTOR_NODE', 'WHERE `DISUSE_FLAG`=0')
@@ -101,41 +106,54 @@ class ConductorCommonLibs():
             self._orchestra_id_list.append(data['ORCHESTRA_ID'])
         # print(self._orchestra_id_list)
 
-    def chk_format_all(self, c_all_data={}):
+    def chk_format_all(self, c_all_data):
+        """
+        check all conductor infomation
+
+        Arguments:
+            c_data: conductor infomation(dict)
+        Returns:
+            (tuple)
+            - retBool (bool)
+            - err_code xxx-xxxxx
+            - err msg args (list)
+        """
         err_code = 'xxx-xxxxxx'
 
         # check first block
-        res_chk_format = self.chk_format(c_all_data)
-        if res_chk_format[0] is False:
-            return False, err_code, res_chk_format[1]
+        res_chk = self.chk_format(c_all_data)
+        if res_chk[0] is False:
+            return False, err_code, res_chk[1]
 
         # check config block
-        res_chk_fonig = self.chk_config(self.config_data)
-        if res_chk_fonig[0] is False:
-            return False, err_code, res_chk_fonig[1]
+        res_chk = self.chk_config(self.config_data)
+        if res_chk[0] is False:
+            return False, err_code, res_chk[1]
 
         # check conductor block
-        res_chk_conductor = self.chk_conductor(self.conductor_data)
-        if res_chk_conductor[0] is False:
-            return False, err_code, res_chk_conductor[1]
-
-        # check node block
-        res_chk_node = self.chk_node(self.node_datas)
-        if res_chk_node[0] is False:
-            return False, err_code, res_chk_node[1]
-        else:
-            chk_node_id_list = res_chk_node[1]
-            # print(chk_node_id_list)
-
-        # check node detail
-        res_chk_node_detail = self.chk_node_detail(self.node_datas, chk_node_id_list)
-        if res_chk_node_detail[0] is False:
-            return False, err_code, res_chk_node_detail[1]
+        res_chk = self.chk_conductor(self.conductor_data)
+        if res_chk[0] is False:
+            return False, err_code, res_chk[1]
 
         # check edge block
-        res_chk_edge = self.chk_edge(self.edge_datas)
-        if res_chk_edge[0] is False:
-            return False, err_code, res_chk_edge[1]
+        res_chk = self.chk_edge(self.edge_datas)
+        if res_chk[0] is False:
+            return False, err_code, res_chk[1]
+
+        # check node block
+        res_chk = self.chk_node(self.node_datas)
+        if res_chk[0] is False:
+            return False, err_code, res_chk[1]
+
+        # check node detail
+        res_chk = self.chk_node_detail(self.node_datas)
+        if res_chk[0] is False:
+            return False, err_code, res_chk[1]
+
+        # check node call loop
+        res_chk = self.chk_call_loop(self.conductor_data['id'], self._node_call_datas)
+        if res_chk[0] is False:
+            return False, err_code, res_chk[1]
 
         return True,
 
@@ -275,12 +293,12 @@ class ConductorCommonLibs():
         else:
             return True,
 
-    def chk_node(self, c_data):
+    def chk_node(self, node_datas):
         """
         check node block
 
         Arguments:
-            c_data: node_datas in conductor infomation(dict)
+            node_datas: node_datas in conductor infomation(dict)
         Returns:
             (tuple)
             - retBool (bool)
@@ -288,9 +306,8 @@ class ConductorCommonLibs():
         """
         err_msg_args = []
 
-        chk_node_id_list = []
         chk_start_node = []
-        for key, block_1 in c_data.items():
+        for key, block_1 in node_datas.items():
             block_err_msg_args = []
 
             if 'id' not in block_1 or not re.fullmatch(r'node-\d{1,}', block_1['id']):
@@ -325,11 +342,14 @@ class ConductorCommonLibs():
             if len(block_err_msg_args) != 0:
                 err_msg_args.append('{}({})'.format(key, ','.join(block_err_msg_args)))
             else:
-                # make chk_node_id_list
-                chk_node_id_list.append(block_1['id'])
+                # make node_id_list
+                self._node_id_list.append(block_1['id'])
                 # check type=start
                 if block_1['type'] == 'start':
                     chk_start_node.append(block_1['id'])
+                # extract type=call
+                elif block_1['type'] == 'call':
+                    self._node_call_datas[key] = block_1
 
         if len(err_msg_args) != 0:
             return False, [','.join(err_msg_args)]
@@ -337,9 +357,20 @@ class ConductorCommonLibs():
             if len(chk_start_node) != 1:
                 return False, ['node[type=start] is duplicate']
 
-            return True, chk_node_id_list
+            return True,
 
     def chk_terminal_block(self, terminal_blcok):
+        """
+        check node terminal block
+
+        Arguments:
+            node_type: node type
+            terminal_blcok: terminal dict in node
+        Returns:
+            (tuple)
+            - retBool (bool)
+            - err msg (str)
+        """
         err_msg_args = []
 
         for terminalname, terminalinfo in terminal_blcok.items():
@@ -371,42 +402,40 @@ class ConductorCommonLibs():
         else:
             return True,
 
-    def chk_node_detail(self, c_data, chk_node_id_list):
+    def chk_node_detail(self, node_datas):
         """
         check node detail
 
         Arguments:
-            c_data: node_datas in conductor infomation(dict)
+            node_datas: node_datas in conductor infomation(dict)
         Returns:
             (tuple)
             - retBool (bool)
             - err msg args (list)
         """
         err_msg_args = []
-        for key, block_1 in c_data.items():
+        for key, block_1 in node_datas.items():
             node_type = block_1['type']
 
             if node_type == 'end':
                 if 'end_type' not in block_1 or block_1['end_type'] not in self._node_end_type_list:
                     err_msg_args.append('{}.end_type'.format(key))
                     continue
-
-            if node_type == 'movement':
-                res_chk_type_movement = self.chk_type_movement(block_1)
-                if res_chk_type_movement[0] is False:
-                    err_msg_args.append('{}({})'.format(key, res_chk_type_movement[1]))
+            elif node_type == 'movement':
+                res_chk = self.chk_type_movement(block_1)
+                if res_chk[0] is False:
+                    err_msg_args.append('{}({})'.format(key, res_chk[1]))
                     continue
-
-            if node_type == 'call':
-                res_chk_type_call = self.chk_type_call(block_1)
-                if res_chk_type_call[0] is False:
-                    err_msg_args.append('{}({})'.format(key, res_chk_type_call[1]))
+            elif node_type == 'call':
+                res_chk = self.chk_type_call(block_1)
+                if res_chk[0] is False:
+                    err_msg_args.append('{}({})'.format(key, res_chk[1]))
                     continue
 
             # check node conditions
-            res_chk_node_conditions = self.chk_node_conditions(node_type, block_1['terminal'], chk_node_id_list)
-            if res_chk_node_conditions[0] is False:
-                err_msg_args.append('{}({})'.format(key, res_chk_node_conditions[1]))
+            res_chk = self.chk_node_conditions(node_type, block_1['terminal'])
+            if res_chk[0] is False:
+                err_msg_args.append('{}({})'.format(key, res_chk[1]))
                 continue
 
         if len(err_msg_args) != 0:
@@ -415,6 +444,16 @@ class ConductorCommonLibs():
             return True,
 
     def chk_type_movement(self, node_blcok):
+        """
+        check node type=movement
+
+        Arguments:
+            node_blcok: node data
+        Returns:
+            (tuple)
+            - retBool (bool)
+            - err msg (str)
+        """
         err_msg_args = []
 
         if 'movement_id' not in node_blcok or not node_blcok['movement_id']:
@@ -445,6 +484,16 @@ class ConductorCommonLibs():
             return True,
 
     def chk_type_call(self, node_blcok):
+        """
+        check node type=call
+
+        Arguments:
+            node_blcok: node data
+        Returns:
+            (tuple)
+            - retBool (bool)
+            - err msg (str)
+        """
         err_msg_args = []
 
         if 'call_conductor_id' not in node_blcok or not node_blcok['call_conductor_id']:
@@ -455,8 +504,8 @@ class ConductorCommonLibs():
             err_msg_args.append('call_conductor_name')
             # db チェック
 
-        if 'skip_flg' not in node_blcok:
-            err_msg_args.append('skip_flg')
+        if 'skip_flag' not in node_blcok:
+            err_msg_args.append('skip_flag')
 
         if 'operation_id' not in node_blcok:
             err_msg_args.append('operation_id')
@@ -471,14 +520,13 @@ class ConductorCommonLibs():
         else:
             return True,
 
-    def chk_node_conditions(self, node_type, terminal_blcok, chk_node_id_list):
+    def chk_node_conditions(self, node_type, terminal_blcok):
         """
         check node conditions
 
         Arguments:
             node_type: node type
             terminal_blcok: terminal dict in node
-            chk_node_id_list: node id list
         Returns:
             (tuple)
             - retBool (bool)
@@ -493,7 +541,7 @@ class ConductorCommonLibs():
 
         for terminalname, terminalinfo in terminal_blcok.items():
             # check whether node is connected
-            if terminalinfo['targetNode'] not in chk_node_id_list:
+            if terminalinfo['targetNode'] not in self._node_id_list:
                 err_msg_args.append('terminal.{}.targetNode not connected'.format(terminalname))
                 continue
 
@@ -510,21 +558,31 @@ class ConductorCommonLibs():
 
         # check 'conditional-branch' status id
         if node_type == 'conditional-branch':
-            res_chk_type_condtional_branch = self.chk_type_condtional_branch(terminal_blcok)
+            res_chk = self.chk_type_condtional_branch(terminal_blcok)
 
-            if res_chk_type_condtional_branch[0] is False:
-                return False, res_chk_type_condtional_branch[1]
+            if res_chk[0] is False:
+                return False, res_chk[1]
 
         # check 'status-file-branch' condition
-        if node_type == 'status-file-branch':
-            res_chk_type_status_file_branch = self.chk_type_status_file_branch(terminal_blcok)
+        elif node_type == 'status-file-branch':
+            res_chk = self.chk_type_status_file_branch(terminal_blcok)
 
-            if res_chk_type_status_file_branch[0] is False:
-                return False, res_chk_type_status_file_branch[1]
+            if res_chk[0] is False:
+                return False, res_chk[1]
 
         return True,
 
     def chk_type_condtional_branch(self, terminal_blcok):
+        """
+        check node type=condtional-branch
+
+        Arguments:
+            terminal_blcok: terminal dict in node
+        Returns:
+            (tuple)
+            - retBool (bool)
+            - err msg (str)
+        """
         err_msg_args = []
 
         for terminalname, terminalinfo in terminal_blcok.items():
@@ -548,16 +606,26 @@ class ConductorCommonLibs():
             return True,
 
     def chk_type_status_file_branch(self, terminal_blcok):
+        """
+        check node type=status-file-branch
+
+        Arguments:
+            terminal_blcok: terminal dict in node
+        Returns:
+            (tuple)
+            - retBool (bool)
+            - err msg (str)
+        """
         err_msg_args = []
         condition_val_list = []
         condition_caseno_list = []
+
         for terminalname, terminalinfo in terminal_blcok.items():
             if terminalinfo['type'] == 'out':
                 if 'case' not in terminalinfo or not terminalinfo['case']:
                     err_msg_args.append('terminal.{}.case'.format(terminalname))
                     continue
-
-                if terminalinfo['case'] == 'else':
+                elif terminalinfo['case'] == 'else':
                     continue
 
                 if 'condition' not in terminalinfo or not terminalinfo['condition'] or not terminalinfo['condition'][0]:
@@ -659,11 +727,95 @@ class ConductorCommonLibs():
         else:
             return True,
 
-    def chk_call_loop(self, c_data):
-        retCode = 'xxx-xxxxx'
-        retMsgList = []
+    def chk_call_loop(self, chk_call_conductor_id, node_call_datas):
+        """
+        check whether node type=call is loop recursively
 
-        return False, retCode, retMsgList
+        Arguments:
+            chk_call_conductor_id: my conductor id
+            node_call_datas: node datas type=call
+        Returns:
+            (tuple)
+            - retBool (bool)
+            - err msg args (list)
+        """
+        # dont check when you want to insert
+        if not chk_call_conductor_id:
+            return True,
+
+        err_msg_args = []
+
+        for key, block_1 in node_call_datas.items():
+            res_chk = self._chk_call_loop_recursive(block_1['call_conductor_id'], chk_call_conductor_id)
+            if res_chk[0] is False:
+                err_msg_args.append('{}.{}'.format(key, res_chk[1]))
+
+        if len(err_msg_args) != 0:
+            return False, ['\n'.join(err_msg_args)]
+        else:
+            return True,
+
+    def _chk_call_loop_recursive(self, call_conductor_id, chk_call_conductor_id):
+        """
+        check whether node type=call is loop
+
+        Arguments:
+            call_conductor_id: conductor id for target data
+            chk_call_conductor_id: my conductor id
+        Returns:
+            (tuple)
+            - retBool (bool)
+            - err msg args (list)
+        """
+        data_list = self.__db.table_select('T_COMN_CONDUCTOR_CLASS', 'WHERE `DISUSE_FLAG`=0 AND `CONDUCTOR_CLASS_ID`=%s', [call_conductor_id])
+        if len(data_list) == 0:
+            return False, 'call_conductor_id={} not exists'.format(call_conductor_id)
+
+        chk_c_data = json.loads(data_list[0]['SETTING'])
+        chk_node_datas = self.extract_node(chk_c_data)
+        chk_node_call_datas = self.extract_call(chk_node_datas)
+
+        for key, block_1 in chk_node_call_datas.items():
+            if block_1['call_conductor_id'] == chk_call_conductor_id:
+                return False, 'call_conductor_id={} is loop'.format(chk_call_conductor_id)
+            else:
+                return self._chk_call_loop_recursive(block_1['call_conductor_id'], chk_call_conductor_id)
+
+        return True,
+
+    def extract_call(self, node_datas):
+        """
+        extract node type=call from node datas
+
+        Arguments:
+            node_datas: node_datas in conductor infomation(dict)
+        Returns:
+            node_datas
+        """
+        res = {}
+
+        for key, block_1 in node_datas.items():
+            if block_1['type'] == 'call':
+                res[key] = block_1
+
+        return res
+
+    def extract_node(self, c_data):
+        """
+        extract node datas
+
+        Arguments:
+            c_data: conductor infomation(dict)
+        Returns:
+            node_datas
+        """
+        res = {}
+
+        for key, value in c_data.items():
+            if re.fullmatch(r'node-\d{1,}', key):
+                res[key] = value
+
+        return res
 
     def chk_node_idlink(self, c_data):
         retCode = 'xxx-xxxxx'
