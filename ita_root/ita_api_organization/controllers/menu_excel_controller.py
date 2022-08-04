@@ -32,7 +32,6 @@ from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.styles import PatternFill, Border, Side, Alignment
 from openpyxl.utils import get_column_letter
 from openpyxl.utils.cell import absolute_coordinate
-# from common_libs.loadtable.load_table import loadTable
 from common_libs.loadtable import *
 
 @api_filter
