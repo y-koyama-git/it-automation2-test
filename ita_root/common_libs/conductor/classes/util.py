@@ -196,12 +196,11 @@ class ConductorCommonLibs():
             if re.fullmatch(r'node-\d{1,}', key):
                 self.node_datas[key] = value
                 is_exist_node = True
-                continue
-            if re.fullmatch(r'line-\d{1,}', key):
+            elif re.fullmatch(r'line-\d{1,}', key):
                 self.edge_datas[key] = value
                 is_exist_edge = True
-                continue
-            is_exist_extra = True
+            else:
+                is_exist_extra = True
 
         if is_exist_node is False:
             err_msg_args.append('node')
@@ -269,24 +268,12 @@ class ConductorCommonLibs():
 
         if 'conductor_name' not in c_data:
             err_msg_args.append('conductor.conductor_name')
-        else:
-            val = c_data['conductor_name']
-            if not val:
-                err_msg_args.append('conductor.conductor_name')
-            # 重複チェックいる？
-            # 文字数チェックいる？
 
         if 'note' not in c_data:
             err_msg_args.append('conductor.note')
-        else:
-            val = c_data['note']
-            # 文字数チェックいる？
 
         if 'last_update_date_time' not in c_data:
             err_msg_args.append('conductor.last_update_date_time')
-        else:
-            val = c_data['last_update_date_time']
-            # DBの更新時刻と比較？
 
         if len(err_msg_args) != 0:
             return False, [','.join(err_msg_args)]
@@ -335,9 +322,9 @@ class ConductorCommonLibs():
             if 'h' not in block_1 or type(block_1['h']) is not int:
                 block_err_msg_args.append('h')
 
-            if 'note' in block_1:
-                # noteの文字数チェック
-                pass
+            if 'note' in block_1 and block_1['note']:
+                if len(block_1['note']) > 4000:
+                    block_err_msg_args.append('note is too long')
 
             if len(block_err_msg_args) != 0:
                 err_msg_args.append('{}({})'.format(key, ','.join(block_err_msg_args)))
@@ -458,22 +445,26 @@ class ConductorCommonLibs():
 
         if 'movement_id' not in node_blcok or not node_blcok['movement_id']:
             err_msg_args.append('movement_id')
-            # db チェック
+        else:
+            data_list = self.__db.table_select('T_COMN_MOVEMENT', 'WHERE `DISUSE_FLAG`=0 AND `MOVEMENT_ID`=%s', [node_blcok['movement_id']])
+            if len(data_list) == 0:
+                err_msg_args.append('movement_id is not available')
 
-        if 'movement_name' not in node_blcok or not node_blcok['movement_name']:
+        if 'movement_name' not in node_blcok:
             err_msg_args.append('movement_name')
-            # db チェック
 
-        if 'skip_flg' not in node_blcok:
-            err_msg_args.append('skip_flg')
+        if 'skip_flag' not in node_blcok:
+            err_msg_args.append('skip_flag')
 
         if 'operation_id' not in node_blcok:
             err_msg_args.append('operation_id')
-            # db チェック
+        elif node_blcok['operation_id']:
+            data_list = self.__db.table_select('T_COMN_OPERATION', 'WHERE `DISUSE_FLAG`=0 AND `OPERATION_ID`=%s', [node_blcok['operation_id']])
+            if len(data_list) == 0:
+                err_msg_args.append('operation_id is not available')
 
         if 'operation_name' not in node_blcok:
             err_msg_args.append('operation_name')
-            # db チェック
 
         if 'orchestra_id' not in node_blcok or node_blcok['orchestra_id'] not in self._orchestra_id_list:
             err_msg_args.append('orchestra_id')
@@ -498,22 +489,26 @@ class ConductorCommonLibs():
 
         if 'call_conductor_id' not in node_blcok or not node_blcok['call_conductor_id']:
             err_msg_args.append('call_conductor_id')
-            # db チェック
+        else:
+            data_list = self.__db.table_select('T_COMN_CONDUCTOR_CLASS', 'WHERE `DISUSE_FLAG`=0 AND `CONDUCTOR_CLASS_ID`=%s', [node_blcok['call_conductor_id']])  # noqa E501
+            if len(data_list) == 0:
+                err_msg_args.append('call_conductor_id is not available')
 
-        if 'call_conductor_name' not in node_blcok or not node_blcok['call_conductor_name']:
+        if 'call_conductor_name' not in node_blcok:
             err_msg_args.append('call_conductor_name')
-            # db チェック
 
         if 'skip_flag' not in node_blcok:
             err_msg_args.append('skip_flag')
 
         if 'operation_id' not in node_blcok:
             err_msg_args.append('operation_id')
-            # db チェック
+        elif node_blcok['operation_id']:
+            data_list = self.__db.table_select('T_COMN_OPERATION', 'WHERE `DISUSE_FLAG`=0 AND `OPERATION_ID`=%s', [node_blcok['operation_id']])
+            if len(data_list) == 0:
+                err_msg_args.append('operation_id is not available')
 
         if 'operation_name' not in node_blcok:
             err_msg_args.append('operation_name')
-            # db チェック
 
         if len(err_msg_args) != 0:
             return False, ','.join(err_msg_args)
@@ -769,11 +764,11 @@ class ConductorCommonLibs():
         """
         data_list = self.__db.table_select('T_COMN_CONDUCTOR_CLASS', 'WHERE `DISUSE_FLAG`=0 AND `CONDUCTOR_CLASS_ID`=%s', [call_conductor_id])
         if len(data_list) == 0:
-            return False, 'call_conductor_id={} not exists'.format(call_conductor_id)
+            return False, 'call_conductor_id={} is not available'.format(call_conductor_id)
 
         chk_c_data = json.loads(data_list[0]['SETTING'])
         chk_node_datas = self.extract_node(chk_c_data)
-        chk_node_call_datas = self.extract_call(chk_node_datas)
+        chk_node_call_datas = self.extract_node_type(chk_node_datas, 'call')
 
         for key, block_1 in chk_node_call_datas.items():
             if block_1['call_conductor_id'] == chk_call_conductor_id:
@@ -783,9 +778,9 @@ class ConductorCommonLibs():
 
         return True,
 
-    def extract_call(self, node_datas):
+    def extract_node_type(self, node_datas, node_type):
         """
-        extract node type=call from node datas
+        extract node type={node_type} from node datas
 
         Arguments:
             node_datas: node_datas in conductor infomation(dict)
@@ -795,7 +790,7 @@ class ConductorCommonLibs():
         res = {}
 
         for key, block_1 in node_datas.items():
-            if block_1['type'] == 'call':
+            if block_1['type'] == node_type:
                 res[key] = block_1
 
         return res
@@ -817,8 +812,72 @@ class ConductorCommonLibs():
 
         return res
 
-    def chk_node_idlink(self, c_data):
-        retCode = 'xxx-xxxxx'
-        retMsgList = []
+    def extract_edge(self, c_data):
+        """
+        extract edge datas
 
-        return False, retCode, retMsgList
+        Arguments:
+            c_data: conductor infomation(dict)
+        Returns:
+            edge_datas
+        """
+        res = {}
+
+        for key, value in c_data.items():
+            if re.fullmatch(r'line-\d{1,}', key):
+                res[key] = value
+
+        return res
+
+    def override_node_idlink(self, c_all_data=None):
+        """
+        update conductor infomation(dict)
+
+        Arguments:
+            c_data: conductor infomation(dict)
+        Returns:
+        Returns:
+            (tuple)
+            - retBool (bool)
+            - err_code xxx-xxxxx
+            - err msg args (list)
+        """
+        retCode = 'xxx-xxxxx'
+
+        if c_all_data:
+            res_check = self.chk_format_all(c_all_data)
+            if res_check[0] is False:
+                return res_check
+
+        try:
+            self.__db.db_transaction_start()
+
+            # conductor name
+            if self.conductor_data['id']:
+                data_list = self.__db.table_select('T_COMN_CONDUCTOR_CLASS', 'WHERE `DISUSE_FLAG`=0 AND `CONDUCTOR_CLASS_ID`=%s', [self.conductor_data['id']])  # noqa E501
+                self.conductor_data['conductor_name'] = data_list[0]['CONDUCTOR_NAME']
+
+            for key, block_1 in self.node_datas.items():
+                node_type = block_1['type']
+
+                if node_type == 'movement':
+                    # movement_name
+                    data_list = self.__db.table_select('T_COMN_MOVEMENT', 'WHERE `DISUSE_FLAG`=0 AND `MOVEMENT_ID`=%s', [block_1['movement_id']])
+                    block_1['movement_name'] = data_list[0]['MOVEMENT_NAME']
+                    # operation_name
+                    if block_1['operation_id']:
+                        data_list = self.__db.table_select('T_COMN_OPERATION', 'WHERE `DISUSE_FLAG`=0 AND `OPERATION_ID`=%s', [block_1['operation_id']])  # noqa E501
+                        block_1['operation_name'] = data_list[0]['OPERATION_NAME']
+                elif node_type == 'call':
+                    # call_conductor_name
+                    data_list = self.__db.table_select('T_COMN_CONDUCTOR_CLASS', 'WHERE `DISUSE_FLAG`=0 AND `CONDUCTOR_CLASS_ID`=%s', [block_1['call_conductor_id']])  # noqa E501
+                    block_1['call_conductor_name'] = data_list[0]['CONDUCTOR_NAME']
+                    # operation_name
+                    if block_1['operation_id']:
+                        data_list = self.__db.table_select('T_COMN_OPERATION', 'WHERE `DISUSE_FLAG`=0 AND `OPERATION_ID`=%s', [block_1['operation_id']])  # noqa E501
+                        block_1['operation_name'] = data_list[0]['OPERATION_NAME']
+
+        except Exception as e:
+            return False, retCode, e
+
+        return True,
