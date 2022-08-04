@@ -41,7 +41,7 @@ def define_and_execute_menu_create(organization_id, workspace_id, body=None):  #
         body = dict(connexion.request.get_json())
         create_param = body
     
-    result_data = menu_create_lib.create_menu_define(objdbca, create_param)
+    result_data = menu_create_lib.menu_create_define(objdbca, create_param)
     return result_data,
 
 
@@ -68,7 +68,7 @@ def execute_menu_create(organization_id, workspace_id, body=None):  # noqa: E501
         body = dict(connexion.request.get_json())
         exec_target = body
     
-    result_data = menu_create_lib.create_menu_execute(objdbca, exec_target)
+    result_data = menu_create_lib.menu_create_execute(objdbca, exec_target)
     return result_data,
 
 
