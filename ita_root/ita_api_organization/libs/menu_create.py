@@ -347,17 +347,23 @@ def _collect_common_menu_create_data(objdbca):
         link_pulldown = recode.get('LINK_PULLDOWN_' + lang.upper())
         pulldown_item_list.append({'link_id': link_id, 'menu_id': menu_id, 'link_pulldown': link_pulldown})
     
+    # ロールの選択肢一覧
+    # ####メモ：共通基盤と結合後、ロール取得APIを実施して対象のロールを取得する。
+    # 選択可能なロールは、Workspaceが持っているロールすべて。
+    role_list = ["dummy_role1", "dummy_role2", "dummy_role3"]
+    
     common_data = {
         "column_class_list": column_class_list,
         "target_menu_group_list": target_menu_group_list,
         "sheet_type_list": sheet_type_list,
         "pulldown_item_list": pulldown_item_list,
+        "role_list": role_list
     }
     
     return common_data
 
 
-def create_menu_execute(objdbca, exec_target):
+def menu_create_execute(objdbca, exec_target):
     """
         メニュー作成の実行
         ARGS:
@@ -370,7 +376,7 @@ def create_menu_execute(objdbca, exec_target):
     return {"aaa": "bbb"}
 
 
-def create_menu_define(objdbca, create_param):
+def menu_create_define(objdbca, create_param):
     """
         メニュー定義および作成の実行
         ARGS:
