@@ -1140,23 +1140,16 @@ class loadTable():
                 exec_authority = self.check_authority_cmd(cmd_type)
                 if exec_authority[0] is not True:
                     return exec_authority
-
                 # 不要パラメータの除外
                 entry_parameter = self.exclusion_parameter(cmd_type, entry_parameter)
-                # parameter 簡易チェック
-                if len(entry_parameter) == 0:
-                    status_code = '200-00202'
-                    msg = ''
-                    return False, status_code, msg
                 # 必須項目チェック
                 self.chk_required(cmd_type, entry_parameter)
-                
+
                 # PK 埋め込み table_insert table_update用
                 if cmd_type != CMD_REGISTER and target_uuid != '':
                     # 更新系処理時 uuid 埋め込み
                     target_uuid_key = self.get_rest_key(primary_key)
                     entry_parameter[target_uuid_key] = target_uuid
-
                 # 各カラム単位の基本処理（前）、個別処理（前）を実施
                 for rest_key in list(entry_parameter.keys()):
                     rest_val = entry_parameter.get(rest_key)
@@ -1472,6 +1465,7 @@ class loadTable():
             else:
                 rest_key = self.get_rest_key(col_name)
                 view_item = self.get_objcol(rest_key).get(COLNAME_VIEW_ITEM)
+                auto_input_tem = self.get_objcol(rest_key).get(COLNAME_AUTO_INPUT)
                 if len(rest_key) > 0:
 
                     if isinstance(col_val, datetime.datetime):
@@ -1492,7 +1486,7 @@ class loadTable():
                     if mode in ['input']:
                         rest_parameter.setdefault(rest_key, col_val)
                     else:
-                        if view_item in '1':
+                        if view_item == '1' or auto_input_tem == '1':
                             rest_parameter.setdefault(rest_key, col_val)
 
                     if mode not in ['excel', 'excel_jnl']:
@@ -1807,7 +1801,9 @@ class loadTable():
                             del parameter[tmp_keys]
                     if cmd_type == CMD_DISCARD:
                         if tmp_col_name not in primary_key_list:
-                            del parameter[tmp_keys]
+                            # 廃止時に備考の更新は例外で可
+                            if tmp_col_name != 'NOTE':
+                                del parameter[tmp_keys]
                     self.set_columnclass(tmp_keys, cmd_type)
                 else:
                     del parameter[tmp_keys]
@@ -1815,6 +1811,7 @@ class loadTable():
             else:
                 del parameter[tmp_keys]
                 err_keys.append(tmp_keys)
+
         # 不正なキーがある場合エラー
         if len(err_keys) != 0:
             err_keys = ",".join(map(str, err_keys))
@@ -1826,7 +1823,7 @@ class loadTable():
                 'msg_args': msg_args,
                 'msg': msg,
             }
-            self.set_message(dict_msg, MSG_LEVEL_ERROR) 
+            self.set_message(dict_msg, MSG_LEVEL_ERROR)
         return parameter
 
     def chk_required(self, cmd_type, parameter):
