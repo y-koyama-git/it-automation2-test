@@ -157,12 +157,12 @@ class ConductorCommonLibs():
 
         return True,
 
-    def chk_format(self, c_data):
+    def chk_format(self, c_all_data):
         """
         check format
 
         Arguments:
-            c_data: conductor infomation(dict)
+            c_all_data: conductor infomation(dict)
         Returns:
             (tuple)
             - retBool (bool)
@@ -171,20 +171,20 @@ class ConductorCommonLibs():
         err_msg_args = []
 
         # check config
-        if 'config' in c_data:
-            if not c_data['config']:
+        if 'config' in c_all_data:
+            if not c_all_data['config']:
                 err_msg_args.append('config')
-            self.config_data = c_data['config']
-            del c_data['config']
+            self.config_data = c_all_data['config']
+            del c_all_data['config']
         else:
             err_msg_args.append('config')
 
         # check conductor
-        if 'conductor' in c_data:
-            if not c_data['conductor']:
+        if 'conductor' in c_all_data:
+            if not c_all_data['conductor']:
                 err_msg_args.append('conductor')
-            self.conductor_data = c_data['conductor']
-            del c_data['conductor']
+            self.conductor_data = c_all_data['conductor']
+            del c_all_data['conductor']
         else:
             err_msg_args.append('conductor')
 
@@ -192,7 +192,7 @@ class ConductorCommonLibs():
         is_exist_node = False
         is_exist_edge = False
         is_exist_extra = False
-        for key, value in c_data.items():
+        for key, value in c_all_data.items():
             if re.fullmatch(r'node-\d{1,}', key):
                 self.node_datas[key] = value
                 is_exist_node = True
@@ -265,6 +265,10 @@ class ConductorCommonLibs():
 
         if 'id' not in c_data:
             err_msg_args.append('conductor.id')
+        elif c_data['id']:
+            data_list = self.__db.table_select('T_COMN_CONDUCTOR_CLASS', 'WHERE `DISUSE_FLAG`=0 AND `CONDUCTOR_CLASS_ID`=%s', [c_data['id']])  # noqa E501
+            if len(data_list) == 0:
+                err_msg_args.append('conductor.id not exists')
 
         if 'conductor_name' not in c_data:
             err_msg_args.append('conductor.conductor_name')
@@ -339,7 +343,7 @@ class ConductorCommonLibs():
                     self._node_call_datas[key] = block_1
 
         if len(err_msg_args) != 0:
-            return False, [','.join(err_msg_args)]
+            return False, ['\n'.join(err_msg_args)]
         else:
             if len(chk_start_node) != 1:
                 return False, ['node[type=start] is duplicate']
@@ -406,7 +410,7 @@ class ConductorCommonLibs():
 
             if node_type == 'end':
                 if 'end_type' not in block_1 or block_1['end_type'] not in self._node_end_type_list:
-                    err_msg_args.append('{}.end_type'.format(key))
+                    err_msg_args.append('{}(end_type)'.format(key))
                     continue
             elif node_type == 'movement':
                 res_chk = self.chk_type_movement(block_1)
@@ -426,7 +430,7 @@ class ConductorCommonLibs():
                 continue
 
         if len(err_msg_args) != 0:
-            return False, [','.join(err_msg_args)]
+            return False, ['\n'.join(err_msg_args)]
         else:
             return True,
 
@@ -715,10 +719,10 @@ class ConductorCommonLibs():
                     block_err_msg_args.append('outTerminal')
 
             if len(block_err_msg_args) != 0:
-                err_msg_args.append(key + '(' + ','.join(block_err_msg_args) + ')')
+                err_msg_args.append('{}({})'.format(key, ','.join(block_err_msg_args)))
 
         if len(err_msg_args) != 0:
-            return False, [','.join(err_msg_args)]
+            return False, ['\n'.join(err_msg_args)]
         else:
             return True,
 
@@ -812,23 +816,6 @@ class ConductorCommonLibs():
 
         return res
 
-    def extract_edge(self, c_data):
-        """
-        extract edge datas
-
-        Arguments:
-            c_data: conductor infomation(dict)
-        Returns:
-            edge_datas
-        """
-        res = {}
-
-        for key, value in c_data.items():
-            if re.fullmatch(r'line-\d{1,}', key):
-                res[key] = value
-
-        return res
-
     def override_node_idlink(self, c_all_data=None):
         """
         update conductor infomation(dict)
@@ -840,7 +827,7 @@ class ConductorCommonLibs():
             (tuple)
             - retBool (bool)
             - err_code xxx-xxxxx
-            - err msg args (list)
+            # - err msg args (list)
         """
         retCode = 'xxx-xxxxx'
 
@@ -850,8 +837,6 @@ class ConductorCommonLibs():
                 return res_check
 
         try:
-            self.__db.db_transaction_start()
-
             # conductor name
             if self.conductor_data['id']:
                 data_list = self.__db.table_select('T_COMN_CONDUCTOR_CLASS', 'WHERE `DISUSE_FLAG`=0 AND `CONDUCTOR_CLASS_ID`=%s', [self.conductor_data['id']])  # noqa E501
@@ -878,6 +863,14 @@ class ConductorCommonLibs():
                         block_1['operation_name'] = data_list[0]['OPERATION_NAME']
 
         except Exception as e:
-            return False, retCode, e
+            g.applogger.error(e)
+            return False, retCode
 
-        return True,
+        res = {
+            'config': self.conductor_data,
+            'conductor': self.conductor_data,
+        }
+        res.update(self.node_datas)
+        res.update(self.edge_datas)
+
+        return res
