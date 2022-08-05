@@ -924,9 +924,6 @@ class loadTable():
                 for tmp_exec_result in list_exec_result:
                     entry_parameter = tmp_exec_result.get('parameter')
                     self.exec_restore_action(entry_parameter, tmp_exec_result)
-                status_code = result_data[1]
-                msg_args = self.get_message(MSG_LEVEL_ERROR)
-
                 status_code = '200-00201'
                 messagelist = self.get_message(MSG_LEVEL_ERROR)
                 for tmp_msgs in messagelist:
@@ -1145,6 +1142,14 @@ class loadTable():
                 # 必須項目チェック
                 self.chk_required(cmd_type, entry_parameter)
 
+                # 登録時、primary_key指定時の重複チェック
+                exec_chk_primay_val = self.chk_primay_val(entry_parameter, target_uuid_key, target_uuid, cmd_type)
+                if exec_chk_primay_val is True:
+                    if cmd_type == CMD_REGISTER:
+                        tmp_uuid_val = entry_parameter[target_uuid_key]
+                        if tmp_uuid_val == '' or tmp_uuid_val is None:
+                            del entry_parameter[target_uuid_key]
+
                 # PK 埋め込み table_insert table_update用
                 if cmd_type != CMD_REGISTER and target_uuid != '':
                     # 更新系処理時 uuid 埋め込み
@@ -1210,7 +1215,7 @@ class loadTable():
                                     self.set_message(dict_msg, MSG_LEVEL_ERROR)
 
                 # メニュー共通処理:レコード操作前 組み合わせ一意制約
-                # self.exec_unique_constraint(entry_parameter, target_uuid)
+                self.exec_unique_constraint(entry_parameter, target_uuid)
 
                 # メニュー、カラム個別処理:レコード操作前
                 target_menu_option = {
@@ -1548,7 +1553,15 @@ class loadTable():
                                 objcolumn = self.get_columnclass(tmp_constraint_key)
                                 tmp_bool, tmp_msg, output_val = objcolumn.convert_value_output(val)
                                 dict_bind_kv.setdefault(tmp_constraint_key, output_val)
-                                
+                            else:
+                                tmp_constraint_col_name = self.get_col_name(tmp_constraint_key)
+                                tmp_where_str = " `{}` = %s ".format(tmp_constraint_col_name)
+                                where_str = where_str + ' {} {}'.format(conjunction, tmp_where_str)
+                                val = parameter.get(tmp_constraint_key)
+                                bind_value_list.append(val)
+                                objcolumn = self.get_columnclass(tmp_constraint_key)
+                                tmp_bool, tmp_msg, output_val = objcolumn.convert_value_output(val)
+                                dict_bind_kv.setdefault(tmp_constraint_key, output_val)
                 # 更新時自身をIDを除外
                 if target_uuid is not None:
                     if len(target_uuid) != 0:
@@ -1571,6 +1584,42 @@ class loadTable():
                         'msg': msg,
                     }
                     self.set_message(dict_msg, MSG_LEVEL_ERROR)
+
+    # []:PK指定時の重複チェックの実施
+    def chk_primay_val(self, entry_parameter, target_uuid_key, primary_val, cmd_type):
+        """
+            PK指定時の重複チェックの実施(登録時PK指定時のみ)
+            ARGS:
+                entry_parameter:パラメータ
+                target_uuid_key: PKのrest_name
+                primary_val:値
+                cmd_type: 実行種別
+            RETRUN:
+                bool
+        """
+        
+        retBool = True
+        msg = ''
+        if cmd_type == CMD_REGISTER:
+            if primary_val is None or primary_val == '' :
+                primary_val = entry_parameter.get(target_uuid_key)
+
+            if primary_val is not None:
+                where_str = " where  `{}` = %s ".format(self.get_primary_key())
+                bind_value_list = [primary_val]
+                table_count = self.objdbca.table_select(self.get_table_name(), where_str, bind_value_list)
+                if len(table_count) != 0:
+                    retBool = False
+                    status_code = '200-00219'
+                    msg_args = [cmd_type, target_uuid_key,primary_val]
+                    msg = g.appmsg.get_api_message(status_code, msg_args)
+                    dict_msg = {
+                        'status_code': status_code,
+                        'msg_args': msg_args,
+                        'msg': msg,
+                    }
+                    self.set_message(dict_msg, MSG_LEVEL_ERROR)
+        return retBool
 
     # []: レコード操作前処理の実施(メニュー)
     def exec_menu_before_validate(self, target_option):

@@ -25,6 +25,8 @@
     "200-00216": "{} is greater than or equal to the maximum value (maximum value: {}, input value: {})",
     "200-00217": "{} is not an integer value.( input value: {})",
     "200-00218": "The input value of {} is not found in the reference ({}).(input value:{})",
+    "200-00219": "The parameter ({}) value specified in {} operation is duplicated. (value:{})",
+    "200-00601": "Failed to get version information",
     "400-00001": "Request-Header Paramater({}) is Invalid",
     "400-00002": "Request-Body Paramater({}) is Invalid",
     "401-00001": "You do not have access privileges to the target menu. (menu: {})",
