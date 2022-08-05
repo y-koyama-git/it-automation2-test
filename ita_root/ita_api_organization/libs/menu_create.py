@@ -707,7 +707,8 @@ def _create_new_execute(objdbca, create_param):
             "MENU_CREATE_ID": menu_create_id,
             "STATUS_ID": status_id,
             "CREATE_TYPE": create_type,
-            "MENU_MATERIAL": ""
+            "MENU_MATERIAL": "",
+            "DISUSE_FLAG": "0"
         }
         primary_key_name = 'HISTORY_ID'
         ret = objdbca.table_insert(t_menu_create_history, data_list, primary_key_name)
