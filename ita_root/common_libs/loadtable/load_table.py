@@ -1210,7 +1210,7 @@ class loadTable():
                                     self.set_message(dict_msg, MSG_LEVEL_ERROR)
 
                 # メニュー共通処理:レコード操作前 組み合わせ一意制約
-                self.exec_unique_constraint(entry_parameter, target_uuid)
+                # self.exec_unique_constraint(entry_parameter, target_uuid)
 
                 # メニュー、カラム個別処理:レコード操作前
                 target_menu_option = {
