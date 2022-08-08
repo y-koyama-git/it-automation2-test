@@ -87,7 +87,7 @@ def get_excel_filter(organization_id, workspace_id, menu, body=None):  # noqa: E
         if not ret_t_common_menu:
             log_msg_args = [menu]
             api_msg_args = [menu]
-            raise AppException("200-00001", log_msg_args, api_msg_args)  # noqa: F405
+            raise AppException("200-00002", log_msg_args, api_msg_args)  # noqa: F405
         menu_id = ret_t_common_menu[0].get('MENU_ID')
         file_name = ret_t_common_menu[0].get('MENU_NAME_' + lang.upper()) + '_' + datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.xlsx'
         file_path = excel_dir + '/' + file_name
@@ -97,7 +97,7 @@ def get_excel_filter(organization_id, workspace_id, menu, body=None):  # noqa: E
         if not retList_t_common_menu_column_link:
             log_msg_args = [menu]
             api_msg_args = [menu]
-            raise AppException("200-00004", log_msg_args, api_msg_args)  # noqa: F405
+            raise AppException("200-00005", log_msg_args, api_msg_args)  # noqa: F405
         
         # 『カラムクラスマスタ』テーブルからcolumn_typeの一覧を取得
         ret = objdbca.table_select(t_common_column_class, 'WHERE COLUMN_CLASS_NAME LIKE %s AND DISUSE_FLAG = %s', ['%IDColumn%', 0])
@@ -117,7 +117,7 @@ def get_excel_filter(organization_id, workspace_id, menu, body=None):  # noqa: E
         if not ret:
             log_msg_args = [menu]
             api_msg_args = [menu]
-            raise AppException("200-00002", log_msg_args, api_msg_args)  # noqa: F405
+            raise AppException("200-00003", log_msg_args, api_msg_args)  # noqa: F405
         
         # 登録更新廃止復活フラグを取得する
         menu_table_link_list = []
@@ -899,7 +899,7 @@ def get_excel_format(organization_id, workspace_id, menu):  # noqa: E501
         if not ret_t_common_menu:
             log_msg_args = [menu]
             api_msg_args = [menu]
-            raise AppException("200-00001", log_msg_args, api_msg_args)  # noqa: F405
+            raise AppException("200-00002", log_msg_args, api_msg_args)  # noqa: F405
         menu_id = ret_t_common_menu[0].get('MENU_ID')
         file_name = ret_t_common_menu[0].get('MENU_NAME_' + lang.upper()) + '_' + datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.xlsx'
         file_path = excel_dir + '/' + file_name
@@ -909,7 +909,7 @@ def get_excel_format(organization_id, workspace_id, menu):  # noqa: E501
         if not retList_t_common_menu_column_link:
             log_msg_args = [menu]
             api_msg_args = [menu]
-            raise AppException("200-00004", log_msg_args, api_msg_args)  # noqa: F405
+            raise AppException("200-00005", log_msg_args, api_msg_args)  # noqa: F405
         
         # 『カラムクラスマスタ』テーブルからcolumn_typeの一覧を取得
         ret = objdbca.table_select(t_common_column_class, 'WHERE COLUMN_CLASS_NAME LIKE %s AND DISUSE_FLAG = %s', ['%IDColumn%', 0])
@@ -929,7 +929,7 @@ def get_excel_format(organization_id, workspace_id, menu):  # noqa: E501
         if not ret:
             log_msg_args = [menu]
             api_msg_args = [menu]
-            raise AppException("200-00002", log_msg_args, api_msg_args)  # noqa: F405
+            raise AppException("200-00003", log_msg_args, api_msg_args)  # noqa: F405
         
         # 登録更新廃止復活フラグを取得する
         menu_table_link_list = []
