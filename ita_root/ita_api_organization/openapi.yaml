@@ -2249,7 +2249,7 @@ paths:
       tags:
         - Conductor Controll
       description: Conductor作業の予約取り消し
-      operationId: patchConductorCansel
+      operationId: patchConductorCancel
       parameters:
         - name: organization_id
           in: path
@@ -2275,6 +2275,11 @@ paths:
           required: true
           schema:
             type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
       responses:
         '200':
           description: Success
@@ -2334,6 +2339,11 @@ paths:
           required: true
           schema:
             type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
       responses:
         '200':
           description: Success
@@ -2399,6 +2409,11 @@ paths:
           required: true
           schema:
             type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
       responses:
         '200':
           description: Success
