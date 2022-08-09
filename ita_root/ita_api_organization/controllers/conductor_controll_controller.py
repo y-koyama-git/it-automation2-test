@@ -13,7 +13,7 @@
 #   limitations under the License.
 
 import connexion
-import six
+import six  # noqa: F401
 
 from common_libs.common import *  # noqa: F403
 from libs import execute_info
@@ -237,41 +237,6 @@ def post_execute_filter(organization_id, workspace_id, menu, target, body=None):
     return result_data,
 
 
-@api_filter
-def post_execute_filter_count(organization_id, workspace_id, menu, target, body=None):  # noqa: E501
-    """post_execute_filter_count
-
-    Conductor,Operationを対象に、検索条件を指定し、レコードの件数する # noqa: E501
-
-    :param organization_id: OrganizationID
-    :type organization_id: str
-    :param workspace_id: WorkspaceID
-    :type workspace_id: str
-    :param menu: メニュー名
-    :type menu: str
-    :param target: conductor_list or operation_list
-    :type target: str
-    :param body:
-    :type body: dict | bytes
-
-    :rtype: InlineResponse2004
-    """
-    # DB接続
-    objdbca = DBConnectWs(workspace_id)  # noqa: F405
-
-    # メニューに対するロール権限をチェック（Falseなら権限エラー）
-    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
-    
-    filter_parameter = {}
-    if connexion.request.is_json:
-        body = dict(connexion.request.get_json())
-        filter_parameter = body
-        
-    # メニューのカラム情報を取得
-    result_data = execute_info.rest_count(objdbca, target, filter_parameter)
-    return result_data,
-
-
 # 作業実行
 @api_filter
 def post_conductor_excecute(organization_id, workspace_id, menu, body=None):  # noqa: E501
@@ -325,7 +290,15 @@ def get_conductor_info(organization_id, workspace_id, menu, conductor_instance_i
 
     :rtype: InlineResponse20012
     """
-    return 'do some magic!'
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+
+    # メニューに対するロール権限をチェック（Falseなら権限エラー）
+    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
+
+    # メニューのカラム情報を取得
+    result_data = conductor_controll.get_conductor_info(objdbca, menu, conductor_instance_id)
+    return result_data,
 
 
 @api_filter
@@ -345,12 +318,20 @@ def get_conductor_instance_data(organization_id, workspace_id, menu, conductor_i
 
     :rtype: InlineResponse20014
     """
-    return 'do some magic!'
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+
+    # メニューに対するロール権限をチェック（Falseなら権限エラー）
+    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
+
+    # メニューのカラム情報を取得
+    result_data = conductor_controll.get_conductor_instance_data(objdbca, menu, conductor_instance_id)
+    return result_data,
 
 
 @api_filter
-def patch_conductor_cansel(organization_id, workspace_id, menu, conductor_instance_id):  # noqa: E501
-    """patch_conductor_cansel
+def patch_conductor_cancel(organization_id, workspace_id, menu, conductor_instance_id, body=None):
+    """patch_conductor_cancel
 
     Conductor作業の予約取り消し # noqa: E501
 
@@ -365,11 +346,21 @@ def patch_conductor_cansel(organization_id, workspace_id, menu, conductor_instan
 
     :rtype: InlineResponse20011
     """
-    return 'do some magic!'
+    return {},
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+
+    # メニューに対するロール権限をチェック（Falseなら権限エラー）
+    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
+    
+    # 予約取消の実行
+    action_type = "cansel"
+    result_data = conductor_controll.conductor_execute_action(objdbca, menu, action_type, conductor_instance_id)
+    return result_data,
 
 
 @api_filter
-def patch_conductor_relese(organization_id, workspace_id, menu, conductor_instance_id, node_instance_id):  # noqa: E501
+def patch_conductor_relese(organization_id, workspace_id, menu, conductor_instance_id, node_instance_id, body=None):  # noqa: E501
     """patch_conductor_relese
 
     Conductor作業の一時停止解除 # noqa: E501
@@ -391,7 +382,7 @@ def patch_conductor_relese(organization_id, workspace_id, menu, conductor_instan
 
 
 @api_filter
-def patch_conductor_scram(organization_id, workspace_id, menu, conductor_instance_id):  # noqa: E501
+def patch_conductor_scram(organization_id, workspace_id, menu, conductor_instance_id, body=None):  # noqa: E501
     """patch_conductor_scram
 
     Conductor作業の緊急停止 # noqa: E501
