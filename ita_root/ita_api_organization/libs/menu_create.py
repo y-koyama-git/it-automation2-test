@@ -283,6 +283,10 @@ def collect_exist_menu_create_data(objdbca, menu_create):
         # ####メモ：縦メニュー用の考慮がされていないため、最終的な修正が必要。
         menu_info['menu']['columns'] = collect_parent_sord_order(column_info_data, column_group_parent_of_child, key_to_id)
     
+    # カラム情報およびカラムグループ情報の個数を取得し、menu_info['menu']に格納
+    menu_info['menu']['number_item'] = len(column_info_data)
+    menu_info['menu']['number_group'] = len(column_group_info_data)
+    
     # カラム情報を格納
     menu_info['column'] = column_info_data
     
@@ -436,6 +440,7 @@ def _create_new_execute(objdbca, create_param):
     
     # 変数定義
     lang = g.get('LANGUAGE')
+    user_id = g.get('USER_ID')
     
     # 登録するためのデータを抽出
     menu_data = check_request_body_key(create_param, 'menu')  # "menu" keyが無かったら400-00002エラー
@@ -702,7 +707,8 @@ def _create_new_execute(objdbca, create_param):
             "STATUS_ID": status_id,
             "CREATE_TYPE": create_type,
             "MENU_MATERIAL": "",
-            "DISUSE_FLAG": "0"
+            "DISUSE_FLAG": "0",
+            "LAST_UPDATE_USER": user_id
         }
         primary_key_name = 'HISTORY_ID'
         ret = objdbca.table_insert(t_menu_create_history, data_list, primary_key_name)
