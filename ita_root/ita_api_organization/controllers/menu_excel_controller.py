@@ -1134,9 +1134,6 @@ def post_excel_filter(organization_id, workspace_id, menu, body=None):  # noqa: 
 
     :rtype: InlineResponse2004
     """
-    # if connexion.request.is_json:
-    #     body = Object.from_dict(connexion.request.get_json())  # noqa: E501
-    # return 'do some magic!'
     try:
         # 言語設定取得
         lang = g.LANGUAGE
