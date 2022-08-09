@@ -1005,6 +1005,7 @@ class loadTable():
                 # コミット  トランザクション終了
                 self.objdbca.db_transaction_end(True)
                 tmp_data = self.get_exec_count()
+                result = tmp_data
             else:
                 # ロールバック トランザクション終了
                 self.objdbca.db_transaction_end(False)
@@ -1024,6 +1025,9 @@ class loadTable():
                                 status_code = err_megs.get('status_code')
                                 msg = err_megs.get('msg_args')
                                 err_msg_count_flg = 1
+                                if msg == '' or status_code == '':
+                                    status_code = '200-00201'
+                                    err_msg_count_flg = 0
                             else:
                                 status_code = '200-00201'
                                 err_msg_count_flg = 0
@@ -1033,8 +1037,8 @@ class loadTable():
 
                 if err_msg_count_flg == 0:
                     msg = json.dumps(err_all, ensure_ascii=False)
-
         except Exception:
+            result = {}
             # ロールバック トランザクション終了
             self.objdbca.db_transaction_end(False)
             type_, value, traceback_ = sys.exc_info()
@@ -1044,8 +1048,6 @@ class loadTable():
             log_msg_args = []
             api_msg_args = []
             raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
-
-        result = tmp_data
 
         return status_code, result, msg,
     
@@ -1128,13 +1130,6 @@ class loadTable():
                     tmp_errs = {}
                     for err_key, err_info in errs_info.items():
                         for err_megs in err_info:
-                            if len(err_info) == 1 and len(errs_info) == 1:
-                                status_code = err_megs.get('status_code')
-                                msg = err_megs.get('msg_args')
-                                err_msg_count_flg = 1
-                            else:
-                                status_code = '200-00201'
-                                err_msg_count_flg = 0
                             tmp_errs.setdefault(err_key, [])
                             tmp_errs[err_key].append(err_megs.get('msg'))
                     err_all[eno] = tmp_errs.copy()
@@ -1180,6 +1175,8 @@ class loadTable():
             # REST用キーのパラメータ、ファイル(base64)
             entry_parameter = parameters.get(REST_PARAMETER_KEYNAME)
             entry_file = parameters.get(REST_FILE_KEYNAME)
+            if entry_file is None:
+                entry_file = {}
             if target_uuid is None:
                 target_uuid = ''
 

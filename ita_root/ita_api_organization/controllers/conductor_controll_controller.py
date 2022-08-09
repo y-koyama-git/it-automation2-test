@@ -21,6 +21,7 @@ from common_libs.api import api_filter
 
 from libs import conductor_controll
 
+
 # Conductorクラス関連
 @api_filter
 def get_conductor_class_info(organization_id, workspace_id, menu):  # noqa: E501
@@ -37,7 +38,16 @@ def get_conductor_class_info(organization_id, workspace_id, menu):  # noqa: E501
 
     :rtype: InlineResponse20012
     """
-    return 'do some magic!'
+
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+
+    # メニューに対するロール権限をチェック（Falseなら権限エラー）
+    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
+
+    # メニューのカラム情報を取得
+    result_data = conductor_controll.get_conductor_class_info(objdbca, menu)
+    return result_data,
 
 
 @api_filter
@@ -59,7 +69,10 @@ def get_conductor_class_data(organization_id, workspace_id, menu, conductor_clas
     """
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
-    
+
+    # メニューに対するロール権限をチェック（Falseなら権限エラー）
+    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
+
     # メニューのカラム情報を取得
     result_data = conductor_controll.get_conductor_data(objdbca, menu, conductor_class_id)
     return result_data,
@@ -77,7 +90,7 @@ def post_conductor_data(organization_id, workspace_id, menu, body=None):  # noqa
     :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
-    :param body: 
+    :param body:
     :type body: dict | bytes
 
     :rtype: InlineResponse20011
@@ -89,7 +102,10 @@ def post_conductor_data(organization_id, workspace_id, menu, body=None):  # noqa
 
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
-    
+
+    # メニューに対するロール権限をチェック（Falseなら権限エラー）
+    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
+
     result_data = conductor_controll.conductor_maintenance(objdbca, menu, conductor_data)
     return result_data,
 
@@ -108,7 +124,7 @@ def patch_conductor_data(organization_id, workspace_id, menu, conductor_class_id
     :type menu: str
     :param conductor_class_id: Conductor Class ID
     :type conductor_class_id: str
-    :param body: 
+    :param body:
     :type body: dict | bytes
 
     :rtype: InlineResponse20011
@@ -120,6 +136,9 @@ def patch_conductor_data(organization_id, workspace_id, menu, conductor_class_id
 
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
+
+    # メニューに対するロール権限をチェック（Falseなら権限エラー）
+    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
     
     result_data = conductor_controll.conductor_maintenance(objdbca, menu, conductor_data, conductor_class_id)
     return result_data,
@@ -145,10 +164,10 @@ def get_conductor_execute_info(organization_id, workspace_id, menu):  # noqa: E5
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
     
     # メニューに対するロール権限をチェック（Falseなら権限エラー）
-    # chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)
+    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
     
     # 作業実行関連のメニューの基本情報および項目情報の取得
-    target_menu = ["operation_list", "movement_list", "conductor_list"] # "conductor_list"
+    target_menu = ["operation_list", "movement_list", "conductor_list"]
     data = execute_info.call_collect_menu_info(objdbca, target_menu)
     return data,
 
@@ -176,7 +195,7 @@ def get_execute_search_candidates(organization_id, workspace_id, menu, target, c
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
     
     # メニューに対するロール権限をチェック（Falseなら権限エラー）
-    # chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)
+    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
     
     # 対象項目のプルダウン検索候補一覧を取得
     data = execute_info.collect_search_candidates(objdbca, target, column)
@@ -197,7 +216,7 @@ def post_execute_filter(organization_id, workspace_id, menu, target, body=None):
     :type menu: str
     :param target: conductor_list or operation_list
     :type target: str
-    :param body: 
+    :param body:
     :type body: dict | bytes
 
     :rtype: InlineResponse2005
@@ -206,7 +225,7 @@ def post_execute_filter(organization_id, workspace_id, menu, target, body=None):
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
 
     # メニューに対するロール権限をチェック（Falseなら権限エラー）
-    # chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)
+    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
     
     filter_parameter = {}
     if connexion.request.is_json:
@@ -232,7 +251,7 @@ def post_execute_filter_count(organization_id, workspace_id, menu, target, body=
     :type menu: str
     :param target: conductor_list or operation_list
     :type target: str
-    :param body: 
+    :param body:
     :type body: dict | bytes
 
     :rtype: InlineResponse2004
@@ -241,7 +260,7 @@ def post_execute_filter_count(organization_id, workspace_id, menu, target, body=
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
 
     # メニューに対するロール権限をチェック（Falseなら権限エラー）
-    # chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)
+    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
     
     filter_parameter = {}
     if connexion.request.is_json:
@@ -266,14 +285,26 @@ def post_conductor_excecute(organization_id, workspace_id, menu, body=None):  # 
     :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
-    :param body: 
+    :param body:
     :type body: dict | bytes
 
     :rtype: InlineResponse20011
     """
+
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+
+    # メニューに対するロール権限をチェック（Falseなら権限エラー）
+    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
+    
+    parameter = {}
     if connexion.request.is_json:
-        body = dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
+        body = dict(connexion.request.get_json())
+        parameter = body
+        
+    # メニューのカラム情報を取得
+    result_data = conductor_controll.conductor_execute(objdbca, menu, parameter)
+    return result_data,
 
 
 # Conductor作業確認関連
