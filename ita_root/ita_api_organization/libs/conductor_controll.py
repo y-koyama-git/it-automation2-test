@@ -364,3 +364,207 @@ def conductor_execute(objdbca, menu, parameter):
     }
 
     return result
+
+
+def get_conductor_info(objdbca, menu, conductor_instance_id):
+    """
+        Conductor基本情報の取得
+        ARGS:
+            objdbca:DB接クラス  DBConnectWs()
+            menu:メニュー名 string
+        RETRUN:
+            statusCode, {}, msg
+    """
+    # メニューに対するロール権限をチェック
+    privilege = check_auth_menu(menu, objdbca)  # noqa: F841
+    
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['14', '15', '16']
+    menu_table_link_record = check_sheet_type(menu, sheet_type_list, objdbca)  # noqa: F841
+
+    objmenu = load_table.loadTable(objdbca, menu)  # noqa: F405
+    if objmenu.get_objtable() is False:
+        status_code = "401-00003"
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
+    
+    try:
+        # 対象メニューのload_table生成(conductor_instance_list,conductor_node_instance_list,movement_list)
+        c_menu = 'conductor_instance_list'
+        cc_menu = 'conductor_class_edit'
+        n_menu = 'conductor_node_instance_list'
+        m_menu = 'movement_list'
+        objconductor = load_table.loadTable(objdbca, c_menu)  # noqa: F405
+        objnode = load_table.loadTable(objdbca, n_menu)  # noqa: F405
+        objmovement = load_table.loadTable(objdbca, m_menu)  # noqa: F405
+        objcclass = load_table.loadTable(objdbca, cc_menu)  # noqa: F405
+
+        if (objconductor.get_objtable() is False or
+                objnode.get_objtable() is False or
+                objmovement.get_objtable() is False or
+                objcclass.get_objtable() is False):
+            raise Exception()
+
+        objmenus = {
+            "objconductor": objconductor,
+            "objnode": objnode,
+            "objmovement": objmovement,
+            "objcclass": objcclass
+        }
+
+        objCexec = ConductorExecuteLibs(objdbca, '', objmenus)
+        result = objCexec.get_instance_info_data(conductor_instance_id)
+
+    except Exception:
+        status_code = "200-00805"
+        log_msg_args = [conductor_instance_id]
+        api_msg_args = [conductor_instance_id]
+        raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
+
+    return result
+
+
+def get_conductor_instance_data(objdbca, menu, conductor_instance_id):
+    """
+        Conductorクラスの取得
+        ARGS:
+            objdbca:DB接クラス  DBConnectWs()
+            menu:メニュー名 string
+            conductor_class_id:ConductorクラスID string
+        RETRUN:
+            data
+    """
+
+    # メニューに対するロール権限をチェック
+    privilege = check_auth_menu(menu, objdbca)  # noqa: F841
+    
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['14', '15', '16']
+    menu_table_link_record = check_sheet_type(menu, sheet_type_list, objdbca)  # noqa: F841
+
+    try:
+        # 対象メニューのload_table生成(conductor_instance_list,conductor_node_instance_list,movement_list)
+        c_menu = 'conductor_instance_list'
+        cc_menu = 'conductor_class_edit'
+        n_menu = 'conductor_node_instance_list'
+        m_menu = 'movement_list'
+        objconductor = load_table.loadTable(objdbca, c_menu)  # noqa: F405
+        objnode = load_table.loadTable(objdbca, n_menu)  # noqa: F405
+        objmovement = load_table.loadTable(objdbca, m_menu)  # noqa: F405
+        objcclass = load_table.loadTable(objdbca, cc_menu)  # noqa: F405
+
+        if (objconductor.get_objtable() is False or
+                objnode.get_objtable() is False or
+                objmovement.get_objtable() is False or
+                objcclass.get_objtable() is False):
+            raise Exception()
+
+        objmenus = {
+            "objconductor": objconductor,
+            "objnode": objnode,
+            "objmovement": objmovement,
+            "objcclass": objcclass
+        }
+
+        objCexec = ConductorExecuteLibs(objdbca, '', objmenus)
+        result = objCexec.get_instance_data(conductor_instance_id)
+    
+    except Exception:
+        status_code = "200-00806"
+        log_msg_args = [conductor_instance_id]
+        api_msg_args = [conductor_instance_id]
+        raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
+
+    return result
+
+
+def conductor_execute_action(objdbca, menu, mode='', conductor_instance_id='', node_instance_id=''):
+    """
+        Conductor作業に対する個別処理(cancel,scram,relese)
+        ARGS:
+            objdbca:DB接クラス  DBConnectWs()
+            menu:メニュー名 string
+            mode: 処理種別 cancel,scram,relese
+            conductor_instance_id:
+        RETRUN:
+            data
+    """
+    msg = ''
+    # メニューに対するロール権限をチェック
+    privilege = check_auth_menu(menu, objdbca)
+    if privilege == '2':
+        status_code = "401-00001"
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['15', '16']
+    menu_table_link_record = check_sheet_type(menu, sheet_type_list, objdbca)  # noqa: F841
+
+    try:
+        if mode == '' or mode is None:
+            raise Exception()
+
+        # 対象メニューのload_table生成(conductor_instance_list,conductor_node_instance_list)
+        c_menu = 'conductor_instance_list'
+        n_menu = 'conductor_node_instance_list'
+        objconductor = load_table.loadTable(objdbca, c_menu)  # noqa: F405
+        objnode = load_table.loadTable(objdbca, n_menu)  # noqa: F405
+
+        if (objconductor.get_objtable() is False or
+                objnode.get_objtable() is False):
+            raise Exception()
+        
+        objmenus = {
+            "objconductor": objconductor,
+            "objnode": objnode
+        }
+        objCexec = ConductorExecuteLibs(objdbca, '', objmenus, 'Update', conductor_instance_id)
+    except Exception:
+        status_code = "200-00807"
+        log_msg_args = [mode, conductor_instance_id, node_instance_id]
+        api_msg_args = [mode, conductor_instance_id, node_instance_id]
+        raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
+    
+    try:
+        status_code = "000-00000"
+        msg_args = []
+        # トランザクション開始
+        objdbca.db_transaction_start()
+
+        # 対象メニューのテーブルと「ロック対象テーブル」を昇順でロック
+        locktable_list = objconductor.get_locktable()
+        if locktable_list is not None:
+            tmp_result = objdbca.table_lock([locktable_list])
+        else:
+            tmp_result = objdbca.table_lock([objconductor.get_table_name(), objnode.get_table_name()])  # noqa: F841
+
+        # conductor instanceテーブルへのレコード追加
+        action_result = objCexec.execute_action(mode, conductor_instance_id, node_instance_id)
+        if action_result[0] is not True:
+            status_code = action_result[1]
+            msg_args = action_result[2]
+            raise Exception()
+
+        objdbca.db_transaction_end(True)
+        
+        if mode == 'cancel':
+            msg_code = 'MSG-40001'
+        elif mode == 'scram':
+            msg_code = 'MSG-40002'
+        elif mode == 'relese':
+            msg_code = 'MSG-40003'
+        msg = g.appmsg.get_api_message(msg_code, [conductor_instance_id, node_instance_id])
+
+    except Exception:
+        # ロールバック トランザクション終了
+        objdbca.db_transaction_end(False)
+        log_msg_args = msg_args
+        api_msg_args = msg_args
+        raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
+
+    result = msg
+
+    return result

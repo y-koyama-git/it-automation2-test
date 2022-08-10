@@ -346,7 +346,6 @@ def patch_conductor_cancel(organization_id, workspace_id, menu, conductor_instan
 
     :rtype: InlineResponse20011
     """
-    return {},
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
 
@@ -354,7 +353,7 @@ def patch_conductor_cancel(organization_id, workspace_id, menu, conductor_instan
     chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
     
     # 予約取消の実行
-    action_type = "cansel"
+    action_type = "cancel"
     result_data = conductor_controll.conductor_execute_action(objdbca, menu, action_type, conductor_instance_id)
     return result_data,
 
@@ -378,7 +377,16 @@ def patch_conductor_relese(organization_id, workspace_id, menu, conductor_instan
 
     :rtype: InlineResponse20011
     """
-    return 'do some magic!'
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+
+    # メニューに対するロール権限をチェック（Falseなら権限エラー）
+    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
+    
+    # 一時停止解除の実行
+    action_type = "relese"
+    result_data = conductor_controll.conductor_execute_action(objdbca, menu, action_type, conductor_instance_id, node_instance_id)
+    return result_data,
 
 
 @api_filter
@@ -398,7 +406,16 @@ def patch_conductor_scram(organization_id, workspace_id, menu, conductor_instanc
 
     :rtype: InlineResponse20011
     """
-    return 'do some magic!'
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+
+    # メニューに対するロール権限をチェック（Falseなら権限エラー）
+    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
+    
+    # 緊急停止の実行
+    action_type = "scram"
+    result_data = conductor_controll.conductor_execute_action(objdbca, menu, action_type, conductor_instance_id)
+    return result_data,
 
 
 # Conductor作業確認一覧個別関連
