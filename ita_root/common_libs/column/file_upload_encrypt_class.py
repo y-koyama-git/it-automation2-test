@@ -74,8 +74,8 @@ class FileUploadEncryptColumn(FileUploadColumn):
         if cmd_type == "Discard":
             return retBool
         
-        # base64からデコードしてstrに変換
-        decode_option = base64.b64decode(option["file_data"].encode()).decode()
+        decode_option = option.get("file_data")
+
         uuid = option["uuid"]
         uuid_jnl = option["uuid_jnl"]
         workspace_id = g.get("WORKSPACE_ID")
