@@ -24,17 +24,11 @@ import copy
 import textwrap
 
 
+
 class ConductorExecuteLibs():
     """
-    load_table
-
-        共通
-            get_menu_info: メニューIDから関連情報全取得
-        REST
-            filter:   一覧データ取得、検索条件による絞り込み
-            maintenance:   登録、更新(更新、廃止、復活)処理
-            maintenance_all:   登録、更新(更新、廃止、復活)の複合処理
-
+        ConductorExecuteLibs
+        COnductor作業関連
     """
 
     def __init__(self, objdbca, menu, objmenus, cmd_type='Register', target_uuid=''):
@@ -61,14 +55,14 @@ class ConductorExecuteLibs():
         """
             Conductor基本情報の取得
             ARGS:
-                mode: "" (list key:[{id,name}] and dict key:{id:name}) or "all"  dict key:{rest_key:rows})
+                mode: "" (list key:[{id,name}] and dict key:{id:name}) or "all"  dict key:{rest_key:db rows})
             RETRUN:
                 statusCode, {}, msg
         """
 
         try:
             lang_upper = self.lang.upper()
-                
+            
             dict_target_table = {
                 "conductor_status": {
                     "table_name": "T_COMN_CONDUCTOR_STATUS",
@@ -190,7 +184,7 @@ class ConductorExecuteLibs():
             Conductor実行(パラメータ生成)
             ARGS:
                 parameter:パラメータ  {}
-                parent_conductor_instance_id:親conductorID
+                parent_conductor_instance_id:親conductorID string
             RETRUN:
                 data
         """
@@ -465,3 +459,421 @@ class ConductorExecuteLibs():
             if tmp_result[0] is not True:
                 return tmp_result
         return tmp_result
+
+    def get_instance_info_data(self, conductor_instance_id, mode=''):
+        """
+            Conductor作業確認用の基本情報の取得
+            ARGS:
+                conductor_instance_id:作業id
+                mode: "" (list key:[{id,name}] and dict key:{id:name}) or "all"  dict key:{rest_key:rows})
+            RETRUN:
+                {}
+        """
+
+        try:
+            lang_upper = self.lang.upper()
+                
+            dict_target_table = {
+                "conductor_status": {
+                    "table_name": "T_COMN_CONDUCTOR_STATUS",
+                    "pk": "STATUS_ID",
+                    "name": "STATUS_NAME_" + lang_upper,
+                },
+                "node_status": {
+                    "table_name": "T_COMN_CONDUCTOR_NODE_STATUS",
+                    "pk": "STATUS_ID",
+                    "name": "STATUS_NAME_" + lang_upper,
+                },
+                "node_type": {
+                    "table_name": "T_COMN_CONDUCTOR_NODE",
+                    "pk": "NODE_TYPE_ID",
+                    "name": "NODE_TYPE_NAME"
+                },
+                "orchestra": {
+                    "table_name": "T_COMN_ORCHESTRA",
+                    "pk": "ORCHESTRA_ID",
+                    "name": "ORCHESTRA_NAME",
+                },
+                "refresh_interval": {
+                    "table_name": "T_COMN_CONDUCTOR_IF_INFO",
+                    "pk": "CONDUCTOR_IF_INFO_ID",
+                    "refresh_interval": "CONDUCTOR_REFRESH_INTERVAL",
+                    "sortkey": "CONDUCTOR_IF_INFO_ID",
+                }
+            }
+
+            result = {}
+            result.setdefault('list', {})
+            result.setdefault('dict', {})
+            for target_key, target_table_info in dict_target_table.items():
+                table_name = target_table_info.get('table_name')
+                sortkey = target_table_info.get('sortkey')
+                if sortkey is None:
+                    sortkey = 'DISP_SEQ'
+                sql_str = target_table_info.get('sql')
+
+                pk_col = target_table_info.get('pk')
+                name_col = target_table_info.get('name')
+                refresh_interval = target_table_info.get('refresh_interval')
+                orc_id = target_table_info.get('orc_id')
+                orc_name = target_table_info.get('orc_name')
+
+                where_str = target_table_info.get('join')
+                if where_str is None:
+                    where_str = ' WHERE `DISUSE_FLAG` = 0 ORDER BY `' + sortkey + '` ASC '
+                else:
+                    sql_str = sql_str + ' ORDER BY `' + sortkey + '` ASC '
+
+                if sql_str is None:
+                    rows = self.objdbca.table_select(table_name, where_str, [])
+                else:
+                    rows = self.objdbca.sql_execute(sql_str, [])
+
+                if mode == '':
+                    if target_key == 'refresh_interval':
+                        result.setdefault('refresh_interval', rows[0].get(refresh_interval))
+                    else:
+                        result['dict'].setdefault(target_key, {})
+                        result['list'].setdefault(target_key, [])
+                        for row in rows:
+                            id = row.get(pk_col)
+                            name = row.get(name_col)
+                            tmp_arr = {"id": id, "name": name}
+                            if target_key == 'movement':
+                                orchestra_id = row.get(orc_id)
+                                orchestra_name = row.get(orc_name)
+                                tmp_arr = {"id": id, "name": name}
+                                tmp_arr.setdefault("orchestra_id", orchestra_id)
+                                tmp_arr.setdefault("orchestra_name", orchestra_name)
+                            result['dict'][target_key].setdefault(id, name)
+                            result['list'][target_key].append(tmp_arr)
+                else:
+                    result.setdefault(target_key, {})
+                    for row in rows:
+                        id = row.get(pk_col)
+                        result[target_key].setdefault(id, row)
+
+            # 作業に関連する、Conductor、Movement、Operationのリスト
+            objconductor = self.objmenus.get('objconductor')
+            objnode = self.objmenus.get('objnode')
+
+            # conductor instanceから一覧生成
+            filter_parameter = {
+                "conductor_instance_id": {"LIST": [conductor_instance_id]}
+            }
+            result['dict'].setdefault('conductor', {})
+            result['list'].setdefault('conductor', [])
+            result['dict'].setdefault('operation', {})
+            result['list'].setdefault('operation', [])
+            result['dict'].setdefault('movement', {})
+            result['list'].setdefault('movement', [])
+
+            result_ci_filter = objconductor.rest_filter(filter_parameter)
+            if result_ci_filter[0] == '000-00000':
+                for tmp_ci in result_ci_filter[1]:
+                    ci_p = tmp_ci.get('parameter')
+                    # conductor
+                    id = ci_p.get('instance_source_class_id')
+                    name = ci_p.get('instance_source_class_name')
+                    tmp_arr = {"id": id, "name": name}
+                    result['dict']['conductor'].setdefault(id, name)
+                    result['list']['conductor'].append(tmp_arr)
+                    p_id = ci_p.get('parent_conductor_instance_id')
+                    p_name = ci_p.get('parent_conductor_instance_name')
+                    if p_id is not None and p_name is not None:
+                        tmp_arr = {"id": p_id, "name": p_name}
+                        result['dict']['conductor'].setdefault(p_id, p_name)
+                        result['list']['conductor'].append(tmp_arr)
+
+                    # operation
+                    id = ci_p.get('operation_id')
+                    name = ci_p.get('operation_name')
+                    tmp_arr = {"id": id, "name": name}
+                    result['dict']['operation'].setdefault(id, name)
+                    result['list']['operation'].append(tmp_arr)
+
+            # node instanceからクラス一覧生成
+            filter_parameter = {
+                "conductor_instance_id": {"LIST": [conductor_instance_id]}
+            }
+            result_ni_filter = objnode.rest_filter(filter_parameter)
+            if result_ni_filter[0] == '000-00000':
+                for tmp_ni in result_ni_filter[1]:
+                    ni_p = tmp_ni.get('parameter')
+
+                    # movement
+                    id = ni_p.get('instance_source_movement_id')
+                    name = ni_p.get('instance_source_movement_name')
+                    if id is not None and name is not None:
+                        tmp_arr = {"id": id, "name": name}
+                        result['dict']['movement'].setdefault(id, name)
+                        result['list']['movement'].append(tmp_arr)
+                        
+                    # conductor
+                    id = ni_p.get('instance_source_conductor_id')
+                    name = ni_p.get('instance_source_conductor_name')
+                    if id is not None and name is not None:
+                        tmp_arr = {"id": id, "name": name}
+                        result['dict']['conductor'].setdefault(id, name)
+                        result['list']['conductor'].append(tmp_arr)
+
+                    # operation
+                    id = ni_p.get('operation_id')
+                    name = ni_p.get('operation_name')
+                    if id is not None and name is not None:
+                        tmp_arr = {"id": id, "name": name}
+                        result['dict']['operation'].setdefault(id, name)
+                        result['list']['operation'].append(tmp_arr)
+                    
+        except Exception:
+            status_code = "200-00803"
+            log_msg_args = []
+            api_msg_args = []
+            raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
+
+        return result
+
+    def get_instance_data(self, conductor_instance_id):
+        """
+            対象のConductor作業の設定、ステータス取得
+            ARGS:
+                conductor_instance_id:作業id
+            RETRUN:
+                {}
+        """
+
+        try:
+
+            result = {}
+            result.setdefault('conductor_class', {})
+            result.setdefault('conductor', {})
+            result.setdefault('node', {})
+            
+            objconductor = self.objmenus.get('objconductor')
+            objnode = self.objmenus.get('objnode')
+
+            instance_info_data = self.get_instance_info_data(conductor_instance_id)
+            
+            conductor_status = {}
+            class_settings = {}
+            node_status = {}
+
+            jump_menu_list = {
+                "1": "check_operation_status",
+                "2": "check_operation_status",
+                "3": "check_operation_status"
+            }
+
+            # conductor
+            filter_parameter = {
+                "conductor_instance_id": {"LIST": [conductor_instance_id]}
+            }
+            result_ci_filter = objconductor.rest_filter(filter_parameter)
+            if result_ci_filter[0] == '000-00000':
+                if len(result_ci_filter[1]) == 1:
+                    for tmp_ci in result_ci_filter[1]:
+                        ci_p = tmp_ci.get('parameter')
+                        class_settings = ci_p.get('class_settings')
+                        conductor_status = {
+                            "conductor_instance_id": ci_p.get('conductor_instance_id'),
+                            "conductor_name": ci_p.get('instance_source_class_name'),
+                            "status_id": ci_p.get('status_id'),
+                            "execution_user": ci_p.get('execution_user'),
+                            "abort_execute_flag": ci_p.get('abort_execute_flag'),
+                            "operation_id": ci_p.get('operation_id'),
+                            "operation_name": ci_p.get('operation_name'),
+                            "time_book": ci_p.get('time_book'),
+                            "time_start": ci_p.get('time_start'),
+                            "time_end": ci_p.get('time_end'),
+                            "execution_log": ci_p.get('execution_log'),
+                            "remarks": ci_p.get('remarks'),
+                        }
+
+            # node instanceからクラス一覧生成
+            filter_parameter = {
+                "conductor_instance_id": {"LIST": [conductor_instance_id]}
+            }
+            result_ni_filter = objnode.rest_filter(filter_parameter)
+            if result_ni_filter[0] == '000-00000':
+                for tmp_ni in result_ni_filter[1]:
+                    ni_p = tmp_ni.get('parameter')
+                    node_name = ni_p.get('instance_source_node_name')
+                    # 各作業確認のメニュー
+                    jump_menu_id = None
+                    tmp_orchestra = instance_info_data.get('dict').get('orchestra')
+                    movement_type = ni_p.get('movement_type')
+                    if movement_type is not None:
+                        tmp_orchestra_id = [k for k, v in tmp_orchestra.items() if v == movement_type]
+                        tmp_orchestra_id = tmp_orchestra_id[0]
+                        jump_menu_id = jump_menu_list.get(tmp_orchestra_id)
+
+                    tmp_node_status = {
+                        "node_instance_id": ni_p.get('node_instance_id'),
+                        "node_name": ni_p.get('instance_source_node_name'),
+                        "node_type": ni_p.get('node_type'),
+                        "status_id": ni_p.get('status_id'),
+                        "status_file": ni_p.get('status_file'),
+                        "skip": ni_p.get('skip'),
+                        "remarks": ni_p.get('remarks'),
+                        "time_start": ni_p.get('time_start'),
+                        "time_end": ni_p.get('time_end'),
+                        "operation_id": ni_p.get('operation_id'),
+                        "operation_name": ni_p.get('operation_name'),
+                        "jump": {
+                            "menu_id": jump_menu_id,
+                            "execution_id": ni_p.get('execution_id'),
+                        }
+                    }
+                    node_status.setdefault(node_name, tmp_node_status)
+
+            result['conductor_class'] = class_settings
+            result['conductor'] = conductor_status
+            result['node'] = node_status
+            
+        except Exception:
+            status_code = "200-00803"
+            log_msg_args = []
+            api_msg_args = []
+            raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
+
+        return result
+
+    def execute_action(self, mode='', conductor_instance_id='', node_instance_id=''):
+        """
+            Conductor作業に対する個別処理(cancel,scram,relese)
+            ARGS:
+                mode: "" (list key:[{id,name}] and dict key:{id:name}) or "all"  dict key:{rest_key:rows})
+                conductor_instance_id: string
+                node_instance_id: string
+            RETRUN:
+                retBool, status_code, msg_args,
+        """
+
+        try:
+            retBool = True
+            status_code = '000-00000'
+            msg_args = []
+    
+            instance_info_data = self.get_instance_info_data(conductor_instance_id)
+            
+            objconductor = self.objmenus.get('objconductor')
+            objnode = self.objmenus.get('objnode')
+            tmp_parameter = {}
+            
+            if conductor_instance_id != '':
+                filter_parameter = {
+                    "conductor_instance_id": {"LIST": [conductor_instance_id]}
+                }
+                result_ci_filter = objconductor.rest_filter(filter_parameter)
+                if result_ci_filter[0] == '000-00000':
+                    if len(result_ci_filter[1]) == 1:
+                        ci_p = result_ci_filter[1][0].get('parameter')
+                        ci_last_update_date_time = ci_p.get('last_update_date_time')
+                        ci_status_id = ci_p.get('status_id')
+                        ci_abort_execute_flag = ci_p.get('abort_execute_flag')
+            if node_instance_id != '':
+                # node instanceからクラス一覧生成
+                filter_parameter = {
+                    "conductor_instance_id": {"LIST": [conductor_instance_id]},
+                    "node_instance_id": {"LIST": [node_instance_id]}
+                    # "node_type": {"LIST": ["pause"]},
+                }
+                result_ni_filter = objnode.rest_filter(filter_parameter)
+                
+                if result_ni_filter[0] == '000-00000':
+                    if len(result_ni_filter[1]) == 1:
+                        ni_p = result_ni_filter[1][0].get('parameter')
+                        print(ni_p)
+                        ni_released_flag = ni_p.get('released_flag')
+                        ni_node_type = ni_p.get('node_type')
+                        ni_last_update_date_time = ni_p.get('last_update_date_time')
+                        ni_status_id = ni_p.get('status_id')
+
+            if mode == 'cancel':
+                # ステータス変更(未実行(予約)→予約取消)
+                status_id = instance_info_data.get('dict').get('conductor_status').get('10')
+                cancel_accept_status = instance_info_data.get('dict').get('conductor_status').get('2')
+                # 未実行(予約)の時のみ
+                if ci_status_id == cancel_accept_status:
+                    tmp_parameter.setdefault('conductor_instance_id', conductor_instance_id)
+                    tmp_parameter.setdefault('last_update_date_time', ci_last_update_date_time)
+                    tmp_parameter.setdefault('status_id', status_id)
+                    conductor_parameter = {
+                        "file": {},
+                        "parameter": tmp_parameter
+                    }
+                    tmp_result = objconductor.exec_maintenance(conductor_parameter, self.target_uuid, self.cmd_type)
+                    if tmp_result[0] is not True:
+                        status_code = "200-00807"
+                        msg_args = [mode, conductor_instance_id, ci_status_id]
+                        raise Exception()  # noqa: F405
+                else:
+                    status_code = "200-00808"
+                    msg_args = [conductor_instance_id, ci_status_id]
+                    raise Exception()  # noqa: F405
+
+            elif mode == 'scram':
+                # 緊急停止フラグON
+                scram_accept_status = [
+                    instance_info_data.get('dict').get('conductor_status').get('3'),
+                    instance_info_data.get('dict').get('conductor_status').get('4'),
+                    instance_info_data.get('dict').get('conductor_status').get('5')
+                ]
+                if ci_status_id in scram_accept_status:
+                    if ci_abort_execute_flag != '0':
+                        status_code = "200-00810"
+                        msg_args = [conductor_instance_id, ci_status_id, ci_abort_execute_flag]
+                        raise Exception()  # noqa: F405
+                    tmp_parameter.setdefault('conductor_instance_id', conductor_instance_id)
+                    tmp_parameter.setdefault('last_update_date_time', ci_last_update_date_time)
+                    tmp_parameter.setdefault('abort_execute_flag', '1')
+                    conductor_parameter = {
+                        "file": {},
+                        "parameter": tmp_parameter
+                    }
+                    tmp_result = objconductor.exec_maintenance(conductor_parameter, self.target_uuid, self.cmd_type)
+                    if tmp_result[0] is not True:
+                        status_code = "200-00807"
+                        msg_args = [mode, conductor_instance_id, ci_status_id]
+                        raise Exception()  # noqa: F405
+                else:
+                    status_code = "200-00809"
+                    msg_args = [conductor_instance_id, ci_status_id]
+                    raise Exception()  # noqa: F405
+
+            elif mode == 'relese':
+                if ni_node_type == "pause":
+                    if ni_released_flag == "0":
+                        released_accept_status = instance_info_data.get('dict').get('node_status').get('11')
+                        if ni_status_id == released_accept_status:
+                            status_id = instance_info_data.get('dict').get('node_status').get('3')
+                            tmp_parameter.setdefault('last_update_date_time', ni_last_update_date_time)
+                            tmp_parameter.setdefault('status_id', status_id)
+                            tmp_parameter.setdefault('released_flag', '1')
+                            tmp_parameter.setdefault('node_instance_id', node_instance_id)
+                            node_parameter = {
+                                "file": {},
+                                "parameter": tmp_parameter
+                            }
+                            tmp_result = objnode.exec_maintenance(node_parameter, node_instance_id, self.cmd_type)
+                            if tmp_result[0] is not True:
+                                status_code = "200-00807"
+                                msg_args = [mode, node_instance_id, ci_status_id]
+                                raise Exception()  # noqa: F405
+                        else:
+                            status_code = "200-00813"
+                            msg_args = [conductor_instance_id, node_instance_id, ni_status_id]
+                            raise Exception()  # noqa: F405
+                    else:
+                        status_code = "200-00812"
+                        msg_args = [conductor_instance_id, node_instance_id]
+                        raise Exception()  # noqa: F405
+                else:
+                    status_code = "200-00811"
+                    msg_args = [conductor_instance_id, node_instance_id, ni_node_type]
+                    raise Exception()  # noqa: F405
+
+        except Exception:
+            retBool = False
+
+        return retBool, status_code, msg_args,
