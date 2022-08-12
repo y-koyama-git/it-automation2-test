@@ -77,6 +77,8 @@ class ConductorCommonLibs():
 
     _node_call_datas = {}
 
+    _node_start_data = {}
+
     __db = None
 
     def __init__(self, wsdb_istc=None):
@@ -154,6 +156,10 @@ class ConductorCommonLibs():
         res_chk = self.chk_call_loop(self.conductor_data['id'], self._node_call_datas)
         if res_chk[0] is False:
             return False, err_code, res_chk[1]
+
+        # check node parallel
+        if self.chk_type_parallel() is False:
+            return False, err_code, 'condition from parallel-branch to merge is invalid'
 
         return True,
 
@@ -297,7 +303,6 @@ class ConductorCommonLibs():
         """
         err_msg_args = []
 
-        chk_start_node = []
         for key, block_1 in node_datas.items():
             block_err_msg_args = []
 
@@ -314,16 +319,16 @@ class ConductorCommonLibs():
                 if res_chk_terminal_block[0] is False:
                     block_err_msg_args.append(res_chk_terminal_block[1])
 
-            if 'x' not in block_1 or type(block_1['x']) is not int:
+            if 'x' not in block_1:
                 block_err_msg_args.append('x')
 
-            if 'y' not in block_1 or type(block_1['y']) is not int:
+            if 'y' not in block_1:
                 block_err_msg_args.append('y')
 
-            if 'w' not in block_1 or type(block_1['w']) is not int:
+            if 'w' not in block_1:
                 block_err_msg_args.append('w')
 
-            if 'h' not in block_1 or type(block_1['h']) is not int:
+            if 'h' not in block_1:
                 block_err_msg_args.append('h')
 
             if 'note' in block_1 and block_1['note']:
@@ -337,7 +342,7 @@ class ConductorCommonLibs():
                 self._node_id_list.append(block_1['id'])
                 # check type=start
                 if block_1['type'] == 'start':
-                    chk_start_node.append(block_1['id'])
+                    self._node_start_data[key] = block_1
                 # extract type=call
                 elif block_1['type'] == 'call':
                     self._node_call_datas[key] = block_1
@@ -345,7 +350,7 @@ class ConductorCommonLibs():
         if len(err_msg_args) != 0:
             return False, ['\n'.join(err_msg_args)]
         else:
-            if len(chk_start_node) != 1:
+            if len(self._node_start_data) != 1:
                 return False, ['node[type=start] is duplicate']
 
             return True,
@@ -379,10 +384,10 @@ class ConductorCommonLibs():
             if 'edge' not in terminalinfo or not terminalinfo['edge']:
                 block_err_msg_args.append('terminal.{}.edge'.format(terminalname))
 
-            if 'x' not in terminalinfo or type(terminalinfo['x']) is not int:
+            if 'x' not in terminalinfo:
                 block_err_msg_args.append('terminal.{}.x'.format(terminalname))
 
-            if 'y' not in terminalinfo or type(terminalinfo['y']) is not int:
+            if 'y' not in terminalinfo:
                 block_err_msg_args.append('terminal.{}.y'.format(terminalname))
 
             if len(block_err_msg_args) != 0:
@@ -660,12 +665,24 @@ class ConductorCommonLibs():
         else:
             return True,
 
-    def chk_edge(self, c_data):
+    def chk_type_parallel(self):
+        """
+        check whether contain 'conditional-branch' or 'status-file-branch' in way from parallel-branch to parallel-merge
+
+        Arguments:
+            
+        Returns:
+            (tuple)
+            - retBool (bool)
+        """
+        return True
+
+    def chk_edge(self, edge_datas):
         """
         check edge block
 
         Arguments:
-            c_data: edge_datas in conductor infomation(dict)
+            edge_datas: edge_datas in conductor infomation(dict)
         Returns:
             (tuple)
             - retBool (bool)
@@ -673,7 +690,7 @@ class ConductorCommonLibs():
         """
         err_msg_args = []
 
-        for key, block_1 in c_data.items():
+        for key, block_1 in edge_datas.items():
             block_err_msg_args = []
 
             if 'id' not in block_1:
