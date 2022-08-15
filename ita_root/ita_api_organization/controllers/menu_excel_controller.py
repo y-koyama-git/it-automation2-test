@@ -1477,7 +1477,7 @@ def get_excel_journal(organization_id, workspace_id, menu):  # noqa: E501
         # 編集してきたエクセルファイルをエンコードする
         wbEncode = file_encode(file_path)  # noqa: F405 F841
         # エンコード後wbは削除する
-        # os.remove(file_path)    # noqa: F405
+        os.remove(file_path)    # noqa: F405
         
         return wbEncode, 200
     except Exception as result:
