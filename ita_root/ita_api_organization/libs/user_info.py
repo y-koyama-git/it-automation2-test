@@ -15,6 +15,7 @@
 from common_libs.common import *  # noqa: F403
 from flask import g
 from libs.organization_common import check_auth_menu
+from common_libs.common.exception import AppException
 
 
 def collect_menu_group_panels(objdbca):
@@ -41,10 +42,14 @@ def collect_menu_group_panels(objdbca):
     menu_groups = []
     for recode in ret:
         # メニューに対する権限があるかどうかをチェック
-        menu_id = recode.get('MENU_ID')
-        role_check = check_auth_menu(menu_id)
-        if not role_check:
-            continue
+        menu_name_rest = recode.get('MENU_NAME_REST')
+        try:
+            check_auth_menu(menu_name_rest)
+        except AppException as e:
+            if e.args[0] == '401-00001':
+                continue
+            else:
+                raise e
         
         # 権限のあるメニューのメニューグループを格納
         menu_group_id = recode.get('MENU_GROUP_ID')
@@ -142,17 +147,21 @@ def collect_menus(objdbca):
     menus = {}
     for recode in ret:
         # メニューに対する権限があるかどうかをチェック
-        menu_id = recode.get('MENU_ID')
-        role_check = check_auth_menu(menu_id)
-        if not role_check:
-            continue
+        menu_name_rest = recode.get('MENU_NAME_REST')
+        try:
+            check_auth_menu(menu_name_rest)
+        except AppException as e:
+            if e.args[0] == '401-00001':
+                continue
+            else:
+                raise e
         
         menu_group_id = recode.get('MENU_GROUP_ID')
         if menu_group_id not in menus:
             menus[menu_group_id] = []
         
         add_menu = {}
-        add_menu['id'] = menu_id
+        add_menu['id'] = recode.get('MENU_ID')
         add_menu['menu_name'] = recode.get('MENU_NAME_' + lang.upper())
         add_menu['menu_name_rest'] = recode.get('MENU_NAME_REST')
         add_menu['disp_seq'] = recode.get('DISP_SEQ')

@@ -30,7 +30,6 @@ def getMovementAnsibleCnfUploadDirPath():
     return "{}{}/{}/uploadfiles/10202/Ansible_cfg".format(os.environ["PYTHONPATH"], g.get('ORGANIZATION_ID'), g.get('WORKSPACE_ID'))
 
 
-
 def getRolePackageContentUploadDirPath():
     """
       ロールパッケージ管理FileUploadColumnディレクトリバスを取得する。
@@ -40,6 +39,7 @@ def getRolePackageContentUploadDirPath():
         ロールパッケージ管理FileUploadColumnディレクトリバス
     """
     return "{}{}/{}/uploadfiles/20404/zip_format_role_package_file".format(os.environ["PYTHONPATH"], g.get('ORGANIZATION_ID'), g.get('WORKSPACE_ID'))
+
 
 def getFileContentUploadDirPath():
     """
@@ -51,6 +51,7 @@ def getFileContentUploadDirPath():
     """
     return "{}{}/{}/uploadfiles/20105/files".format(os.environ["PYTHONPATH"], g.get('ORGANIZATION_ID'), g.get('WORKSPACE_ID'))
 
+
 def getTemplateContentUploadDirPath():
     """
       テンプレート管理FileUploadColumnディレクトリバスを取得する。
@@ -60,6 +61,7 @@ def getTemplateContentUploadDirPath():
         テンプレート管理FileUploadColumnディレクトリバス
     """
     return "{}{}/{}/uploadfiles/20106/template_files".format(os.environ["PYTHONPATH"], g.get('ORGANIZATION_ID'), g.get('WORKSPACE_ID'))
+
 
 def getDeviceListSSHPrivateKeyUploadDirPath():
     """
@@ -71,6 +73,7 @@ def getDeviceListSSHPrivateKeyUploadDirPath():
     """
     return "{}{}/{}/uploadfiles/20101/ssh_private_key_file".format(os.environ["PYTHONPATH"], g.get('ORGANIZATION_ID'), g.get('WORKSPACE_ID'))
 
+
 def getDeviceListServerCertificateUploadDirPath():
     """
       機器一覧サーバー証明書ディレクトリバスを取得する。
@@ -80,6 +83,7 @@ def getDeviceListServerCertificateUploadDirPath():
         機器一覧サーバー証明書ディレクトリバスを取得
     """
     return "{}{}/{}/uploadfiles/20101/server_certificate".format(os.environ["PYTHONPATH"], g.get('ORGANIZATION_ID'), g.get('WORKSPACE_ID'))
+
 
 def getAnsibleIFSSHPrivateKeyUploadDirPath():
     """
@@ -91,6 +95,7 @@ def getAnsibleIFSSHPrivateKeyUploadDirPath():
     """
     return "{}{}/{}/uploadfiles/20102/ssh_private_key_file".format(os.environ["PYTHONPATH"], g.get('ORGANIZATION_ID'), g.get('WORKSPACE_ID'))
 
+
 def getAACListSSHPrivateKeyUploadDirPath():
     """
       AACホスト一覧ssh秘密鍵ファイルディレクトリバスを取得する。
@@ -100,6 +105,7 @@ def getAACListSSHPrivateKeyUploadDirPath():
         AACホスト一覧ssh秘密鍵ファイルディレクトリバス
     """
     return "{}{}/{}/uploadfiles/20103/ssh_private_key_file".format(os.environ["PYTHONPATH"], g.get('ORGANIZATION_ID'), g.get('WORKSPACE_ID'))
+
 
 def getLegayRoleExecutPopulatedDataUploadDirPath():
     """
@@ -111,6 +117,7 @@ def getLegayRoleExecutPopulatedDataUploadDirPath():
     """
     return "{}{}/{}/uploadfiles/20414/populated_data".format(os.environ["PYTHONPATH"], g.get('ORGANIZATION_ID'), g.get('WORKSPACE_ID'))
 
+
 def getLegayRoleExecutResultDataUploadDirPath():
     """
       作業管理結果データディレクトリバスを取得する。
@@ -120,6 +127,7 @@ def getLegayRoleExecutResultDataUploadDirPath():
         作業管理結果データディレクトリバス
     """
     return "{}{}/{}/uploadfiles/20414/result_data".format(os.environ["PYTHONPATH"], g.get('ORGANIZATION_ID'), g.get('WORKSPACE_ID'))
+
 
 def to_str(bstr):
     """

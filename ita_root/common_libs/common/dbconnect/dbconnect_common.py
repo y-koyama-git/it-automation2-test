@@ -220,7 +220,7 @@ class DBConnectCommon:
         Arguments:
             db_cursor: db cursor
         """
-        if(os.environ.get("DEBUUG_SQL") != "1"):
+        if os.environ.get("DEBUUG_SQL") != "1":
             return
 
         print(db_cursor._last_executed)
@@ -244,7 +244,7 @@ class DBConnectCommon:
         for data in data_list:
             # print(data)
             column_list.append(data['Field'])
-            if(data['Key'] == 'PRI'):
+            if data['Key'] == 'PRI':
                 primary_key_list.append(data['Field'])
 
         return (column_list, primary_key_list)
@@ -307,7 +307,8 @@ class DBConnectCommon:
         for data in data_list:
             # auto set
             timestamp = str(get_timestamp())
-            data[primary_key_name] = str(self._uuid_create())
+            if primary_key_name not in data or not data[primary_key_name]:
+                data[primary_key_name] = str(self._uuid_create())
             data[self._COLUMN_NAME_TIMESTAMP] = timestamp
 
             # make sql statement

@@ -40,7 +40,7 @@ def get_filter_count(organization_id, workspace_id, menu):  # noqa: E501
 
     :rtype: InlineResponse2004
     """
-     # DB接続
+    # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
     
     filter_parameter = {}
