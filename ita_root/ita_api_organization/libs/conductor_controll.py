@@ -103,8 +103,8 @@ def conductor_maintenance(objdbca, menu, conductor_data, target_uuid=''):
         # raise Exception()
 
     except Exception:
-        # 200-00801
-        status_code = "200-00801"
+        # 499-00801
+        status_code = "499-00801"
         log_msg_args = []
         api_msg_args = []
         raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
@@ -172,9 +172,91 @@ def get_conductor_data(objdbca, menu, conductor_class_id):
             raise Exception()
 
     except Exception:
-        status_code = "200-00802"
+        status_code = "499-00802"
         log_msg_args = [conductor_class_id]
         api_msg_args = [conductor_class_id]
+        raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
+
+    return result
+
+
+def get_conductor_data_execute(objdbca, menu, conductor_class_id):
+    """
+        Conductorクラスの取得
+        ARGS:
+            objdbca:DB接クラス  DBConnectWs()
+            menu:メニュー名 string
+            conductor_class_id:ConductorクラスID string
+        RETRUN:
+            data
+    """
+    menu = 'conductor_class_edit'
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['14', '15', '16']
+    menu_table_link_record = check_sheet_type(menu, sheet_type_list, objdbca)  # noqa: F841
+
+    objmenu = load_table.loadTable(objdbca, menu)  # noqa: F405
+    if objmenu.get_objtable() is False:
+        status_code = "401-00003"
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
+
+    try:
+        mode = "nomal"
+        filter_parameter = {"conductor_class_id": {"LIST": [conductor_class_id]}}
+        status_code, tmp_result, msg = objmenu.rest_filter(filter_parameter, mode)
+
+        if len(tmp_result) == 1:
+            tmp_data = tmp_result[0].get('parameter')
+            tmp_conductor_class_id = tmp_data.get('conductor_class_id')
+            tmp_remarks = tmp_data.get('remarks')
+            tmp_last_update_date_time = tmp_data.get('last_update_date_time')
+
+            result = tmp_data.get('setting')
+            result['conductor']['id'] = tmp_conductor_class_id
+            result['conductor']['note'] = tmp_remarks
+            result['conductor']['last_update_date_time'] = tmp_last_update_date_time
+
+        elif len(tmp_result) == 0:
+            raise Exception()
+
+    except Exception:
+        status_code = "499-00802"
+        log_msg_args = [conductor_class_id]
+        api_msg_args = [conductor_class_id]
+        raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
+
+    return result
+
+
+def get_conductor_execute_class_info(objdbca, menu):
+    """
+        Conductor基本情報
+        ARGS:
+            objdbca:DB接クラス  DBConnectWs()
+            menu:メニュー名 string
+        RETRUN:
+            statusCode, {}, msg
+    """
+    menu = 'conductor_class_edit'
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['14', '15', '16']
+    menu_table_link_record = check_sheet_type(menu, sheet_type_list, objdbca)  # noqa: F841
+
+    objmenu = load_table.loadTable(objdbca, menu)  # noqa: F405
+    if objmenu.get_objtable() is False:
+        status_code = "401-00003"
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
+    
+    try:
+        result = get_conductor_class_info_data(objdbca)
+    except Exception:
+        status_code = "499-00803"
+        log_msg_args = []
+        api_msg_args = []
         raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
 
     return result
@@ -207,7 +289,7 @@ def get_conductor_class_info(objdbca, menu):
     try:
         result = get_conductor_class_info_data(objdbca)
     except Exception:
-        status_code = "200-00803"
+        status_code = "499-00803"
         log_msg_args = []
         api_msg_args = []
         raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
@@ -249,10 +331,10 @@ def get_conductor_class_info_data(objdbca, mode=""):
         }
 
         objCexec = ConductorExecuteLibs(objdbca, '', objmenus)
-        result = objCexec.get_class_info_data('all')
+        result = objCexec.get_class_info_data(mode)
     
     except Exception:
-        status_code = "200-00803"
+        status_code = "499-00803"
         log_msg_args = []
         api_msg_args = []
         raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
@@ -317,7 +399,7 @@ def conductor_execute(objdbca, menu, parameter):
         if create_parameter[0] != '000-00000':
             raise Exception()
     except Exception:
-        status_code = "200-00804"
+        status_code = "499-00804"
         log_msg_args = [conductor_class_id, operation_id, schedule_date]
         api_msg_args = [conductor_class_id, operation_id, schedule_date]
         raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
@@ -354,7 +436,7 @@ def conductor_execute(objdbca, menu, parameter):
     except Exception:
         # ロールバック トランザクション終了
         objdbca.db_transaction_end(False)
-        status_code = "200-00804"
+        status_code = "499-00804"
         log_msg_args = [conductor_class_id, operation_id, schedule_date]
         api_msg_args = [conductor_class_id, operation_id, schedule_date]
         raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
@@ -417,7 +499,7 @@ def get_conductor_info(objdbca, menu, conductor_instance_id):
         result = objCexec.get_instance_info_data(conductor_instance_id)
 
     except Exception:
-        status_code = "200-00805"
+        status_code = "499-00805"
         log_msg_args = [conductor_instance_id]
         api_msg_args = [conductor_instance_id]
         raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
@@ -471,7 +553,7 @@ def get_conductor_instance_data(objdbca, menu, conductor_instance_id):
         result = objCexec.get_instance_data(conductor_instance_id)
     
     except Exception:
-        status_code = "200-00806"
+        status_code = "499-00806"
         log_msg_args = [conductor_instance_id]
         api_msg_args = [conductor_instance_id]
         raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
@@ -523,7 +605,7 @@ def conductor_execute_action(objdbca, menu, mode='', conductor_instance_id='', n
         }
         objCexec = ConductorExecuteLibs(objdbca, '', objmenus, 'Update', conductor_instance_id)
     except Exception:
-        status_code = "200-00807"
+        status_code = "499-00807"
         log_msg_args = [mode, conductor_instance_id, node_instance_id]
         api_msg_args = [mode, conductor_instance_id, node_instance_id]
         raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
