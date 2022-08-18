@@ -914,7 +914,7 @@ class loadTable():
                         bindvalue = None
 
                     if bindvalue is None or isinstance(bindvalue, str) is False:
-                        status_code = '200-00102'
+                        status_code = '499-00102'
                         log_msg_args = []
                         api_msg_args = []
                         # raise AppException(status_code, msg_ags)
@@ -1022,7 +1022,7 @@ class loadTable():
                     entry_parameter = tmp_exec_result.get('parameter')
                     self.exec_restore_action(entry_parameter, tmp_exec_result)
 
-                status_code = '200-00201'
+                status_code = '499-00201'
                 err_msg_count_flg = 0
                 for eno, errs_info in err_result.items():
                     tmp_errs = {}
@@ -1033,10 +1033,10 @@ class loadTable():
                                 msg = err_megs.get('msg_args')
                                 err_msg_count_flg = 1
                                 if msg == '' or status_code == '':
-                                    status_code = '200-00201'
+                                    status_code = '499-00201'
                                     err_msg_count_flg = 0
                             else:
-                                status_code = '200-00201'
+                                status_code = '499-00201'
                                 err_msg_count_flg = 0
                             tmp_errs.setdefault(err_key, [])
                             tmp_errs[err_key].append(err_megs.get('msg'))
@@ -1051,7 +1051,7 @@ class loadTable():
             type_, value, traceback_ = sys.exc_info()
             msg = ['{}'.format(traceback.format_exception(type_, value, traceback_))]
             print(msg)
-            status_code = "200-00220"
+            status_code = "499-00220"
             log_msg_args = []
             api_msg_args = []
             raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
@@ -1131,7 +1131,7 @@ class loadTable():
                     entry_parameter = tmp_exec_result.get('parameter')
                     self.exec_restore_action(entry_parameter, tmp_exec_result)
 
-                status_code = '200-00201'
+                status_code = '499-00201'
                 err_msg_count_flg = 0
                 for eno, errs_info in err_result.items():
                     tmp_errs = {}
@@ -1150,7 +1150,7 @@ class loadTable():
             type_, value, traceback_ = sys.exc_info()
             msg = ['{}'.format(traceback.format_exception(type_, value, traceback_))]
             print(msg)
-            status_code = "200-00220"
+            status_code = "499-00220"
             log_msg_args = []
             api_msg_args = []
             raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
@@ -1212,7 +1212,7 @@ class loadTable():
                     tmp_rows = self.get_target_rows(target_uuid)
                     
                     if len(tmp_rows) != 1:
-                        status_code = '200-00205'
+                        status_code = '499-00205'
                         msg_args = [target_uuid]
                         msg = g.appmsg.get_api_message(status_code, msg_args)
                         dict_msg = {
@@ -1352,7 +1352,7 @@ class loadTable():
                 # レコード操作前エラー確認
                 if self.get_message_count(MSG_LEVEL_ERROR) > 0:
                     retBool = False
-                    status_code = '200-00201'
+                    status_code = '499-00201'
                     msg = self.get_message(MSG_LEVEL_ERROR)
                     return retBool, status_code, msg
 
@@ -1368,7 +1368,7 @@ class loadTable():
 
                 for rest_key in list(entry_parameter.keys()):
                     if self.chk_restkey(rest_key) is not True:
-                        status_code = '200-00209'
+                        status_code = '499-00209'
                         msg_args = [rest_key]
                         msg = g.appmsg.get_api_message(status_code, msg_args)
                         dict_msg = {
@@ -1409,7 +1409,7 @@ class loadTable():
                 # レコード操作後エラー確認
                 if self.get_message_count(MSG_LEVEL_ERROR) > 0:
                     retBool = False
-                    status_code = '200-00201'
+                    status_code = '499-00201'
                     msg = self.get_message(MSG_LEVEL_ERROR)
                     return retBool, status_code, msg
 
@@ -1468,7 +1468,7 @@ class loadTable():
                 # レコード操作後エラー確認
                 if self.get_message_count(MSG_LEVEL_ERROR) > 0:
                     retBool = False
-                    status_code = '200-00201'
+                    status_code = '499-00201'
                     msg = self.get_message(MSG_LEVEL_ERROR)
                     return retBool, status_code, msg
 
@@ -1478,7 +1478,7 @@ class loadTable():
             else:
                 # 実行種別エラー
                 retBool = False
-                status_code = '200-00210'
+                status_code = '499-00210'
                 msg_args = [cmd_type]
                 msg = g.appmsg.get_api_message(status_code, msg_args)
                 dict_msg = {
@@ -1686,7 +1686,7 @@ class loadTable():
                     for table_count_rows in table_count:
                         list_uuids.append(table_count_rows.get(primary_key_list[0]))
                     
-                    status_code = '200-00204'
+                    status_code = '499-00204'
                     msg_args = [str(dict_bind_kv), str(list_uuids)]
                     msg = g.appmsg.get_api_message(status_code, msg_args)
                     dict_msg = {
@@ -1721,7 +1721,7 @@ class loadTable():
                 table_count = self.objdbca.table_select(self.get_table_name(), where_str, bind_value_list)
                 if len(table_count) != 0:
                     retBool = False
-                    status_code = '200-00219'
+                    status_code = '499-00219'
                     msg_args = [cmd_type, target_uuid_key, primary_val]
                     msg = g.appmsg.get_api_message(status_code, msg_args)
                     dict_msg = {
@@ -1867,7 +1867,7 @@ class loadTable():
             lastupdatetime_current = current_parameter.get('last_update_date_time')
             lastupdatetime_parameter = entry_parameter.get('last_update_date_time')
             if lastupdatetime_parameter is None:
-                status_code = '200-00211'
+                status_code = '499-00211'
                 msg_args = [lastupdatetime_parameter]
                 msg = g.appmsg.get_api_message(status_code, msg_args)
                 dict_msg = {
@@ -1885,7 +1885,7 @@ class loadTable():
                 # 更新系の追い越し判定
                 if lastupdatetime_current != lastupdatetime_parameter:
                     # if (lastupdatetime_current < lastupdatetime_parameter) is False:
-                    status_code = '200-00203'
+                    status_code = '499-00203'
                     msg_args = [target_uuid]
                     msg = g.appmsg.get_api_message(status_code, msg_args)
                     dict_msg = {
@@ -1895,7 +1895,7 @@ class loadTable():
                     }
                     self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR)
         except ValueError as msg_args:
-            status_code = '200-00211'
+            status_code = '499-00211'
             msg_args = [lastupdatetime_parameter]
             msg = g.appmsg.get_api_message(status_code, msg_args)
             dict_msg = {
@@ -1932,7 +1932,7 @@ class loadTable():
 
                 # 廃止→廃止の場合エラー
                 if cmd_type == CMD_DISCARD and discard_row in ['1', 1] and discard_parameter in ['1', 1]:
-                    status_code = '200-00206'
+                    status_code = '499-00206'
                     msg_args = [target_uuid]
                     msg = g.appmsg.get_api_message(status_code, msg_args)
                     dict_msg = {
@@ -1996,7 +1996,7 @@ class loadTable():
         # 不正なキーがある場合エラー
         if len(err_keys) != 0:
             err_keys = ",".join(map(str, err_keys))
-            status_code = '200-00212'
+            status_code = '499-00212'
             msg_args = [err_keys]
             msg = g.appmsg.get_api_message(status_code, msg_args)
             dict_msg = {
@@ -2022,11 +2022,11 @@ class loadTable():
             if len(required_restkey_list) <= len(parameter):
                 for required_restkey in required_restkey_list:
                     if required_restkey not in parameter:
-                        status_code = '200-00207'
+                        status_code = '499-00207'
                         msg_args = [required_restkey]
                         msg = g.appmsg.get_api_message(status_code, [msg_args])
             else:
-                status_code = '200-00207'
+                status_code = '499-00207'
                 msg_args = [",".join(required_restkey_list)]
                 msg = g.appmsg.get_api_message(status_code, [msg_args])
 
