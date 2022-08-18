@@ -308,7 +308,9 @@ class loadTable():
                 msg_args = self.menu
                 msg = g.appmsg.get_api_message(status_code, [msg_args])
                 raise Exception(status_code, msg)
-        except Exception:
+        except Exception as e:
+            with open("/storage/debug.log", mode="a") as file:
+                file.write("{}\n".format(e))
             return False
 
         for tmp_menu in tmp_menu_info:
@@ -333,7 +335,9 @@ class loadTable():
                 msg_args = self.menu
                 msg = g.appmsg.get_api_message(status_code, [msg_args])
                 raise Exception(status_code, msg)
-        except Exception:
+        except Exception as e:
+            with open("/storage/debug.log", mode="a") as file:
+                file.write("{}\n".format(e))
             return False
 
         try:
@@ -374,7 +378,9 @@ class loadTable():
                         tmp_list.setdefault(tmp_id, tmp_nm)
 
                     list_info.setdefault(rest_name, tmp_list)
-        except Exception:
+        except Exception as e:
+            with open("/storage/debug.log", mode="a") as file:
+                file.write("{}\n".format(e))
             return False
 
         try:
@@ -382,8 +388,9 @@ class loadTable():
             column_list, primary_key_list = self.objdbca.table_columns_get(table_name)
             self.set_column_list(column_list)
             self.set_primary_key(primary_key_list[0])
-
-        except Exception:
+        except Exception as e:
+            with open("/storage/debug.log", mode="a") as file:
+                file.write("{}\n".format(e))
             return False
 
         result_data = {
