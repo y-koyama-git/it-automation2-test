@@ -31,24 +31,8 @@ from common_libs.ansible_driver.classes.WrappedStringReplaceAdmin import Wrapped
 from common_libs.ansible_driver.classes.ansible_common_libs import AnsibleCommonLibs
 from common_libs.ansible_driver.classes.VarStructAnalJsonConvClass import VarStructAnalJsonConv
 from common_libs.ansible_driver.classes.AnsibleMakeMessage import AnsibleMakeMessage
+from common_libs.ansible_driver.classes.YamlParseClass import YamlParse
 from common_libs.ansible_driver.functions.util import get_AnsibleDriverTmpPath, getFileupLoadColumnPath
-
-
-# ToDo  Dummyクラス、あとで削除
-class YAMLParse():
-
-    def __init__(self, obj):
-        pass
-
-    def yaml_file_parse(self, a, b):
-        if 'fail' in a:
-            b.update({'.*$\/':'.*$\/'})
-        else:
-            b.update({'aaa':'bbb'})
-        return False if 'error' in a else True
-
-    def GetLastError(self):
-        return ''
 
 
 #################################################################################
@@ -481,13 +465,11 @@ class CheckAnsibleRoleFiles():
             # 対象ファイルから変数取得
             chkObj = DefaultVarsFileAnalysis(self.lv_objMTS)
             chkObj.setVariableDefineLocation(AnscConst.DF_README_VARS)
-            """ToDo"""
-            obj = YAMLParse(self.lv_objMTS)
-            yaml_parse_array = {}
-            ret = obj.yaml_file_parse(user_vars_file, yaml_parse_array)
+            obj = YamlParse()
+            yaml_parse_array = obj.Parse(user_vars_file)
             errmsg = obj.GetLastError()
             obj = None
-            if not ret:
+            if yaml_parse_array is False:
                 # ITA readmeのYAML解析で想定外のエラーが発生しました。(ロールパッケージ名:{} role:{} file:{})
                 errmsg = "%s\n%s" % (
                     errmsg,
@@ -3528,6 +3510,9 @@ class DefaultVarsFileAnalysis():
         DefineLocation = self.getVariableDefineLocation()
         for pattern in AnscConst.DF_VarName_pattenAry[DefineLocation]:
             match_pattern = pattern['pattern']
+            if isinstance(in_string, int):
+                in_string = str(in_string)
+
             ret = re.finditer(match_pattern, in_string)
             if len(list(ret)) == 0:
                 continue
@@ -3645,13 +3630,11 @@ class YAMLFileAnalysis():
             error_code = "MSG-10645"
             error_ary = [in_role_pkg_name]
 
-        # ToDo
-        obj = YAMLParse(self.lv_objMTS)
-        yaml_parse_array = {}
-        ret = obj.yaml_file_parse(defvarfile, yaml_parse_array)
+        obj = YamlParse()
+        yaml_parse_array = obj.Parse(defvarfile)
         errmsg = obj.GetLastError()
         obj = None
-        if not ret:
+        if yaml_parse_array is False:
             errmsg = "%s\n%s" % (errmsg, self.lv_objMTS.getSomeMessage(error_code, error_ary))
             self.SetLastError(inspect.currentframe().f_code.co_filename, inspect.currentframe().f_lineno, errmsg)
             return False, in_parent_vars_list, ina_vars_list, ina_array_vars_list, ina_varval_list
