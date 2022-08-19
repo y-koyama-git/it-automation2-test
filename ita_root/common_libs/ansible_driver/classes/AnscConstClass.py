@@ -88,9 +88,9 @@ class AnscConst:
 
     # 正規表記でエスケープが必要な文字 $ ( ) * + - / ? ^ { | }
     # 親変数で許容する文字: xxx_[0-9a-zA-Z_]　  GBL/TPF
-    VAR_parent_VarName = "/^(\s*)[0-9a-zA-Z_]*(\s*)$/"      # 通常の変数
-    GBL_parent_VarName = "/^(\s*)GBL_[0-9a-zA-Z_]*(\s*)$/"  # グローバル変数
-    TPF_parent_VarName = "/^(\s*)TPF_[0-9a-zA-Z_]*(\s*)$/"  # テンプレート変数
+    VAR_parent_VarName = r"^\s*[0-9a-zA-Z_]*\s*$"      # 通常の変数
+    GBL_parent_VarName = r"^\s*GBL_[0-9a-zA-Z_]*\s*$"  # グローバル変数
+    TPF_parent_VarName = r"^\s*TPF_[0-9a-zA-Z_]*\s*$"  # テンプレート変数
     
     # 実行エンジン
     DF_EXEC_MODE_ANSIBLE = '1'    # Ansibleで実行
