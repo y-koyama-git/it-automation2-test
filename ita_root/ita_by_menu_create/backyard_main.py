@@ -134,7 +134,7 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
     
     try:
         # メニュー作成用の各テーブルからレコードを取得
-        recode_t_menu_define, recode_t_menu_column_group, recode_t_menu_column, recode_t_menu_convert, recode_t_menu_unique_constraint, recode_t_menu_role \
+        recode_t_menu_define, recode_t_menu_column_group, recode_t_menu_column, recode_t_menu_convert, recode_t_menu_unique_constraint, recode_t_menu_role, recode_t_menu_other_link \
             = _collect_menu_create_data(objdbca, menu_create_id)  # noqa: E501
         
         # テーブル名を生成
@@ -184,6 +184,9 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
             
         # カラムグループ登録の処理に必要な形式にフォーマット
         dict_t_menu_column_group, target_column_group_list = _format_column_group_data(recode_t_menu_column_group, recode_t_menu_column)
+        
+        # 「他メニュー連携」を利用する処理に必要な形式にフォーマット
+        dict_t_menu_other_link = _format_other_link(recode_t_menu_other_link)
         
         # トランザクション開始
         objdbca.db_transaction_start()
@@ -245,7 +248,7 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
                     }
             
             # 「メニュー-カラム紐付管理」にレコードを登録
-            result, msg = _insert_t_comn_menu_column_link(objdbca, sheet_type, menu_uuid, dict_t_comn_column_group, dict_t_menu_column_group, recode_t_menu_column)  # noqa: E501
+            result, msg = _insert_t_comn_menu_column_link(objdbca, sheet_type, menu_uuid, dict_t_comn_column_group, dict_t_menu_column_group, recode_t_menu_column, dict_t_menu_other_link)  # noqa: E501
             if not result:
                 raise Exception(msg)
             
@@ -282,11 +285,12 @@ def _collect_menu_create_data(objdbca, menu_create_id):
             menu_create_id: メニュー作成の対象となる「メニュー定義一覧」のレコードのID
         RETRUN:
             recode_t_menu_define, # 「メニュー定義一覧」から対象のレコード(1件)
-            recode_t_menu_column_group, # 「カラムグループ作成情報」からレコード(全件)
+            recode_t_menu_column_group, # 「カラムグループ作成情報」のレコード(全件)
             recode_t_menu_column, # 「メニュー項目作成情報」から対象のレコード(複数)
             recode_t_menu_convert, # 「メニュー(縦)作成情報」から対象のレコード(1件)
             recode_t_menu_unique_constraint, 「一意制約(複数項目)作成情報」からレコード(1件)
-            recode_t_menu_role # 「メニューロール作成情報」から対象のレコード(複数)
+            recode_t_menu_role, # 「メニューロール作成情報」から対象のレコード(複数)
+            recode_t_menu_other_link # 「他メニュー連携」のレコード(全件)
     """
     # テーブル/ビュー名
     t_menu_define = 'T_MENU_DEFINE'  # メニュー定義一覧
@@ -295,6 +299,7 @@ def _collect_menu_create_data(objdbca, menu_create_id):
     t_menu_convert = 'T_MENU_CONVERT'  # メニュー(縦)作成情報
     t_menu_unique_constraint = 'T_MENU_UNIQUE_CONSTRAINT'  # 一意制約(複数項目)作成情報
     t_menu_role = 'T_MENU_ROLE'  # メニューロール作成情報
+    t_menu_other_link = 'T_MENU_OTHER_LINK'  # 他メニュー連携
     
     # 「メニュー定義一覧」から対象のレコードを取得
     recode_t_menu_define = objdbca.table_select(t_menu_define, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
@@ -328,7 +333,10 @@ def _collect_menu_create_data(objdbca, menu_create_id):
     # 「メニューロール作成情報」から対象のレコードを取得
     recode_t_menu_role = objdbca.table_select(t_menu_role, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
     
-    return recode_t_menu_define, recode_t_menu_column_group, recode_t_menu_column, recode_t_menu_convert, recode_t_menu_unique_constraint, recode_t_menu_role  # noqa: E501
+    # 「他メニュー連携」から全てのレコードを取得
+    recode_t_menu_other_link = objdbca.table_select(t_menu_other_link, 'WHERE DISUSE_FLAG = %s', [0])
+    
+    return recode_t_menu_define, recode_t_menu_column_group, recode_t_menu_column, recode_t_menu_convert, recode_t_menu_unique_constraint, recode_t_menu_role, recode_t_menu_other_link  # noqa: E501
 
 
 def _insert_t_comn_menu(objdbca, recode_t_menu_define, menu_group_col_name):
@@ -628,7 +636,7 @@ def _insert_t_comn_column_group(objdbca, target_column_group_list, dict_t_menu_c
     return True, None
 
 
-def _insert_t_comn_menu_column_link(objdbca, sheet_type, menu_uuid, dict_t_comn_column_group, dict_t_menu_column_group, recode_t_menu_column):
+def _insert_t_comn_menu_column_link(objdbca, sheet_type, menu_uuid, dict_t_comn_column_group, dict_t_menu_column_group, recode_t_menu_column, dict_t_menu_other_link):  # noqa: E501
     """
         「メニュー-カラム紐付管理」メニューのテーブルにレコードを追加する
         ARGS:
@@ -638,6 +646,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, menu_uuid, dict_t_comn_
             dict_t_comn_column_group: 「カラムグループ管理」のレコードのidをkeyにしたdict
             dict_t_menu_column_group: 「カラムグループ作成情報」のレコードのidをkeyにしたdict
             recode_t_menu_column：「メニュー項目作成情報」の対象のレコード一覧
+            dict_t_menu_other_link: 「他メニュー連携」のレコードのidをkeyにしたdict
         RETRUN:
             boolean, msg
     """
@@ -829,7 +838,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, menu_uuid, dict_t_comn_
         
         # 「メニュー作成機能で作成した項目」の対象の数だけループスタート
         for recode in recode_t_menu_column:
-            column_class = recode.get('COLUMN_CLASS')
+            column_class = str(recode.get('COLUMN_CLASS'))
             
             # 初期値に登録する値を生成
             initial_value = _create_initial_value(recode)
@@ -837,12 +846,22 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, menu_uuid, dict_t_comn_
             # バリデーションに登録する値を生成
             validate_option = _create_validate_option(recode)
             
-            # ####メモ：「プルダウン選択」の場合が未実装。カラムクラスが7(IDColumn)の場合「REF_TABLE_NAME」などは「他メニュー連携」メニューのテーブルから値を取ってくる必要がある。
+            # IDColumn用の値
             ref_table_name = None
             ref_pkey_name = None
             ref_col_name = None
             ref_sort_conditions = None
             ref_multi_lang = 0
+            
+            # カラムクラスが「プルダウン選択」の場合、「他メニュー連携」のレコードからIDColumnに必要なデータを取得し変数に格納
+            if column_class == "7":
+                other_menu_link_id = recode.get('OTHER_MENU_LINK_ID')
+                target_other_menu_link_recode = dict_t_menu_other_link.get(other_menu_link_id)
+                ref_table_name = target_other_menu_link_recode.get('REF_TABLE_NAME')
+                ref_pkey_name = target_other_menu_link_recode.get('REF_PKEY_NAME')
+                ref_col_name = target_other_menu_link_recode.get('REF_COL_NAME')
+                ref_sort_conditions = target_other_menu_link_recode.get('REF_SORT_CONDITIONS')
+                ref_multi_lang = target_other_menu_link_recode.get('REF_MULTI_LANG')
             
             # 「カラムグループ作成情報」のIDから同じフルカラムグループ名の対象を「カラムグループ管理」から探しIDを指定
             col_group_id = None
@@ -1248,11 +1267,10 @@ def _check_column_validation(objdbca, menu_uuid, column_name_rest):
 
 def _format_column_group_data(recode_t_menu_column_group, recode_t_menu_column):
     """
-        「メニュー-カラム紐付管理」メニューのテーブルにレコードを追加する際に、「MENU_ID」と「COLUMN_NAME_REST」で同じ組み合わせがあるかどうかのチェックをする。
+        カラムグループ登録の処理に必要な形式(idをkeyにしたdict型)にフォーマット
         ARGS:
-            objdbca: DB接クラス DBConnectWs()
-            menu_uuid: メニュー作成の対象となる「メニュー管理」のレコードのID
-            column_name_rest: カラム名(rest)
+            recode_t_menu_column_group: 「カラムグループ作成情報」のレコード一覧
+            recode_t_menu_column: 「メニュー項目作成情報」のレコード一覧
         RETRUN:
             dict_t_menu_column_group: 「カラムグループ作成情報」のレコードのidをkeyにしたdict型に整形
             target_column_group_list: 使用されているカラムグループIDの親をたどり、最終的に使用されるすべてのカラムグループIDのlist
@@ -1306,6 +1324,24 @@ def _format_column_group_data(recode_t_menu_column_group, recode_t_menu_column):
     target_column_group_list = list(dict.fromkeys(target_column_group_list))
     
     return dict_t_menu_column_group, target_column_group_list
+
+
+def _format_other_link(recode_t_menu_other_link):
+    """
+        「他メニュー連携」を利用する処理に必要な形式(idをkeyにしたdict型)にフォーマット
+        ARGS:
+            recode_t_menu_column_group: 「カラムグループ作成情報」のレコード一覧
+            recode_t_menu_column: 「メニュー項目作成情報」のレコード一覧
+        RETRUN:
+            dict_t_menu_other_link: 「他メニュー連携」のレコードのidをkeyにしたdict型に整形
+            
+    """
+    # 「カラムグループ作成情報」のレコードのidをkeyにしたdict型に整形
+    dict_t_menu_other_link = {}
+    for recode in recode_t_menu_other_link:
+        dict_t_menu_other_link[recode.get('LINK_ID')] = recode
+    
+    return dict_t_menu_other_link
 
 
 def _disuse_menu_create_recode(objdbca, recode_t_menu_define):
