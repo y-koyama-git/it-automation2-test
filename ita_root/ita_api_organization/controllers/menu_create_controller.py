@@ -141,7 +141,14 @@ def get_pulldown_initial(organization_id, workspace_id, menu, column):  # noqa: 
 
     :rtype: InlineResponse20011
     """
-    return 'do some magic!'
+    
+    data = {
+        "id1": "初期値候補1",
+        "id2": "初期値候補2",
+        "id3": "初期値候補3"
+    }
+    
+    return data,
 
 
 @api_filter
@@ -161,4 +168,10 @@ def get_reference_item(organization_id, workspace_id, menu, column):  # noqa: E5
 
     :rtype: InlineResponse20011
     """
-    return 'do some magic!'
+    data = {
+        "id1": "column_name_rest_1",
+        "id2": "column_name_rest_2",
+        "id3": "column_name_rest_3"
+    }
+    
+    return data,
