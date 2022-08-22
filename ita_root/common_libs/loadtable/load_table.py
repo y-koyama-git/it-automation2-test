@@ -926,11 +926,11 @@ class loadTable():
                     where_str = textwrap.dedent("""
                         where `{col_name}` IN ( %s )
                         ORDER BY `JOURNAL_REG_DATETIME` DESC
-                    """).format(col_name=target_uuid_key).strip()
+                    """).format(col_name=primary_key).strip()
                 else:
                     where_str = textwrap.dedent("""
                         ORDER BY `JOURNAL_REG_DATETIME` DESC
-                    """).format(col_name=target_uuid_key).strip()
+                    """).format().strip()
 
                 sort_key = self.get_sort_key()
                 if sort_key is not None:
