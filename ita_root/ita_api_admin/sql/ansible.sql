@@ -333,7 +333,6 @@ ANS_WINRM_ID,
 ANS_PLAYBOOK_HED_DEF,
 ANS_EXEC_OPTIONS,
 ANS_ENGINE_VIRTUALENV_NAME,
-ANS_VIRTUALENV_NAME,
 ANS_EXECUTION_ENVIRONMENT_NAME,
 ANS_ANSIBLE_CONFIG_FILE,
 TERRAFORM_WORKSPACE_ID,
@@ -360,7 +359,6 @@ ANS_WINRM_ID,
 ANS_PLAYBOOK_HED_DEF,
 ANS_EXEC_OPTIONS,
 ANS_ENGINE_VIRTUALENV_NAME,
-ANS_VIRTUALENV_NAME,
 ANS_EXECUTION_ENVIRONMENT_NAME,
 ANS_ANSIBLE_CONFIG_FILE,
 TERRAFORM_WORKSPACE_ID,
@@ -601,7 +599,6 @@ CREATE TABLE T_ANSR_EXEC_STS_INST
     I_ANS_WINRM_ID                  VARCHAR(2),                                 -- Movement/Ansible利用情報/WinRM接続
     I_ANS_PLAYBOOK_HED_DEF          TEXT,                                       -- Movement/Ansible利用情報/ヘッダーセクション
     I_ENGINE_VIRTUALENV_NAME        VARCHAR(255),                               -- Movement/Ansible-Core利用情報/virtualenv
-    I_VIRTUALENV_NAME               VARCHAR(255),                               -- Movement/Ansible Tower利用情報/virtualenv
     I_EXECUTION_ENVIRONMENT_NAME    VARCHAR(255),                               -- Movement/Ansible Automation Controller利用情報/実行環境
     I_ANSIBLE_CONFIG_FILE           VARCHAR(255),                               -- Movement/ansible.cfg
     OPERATION_NO_UAPK               VARCHAR(40),                                -- オペレーション/No.
@@ -646,7 +643,6 @@ CREATE TABLE T_ANSR_EXEC_STS_INST_JNL
     I_ANS_WINRM_ID                  VARCHAR(2),                                 -- Movement/Ansible利用情報/WinRM接続
     I_ANS_PLAYBOOK_HED_DEF          TEXT,                                       -- Movement/Ansible利用情報/ヘッダーセクション
     I_ENGINE_VIRTUALENV_NAME        VARCHAR(255),                               -- Movement/Ansible-Core利用情報/virtualenv
-    I_VIRTUALENV_NAME               VARCHAR(255),                               -- Movement/Ansible Tower利用情報/virtualenv
     I_EXECUTION_ENVIRONMENT_NAME    VARCHAR(255),                               -- Movement/Ansible Automation Controller利用情報/実行環境
     I_ANSIBLE_CONFIG_FILE           VARCHAR(255),                               -- Movement/ansible.cfg
     OPERATION_NO_UAPK               VARCHAR(40),                                -- オペレーション/No.

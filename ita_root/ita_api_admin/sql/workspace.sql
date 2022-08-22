@@ -398,7 +398,6 @@ CREATE TABLE T_COMN_MOVEMENT
     ANS_PLAYBOOK_HED_DEF            TEXT,                                       -- ヘッダーセクション
     ANS_EXEC_OPTIONS                TEXT,                                       -- オプションパラメータ
     ANS_ENGINE_VIRTUALENV_NAME      VARCHAR(255),                               -- Virtualenv　
-    ANS_VIRTUALENV_NAME             VARCHAR(255),                               -- Virtualenv
     ANS_EXECUTION_ENVIRONMENT_NAME  VARCHAR(255),                               -- 実行環境
     ANS_ANSIBLE_CONFIG_FILE         VARCHAR(255),                               -- Ansible.cfg
     TERRAFORM_WORKSPACE_ID          VARCHAR(40),                                -- Organization:Workspace
@@ -424,7 +423,6 @@ CREATE TABLE T_COMN_MOVEMENT_JNL
     ANS_PLAYBOOK_HED_DEF            TEXT,                                       -- ヘッダーセクション
     ANS_EXEC_OPTIONS                TEXT,                                       -- オプションパラメータ
     ANS_ENGINE_VIRTUALENV_NAME      VARCHAR(255),                               -- Virtualenv　
-    ANS_VIRTUALENV_NAME             VARCHAR(255),                               -- Virtualenv
     ANS_EXECUTION_ENVIRONMENT_NAME  VARCHAR(255),                               -- 実行環境
     ANS_ANSIBLE_CONFIG_FILE         VARCHAR(255),                               -- Ansible.cfg
     TERRAFORM_WORKSPACE_ID          VARCHAR(40),                                -- Organization:Workspace
@@ -578,22 +576,6 @@ CREATE TABLE T_COMN_AAC_VIRTUALENV
     LAST_UPDATE_TIMESTAMP           DATETIME(6),                                -- 最終更新日時
     LAST_UPDATE_USER                VARCHAR(40),                                -- 最終更新者
     PRIMARY KEY(VIRTUALENV_ID)
-)ENGINE = InnoDB, CHARSET = utf8mb4, COLLATE = utf8mb4_bin, ROW_FORMAT=COMPRESSED ,KEY_BLOCK_SIZE=8;
-
-
-
-
--- AAC実行環境マスタ
-CREATE TABLE T_COMN_AAC_EXECUTION_ENVIRONMENT
-(
-    EXECUTION_ENVIRONMENT_ID        VARCHAR(40),                                -- UUID
-    EXECUTION_ENVIRONMENT_NAME      VARCHAR(255),                               -- AAC 実行環境名
-    EXECUTION_ENVIRONMENT_AAC_ID    INT,                                        -- AAC 実行環境ID
-    NOTE                            TEXT,                                       -- 備考
-    DISUSE_FLAG                     VARCHAR(1),                                 -- 廃止フラグ
-    LAST_UPDATE_TIMESTAMP           DATETIME(6),                                -- 最終更新日時
-    LAST_UPDATE_USER                VARCHAR(40),                                -- 最終更新者
-    PRIMARY KEY(EXECUTION_ENVIRONMENT_ID)
 )ENGINE = InnoDB, CHARSET = utf8mb4, COLLATE = utf8mb4_bin, ROW_FORMAT=COMPRESSED ,KEY_BLOCK_SIZE=8;
 
 
