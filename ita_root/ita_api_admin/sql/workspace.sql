@@ -358,7 +358,7 @@ CREATE TABLE T_COMN_OPERATION
     OPERATION_NAME                  VARCHAR(255),                               -- オペレーション名
     OPERATION_DATE                  DATETIME(6),                                -- 実施予定日時
     LAST_EXECUTE_TIMESTAMP          DATETIME(6),                                -- 最終実行日時
-    ORGANIZATION_ID                 VARCHAR(40),                                -- 組織
+    ENVIRONMENT                     VARCHAR(40),                                -- 環境
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1),                                 -- 廃止フラグ
     LAST_UPDATE_TIMESTAMP           DATETIME(6),                                -- 最終更新日時
@@ -375,7 +375,7 @@ CREATE TABLE T_COMN_OPERATION_JNL
     OPERATION_NAME                  VARCHAR(255),                               -- オペレーション名
     OPERATION_DATE                  DATETIME(6),                                -- 実施予定日時
     LAST_EXECUTE_TIMESTAMP          DATETIME(6),                                -- 最終実行日時
-    ORGANIZATION_ID                 VARCHAR(40),                                -- 組織
+    ENVIRONMENT                     VARCHAR(40),                                -- 環境
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1),                                 -- 廃止フラグ
     LAST_UPDATE_TIMESTAMP           DATETIME(6),                                -- 最終更新日時
