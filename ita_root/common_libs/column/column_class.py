@@ -623,7 +623,7 @@ class Column():
                     tmp_uuids.append(tmp_rows.get(primary_key_list[0]))
                 retBool = False
                 msg = '{}({}):一意制約'.format(self.rest_key_name, val)
-                status_code = '200-00208'
+                status_code = '499-00208'
                 str_uuids = ', '.join(map(str, tmp_uuids))
                 msg_args = [self.rest_key_name, str_uuids]
                 msg = g.appmsg.get_api_message(status_code, msg_args)
@@ -647,12 +647,12 @@ class Column():
         if result == "1":
             if val is None:
                 retBool = False
-                status_code = '200-00213'
+                status_code = '499-00213'
                 msg_args = [self.get_rest_key_name()]
                 msg = g.appmsg.get_api_message(status_code, msg_args)
             elif len(str(val)) == 0:
                 retBool = False
-                status_code = '200-00213'
+                status_code = '499-00213'
                 msg_args = [self.get_rest_key_name()]
                 msg = g.appmsg.get_api_message(status_code, msg_args)
                     
@@ -759,7 +759,7 @@ class Column():
                     bindkey = "__{}__{}".format(self.get_col_name(), listno)
                     bindkeys.append(bindkey)
                     bindvalues.setdefault(bindkey, bindvalue)
-                    listno = +1
+                    listno = listno + 1
 
                 bindkey = "{}".format(",".join(map(str, bindkeys)))
                 str_where = " `{col_name}` IN ( {bindkey} ) ".format(
@@ -815,6 +815,10 @@ class Column():
             else:
                 start_val = tmp_conf.get('START')
                 end_val = tmp_conf.get('END')
+                if start_val is None:
+                    start_val = ''
+                if end_val is None:
+                    end_val = ''
                 bindkey_s = "__{}_S__".format(self.get_col_name())
                 bindkey_e = "__{}_E__".format(self.get_col_name())
                 if start_val is not None and end_val is not None:

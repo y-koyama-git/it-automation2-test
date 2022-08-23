@@ -103,34 +103,34 @@ class NumColumn(Column):
                         retBool = True
                     else:
                         retBool = False
-                        status_code = '200-00214'
+                        status_code = '499-00214'
                         msg_args = [self.get_rest_key_name(), min_num, max_num, val]
                         msg = g.appmsg.get_api_message(status_code, msg_args)
                         return retBool, msg
 
                 elif min_num is not None:
                     # 最小値閾値あり
-                    if min_num < val:
+                    if min_num <= val:
                         retBool = True
                     else:
                         retBool = False
-                        status_code = '200-00215'
+                        status_code = '499-00215'
                         msg_args = [self.get_rest_key_name(), min_num, val]
                         msg = g.appmsg.get_api_message(status_code, msg_args)
                         return retBool, msg
                 elif max_num is not None:
                     # 最大値閾値あり
-                    if val < max_num:
+                    if val <= max_num:
                         retBool = True
                     else:
                         retBool = False
-                        status_code = '200-00216'
+                        status_code = '499-00216'
                         msg_args = [self.get_rest_key_name(), max_num, val]
                         msg = g.appmsg.get_api_message(status_code, msg_args)
                         return retBool, msg
             except ValueError:
                 retBool = False
-                status_code = '200-00217'
+                status_code = '499-00217'
                 msg_args = [self.get_rest_key_name(), val]
                 msg = g.appmsg.get_api_message(status_code, msg_args)
                 return retBool, msg
