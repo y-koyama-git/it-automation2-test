@@ -704,7 +704,8 @@ class ConductorCommonLibs():
                 block_err_msg_args.append('type')
             else:
                 val = block_1['type']
-                if val not in ['edge']:
+                ###  暫定追加
+                if val not in ['edge', 'egde']:
                     block_err_msg_args.append('type')
 
             if 'inNode' not in block_1:
@@ -884,10 +885,10 @@ class ConductorCommonLibs():
             return False, retCode
 
         res = {
-            'config': self.conductor_data,
+            'config': self.config_data,
             'conductor': self.conductor_data,
         }
         res.update(self.node_datas)
         res.update(self.edge_datas)
 
-        return res
+        return True, res,
