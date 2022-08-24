@@ -1169,7 +1169,7 @@ class loadTable():
         return status_code, result, msg,
 
     # [maintenance]:メニューのレコード操作
-    def exec_maintenance(self, parameters, target_uuid='', cmd_type=''):
+    def exec_maintenance(self, parameters, target_uuid='', cmd_type='', pk_use_flg=False):
         """
             RESTAPI[filter]:メニューのレコード操作
             ARGS:
@@ -1258,6 +1258,8 @@ class loadTable():
                         if target_uuid_key in entry_parameter:
                             tmp_uuid_val = entry_parameter[target_uuid_key]
                             if tmp_uuid_val == '' or tmp_uuid_val is None:
+                                del entry_parameter[target_uuid_key]
+                            elif pk_use_flg is False:
                                 del entry_parameter[target_uuid_key]
 
                 # PK 埋め込み table_insert table_update用
@@ -1730,15 +1732,6 @@ class loadTable():
                 table_count = self.objdbca.table_select(self.get_table_name(), where_str, bind_value_list)
                 if len(table_count) != 0:
                     retBool = False
-                    status_code = '499-00219'
-                    msg_args = [cmd_type, target_uuid_key, primary_val]
-                    msg = g.appmsg.get_api_message(status_code, msg_args)
-                    dict_msg = {
-                        'status_code': status_code,
-                        'msg_args': msg_args,
-                        'msg': msg,
-                    }
-                    self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR)
         return retBool
 
     # []: レコード操作前処理の実施(メニュー)
