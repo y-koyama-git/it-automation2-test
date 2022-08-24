@@ -97,7 +97,7 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
     
     # 最終更新日時のフォーマット
     last_update_timestamp = ret[0].get('LAST_UPDATE_TIMESTAMP')
-    last_update_date_time = last_update_timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')
+    last_update_date_time = last_update_timestamp.strftime('%Y/%m/%d %H:%M:%S.%f')
     
     # 縦メニュー利用の有無を取得
     vertical = ret[0].get('VERTICAL')
@@ -138,9 +138,9 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
     # ####メモ：縦メニュー系の処理未実装
     # # 縦メニュー利用がある場合、繰り返し情報を取得して格納
     repeat = {}
-    if int(vertical):
+    # if int(vertical):
         # 「メニュー(縦)作成情報」から対象のレコードを取得
-        ret = objdbca.table_select(t_menu_convert, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
+        # ret = objdbca.table_select(t_menu_convert, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
         # ####メモ：縦メニュー情報を格納する処理
         
     menu_info['repeat'] = repeat
@@ -168,7 +168,7 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
         for count, recode in enumerate(ret, 1):
             # 最終更新日時のフォーマット
             last_update_timestamp = recode.get('LAST_UPDATE_TIMESTAMP')
-            last_update_date_time = last_update_timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')
+            last_update_date_time = last_update_timestamp.strftime('%Y/%m/%d %H:%M:%S.%f')
             
             # カラムデータを格納
             col_detail = {
