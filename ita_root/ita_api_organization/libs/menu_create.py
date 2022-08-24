@@ -393,7 +393,7 @@ def menu_create_define(objdbca, create_param):
         print('タイプは：' + str(type))
         result = _create_new_execute(objdbca, create_param)
         
-        status = result.get('status')
+        history_id = result.get('history_id')
         message = result.get('message')
         # if not status:
         #     # ####メモ：関数で失敗した際にメッセージを受け取ってそれを入れる。
@@ -404,7 +404,7 @@ def menu_create_define(objdbca, create_param):
         print('タイプは：' + str(type))
         result = _initialize_execute(objdbca, create_param)
         
-        status = result.get('status')
+        history_id = result.get('history_id')
         message = result.get('message')
         # if not status:
         #     # ####メモ：関数で失敗した際にメッセージを受け取ってそれを入れる。
@@ -415,7 +415,7 @@ def menu_create_define(objdbca, create_param):
         print('タイプは：' + str(type))
         result = _edit_execute(objdbca, create_param)
         
-        status = result.get('status')
+        history_id = result.get('history_id')
         message = result.get('message')
         # if not status:
         #     # ####メモ：関数で失敗した際にメッセージを受け取ってそれを入れる。
@@ -429,7 +429,7 @@ def menu_create_define(objdbca, create_param):
         api_msg_args = [msg]
         raise AppException('499-00212', log_msg_args, api_msg_args)  # noqa: F405
     
-    result_data = {'status': status, 'message': message}
+    result_data = {'history_id': history_id, 'message': message}
     return result_data
 
 
@@ -481,15 +481,15 @@ def _create_new_execute(objdbca, create_param):  # noqa: C901
         # 「メニュー作成履歴」にレコードを登録
         status_id = "1"  # (1:未実行)
         create_type = "1"  # (1:新規作成)
-        retbool, msg = _insert_t_menu_create_history(objdbca, menu_create_id, status_id, create_type, user_id)
+        retbool, history_id, msg = _insert_t_menu_create_history(objdbca, menu_create_id, status_id, create_type, user_id)
         if not retbool:
             raise Exception(msg)
         
         # コミット/トランザクション終了
         objdbca.db_transaction_end(True)
         
-        status = True
-        msg = ''
+        message = ''
+        
     except Exception as e:
         # ####メモ：失敗時のメッセージはちゃんと取り出したいので、作りこみ予定。
         # ロールバック トランザクション終了
@@ -504,12 +504,13 @@ def _create_new_execute(objdbca, create_param):  # noqa: C901
             status_code = '999-99999'
             msg_args = '{}'.format(*e.args)
             msg = g.appmsg.get_api_message(status_code, [msg_args])
-
-        status = False
+        
+        message = msg
+        history_id = None
 
     result_data = {
-        'status': status,
-        'message': msg
+        'history_id': history_id,
+        'message': message
     }
     
     return result_data
@@ -606,14 +607,13 @@ def _initialize_execute(objdbca, create_param):
         # 「メニュー作成履歴」にレコードを登録
         status_id = "1"  # (1:未実行)
         create_type = "2"  # (2:初期化)
-        retbool, msg = _insert_t_menu_create_history(objdbca, menu_create_id, status_id, create_type, user_id)
+        retbool, history_id, msg = _insert_t_menu_create_history(objdbca, menu_create_id, status_id, create_type, user_id)
         if not retbool:
             raise Exception(msg)
         
         # コミット/トランザクション終了
         objdbca.db_transaction_end(True)
         
-        status = True
         message = ''
 
     except Exception as e:
@@ -632,14 +632,14 @@ def _initialize_execute(objdbca, create_param):
             msg = g.appmsg.get_api_message(status_code, [msg_args])
 
         message = msg
-        status = False
+        history_id = None
 
-    result = {
-        'status': status,
+    result_data = {
+        'history_id': history_id,
         'message': message
     }
     
-    return result
+    return result_data
 
 
 def _edit_execute(objdbca, create_param):
@@ -733,15 +733,13 @@ def _edit_execute(objdbca, create_param):
         # 「メニュー作成履歴」にレコードを登録
         status_id = "1"  # (1:未実行)
         create_type = "3"  # (3:編集)
-        retbool, msg = _insert_t_menu_create_history(objdbca, menu_create_id, status_id, create_type, user_id)
+        retbool, history_id, msg = _insert_t_menu_create_history(objdbca, menu_create_id, status_id, create_type, user_id)
         if not retbool:
             raise Exception(msg)
         
         # コミット/トランザクション終了
         objdbca.db_transaction_end(True)
-        # objdbca.db_transaction_end(False)
         
-        status = True
         message = ''
 
     except Exception as e:
@@ -760,14 +758,14 @@ def _edit_execute(objdbca, create_param):
             msg = g.appmsg.get_api_message(status_code, [msg_args])
 
         message = msg
-        status = False
+        history_id = None
 
-    result = {
-        'status': status,
+    result_data = {
+        'history_id': history_id,
         'message': message
     }
     
-    return result
+    return result_data
 
 
 def _insert_t_menu_define(objdbca, menu_data):
@@ -1616,7 +1614,7 @@ def _insert_t_menu_create_history(objdbca, menu_create_id, status_id, create_typ
             create_type: 「メニュー作成履歴」の作成タイプ
             user_id: ユーザID
         RETRUN:
-            boolean, msg
+            boolean, history_id, msg
     """
     # テーブル名
     t_menu_create_history = 'T_MENU_CREATE_HISTORY'
@@ -1635,7 +1633,9 @@ def _insert_t_menu_create_history(objdbca, menu_create_id, status_id, create_typ
         if not ret:
             raise Exception("「メニュー作成履歴」にレコードを登録する際にエラーが起きた。")
         
+        history_id = ret[0].get('HISTORY_ID')
+        
     except Exception as msg:
-        return False, msg
+        return False, None, msg
     
-    return True, None
+    return True, history_id, None
