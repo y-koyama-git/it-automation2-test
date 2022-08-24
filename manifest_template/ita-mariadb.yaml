@@ -31,7 +31,7 @@ spec:
     spec: # specification for pods
       containers: # we can have one or more containers
       - name: mariadb
-        image: ita-mariadb:0.4 
+        image: mariadb:10.9 
         ports:
         - containerPort: 3306 
         env:
@@ -53,10 +53,11 @@ spec:
           seLinuxOptions: {}
         volumeMounts:
           - name: persistent-storage
-            # mountPath: /tmp
             mountPath: /var/lib/mysql
           - name: mysql-server-initdb
             mountPath: /docker-entrypoint-initdb.d
+            #subPath: docker-entrypoint-initdb.d 
+            #subPath: createdb.sql 
           - name: mysql-server-conf
             mountPath: /etc/mysql/conf.d
       volumes:

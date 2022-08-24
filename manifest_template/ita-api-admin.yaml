@@ -41,6 +41,13 @@ spec:
         - configMapRef:
             name: params-ita-maria 
             name: params-ita-common 
+        #volumeMounts:   
+        #  - name: persistent-storage
+        #    mountPath: /hoge # <--- Please activate this block after correct path to mount is fixed
+      #volumes:
+      #- name: persistent-storage
+      #  persistentVolumeClaim:
+      #    claimName: ita-pvc
 ---
 apiVersion: v1
 kind: Service
