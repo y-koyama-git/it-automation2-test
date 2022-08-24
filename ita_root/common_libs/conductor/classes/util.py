@@ -67,7 +67,7 @@ class ConductorCommonLibs():
         },
     }
 
-    _node_end_type_list = []
+    _node_end_type_list = [6, 7, 8]
 
     _terminal_type_list = ['in', 'out']
 
@@ -93,9 +93,9 @@ class ConductorCommonLibs():
         # print(self._node_type_list)
 
         # 正常終了、異常終了、警告終了のみ許容
-        data_list = wsdb_istc.table_select('T_COMN_CONDUCTOR_STATUS', 'WHERE `DISUSE_FLAG`=0 and `STATUS_NAME_JA` like "%終了"')
-        for data in data_list:
-            self._node_end_type_list.append(data['STATUS_ID'])
+        # data_list = wsdb_istc.table_select('T_COMN_CONDUCTOR_STATUS', 'WHERE `DISUSE_FLAG`=0 AND `STATUS_ID` in (6,7,8)')
+        # for data in data_list:
+        #     self._node_end_type_list.append(data['STATUS_ID'])
         # print(self._node_end_type_list)
 
         data_list = wsdb_istc.table_select('T_COMN_CONDUCTOR_NODE_STATUS', 'WHERE `DISUSE_FLAG`=0')
@@ -414,7 +414,7 @@ class ConductorCommonLibs():
             node_type = block_1['type']
 
             if node_type == 'end':
-                if 'end_type' not in block_1 or block_1['end_type'] not in self._node_end_type_list:
+                if 'end_type' not in block_1 or int(block_1['end_type']) not in self._node_end_type_list:
                     err_msg_args.append('{}(end_type)'.format(key))
                     continue
             elif node_type == 'movement':
