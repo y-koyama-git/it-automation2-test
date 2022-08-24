@@ -293,6 +293,7 @@ CREATE TABLE T_ANSC_COMVRAS_USLIST
     FILE_ID                         VARCHAR(2),                                 -- 資材種別
     VRA_ID                          VARCHAR(2),                                 -- 変数種別
     CONTENTS_ID                     VARCHAR(40),                                -- 使用素材集のPkey
+    VAR_NAME                        VARCHAR(255),                               -- 変数名
     REVIVAL_FLAG                    VARCHAR(1),                                 -- 再利用フラグ
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1),                                 -- 廃止フラグ
