@@ -146,11 +146,18 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
         # シートタイプを取得
         sheet_type = str(recode_t_menu_define.get('SHEET_TYPE'))
         
+        # 縦メニュー利用の有無を取得
+        vertical_flag = True if str(recode_t_menu_define.get('VERTICAL')) == "1" else False
+        
         # シートタイプによる処理の分岐
         file_upload_only_flag = False
         if sheet_type == "1":  # パラメータシート(ホスト/オペレーションあり)
-            # テーブル作成用SQLのパス
-            sql_file_path = "./sql/parameter_sheet_cmdb.sql"  # ####メモ：ファイルの格納先ディレクトリとかは定数で管理したほうがいいかも。
+            if vertical_flag:
+                # パラメータシート(縦メニュー利用あり)用テーブル作成SQL
+                sql_file_path = "./sql/parameter_sheet_cmdb_vertical.sql"  # ####メモ：ファイルの格納先ディレクトリとかは定数で管理したほうがいいかも。
+            else:
+                # パラメータシート用テーブル作成SQL
+                sql_file_path = "./sql/parameter_sheet_cmdb.sql"  # ####メモ：ファイルの格納先ディレクトリとかは定数で管理したほうがいいかも。
             
             # ループパターン(対象メニューグループのリスト)を設定
             target_menu_group_list = ['MENU_GROUP_ID_INPUT', 'MENU_GROUP_ID_SUBST', 'MENU_GROUP_ID_REF']
@@ -159,7 +166,7 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
             file_upload_only_flag = _check_file_upload_column(recode_t_menu_column)
         
         elif sheet_type == "2":  # データシート
-            # テーブル作成用SQLのパス
+            # データシート用テーブル作成SQL
             sql_file_path = "./sql/data_sheet_cmdb.sql"  # ####メモ：ファイルの格納先ディレクトリとかは定数で管理したほうがいいかも。
             
             # ループパターン(対象メニューグループのリスト)を設定
@@ -223,7 +230,7 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
                 raise Exception(msg)
             
             # 「メニュー-テーブル紐付管理」にレコードを登録
-            result, msg = _insert_t_comn_menu_table_link(objdbca, sheet_type, file_upload_only_flag, create_table_name, menu_uuid, recode_t_menu_define, recode_t_menu_unique_constraint, menu_group_col_name)  # noqa: E501
+            result, msg = _insert_t_comn_menu_table_link(objdbca, sheet_type, vertical_flag, file_upload_only_flag, create_table_name, menu_uuid, recode_t_menu_define, recode_t_menu_unique_constraint, menu_group_col_name)  # noqa: E501
             if not result:
                 raise Exception(msg)
             
@@ -248,7 +255,7 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
                     }
             
             # 「メニュー-カラム紐付管理」にレコードを登録
-            result, msg = _insert_t_comn_menu_column_link(objdbca, sheet_type, menu_uuid, dict_t_comn_column_group, dict_t_menu_column_group, recode_t_menu_column, dict_t_menu_other_link)  # noqa: E501
+            result, msg = _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uuid, dict_t_comn_column_group, dict_t_menu_column_group, recode_t_menu_column, dict_t_menu_other_link)  # noqa: E501
             if not result:
                 raise Exception(msg)
             
@@ -482,12 +489,13 @@ def _insert_t_comn_role_menu_link(objdbca, menu_uuid):
     return result, None
 
 
-def _insert_t_comn_menu_table_link(objdbca, sheet_type, file_upload_only_flag, create_table_name, menu_uuid, recode_t_menu_define, recode_t_menu_unique_constraint, menu_group_col_name):  # noqa: E501
+def _insert_t_comn_menu_table_link(objdbca, sheet_type, vertical_flag, file_upload_only_flag, create_table_name, menu_uuid, recode_t_menu_define, recode_t_menu_unique_constraint, menu_group_col_name):  # noqa: E501
     """
         「メニュー-テーブル紐付管理」メニューのテーブルにレコードを追加する
         ARGS:
             objdbca: DB接クラス DBConnectWs()
             sheet_type: シートタイプ
+            vertical_flag: 縦メニュー利用の有無
             file_upload_only_flag: Trueの場合、シートタイプを「4: パラメータシート(ファイルアップロードあり)」とする
             create_table_name: 作成した対象のテーブル名
             menu_uuid: 対象のメニュー（「メニュー管理」のレコード）のUUID
@@ -529,18 +537,25 @@ def _insert_t_comn_menu_table_link(objdbca, sheet_type, file_upload_only_flag, c
         if menu_group_col_name == "MENU_GROUP_ID_INPUT" and recode_t_menu_unique_constraint:
             unique_constraint = str(recode_t_menu_unique_constraint.get('UNIQUE_CONSTRAINT_ITEM'))
         
-        # シートタイプが「1:パラメータシート（ホスト/オペレーションあり）」の場合は、「ホストとオペレーション」の一意制約(複数項目)を追加(対象メニューグループが「入力用」の場合のみ)
+        # シートタイプが「1:パラメータシート（ホスト/オペレーションあり）」の場合は、「ホスト/オペレーション」の一意制約(複数項目)を追加(対象メニューグループが「入力用」の場合のみ)
+        # また、縦メニュー利用がある場合は「ホスト/オペレーション/代入順序」の一意制約(複数項目)を追加する。
         if menu_group_col_name == "MENU_GROUP_ID_INPUT" and sheet_type == "1":
             if unique_constraint:
                 tmp_unique_constraint = json.loads(unique_constraint)
-                add_unique_constraint = ["operation_name", "host_name"]
+                if vertical_flag:
+                    add_unique_constraint = ["operation_name", "host_name", "input_order"]
+                else:
+                    add_unique_constraint = ["operation_name", "host_name"]
                 if tmp_unique_constraint:
                     tmp_unique_constraint.insert(0, add_unique_constraint)
                 else:
                     tmp_unique_constraint = add_unique_constraint
                 unique_constraint = json.dumps(tmp_unique_constraint)
             else:
-                unique_constraint = '[["operation_name", "host_name"]]'
+                if vertical_flag:
+                    unique_constraint = '[["operation_name", "host_name", "input_order"]]'
+                else:
+                    unique_constraint = '[["operation_name", "host_name"]]'
         
         # シートタイプが「1: パラメータシート（ホスト/オペレーションあり）」かつfile_upload_only_flagがTrueの場合、シートタイプを「4: パラメータシート（ファイルアップロードあり）」とする。
         if sheet_type == "1" and file_upload_only_flag:
@@ -636,12 +651,13 @@ def _insert_t_comn_column_group(objdbca, target_column_group_list, dict_t_menu_c
     return True, None
 
 
-def _insert_t_comn_menu_column_link(objdbca, sheet_type, menu_uuid, dict_t_comn_column_group, dict_t_menu_column_group, recode_t_menu_column, dict_t_menu_other_link):  # noqa: E501
+def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uuid, dict_t_comn_column_group, dict_t_menu_column_group, recode_t_menu_column, dict_t_menu_other_link):  # noqa: E501
     """
         「メニュー-カラム紐付管理」メニューのテーブルにレコードを追加する
         ARGS:
             objdbca: DB接クラス DBConnectWs()
             sheet_type: シートタイプ
+            vertical_flag: 縦メニュー利用の有無
             menu_uuid: メニュー作成の対象となる「メニュー管理」のレコードのID
             dict_t_comn_column_group: 「カラムグループ管理」のレコードのidをkeyにしたdict
             dict_t_menu_column_group: 「カラムグループ作成情報」のレコードのidをkeyにしたdict
@@ -791,50 +807,50 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, menu_uuid, dict_t_comn_
             # 表示順序を加算
             disp_seq_num = int(disp_seq_num) + 10
             
-            # 「代入順序」用のレコードを作成
-            # ####メモ：本来だったら縦メニューがある場合しか必要ないので、縦利用の場合に「INPUT_ITEM」「VIEW_ITEM」などをTrue/Falseどちらかするなど、分岐が必要。
-            res_valid = _check_column_validation(objdbca, menu_uuid, "input_order")  # ####メモ：メッセージ一覧から取得する
-            if not res_valid:
-                raise Exception("「メニュー-カラム紐付管理」に同じメニューとカラム名(rest)の組み合わせが既に存在している。")
-            
-            data_list = {
-                "MENU_ID": menu_uuid,
-                "COLUMN_NAME_JA": "代入順序",  # ####メモ：メッセージ一覧から取得する
-                "COLUMN_NAME_EN": "Input order",  # ####メモ：メッセージ一覧から取得する
-                "COLUMN_NAME_REST": "input_order",  # ####メモ：メッセージ一覧から取得する
-                "COL_GROUP_ID": None,
-                "COLUMN_CLASS": 3,  # NumColumn
-                "COLUMN_DISP_SEQ": disp_seq_num,
-                "REF_TABLE_NAME": None,
-                "REF_PKEY_NAME": None,
-                "REF_COL_NAME": None,
-                "REF_SORT_CONDITIONS": None,
-                "REF_MULTI_LANG": 0,  # False
-                "SENSITIVE_COL_NAME": None,
-                "FILE_UPLOAD_PLACE": None,
-                "COL_NAME": "INPUT_ORDER",
-                "SAVE_TYPE": None,
-                "AUTO_INPUT": 0,  # False
-                "INPUT_ITEM": 0,  # False
-                "VIEW_ITEM": 0,  # False
-                "UNIQUE_ITEM": 0,  # False
-                "REQUIRED_ITEM": 0,  # False
-                "AUTOREG_HIDE_ITEM": 0,  # False
-                "AUTOREG_ONLY_ITEM": 0,  # False
-                "INITIAL_VALUE": None,
-                "VALIDATE_OPTION": None,
-                "BEFORE_VALIDATE_REGISTER": None,
-                "AFTER_VALIDATE_REGISTER": None,
-                "DESCRIPTION_JA": "メニューの縦メニューから横メニューに変換する際に、左から昇順で入力されます。",  # ####メモ：メッセージ一覧から取得する
-                "DESCRIPTION_EN": "When converting from the vertical menu to the horizontal menu, items will be arranged in ascending order from left to right.",  # ####メモ：メッセージ一覧から取得する  # noqa: E501
-                "DISUSE_FLAG": "0",
-                "LAST_UPDATE_USER": "9999"  # ####メモ：メニュー作成機能バックヤード用ユーザを用意してそのIDを採用する。
-            }
-            primary_key_name = 'COLUMN_DEFINITION_ID'
-            objdbca.table_insert(t_comn_menu_column_link, data_list, primary_key_name)
-            
-            # 表示順序を加算
-            disp_seq_num = int(disp_seq_num) + 10
+            # 縦メニュー利用ありの場合のみ「代入順序」用のレコードを作成
+            if vertical_flag:
+                res_valid = _check_column_validation(objdbca, menu_uuid, "input_order")  # ####メモ：メッセージ一覧から取得する
+                if not res_valid:
+                    raise Exception("「メニュー-カラム紐付管理」に同じメニューとカラム名(rest)の組み合わせが既に存在している。")
+                
+                data_list = {
+                    "MENU_ID": menu_uuid,
+                    "COLUMN_NAME_JA": "代入順序",  # ####メモ：メッセージ一覧から取得する
+                    "COLUMN_NAME_EN": "Input order",  # ####メモ：メッセージ一覧から取得する
+                    "COLUMN_NAME_REST": "input_order",  # ####メモ：メッセージ一覧から取得する
+                    "COL_GROUP_ID": None,
+                    "COLUMN_CLASS": 3,  # NumColumn
+                    "COLUMN_DISP_SEQ": disp_seq_num,
+                    "REF_TABLE_NAME": None,
+                    "REF_PKEY_NAME": None,
+                    "REF_COL_NAME": None,
+                    "REF_SORT_CONDITIONS": None,
+                    "REF_MULTI_LANG": 0,  # False
+                    "SENSITIVE_COL_NAME": None,
+                    "FILE_UPLOAD_PLACE": None,
+                    "COL_NAME": "INPUT_ORDER",
+                    "SAVE_TYPE": None,
+                    "AUTO_INPUT": 0,  # False
+                    "INPUT_ITEM": 1,  # True
+                    "VIEW_ITEM": 1,  # True
+                    "UNIQUE_ITEM": 0,  # False
+                    "REQUIRED_ITEM": 1,  # True
+                    "AUTOREG_HIDE_ITEM": 0,  # False
+                    "AUTOREG_ONLY_ITEM": 0,  # False
+                    "INITIAL_VALUE": None,
+                    "VALIDATE_OPTION": None,
+                    "BEFORE_VALIDATE_REGISTER": None,
+                    "AFTER_VALIDATE_REGISTER": None,
+                    "DESCRIPTION_JA": "メニューの縦メニューから横メニューに変換する際に、左から昇順で入力されます。",  # ####メモ：メッセージ一覧から取得する
+                    "DESCRIPTION_EN": "When converting from the vertical menu to the horizontal menu, items will be arranged in ascending order from left to right.",  # ####メモ：メッセージ一覧から取得する  # noqa: E501
+                    "DISUSE_FLAG": "0",
+                    "LAST_UPDATE_USER": "9999"  # ####メモ：メニュー作成機能バックヤード用ユーザを用意してそのIDを採用する。
+                }
+                primary_key_name = 'COLUMN_DEFINITION_ID'
+                objdbca.table_insert(t_comn_menu_column_link, data_list, primary_key_name)
+                
+                # 表示順序を加算
+                disp_seq_num = int(disp_seq_num) + 10
         
         # 「メニュー作成機能で作成した項目」の対象の数だけループスタート
         for recode in recode_t_menu_column:
