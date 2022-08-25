@@ -48,16 +48,16 @@ spec:
         securityContext:
           allowPrivilegeEscalation: true
           capabilities: {}
-          privileged: true
+          privileged: false 
           readOnlyRootFilesystem: false
           seLinuxOptions: {}
         volumeMounts:
           - name: persistent-storage
             mountPath: /var/lib/mysql
           - name: mysql-server-initdb
-            mountPath: /docker-entrypoint-initdb.d
+            mountPath: /docker-entrypoint-initdb.d/createdb.sql
             #subPath: docker-entrypoint-initdb.d 
-            #subPath: createdb.sql 
+            subPath: createdb.sql 
           - name: mysql-server-conf
             mountPath: /etc/mysql/conf.d
       volumes:
