@@ -1254,7 +1254,7 @@ paths:
                     example: 
                       {
                         version: string,
-                        installed_driver:[
+                        installed_driver: [
                           string,
                           string
                           ]
