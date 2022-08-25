@@ -775,6 +775,14 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             # 表示順序を加算
             disp_seq_num = int(disp_seq_num) + 10
             
+            # カラムグループ「オペレーション」の情報を取得
+            operation_name_ja = 'オペレーション'
+            operation_name_en = 'Operation'
+            ret = objdbca.table_select(t_comn_column_group, 'WHERE (FULL_COL_GROUP_NAME_JA = %s OR FULL_COL_GROUP_NAME_EN = %s) AND DISUSE_FLAG = %s', [operation_name_ja, operation_name_en, 0])  # noqa: E501
+            if not ret:
+                raise Exception("カラムグループ「オペレーション」のレコードが存在しません")
+            operation_col_group_id = ret[0].get('COL_GROUP_ID')
+            
             # 「オペレーション名」用のレコードを作成
             res_valid = _check_column_validation(objdbca, menu_uuid, "operation_name")  # ####メモ：メッセージ一覧から取得する
             if not res_valid:
@@ -785,7 +793,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "COLUMN_NAME_JA": "オペレーション名",  # ####メモ：メッセージ一覧から取得する
                 "COLUMN_NAME_EN": "Operation name",  # ####メモ：メッセージ一覧から取得する
                 "COLUMN_NAME_REST": "operation_name",  # ####メモ：メッセージ一覧から取得する
-                "COL_GROUP_ID": "0000001",  # カラムグループ「オペレーション」
+                "COL_GROUP_ID": operation_col_group_id,  # カラムグループ「オペレーション」
                 "COLUMN_CLASS": 7,  # IDColumn
                 "COLUMN_DISP_SEQ": disp_seq_num,
                 "REF_TABLE_NAME": "V_COMN_OPERATION",
