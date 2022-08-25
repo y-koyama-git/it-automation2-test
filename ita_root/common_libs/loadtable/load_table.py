@@ -131,6 +131,10 @@ class loadTable():
         # 環境情報
         self.lang = g.LANGUAGE
 
+        # ユーザー
+        self.user = g.USER_ID
+        self.user = '1'
+
         # DBのカラム、PK
         self.primary_key = ''
         self.column_list = ''
@@ -147,7 +151,7 @@ class loadTable():
         self.base_cols_val = {
             REST_KEY_DISCARD: 0,
             REST_KEY_LAST_UPDATE_TIME: None,
-            REST_KEY_LAST_UPDATE_USER: 1,
+            REST_KEY_LAST_UPDATE_USER: self.user,
         }
         
         # 処理件数:種別毎
@@ -1286,7 +1290,8 @@ class loadTable():
                             'current_parameter': {
                                 'parameter': current_parametr,
                                 'file': current_file,
-                            }
+                            },
+                            'user': self.user
                         }
                         # ファイル有無
                         if entry_file is not None:
@@ -1344,7 +1349,8 @@ class loadTable():
                     'current_parameter': {
                         'parameter': current_parametr,
                         'file': current_file,
-                    }
+                    },
+                    'user': self.user
                 }
                 tmp_exec = self.exec_menu_before_validate(target_menu_option)
 
