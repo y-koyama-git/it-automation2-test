@@ -23,7 +23,7 @@ import pathlib
 import json
 
 from chardet import detect
-from flask import has_request_context
+from flask import g, has_request_context
 
 from common_libs.common.dbconnect.dbconnect_ws import DBConnectWs
 from common_libs.ansible_driver.classes.AnscConstClass import AnscConst
@@ -145,7 +145,7 @@ class CheckAnsibleRoleFiles():
                 zip.extractall(in_dist_path)
 
         except Exception:
-            msgstr = self.lv_objMTS.getSomeMessage("MSG-10259")
+            msgstr = g.appmsg.get_api_message("MSG-10259")
             self.SetLastError(inspect.currentframe().f_code.co_filename, inspect.currentframe().f_lineno, msgstr)
             return False
 
@@ -473,7 +473,7 @@ class CheckAnsibleRoleFiles():
                 # ITA readmeのYAML解析で想定外のエラーが発生しました。(ロールパッケージ名:{} role:{} file:{})
                 errmsg = "%s\n%s" % (
                     errmsg,
-                    self.lv_objMTS.getSomeMessage("MSG-10643", [self.lva_msg_role_pkg_name, in_rolename, tgt_file_name])
+                    g.appmsg.get_api_message("MSG-10643", [self.lva_msg_role_pkg_name, in_rolename, tgt_file_name])
                 )
                 self.SetLastError(inspect.currentframe().f_code.co_filename, inspect.currentframe().f_lineno, errmsg)
                 return False, ina_def_vars_list, ina_def_varsval_list, ina_def_array_vars_list, ina_copyvars_list, ina_tpfvars_list, ina_ITA2User_var_list, ina_User2ITA_var_list
@@ -690,7 +690,7 @@ class CheckAnsibleRoleFiles():
 
         if not tasks_dir:
             # MSG-10260 = "｛｝にtasksディレクトリがありません。"
-            msgstr = self.lv_objMTS.getSomeMessage("MSG-10260", ['./roles/%s' % (in_rolename)])
+            msgstr = g.appmsg.get_api_message("MSG-10260", ['./roles/%s' % (in_rolename)])
             self.SetLastError(inspect.currentframe().f_code.co_filename, inspect.currentframe().f_lineno, msgstr)
             return False, ina_def_vars_list, ina_def_varsval_list, ina_def_array_vars_list, ina_copyvars_list, ina_tpfvars_list, ina_ITA2User_var_list, ina_User2ITA_var_list
 
@@ -785,7 +785,7 @@ class CheckAnsibleRoleFiles():
                 # 同じ変数名が複数のdefault定義ファイルに記述されている場合はエラー
                 if parent_var_name in ina_parent_vars_list and ina_parent_vars_list[parent_var_name] is not None:
                     # MSG-10614 = ""変数が複数のdefault定義ファイルに記述されています。(ロールパッケージ名:{} ロール名:{} 変数名:{})"
-                    msgstr = self.lv_objMTS.getSomeMessage(
+                    msgstr = g.appmsg.get_api_message(
                         "MSG-10614", [in_role_pkg_name, in_rolename, parent_var_name]
                     )
                     self.SetLastError(inspect.currentframe().f_code.co_filename, inspect.currentframe().f_lineno, msgstr)
@@ -851,7 +851,7 @@ class CheckAnsibleRoleFiles():
                 # サブディレクトリを許可しているか判定
                 if not in_sub_dir:
                     # MSG-10277 = "サブディレクトリ(｛｝)が存在します。"
-                    msgstr = self.lv_objMTS.getSomeMessage(
+                    msgstr = g.appmsg.get_api_message(
                         "MSG-10277",
                         ['./roles/%s/%s/%s' % (in_rolename, in_dirname, file)]
                     )
@@ -969,7 +969,7 @@ class CheckAnsibleRoleFiles():
         # main.ymlが必要なディレクトリにmain.ymlがない場合
         if in_main_yml is True and main_yml is False:
             # MSG-10257 = "main.ymlファイルがありません。(ディレクトリ:{})"
-            msgstr = self.lv_objMTS.getSomeMessage(
+            msgstr = g.appmsg.get_api_message(
                 "MSG-10257",
                 ['./roles/%s/%s/' % (in_rolename, in_dirname)]
             )
@@ -1030,7 +1030,7 @@ class CheckAnsibleRoleFiles():
                         if len(in_errmsg) > 0:
                             in_errmsg = '%s\n' % (in_errmsg)
 
-                        in_errmsg += self.lv_objMTS.getSomeMessage(
+                        in_errmsg += g.appmsg.get_api_message(
                             "MSG-10514", [os.path.basename(in_filepath), line]
                         )
                         ret_code = False
@@ -1042,7 +1042,7 @@ class CheckAnsibleRoleFiles():
                         if len(in_errmsg) > 0:
                             in_errmsg = '%s\n' % (in_errmsg)
 
-                        in_errmsg += self.lv_objMTS.getSomeMessage(
+                        in_errmsg += g.appmsg.get_api_message(
                             "MSG-10515", [os.path.basename(in_filepath), line]
                         )
                         ret_code = False
@@ -1052,7 +1052,7 @@ class CheckAnsibleRoleFiles():
                     if len(in_errmsg) > 0:
                         in_errmsg = '%s\n' % (in_errmsg)
 
-                    in_errmsg += self.lv_objMTS.getSomeMessage("MSG-10515", [os.path.basename(in_filepath), line])
+                    in_errmsg += g.appmsg.get_api_message("MSG-10515", [os.path.basename(in_filepath), line])
                     ret_code = False
                     continue
 
@@ -1060,7 +1060,7 @@ class CheckAnsibleRoleFiles():
                 if len(in_errmsg) > 0:
                     in_errmsg = '%s\n' % (in_errmsg)
 
-                in_errmsg += self.lv_objMTS.getSomeMessage("MSG-10516", [os.path.basename(in_filepath), line])
+                in_errmsg += g.appmsg.get_api_message("MSG-10516", [os.path.basename(in_filepath), line])
                 ret_code = False
                 continue
 
@@ -1070,7 +1070,7 @@ class CheckAnsibleRoleFiles():
                 if len(in_errmsg) > 0:
                     in_errmsg = '%s\n' % (in_errmsg)
 
-                in_errmsg += self.lv_objMTS.getSomeMessage("MSG-10517", [os.path.basename(in_filepath), line])
+                in_errmsg += g.appmsg.get_api_message("MSG-10517", [os.path.basename(in_filepath), line])
                 ret_code = False
                 continue
 
@@ -1083,7 +1083,7 @@ class CheckAnsibleRoleFiles():
                 if len(in_errmsg) > 0:
                     in_errmsg = '%s\n' % (in_errmsg)
 
-                in_errmsg += self.lv_objMTS.getSomeMessage("MSG-10518", [os.path.basename(in_filepath), ita_var_name])
+                in_errmsg += g.appmsg.get_api_message("MSG-10518", [os.path.basename(in_filepath), ita_var_name])
                 ret_code = False
                 continue
 
@@ -1118,7 +1118,7 @@ class CheckAnsibleRoleFiles():
                 if len(in_errmsg) > 0:
                     in_errmsg = '%s\n' % (in_errmsg)
 
-                in_errmsg += self.lv_objMTS.getSomeMessage(
+                in_errmsg += g.appmsg.get_api_message(
                     "MSG-10519", [os.path.basename(in_translation_table_file), user_var_name]
                 )
                 ret_code = False
@@ -1184,11 +1184,11 @@ class CheckAnsibleRoleFiles():
         encode = encode['encoding'].upper()
         if encode in ["ASCII", "UTF-8"]:
             if yaml[0:3] == b'\xef\xbb\xbf':
-                strErrMsg = self.lv_objMTS.getSomeMessage('MSG-10642', [dispFilename])
+                strErrMsg = g.appmsg.get_api_message('MSG-10642', [dispFilename])
                 boolRet = False
 
         else:
-            strErrMsg = self.lv_objMTS.getSomeMessage('MSG-10641', [dispFilename])
+            strErrMsg = g.appmsg.get_api_message('MSG-10641', [dispFilename])
             boolRet = False
 
         return boolRet, strErrMsg
@@ -1291,7 +1291,7 @@ class CheckAnsibleRoleFiles():
         # ディレクトリか判定
         if not os.path.isdir(roles_dir):
             # rolesディレクトリがない
-            errormsg = objMTS.getSomeMessage("MSG-10256")
+            errormsg = g.appmsg.get_api_message("MSG-10256")
             return result_code, RoleDirList, errormsg
 
         # ディレクトリリスト取得
@@ -1330,7 +1330,7 @@ class CheckAnsibleRoleFiles():
         if result_code is True:
             # roleディレクトリが存在しているか
             if len(RoleDirList) <= 0:
-                errormsg = objMTS.getSomeMessage("MSG-10258")
+                errormsg = g.appmsg.get_api_message("MSG-10258")
                 return False, RoleDirList, errormsg
 
         if result_code is True:
@@ -1342,7 +1342,7 @@ class CheckAnsibleRoleFiles():
                     if len(errormsg) > 0:
                         errormsg = '%s\n' % (errormsg)
 
-                    errormsg = objMTS.getSomeMessage("MSG-10612", [role_name])
+                    errormsg = g.appmsg.get_api_message("MSG-10612", [role_name])
                     result_code = False
 
         if result_code is True:
@@ -1353,7 +1353,7 @@ class CheckAnsibleRoleFiles():
                     if len(errormsg) > 0:
                         errormsg = '%s\n' % (errormsg)
 
-                    errormsg = objMTS.getSomeMessage("MSG-10613", [role_name])
+                    errormsg = g.appmsg.get_api_message("MSG-10613", [role_name])
                     result_code = False
 
         if result_code is True:
@@ -1803,7 +1803,7 @@ class DefaultVarsFileAnalysis():
         """
 
         # MSG-10289 = "default変数ファイルに登録されている変数の属性が不一致。\n"
-        errmsg = self.lv_objMTS.getSomeMessage("MSG-10289")
+        errmsg = g.appmsg.get_api_message("MSG-10289")
 
         # err_vars_list[変数名][ロール名]
         for err_var_name, err_role_list in self.php_array(ina_err_vars_list):
@@ -1812,7 +1812,7 @@ class DefaultVarsFileAnalysis():
                 err_files = '%sroles/%s\n' % (err_files, err_role_name)
 
             if err_files:
-                errmsg = '%s%s' % (errmsg, self.lv_objMTS.getSomeMessage("MSG-10290", [err_var_name, err_files]))
+                errmsg = '%s%s' % (errmsg, g.appmsg.get_api_message("MSG-10290", [err_var_name, err_files]))
 
         return errmsg
 
@@ -1830,16 +1830,16 @@ class DefaultVarsFileAnalysis():
           エラーメッセージ
         """
 
-        errmsg = self.lv_objMTS.getSomeMessage("MSG-10289")
+        errmsg = g.appmsg.get_api_message("MSG-10289")
         for err_var_name, err_pkg_list in self.php_array(ina_err_vars_list):
             err_files = ""
             for err_pkg_name, err_role_list in self.php_array(err_pkg_list):
                 for err_role_name, dummy in self.php_array(err_role_list):
-                    err_files = '%s%s' % (err_files, self.lv_objMTS.getSomeMessage("MSG-10291", [err_pkg_name]))
+                    err_files = '%s%s' % (err_files, g.appmsg.get_api_message("MSG-10291", [err_pkg_name]))
                     err_files = '%sroles/%s\n' % (err_files, err_role_name)
 
             if err_files:
-                errmsg = '%s%s' % (errmsg, self.lv_objMTS.getSomeMessage("MSG-10290", [err_var_name, err_files]))
+                errmsg = '%s%s' % (errmsg, g.appmsg.get_api_message("MSG-10290", [err_var_name, err_files]))
 
         return errmsg
 
@@ -1883,7 +1883,7 @@ class DefaultVarsFileAnalysis():
                     or vars_name not in ina_def_array_vars_list[role_name] \
                     or ina_def_array_vars_list[role_name][vars_name] is None \
                     or (type(ina_def_array_vars_list[role_name][vars_name] is None) in (list, dict) and len(ina_def_array_vars_list[role_name][vars_name]) <= 0):
-                        in_errmsg = '%s\n%s' % (in_errmsg, self.lv_objMTS.getSomeMessage("MSG-10294", [role_name, vars_name]))
+                        in_errmsg = '%s\n%s' % (in_errmsg, g.appmsg.get_api_message("MSG-10294", [role_name, vars_name]))
                         ret_code = False
 
         return ret_code, in_errmsg
@@ -2872,7 +2872,7 @@ class DefaultVarsFileAnalysis():
         for role_name, vars_list in self.php_array(ina_play_global_vars_list):
             for vars_name, dummy in self.php_array(vars_list):
                 if vars_name not in ina_global_vars_list:
-                    in_errmsg = '%s\n%s' % (in_errmsg, self.lv_objMTS.getSomeMessage("MSG-10465", [role_name, vars_name]))
+                    in_errmsg = '%s\n%s' % (in_errmsg, g.appmsg.get_api_message("MSG-10465", [role_name, vars_name]))
                     ret_code = False
 
         return ret_code, in_errmsg
@@ -2930,7 +2930,7 @@ class DefaultVarsFileAnalysis():
                     if len(user_var_match) == 1:
                         in_errmsg = '%s\n%s' % (
                             in_errmsg,
-                            self.lv_objMTS.getSomeMessage("MSG-10514", [os.path.basename(in_filepath), line])
+                            g.appmsg.get_api_message("MSG-10514", [os.path.basename(in_filepath), line])
                         )
                         ret_code = False
                         continue
@@ -2938,13 +2938,13 @@ class DefaultVarsFileAnalysis():
                 else:
                     in_errmsg = '%s\n%s' % (
                         in_errmsg,
-                        self.lv_objMTS.getSomeMessage("MSG-10515", [os.path.basename(in_filepath), line])
+                        g.appmsg.get_api_message("MSG-10515", [os.path.basename(in_filepath), line])
                     )
                     ret_code = False
                     continue
 
             else:
-                in_errmsg = '%s\n%s' % (in_errmsg, self.lv_objMTS.getSomeMessage("MSG-10516", [os.path.basename(in_filepath), line]))
+                in_errmsg = '%s\n%s' % (in_errmsg, g.appmsg.get_api_message("MSG-10516", [os.path.basename(in_filepath), line]))
                 ret_code = False
                 continue
             
@@ -2956,7 +2956,7 @@ class DefaultVarsFileAnalysis():
             ):
                 in_errmsg = '%s\n%s' % (
                     in_errmsg,
-                    self.lv_objMTS.getSomeMessage("MSG-10517", [os.path.basename(in_filepath), user_var_name])
+                    g.appmsg.get_api_message("MSG-10517", [os.path.basename(in_filepath), user_var_name])
                 )
                 ret_code = False
                 continue
@@ -2972,7 +2972,7 @@ class DefaultVarsFileAnalysis():
             ):
                 in_errmsg = '%s\n%s' % (
                     in_errmsg,
-                    self.lv_objMTS.getSomeMessage("MSG-10518", [os.path.basename(in_filepath), ita_var_name])
+                    g.appmsg.get_api_message("MSG-10518", [os.path.basename(in_filepath), ita_var_name])
                 )
                 ret_code = False
                 continue
@@ -3122,7 +3122,7 @@ class DefaultVarsFileAnalysis():
         """
 
         errmsg = ""
-        errmsg = self.lv_objMTS.getSomeMessage("MSG-10520")
+        errmsg = g.appmsg.get_api_message("MSG-10520")
 
         if  "USER_VAR" in ina_comb_err_vars_list \
         and ina_comb_err_vars_list["USER_VAR"] is not None \
@@ -3136,13 +3136,13 @@ class DefaultVarsFileAnalysis():
                         if in_pkg_flg is True:
                             errmsg = '%s%s' % (
                                 errmsg,
-                                self.lv_objMTS.getSomeMessage("MSG-10523", [pkg_name, role_name, ita_vars_name, user_vars_name])
+                                g.appmsg.get_api_message("MSG-10523", [pkg_name, role_name, ita_vars_name, user_vars_name])
                             )
 
                         else:
                             errmsg = '%s%s' % (
                                 errmsg,
-                                self.lv_objMTS.getSomeMessage("MSG-10521", [role_name, ita_vars_name, user_vars_name])
+                                g.appmsg.get_api_message("MSG-10521", [role_name, ita_vars_name, user_vars_name])
                             )
 
         if  "ITA_VAR" in ina_comb_err_vars_list \
@@ -3157,13 +3157,13 @@ class DefaultVarsFileAnalysis():
                         if in_pkg_flg is True:
                             errmsg = '%s%s' % (
                                 errmsg,
-                                self.lv_objMTS.getSomeMessage("MSG-10524", [pkg_name, role_name, user_vars_name, ita_vars_name])
+                                g.appmsg.get_api_message("MSG-10524", [pkg_name, role_name, user_vars_name, ita_vars_name])
                             )
 
                         else:
                             errmsg = '%s%s' % (
                                 errmsg,
-                                self.lv_objMTS.getSomeMessage("MSG-10522", [role_name, user_vars_name, ita_vars_name])
+                                g.appmsg.get_api_message("MSG-10522", [role_name, user_vars_name, ita_vars_name])
                             )
 
         return errmsg
@@ -3635,7 +3635,7 @@ class YAMLFileAnalysis():
         errmsg = obj.GetLastError()
         obj = None
         if yaml_parse_array is False:
-            errmsg = "%s\n%s" % (errmsg, self.lv_objMTS.getSomeMessage(error_code, error_ary))
+            errmsg = "%s\n%s" % (errmsg, g.appmsg.get_api_message(error_code, error_ary))
             self.SetLastError(inspect.currentframe().f_code.co_filename, inspect.currentframe().f_lineno, errmsg)
             return False, in_parent_vars_list, ina_vars_list, ina_array_vars_list, ina_varval_list
 
@@ -3996,7 +3996,7 @@ class VarStructAnalysisFileAccess():
                                 if len(errormsg) > 0:
                                     errormsg = '%s\n' % (errormsg)
 
-                                errormsg += self.lv_objMTS.getSomeMessage("MSG-10602", [tpf_var_name, var_name])
+                                errormsg += g.appmsg.get_api_message("MSG-10602", [tpf_var_name, var_name])
 
                             # webから呼ばれている場合
                             if self.web_mode is True:
@@ -4004,7 +4004,7 @@ class VarStructAnalysisFileAccess():
                                 if len(errormsg) > 0:
                                     errormsg = '%s\n' % (errormsg)
 
-                                errormsg += self.lv_objMTS.getSomeMessage("MSG-10597", [rolename, var_name, tpf_var_name])
+                                errormsg += g.appmsg.get_api_message("MSG-10597", [rolename, var_name, tpf_var_name])
 
                             else:
                                 if self.log_level == "DEBUG":
@@ -4012,7 +4012,7 @@ class VarStructAnalysisFileAccess():
                                     if len(errormsg) > 0:
                                         errormsg = '%s\n' % (errormsg)
 
-                                    errormsg += self.lv_objMTS.getSomeMessage("MSG-10602", [tpf_var_name, var_name])
+                                    errormsg += g.appmsg.get_api_message("MSG-10602", [tpf_var_name, var_name])
 
                             # 次の変数へ
                             continue
@@ -4030,10 +4030,10 @@ class VarStructAnalysisFileAccess():
                                 if len(errormsg) > 0:
                                     errormsg = '%s\n' % (errormsg)
 
-                                parammsg = self.lv_objMTS.getSomeMessage("MSG-10582", [tpf_var_name, var_name])
+                                parammsg = g.appmsg.get_api_message("MSG-10582", [tpf_var_name, var_name])
 
                                 # MSG-10581 = "テンプレート管理で使用しているグローバル変数がグローバル変数管理に登録されていません。{}"
-                                errormsg += self.lv_objMTS.getSomeMessage("MSG-10581", [parammsg])
+                                errormsg += g.appmsg.get_api_message("MSG-10581", [parammsg])
 
                             else:
                                 if self.log_level == "DEBUG":
@@ -4042,7 +4042,7 @@ class VarStructAnalysisFileAccess():
                                     if len(errormsg) > 0:
                                         errormsg = '%s\n' % (errormsg)
 
-                                    errormsg += self.lv_objMTS.getSomeMessage("MSG-10600", [var_name])
+                                    errormsg += g.appmsg.get_api_message("MSG-10600", [var_name])
 
                             # 次の変数へ
                             continue
@@ -4070,7 +4070,7 @@ class VarStructAnalysisFileAccess():
                                 if len(errormsg) > 0:
                                     errormsg = '%s\n' % (errormsg)
 
-                                errormsg += self.lv_objMTS.getSomeMessage("MSG-10597", [rolename, var_name, tpf_var_name])
+                                errormsg += g.appmsg.get_api_message("MSG-10597", [rolename, var_name, tpf_var_name])
 
                             else:
                                 if self.log_level == "DEBUG":
@@ -4078,7 +4078,7 @@ class VarStructAnalysisFileAccess():
                                     if len(errormsg) > 0:
                                         errormsg = '%s\n' % (errormsg)
 
-                                    errormsg += self.lv_objMTS.getSomeMessage("MSG-10602", [tpf_var_name, var_name])
+                                    errormsg += g.appmsg.get_api_message("MSG-10602", [tpf_var_name, var_name])
 
                             # 次の変数へ
                             continue
@@ -4104,7 +4104,7 @@ class VarStructAnalysisFileAccess():
                     if len(errormsg) > 0:
                         errormsg = '%s\n' % (errormsg)
 
-                    errormsg += self.lv_objMTS.getSomeMessage("MSG-10606", [rolename, tpf_var_name])
+                    errormsg += g.appmsg.get_api_message("MSG-10606", [rolename, tpf_var_name])
 
                 else:
                     if self.log_level == "DEBUG":
@@ -4112,7 +4112,7 @@ class VarStructAnalysisFileAccess():
                         if len(errormsg) > 0:
                             errormsg = '%s\n' % (errormsg)
 
-                        errormsg += self.lv_objMTS.getSomeMessage("MSG-10601", [rolename, tpf_var_name])
+                        errormsg += g.appmsg.get_api_message("MSG-10601", [rolename, tpf_var_name])
 
         return gbl_vars_list, tpf_vars_struct, errormsg
 
@@ -4222,7 +4222,7 @@ class VarStructAnalysisFileAccess():
                             if len(errormsg) > 0:
                                 errormsg = '%s\n' % (errormsg)
 
-                            errormsg += self.lv_objMTS.getSomeMessage("MSG-10605", [var_name])
+                            errormsg += g.appmsg.get_api_message("MSG-10605", [var_name])
 
                         else:
                             if self.log_level == "DEBUG":
@@ -4230,7 +4230,7 @@ class VarStructAnalysisFileAccess():
                                 if len(errormsg) > 0:
                                     errormsg = '%s\n' % (errormsg)
 
-                                errormsg += self.lv_objMTS.getSomeMessage("MSG-10600", [var_name])
+                                errormsg += g.appmsg.get_api_message("MSG-10600", [var_name])
 
         return tpf_vars_list, errormsg
 
@@ -4574,7 +4574,7 @@ class VarStructAnalysisFileAccess():
                                 if len(strErrMsg) > 0:
                                     strErrMsg = '%s\n' % (strErrMsg)
 
-                                strErrMsg += self.lv_objMTS.getSomeMessage(
+                                strErrMsg += g.appmsg.get_api_message(
                                     "MSG-10596", [crt_role_name, err_var_name, tpf_var_name]
                                 )
                                 boolRet = False
@@ -4665,7 +4665,7 @@ class VarStructAnalysisFileAccess():
 
     def VarsStructErrmsgEdit(self, ina_err_vars_list, tgt_role_pkg_name, error_msg_code):
 
-        errmsg = self.lv_objMTS.getSomeMessage(error_msg_code)
+        errmsg = g.appmsg.get_api_message(error_msg_code)
         for err_var_name, err_pkg_list in self.php_array(ina_err_vars_list):
             err_files = ""
             for err_pkg_name, err_role_list in self.php_array(err_pkg_list):
@@ -4675,11 +4675,11 @@ class VarStructAnalysisFileAccess():
                 for err_role_name, dummy in self.php_array(err_role_list):
                     err_files = '%s%s\n' % (
                         err_files,
-                        self.lv_objMTS.getSomeMessage("MSG-10609", [err_pkg_name, err_role_name])
+                        g.appmsg.get_api_message("MSG-10609", [err_pkg_name, err_role_name])
                     )
 
             if err_files:
-                errmsg += self.lv_objMTS.getSomeMessage("MSG-10608", [err_var_name, err_files])
+                errmsg += g.appmsg.get_api_message("MSG-10608", [err_var_name, err_files])
 
         return errmsg
 
