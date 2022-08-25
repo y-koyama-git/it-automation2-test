@@ -611,25 +611,36 @@ def _insert_t_comn_column_group(objdbca, target_column_group_list, dict_t_menu_c
             if not target_column_group_data:
                 continue
             
+            # 「パラメータ」を必ず最親のカラムグループ名とするため、「パラメータ」のレコード情報を取得
+            param_name_ja = 'パラメータ'
+            param_name_en = 'Parameter'
+            ret = objdbca.table_select(t_comn_column_group, 'WHERE (FULL_COL_GROUP_NAME_JA = %s OR FULL_COL_GROUP_NAME_EN = %s) AND DISUSE_FLAG = %s', [param_name_ja, param_name_en, 0])  # noqa: E501
+            if not ret:
+                raise Exception("カラムグループ「パラメータ」のレコードが存在しません")
+            param_col_group_id = ret[0].get('COL_GROUP_ID')
+            
             # 対象のカラムグループのフルカラムグループ名(ja/en)がすでに登録されている場合はスキップ。
-            full_col_group_name_ja = target_column_group_data.get('full_col_group_name_ja')
-            full_col_group_name_en = target_column_group_data.get('full_col_group_name_en')
+            full_col_group_name_ja = param_name_ja + '/' + str(target_column_group_data.get('full_col_group_name_ja'))  # フルカラムグループ名に「パラメータ/」を足した名前  # noqa: E501
+            full_col_group_name_en = param_name_en + '/' + str(target_column_group_data.get('full_col_group_name_en'))  # フルカラムグループ名に「Parameter/」を足した名前  # noqa: E501
             ret = objdbca.table_select(t_comn_column_group, 'WHERE (FULL_COL_GROUP_NAME_JA = %s OR FULL_COL_GROUP_NAME_EN = %s) AND DISUSE_FLAG = %s', [full_col_group_name_ja, full_col_group_name_en, 0])  # noqa: E501
             if ret:
                 continue
             
             # 親カラムグループがある場合は、親カラムグループのIDを取得
-            pa_target_id = None
             pa_col_group_id = target_column_group_data.get('pa_col_group_id')
             if pa_col_group_id:
                 pa_column_group_data = dict_t_menu_column_group.get(pa_col_group_id)
-                pa_full_col_group_name_ja = pa_column_group_data.get('full_col_group_name_ja')
-                pa_full_col_group_name_en = pa_column_group_data.get('full_col_group_name_en')
+                pa_full_col_group_name_ja = param_name_ja + '/' + str(pa_column_group_data.get('full_col_group_name_ja'))  # フルカラムグループ名に「パラメータ/」を足した名前  # noqa: E501
+                pa_full_col_group_name_en = param_name_en + '/' + str(pa_column_group_data.get('full_col_group_name_en'))  # フルカラムグループ名に「Parameter/」を足した名前  # noqa: E501
                 ret = objdbca.table_select(t_comn_column_group, 'WHERE (FULL_COL_GROUP_NAME_JA = %s OR FULL_COL_GROUP_NAME_EN = %s) AND DISUSE_FLAG = %s', [pa_full_col_group_name_ja, pa_full_col_group_name_en, 0])  # noqa: E501
                 if not ret:
                     raise Exception("「カラムグループ管理」に対象の親カラムグループのレコードが無いためエラー")
                 
                 pa_target_id = ret[0].get('COL_GROUP_ID')
+            
+            # 親カラムグループが無い場合、「パラメータ」を親カラムグループとして指定する
+            else:
+                pa_target_id = param_col_group_id
                                 
             # 「カラムグループ管理」に登録を実行
             data_list = {
@@ -669,6 +680,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
     try:
         # テーブル名
         t_comn_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
+        t_comn_column_group = 'T_COMN_COLUMN_GROUP'
         
         # 表示順序用変数
         disp_seq_num = 10
@@ -852,6 +864,14 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 # 表示順序を加算
                 disp_seq_num = int(disp_seq_num) + 10
         
+        # カラムグループ「パラメータ」の情報を取得
+        param_name_ja = 'パラメータ'
+        param_name_en = 'Parameter'
+        ret = objdbca.table_select(t_comn_column_group, 'WHERE (FULL_COL_GROUP_NAME_JA = %s OR FULL_COL_GROUP_NAME_EN = %s) AND DISUSE_FLAG = %s', [param_name_ja, param_name_en, 0])  # noqa: E501
+        if not ret:
+            raise Exception("カラムグループ「パラメータ」のレコードが存在しません")
+        param_col_group_id = ret[0].get('COL_GROUP_ID')
+        
         # 「メニュー作成機能で作成した項目」の対象の数だけループスタート
         for recode in recode_t_menu_column:
             column_class = str(recode.get('COLUMN_CLASS'))
@@ -884,8 +904,8 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             tmp_col_group_id = recode.get('CREATE_COL_GROUP_ID')
             target_t_menu_column_group = dict_t_menu_column_group.get(tmp_col_group_id)
             if target_t_menu_column_group:
-                t_full_col_group_name_ja = target_t_menu_column_group.get('full_col_group_name_ja')
-                t_full_col_group_name_en = target_t_menu_column_group.get('full_col_group_name_en')
+                t_full_col_group_name_ja = param_name_ja + '/' + str(target_t_menu_column_group.get('full_col_group_name_ja'))  # フルカラムグループ名に「パラメータ/」を足した名前  # noqa: E501
+                t_full_col_group_name_en = param_name_en + '/' + str(target_t_menu_column_group.get('full_col_group_name_en'))  # フルカラムグループ名に「Paramater/」を足した名前  # noqa: E501
                 for key_id, target_t_comn_column_group in dict_t_comn_column_group.items():
                     c_full_col_group_name_ja = target_t_comn_column_group.get('full_col_group_name_ja')
                     c_full_col_group_name_en = target_t_comn_column_group.get('full_col_group_name_en')
@@ -893,6 +913,9 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                     if (t_full_col_group_name_ja == c_full_col_group_name_ja) or (t_full_col_group_name_en == c_full_col_group_name_en):
                         col_group_id = key_id
                         break
+            # カラムグループが無い場合「パラメータ」をカラムグループとして指定する
+            else:
+                col_group_id = param_col_group_id
             
             # 「メニュー作成機能で作成した項目」用のレコードを作成
             column_name_rest = recode.get('COLUMN_NAME_REST')
