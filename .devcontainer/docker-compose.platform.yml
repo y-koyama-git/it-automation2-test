@@ -14,15 +14,16 @@
 version: '3.1'
 services:
   platform-auth:
-    image: exastro/exastro-common-auth-platform-auth:0.1.0.98e181.20220802-101600
+    image: exastro/exastro-common-auth-platform-auth:0.1.0.41b368.20220824-172620
     environment:
       - LISTEN_PORT=38000
+      - LISTEN_PORT_PF_MNG=38001
       - PYTHONPATH=/app/
       - CONFIG_API_PATH=/app/api.conf
       - PYTHONIOENCODING=utf-8
-      - EXASTRO_KEYCLOAK_USER=admin
-      - EXASTRO_KEYCLOAK_PASSWORD=password
-      - EXASTRO_KEYCLOAK_MASTER_REALM=master
+      # - EXASTRO_KEYCLOAK_USER=admin
+      # - EXASTRO_KEYCLOAK_PASSWORD=password
+      # - EXASTRO_KEYCLOAK_MASTER_REALM=master
       - API_KEYCLOAK_HOST=keycloak
       - API_KEYCLOAK_PROTOCOL=http
       - API_KEYCLOAK_PORT=8080
@@ -48,12 +49,11 @@ services:
       - DB_DATABASE=platform
       - DB_USER=app_user
       - DB_PASSWORD=password
-    volumes:
-      - ../ita_root/reverse-proxy.conf:/etc/httpd/conf.d/reverse-proxy.conf:cached
     ports:
       - "0.0.0.0:38000:38000"
+      - "0.0.0.0:38001:38001"
   keycloak:
-    image: exastro/exastro-common-auth-keycloak:0.1.0.98e181.20220802-101558
+    image: exastro/exastro-common-auth-keycloak:0.1.0.41b368.20220824-172513
     environment:
       - KEYCLOAK_USER=admin
       - KEYCLOAK_PASSWORD=password
@@ -66,9 +66,8 @@ services:
     depends_on:
       platform-db:
         condition: service_healthy
-
   platform-db:
-    image: exastro/exastro-common-auth-platform-db:0.1.0.98e181.20220802-101558
+    image: exastro/exastro-common-auth-platform-db:0.1.0.41b368.20220824-172617
     healthcheck:
       test: mysqladmin ping --silent && mysql -u $${KEYCLOAK_DB_USER} -p$${KEYCLOAK_DB_PASSWORD} -D $${KEYCLOAK_DB_DATABASE} -e 'select 1;'
     volumes:
@@ -78,14 +77,13 @@ services:
       - KEYCLOAK_DB_DATABASE=keycloak
       - KEYCLOAK_DB_USER=keycloak
       - KEYCLOAK_DB_PASSWORD=password
-
   platform-web:
-    image: exastro/exastro-common-auth-platform-web:0.1.0.98e181.20220802-101657
+    image: exastro/exastro-common-auth-platform-web:0.1.0.41b368.20220824-172504
     environment:
       - LISTEN_PORT=80
 
   platform-api:
-    image: exastro/exastro-common-auth-platform-api:0.1.0.98e181.20220802-101654
+    image: exastro/exastro-common-auth-platform-api:0.1.0.41b368.20220824-172502
     environment:
       - LISTEN_PORT=8000
       - PYTHONPATH=/app/
@@ -101,3 +99,5 @@ services:
       - DB_DATABASE=platform
       - DB_USER=app_user
       - DB_PASSWORD=password
+      - MYSQL_ROOT_PASSWORD=password
+
