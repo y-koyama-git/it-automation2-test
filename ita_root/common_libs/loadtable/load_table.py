@@ -875,7 +875,7 @@ class loadTable():
                                     if search_key in self.get_restkey_list():
                                         objcolumn = self.get_columnclass(search_key)
                                         # search_modeのチェック
-                                        if search_mode == 'RANGE' and objcolumn not in ['LastUpdateDateColumn', 'NumColumn', 'FloatColumn', 'DateTimeColumn', 'DateColumn']:
+                                        if search_mode == 'RANGE' and objcolumn.__class__.__name__ not in ['LastUpdateDateColumn', 'NumColumn', 'FloatColumn', 'DateTimeColumn', 'DateColumn']:
                                             status_code = '499-00101'
                                             log_msg_args = [search_key]
                                             api_msg_args = [search_key]
@@ -969,10 +969,6 @@ class loadTable():
 
         except AppException as e:
             raise e
-        except Exception:
-            status_code = '999-99999'
-            type_, value, traceback_ = sys.exc_info()
-            msg = ['{}'.format(traceback.format_exception(type_, value, traceback_))]
         finally:
             result = result_list
         return status_code, result, msg,
@@ -1185,268 +1181,123 @@ class loadTable():
         retBool = True
         result = {}
         #  登録/更新(廃止/復活) 処理
-        try:
+        column_list = self.get_column_list()
+        primary_key = self.get_primary_key()
+        sheet_type = self.get_sheet_type()
 
-            column_list = self.get_column_list()
-            primary_key = self.get_primary_key()
-            sheet_type = self.get_sheet_type()
+        # 各カラム単位の基本処理（前）、個別処理（前）を実施
+        # REST用キーのパラメータ、ファイル(base64)
+        entry_parameter = parameters.get(REST_PARAMETER_KEYNAME)
+        entry_file = parameters.get(REST_FILE_KEYNAME)
+        if entry_file is None:
+            entry_file = {}
+        if target_uuid is None:
+            target_uuid = ''
 
-            # 各カラム単位の基本処理（前）、個別処理（前）を実施
-            # REST用キーのパラメータ、ファイル(base64)
-            entry_parameter = parameters.get(REST_PARAMETER_KEYNAME)
-            entry_file = parameters.get(REST_FILE_KEYNAME)
-            if entry_file is None:
-                entry_file = {}
-            if target_uuid is None:
-                target_uuid = ''
+        # 実行種別簡易判定、補完 (target_uuid空:登録,他:更新)
+        if target_uuid == '':
+            cmd_type = CMD_REGISTER
+        else:
+            cmd_type = CMD_UPDATE
+        # 実行種別簡易判定、補完 (typeにて指定時)
+        if 'type' in parameters:
+            cmd_type = parameters.get('type')
+        # 実行種別簡易判定、補完 (パラメータ内にPK無し:登録,有:更新)
+        target_uuid_key = self.get_rest_key(primary_key)
 
-            # 実行種別簡易判定、補完 (target_uuid空:登録,他:更新)
-            if target_uuid == '':
-                cmd_type = CMD_REGISTER
-            else:
-                cmd_type = CMD_UPDATE
-            # 実行種別簡易判定、補完 (typeにて指定時)
-            if 'type' in parameters:
-                cmd_type = parameters.get('type')
-            # 実行種別簡易判定、補完 (パラメータ内にPK無し:登録,有:更新)
+        if cmd_type in [CMD_REGISTER, CMD_UPDATE, CMD_DISCARD, CMD_RESTORE]:
+            # テーブル情報（カラム、PK取得）
+            column_list, primary_key_list = self.objdbca.table_columns_get(self.get_table_name())
             target_uuid_key = self.get_rest_key(primary_key)
-
-            if cmd_type in [CMD_REGISTER, CMD_UPDATE, CMD_DISCARD, CMD_RESTORE]:
-                # テーブル情報（カラム、PK取得）
-                column_list, primary_key_list = self.objdbca.table_columns_get(self.get_table_name())
-                target_uuid_key = self.get_rest_key(primary_key)
-                target_jnls = []
-                current_row = {}
-                current_parametr = {}
-                current_file = {}
+            target_jnls = []
+            current_row = {}
+            current_parametr = {}
+            current_file = {}
+            
+            # 更新時
+            if cmd_type != CMD_REGISTER:
+                tmp_rows = self.get_target_rows(target_uuid)
                 
-                # 更新時
-                if cmd_type != CMD_REGISTER:
-                    tmp_rows = self.get_target_rows(target_uuid)
-                    
-                    if len(tmp_rows) != 1:
-                        status_code = '499-00205'
-                        msg_args = [target_uuid]
-                        msg = g.appmsg.get_api_message(status_code, msg_args)
-                        dict_msg = {
-                            'status_code': status_code,
-                            'msg_args': msg_args,
-                            'msg': msg,
-                        }
-                        self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR)
-                    else:
-                        current_row = tmp_rows[0]
-                        target_uuid = current_row.get(primary_key)
-                        target_uuid_jnl = current_row.get(COLNAME_JNL_SEQ_NO)
-                        current_parametr, current_file = self.convert_colname_restkey(current_row, target_uuid, '', 'input')
-                        # 更新系の追い越し判定
-                        self.chk_lastupdatetime(target_uuid, current_parametr, entry_parameter)
-                        # 更新系処理の場合、廃止フラグから処理種別判定、変更
-                        cmd_type = self.convert_cmd_type(cmd_type, target_uuid, current_row, entry_parameter)
-                        # 履歴の一括取得
-                        target_jnls = self.get_target_jnl_uuids(target_uuid)
-
-                # 処理種別の権限確認(メッセージ集約せずに、400系エラーを返却)
-                exec_authority = self.check_authority_cmd(cmd_type)
-                if exec_authority[0] is not True:
-                    return exec_authority
-                # 不要パラメータの除外
-                entry_parameter = self.exclusion_parameter(cmd_type, entry_parameter)
-                # 必須項目チェック
-                self.chk_required(cmd_type, entry_parameter)
-
-                # 登録時、primary_key指定時の重複チェック
-                exec_chk_primay_val = self.chk_primay_val(entry_parameter, target_uuid_key, target_uuid, cmd_type)
-                if exec_chk_primay_val is True:
-                    if cmd_type == CMD_REGISTER:
-                        if target_uuid_key in entry_parameter:
-                            tmp_uuid_val = entry_parameter[target_uuid_key]
-                            if tmp_uuid_val == '' or tmp_uuid_val is None:
-                                del entry_parameter[target_uuid_key]
-                            elif pk_use_flg is False:
-                                del entry_parameter[target_uuid_key]
-
-                # PK 埋め込み table_insert table_update用
-                if cmd_type != CMD_REGISTER and target_uuid != '':
-                    # 更新系処理時 uuid 埋め込み
-                    target_uuid_key = self.get_rest_key(primary_key)
-                    entry_parameter[target_uuid_key] = target_uuid
-                # 各カラム単位の基本処理（前）、個別処理（前）を実施
-                for rest_key in list(entry_parameter.keys()):
-                    rest_val = entry_parameter.get(rest_key)
-                    if rest_key in self.restkey_list:
-                        target_col_option = {
-                            'uuid': target_uuid,
-                            'uuid_jnl': '',
-                            'cmd_type': cmd_type,
-                            'rest_key_name': rest_key,
-                            'col_name': self.get_col_name(rest_key),
-                            'file_name': '',
-                            'file_data': '',
-                            'entry_parameter': {
-                                'parameter': entry_parameter,
-                                'file': entry_file,
-                            },
-                            'current_parameter': {
-                                'parameter': current_parametr,
-                                'file': current_file,
-                            },
-                            'user': self.user
-                        }
-                        # ファイル有無
-                        if entry_file is not None:
-                            if rest_key in entry_file:
-                                target_col_option['file_name'] = rest_val
-                                target_col_option['file_data'] = entry_file.get(rest_key)
-
-                        # カラムクラス呼び出し
-                        objcolumn = self.get_columnclass(rest_key, cmd_type)
-
-                        # カラムクラス毎の処理:レコード操作前 + カラム毎の個別処理:レコード操作前
-                        tmp_exec = objcolumn.before_iud_action(rest_val, target_col_option)
-                        if tmp_exec[0] is not True:
-                            dict_msg = {
-                                'status_code': '',
-                                'msg_args': '',
-                                'msg': tmp_exec[1],
-                            }
-                            self.set_message(dict_msg, rest_key, MSG_LEVEL_ERROR)
-                        else:
-                            target_col_option = tmp_exec[3]
-                            entry_parameter = target_col_option.get('entry_parameter').get('parameter')
-                            entry_file = target_col_option.get('entry_parameter').get('file')
-                            rest_val = entry_parameter.get(rest_key)
-                            # entry_file[rest_key] = target_col_option.get('file_data')
-
-                            if rest_val is not None:
-                                # VALUE 変換処理不要ならVALUE変更無し
-                                tmp_exec = objcolumn.convert_value_input(rest_val)
-                                if tmp_exec[0] is True:
-                                    entry_parameter[rest_key] = tmp_exec[2]
-                                else:
-                                    dict_msg = {
-                                        'status_code': '',
-                                        'msg_args': '',
-                                        'msg': tmp_exec[1],
-                                    }
-                                    self.set_message(dict_msg, rest_key, MSG_LEVEL_ERROR)
-
-                # メニュー共通処理:レコード操作前 組み合わせ一意制約
-                self.exec_unique_constraint(entry_parameter, target_uuid)
-
-                # メニュー、カラム個別処理:レコード操作前
-                target_menu_option = {
-                    'uuid': target_uuid,
-                    'uuid_jnl': '',
-                    'cmd_type': cmd_type,
-                    'rest_key_name': '',
-                    'col_name': '',
-                    'file_data': '',
-                    'entry_parameter': {
-                        'parameter': entry_parameter,
-                        'file': entry_file,
-                    },
-                    'current_parameter': {
-                        'parameter': current_parametr,
-                        'file': current_file,
-                    },
-                    'user': self.user
-                }
-                tmp_exec = self.exec_menu_before_validate(target_menu_option)
-
-                if tmp_exec[0] is not True:
+                if len(tmp_rows) != 1:
+                    status_code = '499-00205'
+                    msg_args = [target_uuid]
+                    msg = g.appmsg.get_api_message(status_code, msg_args)
                     dict_msg = {
-                        'status_code': '',
-                        'msg_args': '',
-                        'msg': tmp_exec[1],
+                        'status_code': status_code,
+                        'msg_args': msg_args,
+                        'msg': msg,
                     }
                     self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR)
                 else:
-                    target_menu_option = tmp_exec[2]
-                    entry_parameter = target_menu_option.get('entry_parameter').get('parameter')
-                    entry_file = target_menu_option.get('entry_parameter').get('file')
+                    current_row = tmp_rows[0]
+                    target_uuid = current_row.get(primary_key)
+                    target_uuid_jnl = current_row.get(COLNAME_JNL_SEQ_NO)
+                    current_parametr, current_file = self.convert_colname_restkey(current_row, target_uuid, '', 'input')
+                    # 更新系の追い越し判定
+                    self.chk_lastupdatetime(target_uuid, current_parametr, entry_parameter)
+                    # 更新系処理の場合、廃止フラグから処理種別判定、変更
+                    cmd_type = self.convert_cmd_type(cmd_type, target_uuid, current_row, entry_parameter)
+                    # 履歴の一括取得
+                    target_jnls = self.get_target_jnl_uuids(target_uuid)
 
-                # レコード操作前エラー確認
-                if self.get_message_count(MSG_LEVEL_ERROR) > 0:
-                    retBool = False
-                    status_code = '499-00201'
-                    msg = self.get_message(MSG_LEVEL_ERROR)
-                    return retBool, status_code, msg
+            # 処理種別の権限確認(メッセージ集約せずに、400系エラーを返却)
+            exec_authority = self.check_authority_cmd(cmd_type)
+            if exec_authority[0] is not True:
+                return exec_authority
+            # 不要パラメータの除外
+            entry_parameter = self.exclusion_parameter(cmd_type, entry_parameter)
+            # 必須項目チェック
+            self.chk_required(cmd_type, entry_parameter)
 
-                base_cols_val = self.base_cols_val.copy()
-                
-                # 廃止の設定
-                if cmd_type == CMD_DISCARD:
-                    base_cols_val[REST_KEY_DISCARD] = 1
-                else:
-                    base_cols_val[REST_KEY_DISCARD] = 0
-
-                entry_parameter.update(base_cols_val)
-
-                for rest_key in list(entry_parameter.keys()):
-                    if self.chk_restkey(rest_key) is not True:
-                        status_code = '499-00209'
-                        msg_args = [rest_key]
-                        msg = g.appmsg.get_api_message(status_code, msg_args)
-                        dict_msg = {
-                            'status_code': status_code,
-                            'msg_args': msg_args,
-                            'msg': msg,
-                        }
-                        self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR)
-                        return retBool, status_code, msg
-                # rest_key → カラム名に変換
-                colname_parameter = self.convert_restkey_colname(entry_parameter, current_row)
-                # 登録・更新処理
+            # 登録時、primary_key指定時の重複チェック
+            exec_chk_primay_val = self.chk_primay_val(entry_parameter, target_uuid_key, target_uuid, cmd_type)
+            if exec_chk_primay_val is True:
                 if cmd_type == CMD_REGISTER:
-                    result = self.objdbca.table_insert(self.get_table_name(), colname_parameter, primary_key)
-                elif cmd_type == CMD_UPDATE:
-                    result = self.objdbca.table_update(self.get_table_name(), colname_parameter, primary_key)
-                elif cmd_type == CMD_DISCARD:
-                    result = self.objdbca.table_update(self.get_table_name(), colname_parameter, primary_key)
-                elif cmd_type == CMD_RESTORE:
-                    result = self.objdbca.table_update(self.get_table_name(), colname_parameter, primary_key)
+                    if target_uuid_key in entry_parameter:
+                        tmp_uuid_val = entry_parameter[target_uuid_key]
+                        if tmp_uuid_val == '' or tmp_uuid_val is None:
+                            del entry_parameter[target_uuid_key]
+                        elif pk_use_flg is False:
+                            del entry_parameter[target_uuid_key]
 
-                result_uuid = ''
-                result_uuid_jnl = ''
-                if result is False:
-                    dict_msg = {
-                        'status_code': '',
-                        'msg_args': '',
-                        'msg': result,
+            # PK 埋め込み table_insert table_update用
+            if cmd_type != CMD_REGISTER and target_uuid != '':
+                # 更新系処理時 uuid 埋め込み
+                target_uuid_key = self.get_rest_key(primary_key)
+                entry_parameter[target_uuid_key] = target_uuid
+            # 各カラム単位の基本処理（前）、個別処理（前）を実施
+            for rest_key in list(entry_parameter.keys()):
+                rest_val = entry_parameter.get(rest_key)
+                if rest_key in self.restkey_list:
+                    target_col_option = {
+                        'uuid': target_uuid,
+                        'uuid_jnl': '',
+                        'cmd_type': cmd_type,
+                        'rest_key_name': rest_key,
+                        'col_name': self.get_col_name(rest_key),
+                        'file_name': '',
+                        'file_data': '',
+                        'entry_parameter': {
+                            'parameter': entry_parameter,
+                            'file': entry_file,
+                        },
+                        'current_parameter': {
+                            'parameter': current_parametr,
+                            'file': current_file,
+                        },
+                        'user': self.user
                     }
-                    self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR)
-                else:
-                    result_uuid = result[0].get(primary_key_list[0])
-                    result_uuid_jnl = self.get_maintenance_uuid(result_uuid)[0].get(COLNAME_JNL_SEQ_NO)
-                    temp_rows = {primary_key_list[0]: result[0].get(primary_key_list[0])}
-                    tmp_result = self.convert_colname_restkey(temp_rows)
-                    result = tmp_result[0]
-
-                # レコード操作後エラー確認
-                if self.get_message_count(MSG_LEVEL_ERROR) > 0:
-                    retBool = False
-                    status_code = '499-00201'
-                    msg = self.get_message(MSG_LEVEL_ERROR)
-                    return retBool, status_code, msg
-
-                # 各カラム単位の基本処理（後）、個別処理（後）を実施
-                for rest_key, rest_val in entry_parameter.items():
-                    # カラムクラス呼び出し
-                    objcolumn = self.get_columnclass(rest_key, cmd_type)
-                    
-                    target_col_option = {}
-                    target_col_option.setdefault("uuid", result_uuid)
-                    target_col_option.setdefault("uuid_jnl", result_uuid_jnl)
-                    target_col_option.setdefault("cmd_type", cmd_type)
-                    target_col_option.setdefault("rest_key_name", rest_key)
-                    target_col_option.setdefault("col_name", self.get_col_name(rest_key))
                     # ファイル有無
                     if entry_file is not None:
                         if rest_key in entry_file:
-                            target_col_option.setdefault("file_data", entry_file.get(rest_key))
-                    # カラムクラス毎の処理:レコード操作後 ,カラム毎の個別処理:レコード操作後
-                    tmp_exec = objcolumn.after_iud_action(rest_val, target_col_option)
+                            target_col_option['file_name'] = rest_val
+                            target_col_option['file_data'] = entry_file.get(rest_key)
+
+                    # カラムクラス呼び出し
+                    objcolumn = self.get_columnclass(rest_key, cmd_type)
+
+                    # カラムクラス毎の処理:レコード操作前 + カラム毎の個別処理:レコード操作前
+                    tmp_exec = objcolumn.before_iud_action(rest_val, target_col_option)
                     if tmp_exec[0] is not True:
                         dict_msg = {
                             'status_code': '',
@@ -1454,71 +1305,199 @@ class loadTable():
                             'msg': tmp_exec[1],
                         }
                         self.set_message(dict_msg, rest_key, MSG_LEVEL_ERROR)
-                        
-                # テーブル単位の個別処理後を実行
-                # メニュー、カラム個別処理:レコード操作後
-                target_menu_option['uuid_jnl'] = result_uuid_jnl
-                target_menu_option['entry_parameter']['parameter'] = entry_parameter
-                target_menu_option['entry_parameter']['file'] = entry_file
+                    else:
+                        target_col_option = tmp_exec[3]
+                        entry_parameter = target_col_option.get('entry_parameter').get('parameter')
+                        entry_file = target_col_option.get('entry_parameter').get('file')
+                        rest_val = entry_parameter.get(rest_key)
+                        # entry_file[rest_key] = target_col_option.get('file_data')
 
-                tmp_exec = self.exec_menu_after_validate(target_menu_option)
+                        if rest_val is not None:
+                            # VALUE 変換処理不要ならVALUE変更無し
+                            tmp_exec = objcolumn.convert_value_input(rest_val)
+                            if tmp_exec[0] is True:
+                                entry_parameter[rest_key] = tmp_exec[2]
+                            else:
+                                dict_msg = {
+                                    'status_code': '',
+                                    'msg_args': '',
+                                    'msg': tmp_exec[1],
+                                }
+                                self.set_message(dict_msg, rest_key, MSG_LEVEL_ERROR)
+
+            # メニュー共通処理:レコード操作前 組み合わせ一意制約
+            self.exec_unique_constraint(entry_parameter, target_uuid)
+
+            # メニュー、カラム個別処理:レコード操作前
+            target_menu_option = {
+                'uuid': target_uuid,
+                'uuid_jnl': '',
+                'cmd_type': cmd_type,
+                'rest_key_name': '',
+                'col_name': '',
+                'file_data': '',
+                'entry_parameter': {
+                    'parameter': entry_parameter,
+                    'file': entry_file,
+                },
+                'current_parameter': {
+                    'parameter': current_parametr,
+                    'file': current_file,
+                },
+                'user': self.user
+            }
+            tmp_exec = self.exec_menu_before_validate(target_menu_option)
+
+            if tmp_exec[0] is not True:
+                dict_msg = {
+                    'status_code': '',
+                    'msg_args': '',
+                    'msg': tmp_exec[1],
+                }
+                self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR)
+            else:
+                target_menu_option = tmp_exec[2]
+                entry_parameter = target_menu_option.get('entry_parameter').get('parameter')
+                entry_file = target_menu_option.get('entry_parameter').get('file')
+
+            # レコード操作前エラー確認
+            if self.get_message_count(MSG_LEVEL_ERROR) > 0:
+                retBool = False
+                status_code = '499-00201'
+                msg = self.get_message(MSG_LEVEL_ERROR)
+                return retBool, status_code, msg
+
+            base_cols_val = self.base_cols_val.copy()
+            
+            # 廃止の設定
+            if cmd_type == CMD_DISCARD:
+                base_cols_val[REST_KEY_DISCARD] = 1
+            else:
+                base_cols_val[REST_KEY_DISCARD] = 0
+
+            entry_parameter.update(base_cols_val)
+
+            for rest_key in list(entry_parameter.keys()):
+                if self.chk_restkey(rest_key) is not True:
+                    status_code = '499-00209'
+                    msg_args = [rest_key]
+                    msg = g.appmsg.get_api_message(status_code, msg_args)
+                    dict_msg = {
+                        'status_code': status_code,
+                        'msg_args': msg_args,
+                        'msg': msg,
+                    }
+                    self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR)
+                    return retBool, status_code, msg
+            # rest_key → カラム名に変換
+            colname_parameter = self.convert_restkey_colname(entry_parameter, current_row)
+            # 登録・更新処理
+            if cmd_type == CMD_REGISTER:
+                result = self.objdbca.table_insert(self.get_table_name(), colname_parameter, primary_key)
+            elif cmd_type == CMD_UPDATE:
+                result = self.objdbca.table_update(self.get_table_name(), colname_parameter, primary_key)
+            elif cmd_type == CMD_DISCARD:
+                result = self.objdbca.table_update(self.get_table_name(), colname_parameter, primary_key)
+            elif cmd_type == CMD_RESTORE:
+                result = self.objdbca.table_update(self.get_table_name(), colname_parameter, primary_key)
+
+            result_uuid = ''
+            result_uuid_jnl = ''
+            if result is False:
+                dict_msg = {
+                    'status_code': '',
+                    'msg_args': '',
+                    'msg': result,
+                }
+                self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR)
+            else:
+                result_uuid = result[0].get(primary_key_list[0])
+                result_uuid_jnl = self.get_maintenance_uuid(result_uuid)[0].get(COLNAME_JNL_SEQ_NO)
+                temp_rows = {primary_key_list[0]: result[0].get(primary_key_list[0])}
+                tmp_result = self.convert_colname_restkey(temp_rows)
+                result = tmp_result[0]
+
+            # レコード操作後エラー確認
+            if self.get_message_count(MSG_LEVEL_ERROR) > 0:
+                retBool = False
+                status_code = '499-00201'
+                msg = self.get_message(MSG_LEVEL_ERROR)
+                return retBool, status_code, msg
+
+            # 各カラム単位の基本処理（後）、個別処理（後）を実施
+            for rest_key, rest_val in entry_parameter.items():
+                # カラムクラス呼び出し
+                objcolumn = self.get_columnclass(rest_key, cmd_type)
+                
+                target_col_option = {}
+                target_col_option.setdefault("uuid", result_uuid)
+                target_col_option.setdefault("uuid_jnl", result_uuid_jnl)
+                target_col_option.setdefault("cmd_type", cmd_type)
+                target_col_option.setdefault("rest_key_name", rest_key)
+                target_col_option.setdefault("col_name", self.get_col_name(rest_key))
+                # ファイル有無
+                if entry_file is not None:
+                    if rest_key in entry_file:
+                        target_col_option.setdefault("file_data", entry_file.get(rest_key))
+                # カラムクラス毎の処理:レコード操作後 ,カラム毎の個別処理:レコード操作後
+                tmp_exec = objcolumn.after_iud_action(rest_val, target_col_option)
                 if tmp_exec[0] is not True:
                     dict_msg = {
                         'status_code': '',
                         'msg_args': '',
                         'msg': tmp_exec[1],
                     }
-                    self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR)
-                else:
-                    target_menu_option = tmp_exec[2]
-                    entry_parameter = target_menu_option.get('entry_parameter').get('parameter')
-                    entry_file = target_menu_option.get('entry_parameter').get('file')
+                    self.set_message(dict_msg, rest_key, MSG_LEVEL_ERROR)
+                    
+            # テーブル単位の個別処理後を実行
+            # メニュー、カラム個別処理:レコード操作後
+            target_menu_option['uuid_jnl'] = result_uuid_jnl
+            target_menu_option['entry_parameter']['parameter'] = entry_parameter
+            target_menu_option['entry_parameter']['file'] = entry_file
 
-                # 実行結果を保存
-                target_result_info = {}
-                target_result_info.setdefault("uuid", result_uuid)
-                target_result_info.setdefault("uuid_jnl", result_uuid_jnl)
-                target_result_info.setdefault("parameter", entry_parameter)
-                target_result_info.setdefault("target_jnls", target_jnls)
-                self.set_exec_result(target_result_info)
-                
-                # レコード操作後エラー確認
-                if self.get_message_count(MSG_LEVEL_ERROR) > 0:
-                    retBool = False
-                    status_code = '499-00201'
-                    msg = self.get_message(MSG_LEVEL_ERROR)
-                    return retBool, status_code, msg
-
-                # 実行種別件数カウントアップ
-                self.set_exec_count_up(cmd_type)
-
-            else:
-                # 実行種別エラー
-                retBool = False
-                status_code = '499-00210'
-                msg_args = [cmd_type]
-                msg = g.appmsg.get_api_message(status_code, msg_args)
+            tmp_exec = self.exec_menu_after_validate(target_menu_option)
+            if tmp_exec[0] is not True:
                 dict_msg = {
-                    'status_code': status_code,
-                    'msg_args': msg_args,
-                    'msg': msg,
+                    'status_code': '',
+                    'msg_args': '',
+                    'msg': tmp_exec[1],
                 }
                 self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR)
+            else:
+                target_menu_option = tmp_exec[2]
+                entry_parameter = target_menu_option.get('entry_parameter').get('parameter')
+                entry_file = target_menu_option.get('entry_parameter').get('file')
 
-        except Exception:
+            # 実行結果を保存
+            target_result_info = {}
+            target_result_info.setdefault("uuid", result_uuid)
+            target_result_info.setdefault("uuid_jnl", result_uuid_jnl)
+            target_result_info.setdefault("parameter", entry_parameter)
+            target_result_info.setdefault("target_jnls", target_jnls)
+            self.set_exec_result(target_result_info)
+            
+            # レコード操作後エラー確認
+            if self.get_message_count(MSG_LEVEL_ERROR) > 0:
+                retBool = False
+                status_code = '499-00201'
+                msg = self.get_message(MSG_LEVEL_ERROR)
+                return retBool, status_code, msg
+
+            # 実行種別件数カウントアップ
+            self.set_exec_count_up(cmd_type)
+
+        else:
+            # 実行種別エラー
             retBool = False
-            status_code = '999-99999'
-            type_, value, traceback_ = sys.exc_info()
-            msg_args = ['{}'.format(traceback.format_exception(type_, value, traceback_))]
+            status_code = '499-00210'
+            msg_args = [cmd_type]
             msg = g.appmsg.get_api_message(status_code, msg_args)
-            print(msg)
             dict_msg = {
                 'status_code': status_code,
                 'msg_args': msg_args,
                 'msg': msg,
             }
-            if self.get_message_count(MSG_CODE) == 0:
-                self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR, status_code)
+            self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR)
 
         return retBool, result
 
@@ -1729,15 +1708,8 @@ class loadTable():
         retBool = True
         msg = ''
         if cmd_type == CMD_REGISTER:
-            if primary_val is None or primary_val == '':
-                primary_val = entry_parameter.get(target_uuid_key)
+            primary_val = entry_parameter.get(target_uuid_key)
 
-            if primary_val is not None:
-                where_str = " where  `{}` = %s ".format(self.get_primary_key())
-                bind_value_list = [primary_val]
-                table_count = self.objdbca.table_select(self.get_table_name(), where_str, bind_value_list)
-                if len(table_count) != 0:
-                    retBool = False
         return retBool
 
     # []: レコード操作前処理の実施(メニュー)

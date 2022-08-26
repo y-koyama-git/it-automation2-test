@@ -13,6 +13,7 @@
 #   limitations under the License.
 
 from common_libs.common import *  # noqa: F403
+from common_libs.loadtable import *
 from flask import g
 # from libs.organization_common import check_auth_menu
 from libs.organization_common import check_menu_info
@@ -418,32 +419,22 @@ def collect_pulldown_list(objdbca, menu):
     
     pulldown_list = {}
     # id_column_list = ["7", "11", "18"]  # id 7(IDColumn), id 11(LinkIDColumn), id 18(AppIDColumn)
-    id_column_list = ["7", "11"]  # ####メモ：18(AppIDColumn)の場合は別の挙動になるはずなので、いったん除外。
+    id_column_list = ["7", "11", "18", "22"]  # ####メモ：18(AppIDColumn)の場合は別の挙動になるはずなので、いったん除外。
     for recode in ret:
         column_class_id = str(recode.get('COLUMN_CLASS'))
         
         id_column_check = column_class_id in id_column_list
         if not id_column_check:
             continue
-        
+
         column_name_rest = str(recode.get('COLUMN_NAME_REST'))
-        ref_table_name = recode.get('REF_TABLE_NAME')
-        ref_pkey_name = recode.get('REF_PKEY_NAME')
-        ref_col_name = recode.get('REF_COL_NAME')
-        if recode.get('REF_MULTI_LANG') == "1":
-            ref_col_name = ref_col_name + "_" + lang.upper()
-        
+
+        objmenu = load_table.loadTable(objdbca, menu)
+        objcolumn = objmenu.get_columnclass(column_name_rest)
         # ####メモ：現状、ソートコンディションを考慮していない。
-        # ref_sort_conditions = recode.get('REF_SORT_CONDITIONS')
-        
-        if ref_table_name and ref_pkey_name and ref_col_name:
-            ret_2 = objdbca.table_select(ref_table_name, 'WHERE DISUSE_FLAG = %s', [0])
-            column_pulldown_list = {}
-            for recode_2 in ret_2:
-                column_pulldown_list[recode_2.get(ref_pkey_name)] = recode_2.get(ref_col_name)
-            
-            pulldown_list[column_name_rest] = column_pulldown_list
-    
+        column_pulldown_list = objcolumn.get_values_by_key()
+        pulldown_list[column_name_rest] = column_pulldown_list
+
     return pulldown_list
 
 

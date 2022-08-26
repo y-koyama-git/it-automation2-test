@@ -64,6 +64,84 @@ class IDColumn(Column):
         
         self.cmd_type = cmd_type
         
+    def get_values_by_key(self, where_equal=[]):
+        """
+            Keyを検索条件に値を取得する
+            ARGS:
+                where_equal:一致検索のリスト
+            RETRUN:
+                values:検索結果
+        """
+        values = {}
+        language = g.LANGUAGE.upper()
+        ref_malti_lang = self.get_objcol().get("REF_MULTI_LANG")
+        ref_pkey_name = self.get_objcol().get("REF_PKEY_NAME")
+        ref_table_name = self.get_objcol().get("REF_TABLE_NAME")
+        where_str = "WHERE `DISUSE_FLAG` = '0' "
+        bind_value_list = []
+
+        # 連携先のテーブルが言語別のカラムを持つか判定
+        if ref_malti_lang == '1':
+            ref_col_name = "{}_{}".format(self.get_objcol().get("REF_COL_NAME"), language)
+        else:
+            ref_col_name = "{}".format(self.get_objcol().get("REF_COL_NAME"))
+
+        # 一致検索の条件作成
+        if len(where_equal) > 0:
+            tmp_where = ",".join(["%s"] * len(where_equal))
+            where_str = (where_str + "AND `{}` IN ({})").format(ref_pkey_name, tmp_where)
+            bind_value_list = where_equal
+
+        # 検索
+        return_values = self.objdbca.table_select(ref_table_name, where_str, bind_value_list)
+
+        for record in return_values:
+            values[record[ref_pkey_name]] = record[ref_col_name]
+
+        return values
+
+    def get_values_by_value(self, where_equal=[], where_like=""):
+        """
+            valueを検索条件に値を取得する
+            ARGS:
+                where_equal:一致検索のリスト(list)
+                where_like:あいまい検索の値(string)
+            RETRUN:
+                values:検索結果
+        """
+        values = {}
+        language = g.LANGUAGE.upper()
+        ref_malti_lang = self.get_objcol().get("REF_MULTI_LANG")
+        ref_pkey_name = self.get_objcol().get("REF_PKEY_NAME")
+        ref_table_name = self.get_objcol().get("REF_TABLE_NAME")
+        where_str = "WHERE `DISUSE_FLAG` = '0' "
+        bind_value_list = []
+
+        # 連携先のテーブルが言語別のカラムを持つか判定
+        if ref_malti_lang == '1':
+            ref_col_name = "{}_{}".format(self.get_objcol().get("REF_COL_NAME"), language)
+        else:
+            ref_col_name = "{}".format(self.get_objcol().get("REF_COL_NAME"))
+
+        # 一致検索の条件作成
+        if len(where_equal) > 0:
+            tmp_where = ",".join(["%s"] * len(where_equal))
+            where_str = (where_str + "AND `{}` IN ({})").format(ref_col_name, tmp_where)
+            bind_value_list = where_equal
+
+        # あいまい検索の条件作成
+        if len(where_like) > 0:
+            where_str = (where_str + "AND `{}` LIKE %s").format(ref_col_name)
+            bind_value_list.append('%' + where_like + '%')
+
+        # 検索
+        return_values = self.objdbca.table_select(ref_table_name, where_str, bind_value_list)
+
+        for record in return_values:
+            values[record[ref_pkey_name]] = record[ref_col_name]
+
+        return values
+
     def check_basic_valid(self, val, option={}):
         """
             バリデーション処理(カラムクラス毎)
@@ -74,26 +152,14 @@ class IDColumn(Column):
                 ( True / False , メッセージ )
         """
         retBool = True
-        user_env = g.LANGUAGE.upper()
-        table_name = self.get_objcol().get("REF_TABLE_NAME")
-        
-        # 連携先のテーブルが言語別のカラムを持つか判定
-        ref_malti_lang = self.get_objcol().get("REF_MULTI_LANG")
-        if ref_malti_lang == '1':
-            ref_col_name = "{}_{}".format(self.get_objcol().get("REF_COL_NAME"), user_env)
-        else:
-            ref_col_name = "{}".format(self.get_objcol().get("REF_COL_NAME"))
 
-        where_str = "WHERE {} = %s".format(ref_col_name)
-        bind_value_list = [val]
-        
-        return_values = self.objdbca.table_select(table_name, where_str, bind_value_list)
+        return_values = self.get_values_by_value([val])
         
         # 返却値が存在するか確認
         if len(return_values) == 0:
             retBool = False
             status_code = '499-00218'
-            msg_args = [self.get_rest_key_name(), table_name, val]
+            msg_args = [self.get_rest_key_name(), val]
             msg = g.appmsg.get_api_message(status_code, msg_args)
             return retBool, msg
         
@@ -111,28 +177,15 @@ class IDColumn(Column):
         retBool = True
         msg = ''
         if val is not None:
-            try:
-                user_env = g.LANGUAGE.upper()
-                table_name = self.get_objcol().get("REF_TABLE_NAME")
-                
-                # 連携先のテーブルが言語別のカラムを持つか判定
-                ref_malti_lang = self.get_objcol().get("REF_MULTI_LANG")
-                if ref_malti_lang == '1':
-                    ref_col_name = "{}_{}".format(self.get_objcol().get("REF_COL_NAME"), user_env)
-                else:
-                    ref_col_name = "{}".format(self.get_objcol().get("REF_COL_NAME"))
-                where_str = "WHERE {} = %s".format(ref_col_name)
-                bind_value_list = [val]
-                return_values = self.objdbca.table_select(table_name, where_str, bind_value_list)
-                if len(return_values) == 1:
-                    ref_pkey_name = "{}".format(self.get_objcol().get("REF_PKEY_NAME"))
-                    val = return_values[0].get(ref_pkey_name)
-                else:
-                    raise Exception('')
-            except Exception as e:
+
+            return_values = self.get_values_by_value([val])
+
+            if len(return_values) == 1:
+                val = list(return_values.keys())[0]
+            else:
                 retBool = False
                 status_code = '499-00218'
-                msg_args = [self.get_rest_key_name(), table_name, val]
+                msg_args = [self.get_rest_key_name(), val]
                 msg = g.appmsg.get_api_message(status_code, msg_args)
 
         return retBool, msg, val,
@@ -151,24 +204,12 @@ class IDColumn(Column):
         msg = ''
         
         if val is not None:
-            try:
-                user_env = g.LANGUAGE.upper()
-                table_name = self.get_objcol().get("REF_TABLE_NAME")
-                where_str = "WHERE {} = %s".format(self.get_objcol().get("REF_PKEY_NAME"))
-                bind_value_list = [val]
-                return_values = self.objdbca.table_select(table_name, where_str, bind_value_list)
-                if len(return_values) == 1:
-                    # 連携先のテーブルが言語別のカラムを持つか判定
-                    ref_malti_lang = self.get_objcol().get("REF_MULTI_LANG")
-                    if ref_malti_lang == '1':
-                        ref_col_name = "{}_{}".format(self.get_objcol().get("REF_COL_NAME"), user_env)
-                    else:
-                        ref_col_name = "{}".format(self.get_objcol().get("REF_COL_NAME"))
-                    val = return_values[0].get(ref_col_name)
 
-                else:
-                    raise Exception()
-            except Exception as e:
+            return_values = self.get_values_by_key([val])
+
+            if len(return_values) == 1:
+                val = return_values[val]
+            else:
                 status_code = 'MSG-00001'
                 msg_args = [val]
                 val = g.appmsg.get_api_message(status_code, msg_args)
@@ -193,43 +234,23 @@ class IDColumn(Column):
         bindvalues = {}
         str_where = ''
         conjunction = ''
-        master_where = "WHERE `DISUSE_FLAG` = '0' "
         save_type = self.get_save_type()
-        user_env = g.LANGUAGE.upper()
-
-        # 連携先のテーブルが言語別のカラムを持つか判定
-        ref_malti_lang = self.get_objcol().get("REF_MULTI_LANG")
-        if ref_malti_lang == '1':
-            ref_col_name = "{}_{}".format(self.get_objcol().get("REF_COL_NAME"), user_env)
-        else:
-            ref_col_name = "{}".format(self.get_objcol().get("REF_COL_NAME"))
-
-        ref_pkey_name = "{}".format(self.get_objcol().get("REF_PKEY_NAME"))
-        ref_table_name = self.get_objcol().get("REF_TABLE_NAME")
 
         if search_mode == "LIST":
-
-            if len(search_conf) > 0:
-                tmp_where = ",".join(["%s"] * len(search_conf))
-                master_where = (master_where + "AND `{}` IN (" + tmp_where + ")").format(ref_col_name)
-
-            return_values = self.objdbca.table_select(ref_table_name, master_where, search_conf)
+            # マスタを検索
+            return_values = self.get_values_by_value(search_conf)
 
             if len(return_values) > 0:
-                for return_value in return_values:
-                    tmp_conf.append(return_value.get(ref_pkey_name))
+                tmp_conf = list(return_values.keys())
             else:
                 tmp_conf.append("NOT FOUND")
 
-        if search_mode == "NORMAL":
-            if len(search_conf) > 0:
-                master_where = (master_where + "AND `{}` LIKE %s").format(ref_col_name)
-
-            return_values = self.objdbca.table_select(ref_table_name, master_where, ['%' + search_conf + '%'])
+        elif search_mode == "NORMAL":
+            # マスタを検索
+            return_values = self.get_values_by_value([], search_conf)
 
             if len(return_values) > 0:
-                for return_value in return_values:
-                    tmp_conf.append(return_value.get(ref_pkey_name))
+                tmp_conf = list(return_values.keys())
             else:
                 tmp_conf.append("NOT FOUND")
 
