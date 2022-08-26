@@ -19,7 +19,7 @@ from common_libs.common.dbconnect import *  # noqa: F403
 from common_libs.common.logger import AppLog
 from common_libs.common.message_class import MessageTemplate
 from common_libs.common.exception import AppException
-from common_libs.common.util import arrange_stacktrace_format  # noqa: F401
+from common_libs.common.util import arrange_stacktrace_format
 from backyard_main import backyard_main
 
 
