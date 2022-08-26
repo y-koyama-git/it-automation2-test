@@ -197,13 +197,13 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
             # カラムクラス「文字列(単一行)」用のパラメータを追加
             if column_class_name == "SingleTextColumn":
                 col_detail["string_maximum_bytes"] = recode.get('SINGLE_MAX_LENGTH')  # 文字列(単一行) 最大バイト数
-                col_detail["string_regular_expression"] = recode.get('SINGLE_PREG_MATCH')  # 文字列(単一行) 正規表現
+                col_detail["string_regular_expression"] = recode.get('SINGLE_REGULAR_MATCH')  # 文字列(単一行) 正規表現
                 col_detail["string_default_value"] = recode.get('SINGLE_DEFAULT_VALUE')  # 文字列(単一行) 初期値
             
             # カラムクラス「文字列(複数行)」用のパラメータを追加
             if column_class_name == "MultiTextColumn":
                 col_detail["multi_string_maximum_bytes"] = recode.get('MULTI_MAX_LENGTH')  # 文字列(複数行) 最大バイト数
-                col_detail["multi_string_regular_expression"] = recode.get('MULTI_PREG_MATCH')  # 文字列(複数行) 正規表現
+                col_detail["multi_string_regular_expression"] = recode.get('MULTI_REGULAR_MATCH')  # 文字列(複数行) 正規表現
                 col_detail["multi_string_default_value"] = recode.get('MULTI_DEFAULT_VALUE')  # 文字列(複数行) 初期値
             
             # カラムクラス「整数」用のパラメータを追加
@@ -1042,7 +1042,7 @@ def _insert_t_menu_column(objdbca, menu_data, column_data_list):
                 # カラムクラス「文字列(単一行)」用のパラメータを追加
                 if column_class == "SingleTextColumn":
                     parameter["string_maximum_bytes"] = column_data.get('single_maximum_bytes')  # 文字列(単一行) 最大バイト数
-                    parameter["string_regular_expression"] = column_data.get('single_preg_match')  # 文字列(単一行) 正規表現
+                    parameter["string_regular_expression"] = column_data.get('string_regular_expression')  # 文字列(単一行) 正規表現
                     parameter["string_default_value"] = column_data.get('single_default_value')  # 文字列(単一行) 初期値
                 
                 # カラムクラス「文字列(複数行)」用のパラメータを追加
@@ -1319,7 +1319,7 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
                 # カラムクラス「文字列(単一行)」用のパラメータを追加
                 if column_class == "SingleTextColumn":
                     parameter["string_maximum_bytes"] = column_data.get('single_maximum_bytes')  # 文字列(単一行) 最大バイト数
-                    parameter["string_regular_expression"] = column_data.get('single_preg_match')  # 文字列(単一行) 正規表現
+                    parameter["string_regular_expression"] = column_data.get('string_regular_expression')  # 文字列(単一行) 正規表現
                     parameter["string_default_value"] = column_data.get('single_default_value')  # 文字列(単一行) 初期値
                 
                 # カラムクラス「文字列(複数行)」用のパラメータを追加

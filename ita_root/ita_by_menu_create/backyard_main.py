@@ -1186,19 +1186,19 @@ def _create_validate_option(recode):
     # カラムクラスに応じて処理を分岐
     if column_class == "1":  # SingleTextColumn
         single_max_length = str(recode.get('SINGLE_MAX_LENGTH'))
-        single_preg_match = str(recode.get('SINGLE_PREG_MATCH'))
+        single_regular_match = str(recode.get('SINGLE_REGULAR_MATCH'))
         tmp_validate_option['min_length'] = "0"
         tmp_validate_option['max_length'] = single_max_length
-        if single_preg_match:
-            tmp_validate_option['preg_match'] = single_preg_match
+        if single_regular_match:
+            tmp_validate_option['preg_match'] = single_regular_match
         
     elif column_class == "2":  # MultiTextColumn
         multi_max_length = str(recode.get('MULTI_MAX_LENGTH'))
-        multi_preg_match = str(recode.get('MULTI_PREG_MATCH'))
+        multi_regular_match = str(recode.get('MULTI_REGULAR_MATCH'))
         tmp_validate_option['min_length'] = "0"
         tmp_validate_option['max_length'] = multi_max_length
-        if multi_preg_match:
-            tmp_validate_option['preg_match'] = multi_preg_match
+        if multi_regular_match:
+            tmp_validate_option['preg_match'] = multi_regular_match
         
     elif column_class == "3":  # NumColumn
         num_min = str(recode.get('NUM_MIN'))
