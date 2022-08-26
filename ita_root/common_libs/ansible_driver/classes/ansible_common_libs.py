@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
 Ansible共通module
 """
@@ -109,7 +108,7 @@ class AnsibleCommonLibs():
         """
         bool_ret = True
         fatal_error = False
-        in_errmsg = []
+        in_errmsg = ""
         tmp_ina_cpf_vars_list = {}
         
         ams = AnsibleMakeMessage()
@@ -272,7 +271,7 @@ class AnsibleCommonLibs():
                 if fatal_error:
                     break
                 
-            return bool_ret, tmp_ina_tpf_vars_list, in_errmsg
+        return bool_ret, tmp_ina_tpf_vars_list, in_errmsg
     
     def get_gbl_vars_master(self, in_gbl_var_name, WS_DB):
         """
@@ -369,9 +368,9 @@ class AnsibleCommonLibs():
         Arguments:
             in_filename: アップロードされたデータが格納されているファイル名
         Returns:
-            ret_array: is success, エラーメッセージ 
+            ret_array: is success, エラーメッセージ
         """
-        
+
         bool_ret = True
         
         playbook_data_string = open(in_filename)
