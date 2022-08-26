@@ -42,7 +42,7 @@ class PasswordColumn(TextColumn):
             return validate_result
         
         # 正規表現
-        pattern = re.compile(preg_match)
+        pattern = re.compile(preg_match, re.DOTALL)
         tmp_result = pattern.fullmatch(val)
         if tmp_result is None:
             retBool = False

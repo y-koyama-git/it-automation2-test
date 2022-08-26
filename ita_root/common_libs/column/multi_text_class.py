@@ -32,7 +32,7 @@ class MultiTextColumn(TextColumn):
                 ( True / False , メッセージ )
         """
         retBool = True
-        preg_match = "^[^\t]*$"
+        preg_match = r'^[^\t]*$'
 
         if val is not None:
             val = str(val)
@@ -42,7 +42,7 @@ class MultiTextColumn(TextColumn):
                 return validate_result
             
             # 正規表現
-            pattern = re.compile(preg_match)
+            pattern = re.compile(preg_match, re.DOTALL)
             tmp_result = pattern.fullmatch(val)
             if tmp_result is None:
                 retBool = False
