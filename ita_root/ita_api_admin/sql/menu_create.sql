@@ -104,10 +104,10 @@ CREATE TABLE T_MENU_COLUMN
     AUTOREG_HIDE_ITEM               VARCHAR(2) ,                                -- 代入値自動登録対象外フラグ
     AUTOREG_ONLY_ITEM               VARCHAR(2) ,                                -- 代入値自動登録選択フラグ
     SINGLE_MAX_LENGTH               TEXT,                                       -- 文字列(単一行) 最大バイト数
-    SINGLE_PREG_MATCH               TEXT,                                       -- 文字列(単一行) 正規表現
+    SINGLE_REGULAR_MATCH            TEXT,                                       -- 文字列(単一行) 正規表現
     SINGLE_DEFAULT_VALUE            TEXT,                                       -- 文字列(単一行) 初期値
     MULTI_MAX_LENGTH                TEXT,                                       -- 文字列(複数行) 最大バイト数
-    MULTI_PREG_MATCH                TEXT,                                       -- 文字列(複数行) 正規表現
+    MULTI_REGULAR_MATCH             TEXT,                                       -- 文字列(複数行) 正規表現
     MULTI_DEFAULT_VALUE             TEXT,                                       -- 文字列(複数行) 初期値
     NUM_MAX                         INT,                                        -- 整数 最大値
     NUM_MIN                         INT,                                        -- 整数 最小値
@@ -153,10 +153,10 @@ CREATE TABLE T_MENU_COLUMN_JNL
     AUTOREG_HIDE_ITEM               VARCHAR(2) ,                                -- 代入値自動登録対象外フラグ
     AUTOREG_ONLY_ITEM               VARCHAR(2) ,                                -- 代入値自動登録選択フラグ
     SINGLE_MAX_LENGTH               TEXT,                                       -- 文字列(単一行) 最大バイト数
-    SINGLE_PREG_MATCH               TEXT,                                       -- 文字列(単一行) 正規表現
+    SINGLE_REGULAR_MATCH            TEXT,                                       -- 文字列(単一行) 正規表現
     SINGLE_DEFAULT_VALUE            TEXT,                                       -- 文字列(単一行) 初期値
     MULTI_MAX_LENGTH                TEXT,                                       -- 文字列(複数行) 最大バイト数
-    MULTI_PREG_MATCH                TEXT,                                       -- 文字列(複数行) 正規表現
+    MULTI_REGULAR_MATCH             TEXT,                                       -- 文字列(複数行) 正規表現
     MULTI_DEFAULT_VALUE             TEXT,                                       -- 文字列(複数行) 初期値
     NUM_MAX                         INT,                                        -- 整数 最大値
     NUM_MIN                         INT,                                        -- 整数 最小値
@@ -175,42 +175,6 @@ CREATE TABLE T_MENU_COLUMN_JNL
     LINK_MAX_LENGTH                 INT,                                        -- リンク 最大バイト数
     LINK_DEFAULT_VALUE              TEXT,                                       -- リンク 初期値
     PARAM_SHEET_LINK_ID             VARCHAR(40),                                -- パラメータシート参照 連携ID
-    NOTE                            TEXT,                                       -- 備考
-    DISUSE_FLAG                     VARCHAR(1)   ,                              -- 廃止フラグ
-    LAST_UPDATE_TIMESTAMP           DATETIME(6)  ,                              -- 最終更新日時
-    LAST_UPDATE_USER                VARCHAR(40),                                -- 最終更新者
-    PRIMARY KEY(JOURNAL_SEQ_NO)
-)ENGINE = InnoDB, CHARSET = utf8mb4, COLLATE = utf8mb4_bin, ROW_FORMAT=COMPRESSED ,KEY_BLOCK_SIZE=8;
-
-
-
--- メニュー項目作成情報ビュー
-
-
-
--- メニュー(縦)作成情報
-CREATE TABLE T_MENU_CONVERT
-(
-    CONVERT_ID                      VARCHAR(40),                                -- 項番(UUID)
-    CREATE_COLUMN_ID                VARCHAR(40),                                -- 繰り返し開始項目
-    COL_COUNT                       INT,                                        -- 項目数
-    REPEAT_COUNT                    INT,                                        -- 繰り返し数
-    NOTE                            TEXT,                                       -- 備考
-    DISUSE_FLAG                     VARCHAR(1)   ,                              -- 廃止フラグ
-    LAST_UPDATE_TIMESTAMP           DATETIME(6)  ,                              -- 最終更新日時
-    LAST_UPDATE_USER                VARCHAR(40),                                -- 最終更新者
-    PRIMARY KEY(CONVERT_ID)
-)ENGINE = InnoDB, CHARSET = utf8mb4, COLLATE = utf8mb4_bin, ROW_FORMAT=COMPRESSED ,KEY_BLOCK_SIZE=8;
-
-CREATE TABLE T_MENU_CONVERT_JNL
-(
-    JOURNAL_SEQ_NO                  VARCHAR(40),                                -- 履歴用シーケンス
-    JOURNAL_REG_DATETIME            DATETIME(6),                                -- 履歴用変更日時
-    JOURNAL_ACTION_CLASS            VARCHAR (8),                                -- 履歴用変更種別
-    CONVERT_ID                      VARCHAR(40),                                -- 項番(UUID)
-    CREATE_COLUMN_ID                VARCHAR(40),                                -- 繰り返し開始項目
-    COL_COUNT                       INT,                                        -- 項目数
-    REPEAT_COUNT                    INT,                                        -- 繰り返し数
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1)   ,                              -- 廃止フラグ
     LAST_UPDATE_TIMESTAMP           DATETIME(6)  ,                              -- 最終更新日時
