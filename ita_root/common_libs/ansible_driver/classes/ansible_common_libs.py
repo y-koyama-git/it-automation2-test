@@ -65,13 +65,15 @@ class AnsibleCommonLibs():
     vg_FileUPloadColumnBackupFilePath = ""
     db_update_flg = False
     g_null_data_handling_def = ""
+    warning_flag = 0
+    error_flag = 0
     
 
     def __init__(self, run_mode=AnscConst.LC_RUN_MODE_STD):
         global LV_RUN_MODE
         LV_RUN_MODE = run_mode
 
-    def set_run_mode(run_mode):
+    def set_run_mode(self, run_mode):
         """
         処理モードを変数定義ファイルチェックに設定
 
@@ -81,7 +83,7 @@ class AnsibleCommonLibs():
         global LV_RUN_MODE
         LV_RUN_MODE = run_mode
 
-    def get_run_mode():
+    def get_run_mode(self):
         """
         処理モード取得
 
@@ -90,7 +92,7 @@ class AnsibleCommonLibs():
         """
         return LV_RUN_MODE
 
-    def get_cpf_vars_master(in_cpf_var_name, WS_DB):
+    def get_cpf_vars_master(self, in_cpf_var_name, WS_DB):
         """
         ファイル管理の情報をデータベースより取得する。
         
@@ -190,7 +192,7 @@ class AnsibleCommonLibs():
 
         return bool_ret, tmp_ina_cpf_vars_list, in_errmsg
     
-    def get_tpf_vars_master(in_tpf_var_name, WS_DB):
+    def get_tpf_vars_master(self, in_tpf_var_name, WS_DB):
         """
         テンプレート管理の情報をデータベースより取得する。
         
@@ -302,7 +304,7 @@ class AnsibleCommonLibs():
                 
         return bool_ret, tmp_ina_tpf_vars_list, in_errmsg
     
-    def get_gbl_vars_master(in_gbl_var_name, WS_DB):
+    def get_gbl_vars_master(self, in_gbl_var_name, WS_DB):
         """
         グローバル管理の情報をデータベースより取得する。
         
@@ -389,7 +391,7 @@ class AnsibleCommonLibs():
         
         return bool_ret, ina_gbl_vars_list, in_errmsg
     
-    def common_varss_aanalys(in_filename, out_filename, fillter_vars=False):
+    def common_varss_aanalys(self, in_filename, out_filename, fillter_vars=False):
         """
         Legacy/PioneerでアップロードされるPlaybook素材よの共通変数を抜き出す
         FileUploadColumn:checkTempFileBeforeMoveOnPreLoadイベント用
@@ -479,7 +481,7 @@ class AnsibleCommonLibs():
         
         return ret_array
     
-    def select_db_recodes(in_sql, in_key, WS_DB):
+    def select_db_recodes(self, in_sql, in_key, WS_DB):
         """
         指定されたデータベースの全有効レコードを取得する。
         
@@ -500,10 +502,14 @@ class AnsibleCommonLibs():
         
         return ina_row
     
-    def  GetDataFromParameterSheet(self, exec_type, operation_id, movement_id, WS_DB):
+    def GetDataFromParameterSheet(self, exec_type, operation_id, movement_id, WS_DB):
         """
         代入値自動登録とパラメータシートを抜く
         """
+        
+        global g_null_data_handling_def
+        global warning_flag
+        global error_flag
         
         # 処理区分が変数抜出処理
         if exec_type == '2':
@@ -538,9 +544,8 @@ class AnsibleCommonLibs():
             raise ValidationException(errorMsg)
         
         lv_tableNameToMenuIdList = ret[1]
-        lv_tabColNameToValAssRowList = ret[3]
-        lv_tableNameToPKeyNameList = ret[4]
-        lv_tableVerticalMenuList = ret[5]
+        lv_tabColNameToValAssRowList = ret[2]
+        lv_tableNameToPKeyNameList = ret[3]
         
         # 紐付メニューへのSELECT文を生成する。
         ret = self.createQuerySelectCMDB(lv_tableNameToMenuIdList, lv_tabColNameToValAssRowList, lv_tableNameToPKeyNameList, WS_DB)
@@ -556,10 +561,6 @@ class AnsibleCommonLibs():
         lv_varsAssList = ret[0]
         lv_arrayVarsAssList = ret[1]
         warning_flag = ret[2]
-        
-        # 縦メニューのカラムを取得する
-        ret = self.GetVerticalMenuColumnList(lv_tableVerticalMenuList)
-        lv_tableVerticalMenuList = ret[0]
         
         # トランザクション開始 
         traceMsg = g.get_api_message("MSG-10785")
@@ -579,13 +580,8 @@ class AnsibleCommonLibs():
         lv_VarsAssignRecodes = ret[1]
         lv_ArryVarsAssignRecodes = [2]
         
-        # 縦メニューでまとまり全てNULLの場合、代入値管理への登録・更新を対象外とする
-        ret = self.checkVerticalMenuVarsAssignData(lv_tableVerticalMenuList, lv_varsAssList)
-        lv_varsAssList = ret[0]
-        ret = self.checkVerticalMenuVarsAssignData(lv_tableVerticalMenuList, lv_arrayVarsAssList)
-        lv_arrayVarsAssList = ret[0]
-        
-        lv_tableVerticalMenuList.clear()
+        # 作業対象ホストに登録が必要な配列初期化
+        lv_phoLinkList = {}
         
         # 一般変数・複数具体値変数を紐付けている紐付メニューの具体値を代入値管理に登録
         # トレースメッセージ
@@ -630,6 +626,11 @@ class AnsibleCommonLibs():
                     error_flag = 1
                     errorMsg = g.get_api_message("MSG-10441")
                     raise ValidationException(errorMsg)
+                
+                # 作業対象ホストに登録が必要な情報を退避
+                lv_phoLinkList[varsAssRecord['OPERATION_ID']] = {}
+                lv_phoLinkList[varsAssRecord['OPERATION_ID']][varsAssRecord['MOVEMENT_ID']] = {}
+                lv_phoLinkList[varsAssRecord['OPERATION_ID']][varsAssRecord['MOVEMENT_ID']][varsAssRecord['SYSTEM_ID']] = {}
                 
             # 代入値管理から不要なデータを削除する
             # トレースメッセージ
@@ -682,9 +683,6 @@ class AnsibleCommonLibs():
             traceMsg = g.get_api_message("MSG-10810")
             frame = inspect.currentframe().f_back
             g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + traceMsg)
-            
-            # 作業対象ホストに登録が必要な配列初期化
-            lv_phoLinkList = {}
             
             for ope_id, ptn_list in lv_phoLinkList.items():
                 for ptn_id, host_list in ptn_list.items():
@@ -746,15 +744,6 @@ class AnsibleCommonLibs():
         global strSeqOfJnlTablePhoLnk
         global arrayConfigOfPhoLnk
         global arrayValueTmplOfPhoLnk
-
-        strCurTable = strCurTablePhoLnk
-        strJnlTable = strJnlTablePhoLnk
-
-        arrayConfig = arrayConfigOfPhoLnk
-        arrayValue = arrayValueTmplOfPhoLnk
-
-        strSeqOfCurTable = strSeqOfCurTablePhoLnk
-        strSeqOfJnlTable = strSeqOfJnlTablePhoLnk
         
         where = "WHERE PHO_LINK_ID <> '0'"
         WS_DB.table_lock(["T_ANSR_TGT_HOST"])
@@ -881,15 +870,8 @@ class AnsibleCommonLibs():
         global strSeqOfJnlTablePhoLnk
         global arrayConfigOfPhoLnk
         global arrayValueTmplOfPhoLnk
-
-        strCurTable = strCurTablePhoLnk
-        strJnlTable = strJnlTablePhoLnk
-
-        arrayConfig = arrayConfigOfPhoLnk
-        arrayValue = arrayValueTmplOfPhoLnk
-
-        strSeqOfCurTable = strSeqOfCurTablePhoLnk
-        strSeqOfJnlTable = strSeqOfJnlTablePhoLnk
+        
+        arrayValue = arrayValueTmplOfVarA
         
         key = in_phoLinkData["OPERATION_ID"] + "_"
         key += in_phoLinkData["MOVEMENT_ID"] + "_"
@@ -898,7 +880,7 @@ class AnsibleCommonLibs():
         objmenu = load_table.loadTable(WS_DB, "20408")
         
         if key in in_PhoLinkRecodes:
-            action  = "INSERT"
+            action = "INSERT"
             tgt_row = arrayValue
             
             # トレースメッセージ
@@ -946,7 +928,7 @@ class AnsibleCommonLibs():
             parameters = {
                 "parameter": parameter,
                 "file": {},
-                "type":"Register"
+                "type": "Register"
             }
             status_code, result, msg = objmenu.rest_maintenance(parameters)
             
@@ -977,7 +959,7 @@ class AnsibleCommonLibs():
             parameters = {
                 "parameter": parameter,
                 "file": {},
-                "type":"Update"
+                "type": "Update"
             }
             status_code, result, msg = objmenu.rest_maintenance(parameters, tgt_row['PHO_LINK_ID'])
             
@@ -1014,17 +996,6 @@ class AnsibleCommonLibs():
         global strSeqOfJnlTablePhoLnk
         global arrayConfigOfPhoLnk
         global arrayValueTmplOfPhoLnk
-
-        strCurTable = strCurTablePhoLnk
-        strJnlTable = strJnlTablePhoLnk
-
-        arrayConfig = arrayConfigOfPhoLnk
-        arrayValue = arrayValueTmplOfPhoLnk
-
-        strSeqOfCurTable = strSeqOfCurTablePhoLnk
-        strSeqOfJnlTable = strSeqOfJnlTablePhoLnk
-        
-        strPkey = "PHO_LINK_ID"
         
         objmenu = load_table.loadTable(WS_DB, "20408")
         
@@ -1147,40 +1118,6 @@ class AnsibleCommonLibs():
             
         return inout_tableNameToSqlList
     
-    def GetVerticalMenuColumnList(self, inout_tableVerticalMenuList, WS_DB):
-        """
-        縦メニューのカラムを取得する
-        
-        Arguments:
-            inout_tableVerticalMenuList: 縦メニューテーブルのカラム情報配列
-            WS_DB: WorkspaceDBインスタンス
-
-        Returns:
-            inout_tableVerticalMenuList: 縦メニューテーブルのカラム情報配列
-        """
-        # 多重ループを抜けるためのフラグ
-        continue_flg = 0
-        for table_name in inout_tableVerticalMenuList.keys():
-            
-            sql = " DESC " + table_name + " \n"
-            data_list = WS_DB.sql_execute(sql, [])
-            
-            search_list = ['ROW_ID', 'HOST_ID', 'OPERATION_ID_DISP', 'OPERATION_ID_NAME_DISP', 'OPERATION_ID', 'BASE_TIMESTAMP', 'LAST_EXECUTE_TIMESTAMP'
-                           'OPERATION_NAME', 'OPERATION_DATE', 'NOTE', 'DISUSE_FLAG', 'LAST_UPDATE_TIMESTAMP', 'LAST_UPDATE_USER']
-            for row in data_list:
-                if row['Field'] in search_list:
-                    continue_flg = 1
-                    continue
-                
-                inout_tableVerticalMenuList[table_name] = {}
-                inout_tableVerticalMenuList[table_name]['data'] = row['Field']
-            
-            if continue_flg == 1:
-                continue_flg = 0
-                continue
-        
-        return inout_tableVerticalMenuList
-    
     def getVarsAssignRecodes(self, WS_DB):
         """
         代入値管理の情報を取得
@@ -1200,14 +1137,8 @@ class AnsibleCommonLibs():
         global strSeqOfJnlTableVarsAss
         global arrayConfigOfVarAss
         global arrayValueTmplOfVarAss
+        global warning_flag
         
-        strCurTable = strCurTableVarsAss
-        strJnlTable = strJnlTableVarsAss
-        arrayConfig = arrayConfigOfVarAss
-        arrayValue = arrayValueTmplOfVarAss
-        strSeqOfCurTable = strSeqOfCurTableVarsAss
-        strSeqOfJnlTable = strSeqOfJnlTableVarsAss
-        strPkey = "ASSIGN_ID"
         vg_varass_menuID = "2100020311"
         
         in_VarsAssignRecodes = {}
@@ -1381,15 +1312,6 @@ class AnsibleCommonLibs():
         global arrayValueTmplOfVarAss
         global vg_FileUPloadColumnBackupFilePath
         global db_update_flg
-        
-        strCurTable = strCurTableVarsAss
-        strJnlTable = strJnlTableVarsAss
-        arrayConfig = arrayConfigOfVarAss
-        arrayValue = arrayValueTmplOfVarAss
-        strSeqOfCurTable = strSeqOfCurTableVarsAss
-        strSeqOfJnlTable = strSeqOfJnlTableVarsAss
-        strPkey = "ASSIGN_ID"
-        vg_varass_menuID = "2100020311"
         db_valautostup_user_id = "-100019"
         
         key = in_varsAssignList["OPERATION_ID"] + "_"
@@ -1539,7 +1461,7 @@ class AnsibleCommonLibs():
             parameters = {
                 "parameter": parameter,
                 "file": {"vars_entry_file": tgt_row['VARS_ENTRY_FILE']},
-                "type":"Update"
+                "type": "Update"
             }
             status_code, result, msg = objmenu.rest_maintenance(parameters, tgt_row['ASSIGN_ID'])
             
@@ -1580,23 +1502,23 @@ class AnsibleCommonLibs():
             AftInfo['VARS_ENTRY_FILE'] = ""
         
         if not BefInfo['SENSITIVE_FLAG'] == AftInfo['SENSITIVE_FLAG'] or \
-            not BefInfo['VARS_ENTRY_FILE'] == AftInfo['VARS_ENTRY_FILE'] or \
-            not BefInfo['VARS_ENTRY_FILE_MD5'] == AftInfo['COL_FILEUPLOAD_MD5'] or \
-            not BefInfo['VARS_ENTRY'] == AftInfo['VARS_ENTRY']:
-                diff = True
+                not BefInfo['VARS_ENTRY_FILE'] == AftInfo['VARS_ENTRY_FILE'] or \
+                not BefInfo['VARS_ENTRY_FILE_MD5'] == AftInfo['COL_FILEUPLOAD_MD5'] or \
+                not BefInfo['VARS_ENTRY'] == AftInfo['VARS_ENTRY']:
+            diff = True
         
         if diff == 1:
             # 代入値管理の具体値がファイルの場合
             if not BefInfo['VARS_ENTRY_FILE'] == AftInfo['VARS_ENTRY_FILE'] or \
-                not BefInfo['VARS_ENTRY_FILE_MD5'] == AftInfo['COL_FILEUPLOAD_MD5']:
-                    if not BefInfo['VARS_ENTRY_FILE'] == "":
-                        befFileDel = True
+                    not BefInfo['VARS_ENTRY_FILE_MD5'] == AftInfo['COL_FILEUPLOAD_MD5']:
+                if not BefInfo['VARS_ENTRY_FILE'] == "":
+                    befFileDel = True
             
             # パラメータシートの具体値がファイルの場合
             if not BefInfo['VARS_ENTRY_FILE'] == AftInfo['VARS_ENTRY_FILE'] or \
-                not BefInfo['VARS_ENTRY_FILE_MD5'] == AftInfo['COL_FILEUPLOAD_MD5']:
-                    if not AftInfo['VARS_ENTRY_FILE'] == "" and AftInfo['REG_TYPE'] == 'Value':
-                        AftFileCpy = True
+                    not BefInfo['VARS_ENTRY_FILE_MD5'] == AftInfo['COL_FILEUPLOAD_MD5']:
+                if not AftInfo['VARS_ENTRY_FILE'] == "" and AftInfo['REG_TYPE'] == 'Value':
+                    AftFileCpy = True
         
         return diff, befFileDel, AftFileCpy
     
@@ -1624,26 +1546,18 @@ class AnsibleCommonLibs():
         global vg_FileUPloadColumnBackupFilePath
         global db_update_flg
         
-        strCurTable = strCurTableVarsAss
-        strJnlTable = strJnlTableVarsAss
-        arrayConfig = arrayConfigOfVarAss
         arrayValue = arrayValueTmplOfVarAss
-        strSeqOfCurTable = strSeqOfCurTableVarsAss
-        strSeqOfJnlTable = strSeqOfJnlTableVarsAss
-        strPkey = "ASSIGN_ID"
-        vg_varass_menuID = "2100020311"
         db_valautostup_user_id = "-100019"
         
         key = in_varsAssignList["OPERATION_ID"] + "_"
         key += in_varsAssignList["MOVEMENT_ID"] + "_"
         key += in_varsAssignList["SYSTEM_ID"] + "_"
         key += in_varsAssignList["MVMT_VAR_LINK_ID"] + "_" 
-        key +=  ""  + "_"
+        key += ""  + "_"
         key += in_varsAssignList["ASSIGN_SEQ"] + "_1"
         
         objmenu = load_table.loadTable(WS_DB, "20409")
-        
-        hit_flg = False
+
         befFileDel = False
         AftFileCpy = False
         
@@ -1671,7 +1585,6 @@ class AnsibleCommonLibs():
             tgt_row = in_ArryVarsAssignRecodes[key]
             
             ret = self.chkSubstitutionValueListRecodedifference(tgt_row, in_varsAssignList)
-            diff = ret[0]
             befFileDel = ret[1]
             AftFileCpy = ret[2]
             
@@ -1828,22 +1741,14 @@ class AnsibleCommonLibs():
         global arrayValueTmplOfVarAss
         global vg_FileUPloadColumnBackupFilePath
         global db_update_flg
-        
-        strCurTable = strCurTableVarsAss
-        strJnlTable = strJnlTableVarsAss
-        arrayConfig = arrayConfigOfVarAss
-        arrayValue = arrayValueTmplOfVarAss
-        strSeqOfCurTable = strSeqOfCurTableVarsAss
-        strSeqOfJnlTable = strSeqOfJnlTableVarsAss
-        strPkey = "ASSIGN_ID"
-        vg_varass_menuID = "2100020311"
+
         db_valautostup_user_id = "-100019"
         
         key = in_varsAssignList["OPERATION_ID"] + "_"
         key += in_varsAssignList["MOVEMENT_ID"] + "_"
         key += in_varsAssignList["SYSTEM_ID"] + "_"
         key += in_varsAssignList["MVMT_VAR_LINK_ID"] + "_" 
-        key +=  ""  + "_"
+        key += "" + "_"
         key += in_varsAssignList["ASSIGN_SEQ"] + "_0"
         
         objmenu = load_table.loadTable(WS_DB, "20409")
@@ -2041,14 +1946,8 @@ class AnsibleCommonLibs():
         global arrayValueTmplOfVarAss
         global vg_FileUPloadColumnBackupFilePath
         global db_update_flg
-        
-        strCurTable = strCurTableVarsAss
-        strJnlTable = strJnlTableVarsAss
-        arrayConfig = arrayConfigOfVarAss
+
         arrayValue = arrayValueTmplOfVarAss
-        strSeqOfCurTable = strSeqOfCurTableVarsAss
-        strSeqOfJnlTable = strSeqOfJnlTableVarsAss
-        strPkey = "ASSIGN_ID"
         vg_varass_menuID = "2100020311"
         db_valautostup_user_id = "-100019"
         
@@ -2056,7 +1955,7 @@ class AnsibleCommonLibs():
         key += in_varsAssignList["MOVEMENT_ID"] + "_"
         key += in_varsAssignList["SYSTEM_ID"] + "_"
         key += in_varsAssignList["MVMT_VAR_LINK_ID"] + "_" 
-        key +=  ""  + "_"
+        key += ""  + "_"
         key += in_varsAssignList["ASSIGN_SEQ"] + "_1"
         
         objmenu = load_table.loadTable(WS_DB, "20409")
@@ -2690,7 +2589,7 @@ class AnsibleCommonLibs():
                             ina_array_vars_ass_list,
                             ina_array_vars_ass_chk_list,
                             in_menu_id,
-                            in_row_id)
+                            in_row_id):
         """
         CMDB代入値紐付対象メニューの情報から代入値管理に登録する情報を生成
         
@@ -2735,7 +2634,7 @@ class AnsibleCommonLibs():
             # Value型カラムの場合
             # 具体値が空白か判定
             ret = self.validateValueTypeColValue(in_col_val, in_null_data_handling_flg, in_menu_id, in_row_id, in_col_list['COL_TITLE'])
-            if ret == 0 and in_col_list['VERTICAL_MENU'] == 0:
+            if ret == 0:
                 return ina_vars_ass_list, ina_vars_ass_chk_list, ina_array_vars_ass_list, ina_array_vars_ass_chk_list
             
             # checkAndCreateVarsAssignDataの戻りは判定しない。
@@ -2761,11 +2660,7 @@ class AnsibleCommonLibs():
                                             in_menu_id,
                                             in_col_list['COLUMN_ID'],
                                             "Value",
-                                            in_row_id,
-                                            in_col_list['START_COL_NAME'],
-                                            in_col_list['COL_CNT'],
-                                            in_col_list['REPEAT_CNT'],
-                                            in_col_list['VERTICAL_MENU'])
+                                            in_row_id)
             
             ina_vars_ass_list = ret[0]
             ina_vars_ass_chk_list = ret[1]
@@ -2775,7 +2670,7 @@ class AnsibleCommonLibs():
         if in_col_list['COL_TYPE'] == AnscConst.DF_COL_TYPE_KEY:
             # 具体値が空白か判定
             ret = self.validateKeyTypeColValue(in_col_val, in_menu_id, in_row_id, in_col_list['COL_TITLE'])
-            if ret == 0 and in_col_list['VERTICAL_MENU'] == 0:
+            if ret == 0:
                 return ina_vars_ass_list, ina_vars_ass_chk_list, ina_array_vars_ass_list, ina_array_vars_ass_chk_list
             
             # checkAndCreateVarsAssignDataの戻りは判定しない。
@@ -2801,11 +2696,7 @@ class AnsibleCommonLibs():
                                             in_menu_id,
                                             in_col_list['COLUMN_ID'],
                                             "Key",
-                                            in_row_id,
-                                            in_col_list['START_COL_NAME'],
-                                            in_col_list['COL_CNT'],
-                                            in_col_list['REPEAT_CNT'],
-                                            in_col_list['VERTICAL_MENU'])
+                                            in_row_id)
             
             ina_vars_ass_list = ret[0]
             ina_vars_ass_chk_list = ret[1]
@@ -2966,11 +2857,7 @@ class AnsibleCommonLibs():
                                     in_menu_id,
                                     in_column_id,
                                     keyValueType,
-                                    in_row_id,
-                                    in_start_col_name,
-                                    in_col_cnt,
-                                    in_repeat_cnt,
-                                    in_vertical_menu)
+                                    in_row_id):
         """
         CMDB代入値紐付対象メニューの情報から代入値管理に登録する情報を生成
         
@@ -3042,11 +2929,7 @@ class AnsibleCommonLibs():
                                 'VARS_ENTRY': in_col_val,
                                 'SENSITIVE_FLAG': in_sensitive_flg,
                                 'VAR_TYPE': in_vars_attr,
-                                'STATUS': chk_status,
-                                'START_COL_NAME': in_start_col_name,
-                                'COL_CNT': in_col_cnt,
-                                'REPEAT_CNT': in_repeat_cnt,
-                                'VERTICAL_MENU': in_vertical_menu}
+                                'STATUS': chk_status}
         elif in_vars_attr == AnscConst.GC_VARS_ATTR_M_ARRAY:
             # 多次元変数
             # オペ+作業+ホスト+変数+メンバ変数の組合せで代入順序が重複していないか判定
@@ -3086,11 +2969,7 @@ class AnsibleCommonLibs():
                                 'VARS_ENTRY': in_col_val,
                                 'SENSITIVE_FLAG': in_sensitive_flg,
                                 'VAR_TYPE': in_vars_attr,
-                                'STATUS': chk_status,
-                                'START_COL_NAME': in_start_col_name,
-                                'COL_CNT': in_col_cnt,
-                                'REPEAT_CNT': in_repeat_cnt,
-                                'VERTICAL_MENU': in_vertical_menu}
+                                'STATUS': chk_status}
         
         return ina_vars_ass_list, ina_vars_ass_chk_list, ina_array_vars_ass_list, ina_array_vars_ass_chk_list
     
@@ -3104,10 +2983,8 @@ class AnsibleCommonLibs():
         Returns:
             is success:(bool)
             inout_tableNameToMenuIdList: テーブル名配列
-            input_FileUploadCloumnusetableNameToMenuIdList: FileUploadCloumnが定義されているテーブル名配列
             inout_tabColNameToValAssRowList: カラム情報配列
             inout_tableNameToPKeyNameList: テーブル主キー名配列
-            inout_tableVerticalMenuList: 縦メニューテーブルのカラム情報配列
         """
         
         global lv_val_assign_tbl
@@ -3134,11 +3011,6 @@ class AnsibleCommonLibs():
         
         sql += "   TBL_B.DISUSE_FLAG  AS COL_DISUSE_FLAG                       ,  \n"
         sql += "   TBL_A.COL_TYPE                                              ,  \n"
-        
-        # 縦メニュー固有情報
-        sql += "   TBL_F.START_COL_NAME                                        ,  \n"
-        sql += "   TBL_F.COL_CNT                                               ,  \n"
-        sql += "   TBL_F.REPEAT_CNT                                            ,  \n"
         
         # 代入値管理データ連携フラグ
         sql += "   TBL_A.NULL_DATA_HANDLING_FLG                                ,  \n"
@@ -3317,19 +3189,18 @@ class AnsibleCommonLibs():
         sql += lv_val_assign_tbl + "  TBL_A                                       \n"
         sql += "   LEFT JOIN T_COMN_MENU_COLUMN_LINK TBL_B ON             \n"
         sql += "          (TBL_A.COLUMN_LIST_ID = TBL_B.COLUMN_DEFINITION_ID)     \n"
+        sql += "          OR (TBL_B.AUTOREG_ONLY_ITEM = 1)                        \n"
         sql += "   LEFT JOIN T_COMN_MENU_TABLE_LINK          TBL_C ON             \n"
         sql += "          (TBL_B.MENU_ID        = TBL_C.MENU_ID)                  \n"
         sql += "   LEFT JOIN T_COMN_MENU   TBL_D ON                               \n"
         sql += "          (TBL_C.MENU_ID        = TBL_D.MENU_ID)                  \n"
-        sql += "   LEFT JOIN F_COL_TO_ROW_MNG   TBL_F ON                          \n"
-        sql += "          (TBL_A.MENU_ID        = TBL_F.TO_MENU_ID)               \n"
         sql += " WHERE                                                            \n"
-        sql += "   TBL_A.DISUSE_FLAG='0' AND (TBL_F.DISUSE_FLAG='0' OR TBL_F.DISUSE_FLAG IS NULL) \n"
+        sql += "   TBL_A.DISUSE_FLAG='0'                                          \n"
+        sql += "   AND TBL_B.AUTOREG_HIDE_ITEM='0'                                          \n"
         sql += " ORDER BY TBL_A.COLUMN_ID                                         \n"
 
         data_list = WS_DB.sql_execute(sql)
 
-        inout_tableVerticalMenuList = {}
         inout_tableNameToMenuIdList = {}
         inout_tabColNameToValAssRowList = {}
         for data in data_list:
@@ -3409,21 +3280,11 @@ class AnsibleCommonLibs():
 
             inout_tableNameToMenuIdList[data['TABLE_NAME']] = data['MENU_ID']
             
-            input_FileUploadCloumnusetableNameToMenuIdList = {}
-            if data['COL_CLASS'] == 'FileUploadColumn':
-                input_FileUploadCloumnusetableNameToMenuIdList[data['TABLE_NAME']] = data['MENU_ID']
-            
             # PasswordColumnかを判定
             key_sensitive_flg = AnscConst.DF_SENSITIVE_OFF
             value_sensitive_flg = AnscConst.DF_SENSITIVE_OFF
             if data['COL_CLASS'] == 'PasswordColumn':
                 value_sensitive_flg = AnscConst.DF_SENSITIVE_ON
-            
-            # 縦メニューのカラムかを判定
-            vertical_menu = False
-            if data['COL_CNT'] != "":
-                vertical_menu = True
-                inout_tableVerticalMenuList[data['TABLE_NAME']] = []
             
             inout_tabColNameToValAssRowList[data['TABLE_NAME']] = {}
             inout_tabColNameToValAssRowList[data['TABLE_NAME']][data['COL_NAME']] = {}
@@ -3448,17 +3309,13 @@ class AnsibleCommonLibs():
                                                                             'KEY_COL_SEQ_COMBINATION_ID': data['KEY_COL_SEQ_COMBINATION_ID'],
                                                                             'KEY_ASSIGN_SEQ': data['KEY_ASSIGN_SEQ'],
                                                                             'NULL_DATA_HANDLING_FLG': data['NULL_DATA_HANDLING_FLG'],
-                                                                            'KEY_SENSITIVE_FLAG': key_sensitive_flg,
-                                                                            'START_COL_NAME': data['START_COL_NAME'],
-                                                                            'COL_CNT': data['COL_CNT'],
-                                                                            'REPEAT_CNT': data['REPEAT_CNT'],
-                                                                            'VERTICAL_MENU': data['COL_TITLE'],
-                                                                            'COL_TITLE': vertical_menu}
+                                                                            'KEY_SENSITIVE_FLAG': key_sensitive_flg}
         
+        # テーブルの主キー名退避
         inout_tableNameToPKeyNameList = {}
         inout_tableNameToPKeyNameList[data['TABLE_NAME']] = data['PKEY_NAME']
         
-        return True, inout_tableNameToMenuIdList, input_FileUploadCloumnusetableNameToMenuIdList, inout_tabColNameToValAssRowList, inout_tableNameToPKeyNameList, inout_tableVerticalMenuList
+        return True, inout_tableNameToMenuIdList, inout_tabColNameToValAssRowList, inout_tableNameToPKeyNameList
     
     def valAssColumnValidate(WS_DB, 
                             in_col_type, 
