@@ -306,7 +306,7 @@ class DBConnectCommon:
         is_last_res = True
         for data in data_list:
             # auto set
-            timestamp = str(get_timestamp())
+            timestamp = get_timestamp()
             if primary_key_name not in data or not data[primary_key_name]:
                 data[primary_key_name] = str(self._uuid_create())
             data[self._COLUMN_NAME_TIMESTAMP] = timestamp
@@ -370,7 +370,7 @@ class DBConnectCommon:
         is_last_res = True
         for data in data_list:
             # auto set
-            timestamp = str(get_timestamp())
+            timestamp = get_timestamp()
             data[self._COLUMN_NAME_TIMESTAMP] = timestamp
 
             # make sql statement
@@ -513,7 +513,7 @@ class DBConnectCommon:
         password = generate_secrets(length, mysql_available_symbol)
 
         if escape is True:
-            password = re.sub(r'([{}])/g'.format(mysql_available_symbol), r'\$1', password)
+            password = re.sub(r'([{}])'.format(mysql_available_symbol), r'\$1', password)
 
         return password
 
