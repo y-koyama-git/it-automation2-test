@@ -82,17 +82,6 @@ class AnscConst:
     DF_VAR_TYPE_GBL = "GBL"
     DF_VAR_TYPE_TPF = "TPF"
 
-    # 具体値 SENSITIVE設定値
-    DF_SENSITIVE_OFF = "0"    # False
-    DF_SENSITIVE_ON = "1"     # True
-    
-    # 機器一覧 認証方式(LOGIN_AUTH_TYPE)
-    DF_LOGIN_AUTH_TYPE_KEY = '1'         # 鍵認証(パスフレーズなし)
-    DF_LOGIN_AUTH_TYPE_PW = '2'          # パスワード認証
-    DF_LOGIN_AUTH_TYPE_KEY_EXCH = '3'    # 認証方式:鍵認証(鍵交換済み)
-    DF_LOGIN_AUTH_TYPE_KEY_PP_USE = '4'  # 認証方式:鍵認証(パスフレーズあり)
-    DF_LOGIN_AUTH_TYPE_PW_WINRM = '5'    # 認証方式:パスワード認証(winrm)
-
     # 正規表記でエスケープが必要な文字 $ ( ) * + - / ? ^ { | }
     # 親変数で許容する文字: xxx_[0-9a-zA-Z_]　  GBL/TPF
     VAR_parent_VarName = "/^(\s*)[0-9a-zA-Z_]*(\s*)$/"      # 通常の変数
@@ -114,6 +103,25 @@ class AnscConst:
     DF_VARS_ATTR_STD = '1'       # 一般変数
     DF_VARS_ATTR_LIST = '2'      # 複数具体値
     DF_VARS_ATTR_STRUCT = '3'    # 多段変数
+    
+    # カラムタイプ
+    DF_COL_TYPE_VAL = '1'    # Value型
+    DF_COL_TYPE_KEY = '2'    # Key型
+    
+    # 具体値 SENSITIVE設定値
+    DF_SENSITIVE_OFF = '1'    # OFF
+    DF_SENSITIVE_ON = '2'     # ON
+    
+    # VARS_ATTRIBUTE_01 の 具体値定義
+    GC_VARS_ATTR_STD = '1'       # 一般変数
+    GC_VARS_ATTR_LIST = '2'      # 複数具体値
+    GC_VARS_ATTR_M_ARRAY = '3'   # 多段変数
+    
+    # 代入値紐付メニューSELECT時のITA独自カラム名
+    DF_ITA_LOCAL_OPERATION_CNT = '__ITA_LOCAL_COLUMN_1__'
+    DF_ITA_LOCAL_HOST_CNT = '__ITA_LOCAL_COLUMN_2__'
+    DF_ITA_LOCAL_DUP_CHECK_ITEM = '__ITA_LOCAL_COLUMN_3__'
+    DF_ITA_LOCAL_PKEY = '__ITA_LOCAL_COLUMN_4__'
 
     ############################################################
     # 変数定義の変数名定義判定配列
