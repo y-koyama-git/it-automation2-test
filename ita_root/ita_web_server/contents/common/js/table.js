@@ -216,9 +216,7 @@ setup() {
     }
 
     // ページ表示時に一覧を表示する
-    if ( tb.info.menu_info.initial_filter_flg === '0') {
-        tb.setTable( tb.mode );
-    }
+    tb.setTable( tb.mode );
     
     return tb.$.container;
 }
