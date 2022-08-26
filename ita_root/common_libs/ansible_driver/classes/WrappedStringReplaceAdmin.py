@@ -96,12 +96,12 @@ class WrappedStringReplaceAdmin:
             True(bool)
         """
         # Fillter定義されている変数も抜出すか判定
-        if FillterVars == 1:
-            tailmarke = "([\s]}}|[\s]+\|)"
-            reptailmarke = " }} |"
+        tailmarke = []
+        if FillterVars is True:
+            tailmarke.append("[\s]}}")
+            tailmarke.append("[\s]+\|")
         else:
-            tailmarke = "[\s]}}"
-            reptailmarke = " }}"
+            tailmarke.append("[\s]}}")
 
         # 入力データを行単位に分解
         arry_list = strSourceString.split("\n")
@@ -125,48 +125,62 @@ class WrappedStringReplaceAdmin:
                 # 空行は読み飛ばす
                 continue
             # 変数名　{{ ???_[a-zA-Z0-9_] | Fillter function }} または{{ ???_[a-zA-Z0-9_] }}　を取出す
-            keyFilter = "{{[\s]" + var_heder_id + "[a-zA-Z0-9_]*" + tailmarke
-            match = re.findall(keyFilter, strRemainString)
-            if len(match) != 0:
+            match_list = []
+            for key in tailmarke:
+                keyFilter = "{{[\s]" + var_heder_id + "[a-zA-Z0-9_]*" + key
+                match = re.findall(keyFilter, strRemainString)
+                for row in match:
+                    # 変数名を抜出す
+                    keyFilter = "[\s]" + var_heder_id + "[a-zA-Z0-9_]*" + "[\s]"
+                    var_name = re.findall(keyFilter, row)
+                    var_name = var_name[0].strip()
+                    match_list.append(var_name)
+            if len(match_list) != 0:
                 # 重複値を除外
-                unique_set = set(match)
+                unique_set = set(match_list)
             else:
                 unique_set = []
-            for var_name_match in unique_set:
-                # 変数名を抜出す
-                var_name_match = var_name_match.replace("{{ ", "")
-                var_name_match = var_name_match.replace(reptailmarke, "")
-
+            for var_name in unique_set:
                 # 変数位置退避
                 var_dict = {}
-                var_dict[line] = var_name_match
+                var_dict[line] = var_name
                 mt_varsLineArray.append(var_dict)
 
                 # 変数名の重複チェック
-                if mt_varsArray.count(var_name_match) == 0:
-                    mt_varsArray.append(var_name_match)
+                if mt_varsArray.count(var_name) == 0:
+                    mt_varsArray.append(var_name)
 
             # --- 予約変数　{{ 予約変数 | Fillter function }}　の抜き出し
             for localvarname in arrylocalvars:
-                keyFilter = "{{[\s]" + localvarname + tailmarke
-                match = re.findall(keyFilter, strRemainString)
-                if len(match) != 0:
+                match_list = []
+                for key in tailmarke:
+                    keyFilter = "{{[\s]" + localvarname + key
+                    match = re.findall(keyFilter, strRemainString)
+
+                    for row in match:
+                        # 変数名を抜出す
+                        keyFilter = "[\s]" + localvarname + "[\s]"
+                        var_name = re.findall(keyFilter, row)
+                        if len(var_name) == 0:
+                            continue
+                        match_list.append(var_name[0].strip())
+
+                if len(match_list) != 0:
                     # 重複値を除外
-                    unique_set = set(match)
+                    unique_set = set(match_list)
                 else:
                     unique_set = []
-                for var_name_match in unique_set:
-                    # 変数名を抜出す
-                    var_name_match = var_name_match.replace("{{ ", "")
-                    var_name_match = var_name_match.replace(reptailmarke, "")
+
+                for var_name in unique_set:
 
                     # 変数位置退避
                     var_dict = {}
-                    var_dict[line] = var_name_match
+                    var_dict[line] = var_name
                     mt_varsLineArray.append(var_dict)
 
                     # 変数名の重複チェック
-                    if mt_varsArray.count(var_name_match) == 0:
-                        mt_varsArray.append(var_name_match)
+                    if mt_varsArray.count(var_name) == 0:
+                        mt_varsArray.append(var_name)
+                        
             # 予約変数　{{ 予約変数 | Fillter function }}　の抜き出し ---
         return True, mt_varsLineArray
