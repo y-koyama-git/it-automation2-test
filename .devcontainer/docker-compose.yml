@@ -20,6 +20,8 @@ services:
       - DB_PASSWORD=password
       - DB_ROOT_PASSWORD=password
       - STORAGEPATH=/storage/
+      - PLATFORM_API_HOST=platform-api
+      - PLATFORM_API_PORT=8000
   ita-api-admin:
     build:
       dockerfile: ./ita_root/ita_api_admin/Dockerfile
