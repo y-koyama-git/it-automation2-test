@@ -24,6 +24,9 @@ import datetime
 import re
 import os
 from flask import g
+import requests
+import json
+from common_libs.common.exception import AppException
 
 
 def ky_encrypt(lcstr):
@@ -329,6 +332,182 @@ def encrypt_upload_file(file_path, text):
         return False
 
     return True
+
+
+def get_exastro_platform_workspaces():
+    """
+    ユーザが所属するworkspaceの一覧と、操作中のworkspaceに所属する環境をExastroPlatformに問い合わせて取得する
+
+    Arguments:
+        None
+    Returns:
+        workspaces:(list)
+        environments:(list)
+    """
+    organization_id = g.get('ORGANIZATION_ID')
+    workspace_id = g.get('WORKSPACE_ID')
+    host_name = os.environ.get('PLATFORM_API_HOST')
+    port = os.environ.get('PLATFORM_API_PORT')
+    user_id = g.get('USER_ID')
+    language = g.get('LANGUAGE')
+    workspaces = []
+    environments_list = []
+    environments = []
+
+    header_para = {
+        "Content-Type": "application/json",
+        "User-Id": user_id,
+        "Roles": json.dumps(g.ROLES),
+        "Language": language
+    }
+
+    # 2回目以降の検索はgの値を使用する
+    if 'PLATFORM_WORKSPACES' in g:
+        workspaces = g.get('PLATFORM_WORKSPACES')
+        environments = g.get('PLATFORM_ENVIRONMENTS')
+
+    else:
+        # API呼出
+        api_url = "http://{}:{}/internal-api/{}/platform/users/{}/workspaces".format(host_name, port, organization_id, user_id)
+        request_response = requests.get(api_url, headers=header_para)
+
+        response_data = json.loads(request_response.text)
+
+        if request_response.status_code != 200:
+            raise AppException("999-00005", [api_url, response_data])
+
+        # workspaceの一覧を取得
+        for record in response_data["data"]:
+            workspaces.append(record["name"])
+            if workspace_id == record["id"]:
+                if "informations" in record and "environments" in record["informations"]:
+                    environments_list = record["informations"]["environments"]
+
+        for value in environments_list:
+            environments.append(value["name"])
+
+        # gに値を設定しておく
+        g.PLATFORM_WORKSPACES = workspaces
+        g.PLATFORM_ENVIRONMENTS = environments
+
+    return workspaces, environments
+
+
+def get_workspace_roles():
+    """
+    workspaceに所属するロールの一覧をExastroPlatformに問い合わせて取得する
+
+    Arguments:
+        None
+    Returns:
+        roles:(list)
+    """
+    organization_id = g.get('ORGANIZATION_ID')
+    workspace_id = g.get('WORKSPACE_ID')
+    host_name = os.environ.get('PLATFORM_API_HOST')
+    port = os.environ.get('PLATFORM_API_PORT')
+    user_id = g.get('USER_ID')
+    language = g.get('LANGUAGE')
+    roles = []
+
+    header_para = {
+        "Content-Type": "application/json",
+        "User-Id": user_id,
+        "Roles": json.dumps(g.ROLES),
+        "Language": language
+    }
+
+    # 2回目以降の検索はgの値を使用する
+    if 'WORKSPACE_ROLES' in g:
+        roles = g.get('WORKSPACE_ROLES')
+
+    else:
+        # API呼出
+        api_url = "http://{}:{}/internal-api/{}/platform/workspaces/{}/roles".format(host_name, port, organization_id, workspace_id)
+        request_response = requests.get(api_url, headers=header_para)
+
+        response_data = json.loads(request_response.text)
+
+        if request_response.status_code != 200:
+            raise AppException("999-00005", [api_url, response_data])
+
+        # workspaceの一覧を取得
+        for record in response_data["data"]:
+            roles.append(record["name"])
+
+        # gに値を設定しておく
+        g.WORKSPACE_ROLES = roles
+
+    return roles
+
+
+def get_exastro_platform_users():
+    """
+    workspaceに所属するユーザの一覧をExastroPlatformに問い合わせて取得する
+
+    Arguments:
+        None
+    Returns:
+        users:(list)
+    """
+    organization_id = g.get('ORGANIZATION_ID')
+    workspace_id = g.get('WORKSPACE_ID')
+    host_name = os.environ.get('PLATFORM_API_HOST')
+    port = os.environ.get('PLATFORM_API_PORT')
+    user_id = g.get('USER_ID')
+    language = g.get('LANGUAGE')
+    users = {}
+
+    header_para = {
+        "Content-Type": "application/json",
+        "User-Id": user_id,
+        "Roles": json.dumps(g.ROLES),
+        "Language": language
+    }
+
+    # 2回目以降の検索はgの値を使用する
+    if 'PLATFORM_USERS' in g:
+        users = g.get('PLATFORM_USERS')
+
+    else:
+        # API呼出
+        api_url = "http://{}:{}/internal-api/{}/platform/workspaces/{}/users".format(host_name, port, organization_id, workspace_id)
+        request_response = requests.get(api_url, headers=header_para)
+
+        response_data = json.loads(request_response.text)
+
+        if request_response.status_code != 200:
+            raise AppException("999-00005", [api_url, response_data])
+
+        # workspaceの一覧を取得
+        for record in response_data["data"]:
+            users[record["id"]] = record["name"]
+
+        # gに値を設定しておく
+        g.PLATFORM_USERS = users
+
+    return users
+
+
+def get_user_name(user_id):
+    """
+    ユーザIDを元にユーザ名を取得する
+
+    Arguments:
+        user_id: ユーザID
+    Returns:
+        user_name: (string)
+    """
+    user_name = ""
+    users = get_exastro_platform_users()
+
+    if user_id in users:
+        user_name = users[user_id]
+    else:
+        status_code = 'MSG-00001'
+        user_name = g.appmsg.get_api_message(status_code, [user_id])
+
+    return user_name
 
 
 if __name__ == '__main__':
