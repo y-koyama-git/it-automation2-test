@@ -298,104 +298,84 @@ class loadTable():
 
         menu_id = None
         # メニュー情報
-        try:
-            query_str = textwrap.dedent("""
-                SELECT * FROM `T_COMN_MENU_TABLE_LINK` `TAB_A`
-                LEFT JOIN `T_COMN_MENU` `TAB_B` ON ( `TAB_A`.`MENU_ID` = `TAB_B`.`MENU_ID` )
-                WHERE `TAB_B`.`MENU_NAME_REST` = %s
-                AND `TAB_A`.`DISUSE_FLAG` <> 1
-                AND `TAB_B`.`DISUSE_FLAG` <> 1
-            """).format(menu=self.menu).strip()
-            tmp_menu_info = self.objdbca.sql_execute(query_str, [self.menu])
-            if len(tmp_menu_info) == 0:
-                status_code = '401-00003'
-                msg_args = self.menu
-                msg = g.appmsg.get_api_message(status_code, [msg_args])
-                raise Exception(status_code, msg)
-        except Exception as e:
-            with open("/storage/debug.log", mode="a") as file:
-                file.write("{}\n".format(e))
-            return False
+        query_str = textwrap.dedent("""
+            SELECT * FROM `T_COMN_MENU_TABLE_LINK` `TAB_A`
+            LEFT JOIN `T_COMN_MENU` `TAB_B` ON ( `TAB_A`.`MENU_ID` = `TAB_B`.`MENU_ID` )
+            WHERE `TAB_B`.`MENU_NAME_REST` = %s
+            AND `TAB_A`.`DISUSE_FLAG` <> 1
+            AND `TAB_B`.`DISUSE_FLAG` <> 1
+        """).format(menu=self.menu).strip()
+        tmp_menu_info = self.objdbca.sql_execute(query_str, [self.menu])
+        if len(tmp_menu_info) == 0:
+            status_code = '401-00003'
+            msg_args = self.menu
+            msg = g.appmsg.get_api_message(status_code, [msg_args])
+            raise Exception(status_code, msg)
 
         for tmp_menu in tmp_menu_info:
             menu_info = tmp_menu
             menu_id = tmp_menu.get(COLNAME_MENU_ID)
 
         # カラム情報情報
-        try:
-            query_str = textwrap.dedent("""
-                SELECT
-                    `TAB_A`.*,
-                    `TAB_B`.`COLUMN_CLASS_NAME` AS `COLUMN_CLASS_NAME`
-                FROM `T_COMN_MENU_COLUMN_LINK` `TAB_A`
-                LEFT JOIN `T_COMN_COLUMN_CLASS` `TAB_B` ON ( `TAB_A`.`COLUMN_CLASS` = `TAB_B`.`COLUMN_CLASS_ID` )
-                WHERE `MENU_ID` = '{menu_id}'
-                AND `TAB_A`.`DISUSE_FLAG` <> 1
-                AND `TAB_B`.`DISUSE_FLAG` <> 1
-                """).format(menu_id=menu_id).strip()
-            tmp_cols_info = self.objdbca.sql_execute(query_str)
-            if len(tmp_cols_info) == 0:
-                status_code = '401-00003'
-                msg_args = self.menu
-                msg = g.appmsg.get_api_message(status_code, [msg_args])
-                raise Exception(status_code, msg)
-        except Exception as e:
-            with open("/storage/debug.log", mode="a") as file:
-                file.write("{}\n".format(e))
-            return False
+        query_str = textwrap.dedent("""
+            SELECT
+                `TAB_A`.*,
+                `TAB_B`.`COLUMN_CLASS_NAME` AS `COLUMN_CLASS_NAME`
+            FROM `T_COMN_MENU_COLUMN_LINK` `TAB_A`
+            LEFT JOIN `T_COMN_COLUMN_CLASS` `TAB_B` ON ( `TAB_A`.`COLUMN_CLASS` = `TAB_B`.`COLUMN_CLASS_ID` )
+            WHERE `MENU_ID` = '{menu_id}'
+            AND `TAB_A`.`DISUSE_FLAG` <> 1
+            AND `TAB_B`.`DISUSE_FLAG` <> 1
+            """).format(menu_id=menu_id).strip()
+        tmp_cols_info = self.objdbca.sql_execute(query_str)
+        if len(tmp_cols_info) == 0:
+            status_code = '401-00003'
+            msg_args = self.menu
+            msg = g.appmsg.get_api_message(status_code, [msg_args])
+            raise Exception(status_code, msg)
 
-        try:
-            cols_info = {}
-            list_info = {}
-            for tmp_col_info in tmp_cols_info:
-                rest_name = tmp_col_info.get(COLNAME_COLUMN_NAME_REST)
-                cols_info.setdefault(rest_name, tmp_col_info)
-                
-                # 参照先テーブル情報
-                ref_table_name = tmp_col_info.get('REF_TABLE_NAME')
-                ref_pkey_name = tmp_col_info.get('REF_PKEY_NAME')
-                ref_col_name = tmp_col_info.get('REF_COL_NAME')
-                ref_multi_lang = tmp_col_info.get('REF_MULTI_LANG')
-                ref_sort_conditions = tmp_col_info.get('REF_SORT_CONDITIONS')
+        cols_info = {}
+        list_info = {}
+        for tmp_col_info in tmp_cols_info:
+            rest_name = tmp_col_info.get(COLNAME_COLUMN_NAME_REST)
+            cols_info.setdefault(rest_name, tmp_col_info)
+            
+            # 参照先テーブル情報
+            ref_table_name = tmp_col_info.get('REF_TABLE_NAME')
+            ref_pkey_name = tmp_col_info.get('REF_PKEY_NAME')
+            ref_col_name = tmp_col_info.get('REF_COL_NAME')
+            ref_multi_lang = tmp_col_info.get('REF_MULTI_LANG')
+            ref_sort_conditions = tmp_col_info.get('REF_SORT_CONDITIONS')
 
-                if ref_table_name is not None:
-                    if ref_multi_lang == "1":
-                        user_env = self.get_lang().upper()
-                        ref_col_name = "{}_{}".format(ref_col_name, user_env)
+            if ref_table_name is not None:
+                if ref_multi_lang == "1":
+                    user_env = self.get_lang().upper()
+                    ref_col_name = "{}_{}".format(ref_col_name, user_env)
 
-                    if ref_sort_conditions is None:
-                        str_order_by = ''
-                    else:
-                        str_order_by = ''
+                if ref_sort_conditions is None:
+                    str_order_by = ''
+                else:
+                    str_order_by = ''
 
-                    query_str = textwrap.dedent("""
-                        SELECT * FROM `{table_name}`
-                        WHERE `DISUSE_FLAG` <> 1
-                        {order_by}
-                    """).format(table_name=ref_table_name, order_by=str_order_by).strip()
-                    tmp_rows = self.objdbca.sql_execute(query_str)
+                query_str = textwrap.dedent("""
+                    SELECT * FROM `{table_name}`
+                    WHERE `DISUSE_FLAG` <> 1
+                    {order_by}
+                """).format(table_name=ref_table_name, order_by=str_order_by).strip()
+                tmp_rows = self.objdbca.sql_execute(query_str)
 
-                    tmp_list = {}
-                    for tmp_row in tmp_rows:
-                        tmp_id = tmp_row.get(ref_pkey_name)
-                        tmp_nm = tmp_row.get(ref_col_name)
-                        tmp_list.setdefault(tmp_id, tmp_nm)
+                tmp_list = {}
+                for tmp_row in tmp_rows:
+                    tmp_id = tmp_row.get(ref_pkey_name)
+                    tmp_nm = tmp_row.get(ref_col_name)
+                    tmp_list.setdefault(tmp_id, tmp_nm)
 
-                    list_info.setdefault(rest_name, tmp_list)
-        except Exception as e:
-            with open("/storage/debug.log", mode="a") as file:
-                file.write("{}\n".format(e))
-            return False
+                list_info.setdefault(rest_name, tmp_list)
 
-        try:
-            table_name = menu_info.get(COLNAME_TABLE_NAME)
-            column_list, primary_key_list = self.objdbca.table_columns_get(table_name)
-            self.set_column_list(column_list)
-            self.set_primary_key(primary_key_list[0])
-        except Exception as e:
-            with open("/storage/debug.log", mode="a") as file:
-                file.write("{}\n".format(e))
-            return False
+        table_name = menu_info.get(COLNAME_TABLE_NAME)
+        column_list, primary_key_list = self.objdbca.table_columns_get(table_name)
+        self.set_column_list(column_list)
+        self.set_primary_key(primary_key_list[0])
 
         result_data = {
             MENUINFO: menu_info,
@@ -1053,17 +1033,11 @@ class loadTable():
 
                 if err_msg_count_flg == 0:
                     msg = json.dumps(err_all, ensure_ascii=False)
-        except Exception:
+        except Exception as e:
             result = {}
             # ロールバック トランザクション終了
             self.objdbca.db_transaction_end(False)
-            type_, value, traceback_ = sys.exc_info()
-            msg = ['{}'.format(traceback.format_exception(type_, value, traceback_))]
-            print(msg)
-            status_code = "499-00220"
-            log_msg_args = []
-            api_msg_args = []
-            raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
+            raise e
 
         return status_code, result, msg,
     
@@ -1153,16 +1127,10 @@ class loadTable():
                 if err_msg_count_flg == 0:
                     msg = json.dumps(err_all, ensure_ascii=False)
 
-        except Exception:
+        except Exception as e:
             # ロールバック トランザクション終了
             self.objdbca.db_transaction_end(False)
-            type_, value, traceback_ = sys.exc_info()
-            msg = ['{}'.format(traceback.format_exception(type_, value, traceback_))]
-            print(msg)
-            status_code = "499-00220"
-            log_msg_args = []
-            api_msg_args = []
-            raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
+            raise e
         
         result = tmp_data
 
@@ -1860,7 +1828,11 @@ class loadTable():
                 lastupdatetime_current = lastupdatetime_current.replace('-', '/')
                 lastupdatetime_parameter = lastupdatetime_parameter.replace('-', '/')
                 lastupdatetime_current = datetime.datetime.strptime(lastupdatetime_current, '%Y/%m/%d %H:%M:%S.%f')
-                lastupdatetime_parameter = datetime.datetime.strptime(lastupdatetime_parameter, '%Y/%m/%d %H:%M:%S.%f')
+                try:
+                    lastupdatetime_parameter = datetime.datetime.strptime(lastupdatetime_parameter, '%Y/%m/%d %H:%M:%S.%f')
+                except Exception:
+                    # 日付変換できないデータはバリデータのほうでエラーにする
+                    return
                 
                 # 更新系の追い越し判定
                 if lastupdatetime_current != lastupdatetime_parameter:
