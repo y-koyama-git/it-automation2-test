@@ -761,12 +761,14 @@ setTableEvents() {
             
             $button.prop('disabled', true );
             
+            //filter
             fn.fetch( url, null, 'POST', tb.filterParams ).then(function( result ){
                 fn.download( type, result, fileName );
                 fn.disabledTimer( $button, false, 1000 );
             }).catch(function( error ){
                 alert( error.message );
                 fn.disabledTimer( $button, false, 1000 );
+                tb.gotoErrPage();
             });
         };
         
@@ -1267,6 +1269,9 @@ filterSelectOpen( $button ) {
             width: width
         });
         $select.find('.select2-search__field').click();
+    }).catch( function( e ) {
+        alert( e.message );
+        tb.gotoErrPage();
     });    
 }
 /*
@@ -1284,13 +1289,15 @@ requestTbody() {
         const count = Number( fn.cv( countResult, 0 ) ),
               printLimitNum = Number( fn.cv( tb.info.menu_info.web_print_limit, -1 ) ),
               printConfirmNum = Number( fn.cv( tb.info.menu_info.web_print_confirm, -1 ) );
+
         
         // リミットチェック
         if ( printLimitNum !== -1 && count > printLimitNum ) {
-            alert('Limit over!');
+            alert(WD.TABLE.limit);
             return false;
+        //表示確認
         } else if ( printConfirmNum !== -1 && count >= printConfirmNum ) {
-            if ( !confirm() ) {
+            if ( !confirm(WD.TABLE.confirm) ) {
                 return false;
             }
         }
@@ -1298,7 +1305,7 @@ requestTbody() {
         tb.workerPost('filter', tb.filterParams );
     }).catch(function( error ){
         alert( error.message );
-        tb.gotoMainMenu();
+        tb.gotoErrPage();
     });
 }
 /*
@@ -1459,6 +1466,7 @@ setWorkerEvent() {
             case 'error':
                 tb.workEnd();
                 alert( message.data.result.message );
+                location.replace('system_error/');
             break;
             default:
                 tb.data.body =  message.data.result;
@@ -2121,6 +2129,9 @@ changeEdtiMode( changeMode ) {
         } else {
             tb.setTable('edit');
         }
+    }).catch( function( e ) {
+        alert( e.message );
+        tb.gotoErrPage();
     });
 }
 /*
@@ -2290,9 +2301,11 @@ editOk() {
     return new Promise(function( resolve, reject ){        
         fn.fetch(`/menu/${tb.params.menuNameRest}/maintenance/all/`, null, 'POST', editData )
             .then(function( result ){ resolve( result ); })
-            .catch(function( result ){ reject( result ); });
+            .catch(function( result ){ reject( result );
+                //バリデーションエラー
+                alert(WD.TABLE.invalid);
+            });
     });
-
 }
 /*
 ##################################################
@@ -2302,9 +2315,15 @@ editOk() {
 */
 editError( error ) {
     const tb = this;
-        
-    const errorMessage = JSON.parse( error.message );
-    
+
+    let errorMessage;
+    try {
+        errorMessage = JSON.parse(error.message);
+    } catch ( e ) {
+        //JSONを作成
+        errorMessage = {"0":{"共通":[error.message]}};
+    }
+
     const errorHtml = [];
     
     for ( const item in errorMessage ) {
@@ -2340,6 +2359,16 @@ editError( error ) {
 */
 gotoMainMenu() {
     //window.location.href = this.params.path;
+}
+
+/*
+##################################################
+   エラーページへ移動
+##################################################
+*/
+gotoErrPage() {
+    window.location.href = this.params.path + 'system_error/';
+
 }
 
 }

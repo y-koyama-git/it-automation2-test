@@ -26,7 +26,7 @@ class CommonUi {
    Constructor
 ##################################################
 */
-constructor( target ) {
+constructor() {
     const ui = this;
     
     // Debug mode menu name
@@ -105,9 +105,21 @@ setUi() {
                     case '12':
                     break;
                     // 13 : メニュー定義・作成
+                    case '13':
+                        ui.createMenu();
+                    break;
                     // 14 : Conductorクラス編集
+                    case '14':
+                        ui.condcutor('edit');
+                    break;
                     // 15 : Conductor作業実行
+                    case '15':
+                        ui.condcutor('');
+                    break;
                     // 16 : Conductor作業確認
+                    case '16':
+                        ui.condcutor('');
+                    break;
                     // 17 : 比較実行
                     // 18 : バージョン確認
                     // 19 : メニュー作成実行
@@ -127,8 +139,9 @@ setUi() {
         }
     }).catch(function( e ){
         console.log('Error!')
-        alert('error!');
-        window.console.error( e );
+        alert(e.message);
+        window.console.error( e.message );
+        location.replace(ui.params.path + 'system_error/');
     });
 }
 
@@ -732,6 +745,7 @@ defaultMenu() {
             }).catch(function( error ){
                 alert( error.message );
                 disabledFalse();
+                location.replace('system_error/');
             });
         };
         
@@ -761,6 +775,7 @@ defaultMenu() {
                     });
                 }).catch(function( error ){
                     alert( error.message );
+                    location.replace('system_error/');
                 });
             break;
             case 'allHistoryDwonloadExcel':
@@ -807,6 +822,47 @@ dataDownload() {
     }
     
     return html.join('');
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//   Create menu
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+createMenu( mode ) {
+    const ui = this;
+    
+    const assets = [
+        { type: 'js', url: '/_/ita/js/create_menu.js'},
+        { type: 'css', url: '/_/ita/css/create_menu.css'}
+    ];
+    
+    fn.loadAssets( assets ).then(function(){
+        const createMenu = new CreateMenu('#content');
+        createMenu.setup();
+    });
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//   Conductor
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+condcutor( mode ) {
+    const ui = this;
+    
+    const assets = [
+        { type: 'js', url: '/_/ita/js/conductor.js'},
+        { type: 'css', url: '/_/ita/css/editor_common.css'},
+        { type: 'css', url: '/_/ita/css/conductor.css'}
+    ];
+    
+    fn.loadAssets( assets ).then(function(){
+        const conductor = new Conductor('#content', mode );
+        conductor.setup();
+    });
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
