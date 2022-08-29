@@ -223,6 +223,10 @@ def file_encode(file_path):
         Encoded string
     """
     try:
+        is_file = os.path.isfile(file_path)
+        if not is_file:
+            return ""
+        
         with open(file_path, "rb") as f:
             return base64.b64encode(f.read()).decode()
     except Exception:
