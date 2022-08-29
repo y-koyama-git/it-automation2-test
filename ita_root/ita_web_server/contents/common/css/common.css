@@ -306,7 +306,11 @@ outline: none;
 .button:focus {
 box-shadow: 0 0 0 1px var(--white100), 0 0 0 3px var(--focusColor);
 }
-.button:focus:hover {
+#editor .button:focus {
+box-shadow: 0 0 0 1px var(--black80), 0 0 0 3px var(--focusColor);
+}
+.button:focus:hover,
+#editor .button:focus:hover {
 box-shadow: none;
 }
 .button:hover > .inner {
@@ -1983,6 +1987,41 @@ color: #AAA;
 .select2-container--default.select2-container--focus .select2-selection--multiple {
 border-color: #0070FF;
 background-color: #E5F1FF;
+}
+
+/*
+##################################################
+   Operation menu
+##################################################
+*/
+.operation-menu-list {
+flex: 0 0 auto;
+display: inline-flex;
+gap: 16px;
+max-width: 100%;
+height: 48px;
+min-width: 0;
+}
+.operation-menu-item {
+flex: 1 1 auto;
+display: flex;
+align-items: center;
+min-width: 0;
+}
+.operation-menu-separate {
+position: relative;
+z-index: 0;
+padding-left: 16px;
+}
+.operation-menu-separate::before {
+content: '';
+display: block;
+position: absolute;
+left: 0; top: 50%;
+transform: translateY(-50%);
+width: 1px; height: 32px;
+border-right: 1px solid rgba( 255,255,255,.1 );
+border-left: 1px solid rgba( 0,0,0,.2 );
 }
 
 /*
