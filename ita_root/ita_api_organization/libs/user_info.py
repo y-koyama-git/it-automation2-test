@@ -90,30 +90,18 @@ def collect_user_auth(objdbca):
             objdbca:DB接クラス  DBConnectWs()
         RETRUN:
             user_auth_data
-    """
-    
-    # ####メモ：必要なものは？
-    # 1:ユーザID
-    # 2:ユーザ名
-    # 3:所属ロール(複数)
-    # 4:所属ワークスペース(複数)
-    # ロールとワークスペースはそれぞれID/NAMEと持ちたいかも。その場合、[{"id": "xxx", "name": "yyy"}, {"id": "xxx", "name": "yyy"}]というような構造にする？
-    
-    # 変数定義
+    """    
+    # ユーザIDを取得
     user_id = g.get('USER_ID')
-    # lang = g.get('LANGUAGE')
     
     # ユーザ名を取得
-    # ####メモ：共通認証基盤側からユーザ名を取得する処理
-    user_name = "ユーザ名"
+    user_name = util.get_user_name(user_id)
     
     # ロールを取得
-    # ####メモ：対象のユーザが所属するロールの一覧を取得する処理
-    roles = ["ロール1", "ロール2", "ロール3"]
+    roles = g.ROLES
     
     # Workspaceを取得
-    # ####メモ：対象のユーザが所属するワークスペースの一覧を取得する処理
-    workspaces = ["ワークスペース1", "ワークスペース2"]
+    workspaces = util.get_exastro_platform_workspaces()[0]
     
     user_auth_data = {
         "user_id": user_id,

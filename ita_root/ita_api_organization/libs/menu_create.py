@@ -48,7 +48,6 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
     t_menu_column = 'T_MENU_COLUMN'
     t_menu_column_group = 'T_MENU_COLUMN_GROUP'
     t_menu_unique_constraint = 'T_MENU_UNIQUE_CONSTRAINT'
-    t_menu_convert = 'T_MENU_CONVERT'
     
     # 変数定義
     lang = g.get('LANGUAGE')
@@ -135,16 +134,6 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
     # メニュー情報を格納
     menu_info['menu'] = menu
     
-    # ####メモ：縦メニュー系の処理未実装
-    # # 縦メニュー利用がある場合、繰り返し情報を取得して格納
-    repeat = {}
-    # if int(vertical):
-        # 「メニュー(縦)作成情報」から対象のレコードを取得
-        # ret = objdbca.table_select(t_menu_convert, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
-        # ####メモ：縦メニュー情報を格納する処理
-        
-    menu_info['repeat'] = repeat
-    
     # 「カラムグループ作成情報」からレコードをすべて取得
     column_group_list = {}
     ret = objdbca.table_select(t_menu_column_group, 'WHERE DISUSE_FLAG = %s', [0])
@@ -208,13 +197,13 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
             # カラムクラス「文字列(単一行)」用のパラメータを追加
             if column_class_name == "SingleTextColumn":
                 col_detail["string_maximum_bytes"] = recode.get('SINGLE_MAX_LENGTH')  # 文字列(単一行) 最大バイト数
-                col_detail["string_regular_expression"] = recode.get('SINGLE_PREG_MATCH')  # 文字列(単一行) 正規表現
+                col_detail["string_regular_expression"] = recode.get('SINGLE_REGULAR_MATCH')  # 文字列(単一行) 正規表現
                 col_detail["string_default_value"] = recode.get('SINGLE_DEFAULT_VALUE')  # 文字列(単一行) 初期値
             
             # カラムクラス「文字列(複数行)」用のパラメータを追加
             if column_class_name == "MultiTextColumn":
                 col_detail["multi_string_maximum_bytes"] = recode.get('MULTI_MAX_LENGTH')  # 文字列(複数行) 最大バイト数
-                col_detail["multi_string_regular_expression"] = recode.get('MULTI_PREG_MATCH')  # 文字列(複数行) 正規表現
+                col_detail["multi_string_regular_expression"] = recode.get('MULTI_REGULAR_MATCH')  # 文字列(複数行) 正規表現
                 col_detail["multi_string_default_value"] = recode.get('MULTI_DEFAULT_VALUE')  # 文字列(複数行) 初期値
             
             # カラムクラス「整数」用のパラメータを追加
@@ -261,14 +250,9 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
             # if column_class_name == "LinkIDColumn":
             #     col_detail["parameter_sheet_reference"] = recode.get('PARAM_SHEET_LINK_ID')  # パラメータシート参照
             
-            # 縦メニュー利用のチェック
-            # ####メモ：未実装
-            col_detail["repeat_item"] = "0"
-            
             col_num = 'c{}'.format(count)
             column_info_data[col_num] = col_detail
             
-            # ####メモ：縦メニュー用の考慮がされていないため、最終的な修正が必要。
             # カラムグループ利用があれば、カラムグループ管理用配列に追加
             if column_group_id:
                 tmp_column_group, column_group_parent_of_child = add_tmp_column_group(column_group_list, col_group_recode_count, column_group_id, col_num, tmp_column_group, column_group_parent_of_child)  # noqa: E501
@@ -277,7 +261,6 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
         column_group_info_data, key_to_id = collect_column_group_sort_order(column_group_list, tmp_column_group, column_group_info_data)
         
         # 大元のカラムの並び順を作成し格納
-        # ####メモ：縦メニュー用の考慮がされていないため、最終的な修正が必要。
         menu_info['menu']['columns'] = collect_parent_sord_order(column_info_data, column_group_parent_of_child, key_to_id)
     
     # カラム情報およびカラムグループ情報の個数を取得し、menu_info['menu']に格納
@@ -470,9 +453,6 @@ def _create_new_execute(objdbca, create_param):  # noqa: C901
         if not retbool:
             raise Exception(msg)
         
-        # ####メモ：未実装
-        # 「メニュー(縦)作成情報」にレコードを登録
-        
         # 「一意制約(複数項目)作成情報」にレコードを登録
         retbool, msg = _insert_t_menu_unique_constraint(objdbca, menu_data)
         if not retbool:
@@ -579,10 +559,6 @@ def _initialize_execute(objdbca, create_param):
         retbool, msg = _insert_t_menu_column(objdbca, menu_data, column_data_list)
         if not retbool:
             raise Exception(msg)
-        
-        # ####メモ：未実装
-        # 「メニュー(縦)作成情報」にレコードを登録/更新
-        # バリデーションチェック
         
         # 現在の「一意制約(複数項目)作成情報」のレコードを取得
         current_t_menu_unique_constraint = objdbca.table_select(t_menu_unique_constraint, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])  # noqa: E501
@@ -705,10 +681,6 @@ def _edit_execute(objdbca, create_param):
         retbool, msg = _insert_t_menu_column(objdbca, menu_data, column_data_list)
         if not retbool:
             raise Exception(msg)
-        
-        # ####メモ：未実装
-        # 「メニュー(縦)作成情報」にレコードを登録/更新
-        # バリデーションチェック
         
         # 現在の「一意制約(複数項目)作成情報」のレコードを取得
         current_t_menu_unique_constraint = objdbca.table_select(t_menu_unique_constraint, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])  # noqa: E501
@@ -955,10 +927,6 @@ def _insert_t_menu_column_group(objdbca, group_data_list):
         
         # 「カラムグループ作成情報」登録処理のループスタート
         for num, group_data in group_data_list.items():
-            # リピートされたカラムグループである場合はスキップ
-            if group_data.get('repeat_group'):
-                continue
-            
             # 登録用パラメータを作成
             col_group_name_ja = group_data.get('col_group_name')
             col_group_name_en = group_data.get('col_group_name')
@@ -1074,7 +1042,7 @@ def _insert_t_menu_column(objdbca, menu_data, column_data_list):
                 # カラムクラス「文字列(単一行)」用のパラメータを追加
                 if column_class == "SingleTextColumn":
                     parameter["string_maximum_bytes"] = column_data.get('single_maximum_bytes')  # 文字列(単一行) 最大バイト数
-                    parameter["string_regular_expression"] = column_data.get('single_preg_match')  # 文字列(単一行) 正規表現
+                    parameter["string_regular_expression"] = column_data.get('string_regular_expression')  # 文字列(単一行) 正規表現
                     parameter["string_default_value"] = column_data.get('single_default_value')  # 文字列(単一行) 初期値
                 
                 # カラムクラス「文字列(複数行)」用のパラメータを追加
@@ -1351,7 +1319,7 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
                 # カラムクラス「文字列(単一行)」用のパラメータを追加
                 if column_class == "SingleTextColumn":
                     parameter["string_maximum_bytes"] = column_data.get('single_maximum_bytes')  # 文字列(単一行) 最大バイト数
-                    parameter["string_regular_expression"] = column_data.get('single_preg_match')  # 文字列(単一行) 正規表現
+                    parameter["string_regular_expression"] = column_data.get('string_regular_expression')  # 文字列(単一行) 正規表現
                     parameter["string_default_value"] = column_data.get('single_default_value')  # 文字列(単一行) 初期値
                 
                 # カラムクラス「文字列(複数行)」用のパラメータを追加

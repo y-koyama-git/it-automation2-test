@@ -12,10 +12,10 @@
 # limitations under the License.
 #
 
-from .text_column_class import TextColumn
+from .id_class import IDColumn
 
 
-class LinkIDColumn(TextColumn):
+class LinkIDColumn(IDColumn):
     """
     カラムクラス個別処理(LinkIDColumn)
     """

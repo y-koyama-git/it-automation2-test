@@ -134,7 +134,7 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
     
     try:
         # メニュー作成用の各テーブルからレコードを取得
-        recode_t_menu_define, recode_t_menu_column_group, recode_t_menu_column, recode_t_menu_convert, recode_t_menu_unique_constraint, recode_t_menu_role, recode_t_menu_other_link \
+        recode_t_menu_define, recode_t_menu_column_group, recode_t_menu_column, recode_t_menu_unique_constraint, recode_t_menu_role, recode_t_menu_other_link \
             = _collect_menu_create_data(objdbca, menu_create_id)  # noqa: E501
         
         # テーブル名を生成
@@ -294,7 +294,6 @@ def _collect_menu_create_data(objdbca, menu_create_id):
             recode_t_menu_define, # 「メニュー定義一覧」から対象のレコード(1件)
             recode_t_menu_column_group, # 「カラムグループ作成情報」のレコード(全件)
             recode_t_menu_column, # 「メニュー項目作成情報」から対象のレコード(複数)
-            recode_t_menu_convert, # 「メニュー(縦)作成情報」から対象のレコード(1件)
             recode_t_menu_unique_constraint, 「一意制約(複数項目)作成情報」からレコード(1件)
             recode_t_menu_role, # 「メニューロール作成情報」から対象のレコード(複数)
             recode_t_menu_other_link # 「他メニュー連携」のレコード(全件)
@@ -303,7 +302,6 @@ def _collect_menu_create_data(objdbca, menu_create_id):
     t_menu_define = 'T_MENU_DEFINE'  # メニュー定義一覧
     t_menu_column_group = 'T_MENU_COLUMN_GROUP'  # カラムグループ作成情報
     t_menu_column = 'T_MENU_COLUMN'  # メニュー項目作成情報
-    t_menu_convert = 'T_MENU_CONVERT'  # メニュー(縦)作成情報
     t_menu_unique_constraint = 'T_MENU_UNIQUE_CONSTRAINT'  # 一意制約(複数項目)作成情報
     t_menu_role = 'T_MENU_ROLE'  # メニューロール作成情報
     t_menu_other_link = 'T_MENU_OTHER_LINK'  # 他メニュー連携
@@ -322,17 +320,6 @@ def _collect_menu_create_data(objdbca, menu_create_id):
     if not recode_t_menu_column:
         print("メニュー項目作成情報に対象が無いのでエラー判定")
     
-    # メニュー(縦)利用を判定
-    vertical = str(recode_t_menu_define.get('VERTICAL'))
-    
-    recode_t_menu_convert = []
-    # ####メモ：レコードの特定方法を検討。menu_create_idから特定したいが、現状column_idになっているので、テーブルの構造から考え直したほうがいい？
-    # メニュー(縦)利用があれば「メニュー(縦)作成情報」から対象のレコードを取得
-    # if vertical == 1:
-    #     recode_t_menu_convert = objdbca.table_select(t_menu_convert, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
-    #     if not recode_t_menu_column:
-    #         print("メニュー(縦)作成情報に対象が無いのでエラー判定")
-    
     # 「一意制約(複数項目)作成情報」から対象のレコードを取得
     recode_t_menu_unique_constraint = objdbca.table_select(t_menu_unique_constraint, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])  # noqa: E501
     recode_t_menu_unique_constraint = recode_t_menu_unique_constraint[0]
@@ -343,7 +330,7 @@ def _collect_menu_create_data(objdbca, menu_create_id):
     # 「他メニュー連携」から全てのレコードを取得
     recode_t_menu_other_link = objdbca.table_select(t_menu_other_link, 'WHERE DISUSE_FLAG = %s', [0])
     
-    return recode_t_menu_define, recode_t_menu_column_group, recode_t_menu_column, recode_t_menu_convert, recode_t_menu_unique_constraint, recode_t_menu_role, recode_t_menu_other_link  # noqa: E501
+    return recode_t_menu_define, recode_t_menu_column_group, recode_t_menu_column, recode_t_menu_unique_constraint, recode_t_menu_role, recode_t_menu_other_link  # noqa: E501
 
 
 def _insert_t_comn_menu(objdbca, recode_t_menu_define, menu_group_col_name):
@@ -662,7 +649,7 @@ def _insert_t_comn_column_group(objdbca, target_column_group_list, dict_t_menu_c
     return True, None
 
 
-def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uuid, dict_t_comn_column_group, dict_t_menu_column_group, recode_t_menu_column, dict_t_menu_other_link):  # noqa: E501
+def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uuid, dict_t_comn_column_group, dict_t_menu_column_group, recode_t_menu_column, dict_t_menu_other_link):  # noqa: E501, C901
     """
         「メニュー-カラム紐付管理」メニューのテーブルにレコードを追加する
         ARGS:
@@ -1199,19 +1186,19 @@ def _create_validate_option(recode):
     # カラムクラスに応じて処理を分岐
     if column_class == "1":  # SingleTextColumn
         single_max_length = str(recode.get('SINGLE_MAX_LENGTH'))
-        single_preg_match = str(recode.get('SINGLE_PREG_MATCH'))
+        single_regular_match = str(recode.get('SINGLE_REGULAR_MATCH'))
         tmp_validate_option['min_length'] = "0"
         tmp_validate_option['max_length'] = single_max_length
-        if single_preg_match:
-            tmp_validate_option['preg_match'] = single_preg_match
+        if single_regular_match:
+            tmp_validate_option['preg_match'] = single_regular_match
         
     elif column_class == "2":  # MultiTextColumn
         multi_max_length = str(recode.get('MULTI_MAX_LENGTH'))
-        multi_preg_match = str(recode.get('MULTI_PREG_MATCH'))
+        multi_regular_match = str(recode.get('MULTI_REGULAR_MATCH'))
         tmp_validate_option['min_length'] = "0"
         tmp_validate_option['max_length'] = multi_max_length
-        if multi_preg_match:
-            tmp_validate_option['preg_match'] = multi_preg_match
+        if multi_regular_match:
+            tmp_validate_option['preg_match'] = multi_regular_match
         
     elif column_class == "3":  # NumColumn
         num_min = str(recode.get('NUM_MIN'))
