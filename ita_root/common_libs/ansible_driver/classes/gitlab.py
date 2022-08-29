@@ -178,6 +178,25 @@ class GitLabAgent:
 
         return self.send_api(method="get", resource="/users/{}/projects".format(user_id), get_params=get_params, as_row=True)
 
+    def get_all_project_by_user_id(self, user_id):
+        res = []
+
+        is_get_all = False
+        next_page = 1
+        while is_get_all is False:
+            response = self.get_project_by_user_id(user_id, next_page)
+            project_list = response.json()
+            res.extend(project_list)
+
+            current_page = response.headers.get('X-Page')
+            total_pages = response.headers.get('X-Total-Pages')
+            if current_page == total_pages:
+                is_get_all = True
+            else:
+                next_page = response.headers.get('X-Next-Page')
+
+        return res
+
     def get_project_by_name(self, project_name):
         """
         get project by project_name

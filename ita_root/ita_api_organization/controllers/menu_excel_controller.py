@@ -1785,132 +1785,129 @@ def post_excel_maintenance(organization_id, workspace_id, menu, body=None):  # n
 
     :rtype: InlineResponse2004
     """
-    try:
-        # 言語設定取得
-        lang = g.LANGUAGE
+    # 言語設定取得
+    lang = g.LANGUAGE
+    
+    # 変数定義
+    t_common_menu = 'T_COMN_MENU'
+    t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
+    
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+    # メニューのカラム情報を取得
+    objmenu = load_table.loadTable(objdbca, menu)   # noqa: F405
+    mode = 'excel'
+    status_code, result, msg = objmenu.rest_filter({}, mode)
+    if status_code != '000-00000':
+        log_msg_args = [msg]
+        api_msg_args = [msg]
+        raise AppException(status_code, log_msg_args, api_msg_args)     # noqa: F405
+    
+    excel_data = {}
+    if connexion.request.is_json:
+        body = dict(connexion.request.get_json())
+        excel_data = body.get('excel')
+    
+    wbDecode = base64.b64decode(excel_data.encode('utf-8'))
+    
+    # 受け取ったデータをエクセルファイルに保存
+    strage_path = os.environ.get('STORAGEPATH')
+    excel_dir = strage_path + "/".join([organization_id, workspace_id]) + "/tmp/excel"
+    file_name = 'post_excel_maintenance_tmp.xlsx'
+    file_path = excel_dir + '/' + file_name
+    with open(file_path, "wb") as f:
+        f.write(wbDecode)
+    
+    # ファイルを読み込む
+    wb = openpyxl.load_workbook(file_path)
+    
+    # 対象メニューを特定するためのIDを取得する
+    ret_t_common_menu = objdbca.table_select(t_common_menu, 'WHERE MENU_NAME_REST = %s AND DISUSE_FLAG = %s', [menu, 0])
+    if not ret_t_common_menu:
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException("499-00002", log_msg_args, api_msg_args)  # noqa: F405
+    menu_id = ret_t_common_menu[0].get('MENU_ID')
+    
+    ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
+    
+    # 除外する項目リスト
+    exclusion_list = []
+    for recode in ret:
+        column_name_rest = str(recode.get('COLUMN_NAME_REST'))
+        column_class_id = str(recode.get('COLUMN_CLASS'))
+        auto_input = str(recode.get('AUTO_INPUT'))
+        input_item = str(recode.get('INPUT_ITEM'))
         
-        # 変数定義
-        t_common_menu = 'T_COMN_MENU'
-        t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
+        # 登録更新不可のものは除外する
+        if auto_input == '1' or input_item == '0':
+            exclusion_list.append(column_name_rest)
         
-        # DB接続
-        objdbca = DBConnectWs(workspace_id)  # noqa: F405
-        # メニューのカラム情報を取得
-        objmenu = load_table.loadTable(objdbca, menu)   # noqa: F405
-        mode = 'excel'
-        status_code, result, msg = objmenu.rest_filter({}, mode)
-        if status_code != '000-00000':
-            log_msg_args = [msg]
-            api_msg_args = [msg]
-            raise AppException(status_code, log_msg_args, api_msg_args)     # noqa: F405
-        
-        excel_data = {}
-        if connexion.request.is_json:
-            body = dict(connexion.request.get_json())
-            excel_data = body.get('excel')
-        
-        wbDecode = base64.b64decode(excel_data.encode('utf-8'))
-        
-        # 受け取ったデータをエクセルファイルに保存
-        strage_path = os.environ.get('STORAGEPATH')
-        excel_dir = strage_path + "/".join([organization_id, workspace_id]) + "/tmp/excel"
-        file_name = 'post_excel_maintenance_tmp.xlsx'
-        file_path = excel_dir + '/' + file_name
-        with open(file_path, "wb") as f:
-            f.write(wbDecode)
-        
-        # ファイルを読み込む
-        wb = openpyxl.load_workbook(file_path)
-        
-        # 対象メニューを特定するためのIDを取得する
-        ret_t_common_menu = objdbca.table_select(t_common_menu, 'WHERE MENU_NAME_REST = %s AND DISUSE_FLAG = %s', [menu, 0])
-        if not ret_t_common_menu:
-            log_msg_args = [menu]
-            api_msg_args = [menu]
-            raise AppException("499-00002", log_msg_args, api_msg_args)  # noqa: F405
-        menu_id = ret_t_common_menu[0].get('MENU_ID')
-        
-        ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
-        
-        # 除外する項目リスト
-        exclusion_list = []
-        for recode in ret:
-            column_name_rest = str(recode.get('COLUMN_NAME_REST'))
-            column_class_id = str(recode.get('COLUMN_CLASS'))
-            auto_input = str(recode.get('AUTO_INPUT'))
-            input_item = str(recode.get('INPUT_ITEM'))
-            
-            # 登録更新不可のものは除外する
-            if auto_input == '1' or input_item == '0':
-                exclusion_list.append(column_name_rest)
-            
-            # カラムクラスIDがファイルアップロードのものは除外する
-            if column_class_id == '9':
-                exclusion_list.append(column_name_rest)
-        
-        # 先頭のシートを選択する
-        ws = wb.worksheets[0]
-        
-        # 項目名記憶用
-        column_name = []
-        param = result[0].get('parameter')
-        
-        for i, key in enumerate(param.keys()):
-            if key == 'discard':
-                # 廃止フラグは先頭に追加する
-                column_name.insert(0, key)
-            else:
-                column_name.append(key)
-        
-        # C列の実行処理種別を見て対象の行を記憶する
-        row_num = ws.max_row
-        col_num = ws.max_column
-        # 登録\更新\廃止\復活
-        msg_reg = g.appmsg.get_api_message('MSG-30004')
-        msg_upd = g.appmsg.get_api_message('MSG-30005')
-        msg_dis = g.appmsg.get_api_message('MSG-30006')
-        msg_res = g.appmsg.get_api_message('MSG-30007')
-        
-        # エクセルに入力されたデータ
-        excel_data = []
-        # 実行処理種別
-        process_type = []
-        for i in range(row_num):
-            # 対象行記憶用
-            target_row = []
-            # 実行処理種別を見る
-            val = ws.cell(row=i + 1, column=3).value
-            if val == msg_reg or val == msg_upd or val == msg_dis or val == msg_res:
-                process_type.append(val)
-                for j in range(4, col_num + 1):
-                    target_row.append(ws.cell(row=i + 1, column=j).value)
-                    
-                excel_data.append(target_row)
-        
-        parameter = []
-        dict_param = {}
-        file_param = {}
-        
-        # i:対象行の分だけループ
-        if excel_data:
-            for row_i in range(len(excel_data)):
-                dict_param = {}
-                parameter.append({})
-                parameter[row_i]["file"] = file_param
-                # j:項目数の分だけループ
-                for col_j in range(len(excel_data[0])):
-                    if column_name[col_j] in exclusion_list:
-                        continue
-                    dict_param[column_name[col_j]] = excel_data[row_i][col_j]
-                parameter[row_i]["parameter"] = dict_param
-                parameter[row_i]["maintenance_type"] = process_type[row_i]
-        
-        # メニューのレコード登録/更新(更新/廃止/復活)
-        result_data = menu_maintenance_all.rest_maintenance_all(objdbca, menu, parameter)
-        
-        # 処理が終わったらwbは削除する
-        os.remove(file_path)
-        
-        return result_data, 200
-    except Exception as result:
-        return result,
+        # カラムクラスIDがファイルアップロードのものは除外する
+        if column_class_id == '9':
+            exclusion_list.append(column_name_rest)
+    
+    # 先頭のシートを選択する
+    ws = wb.worksheets[0]
+    
+    # 項目名記憶用
+    column_name = []
+    param = result[0].get('parameter')
+    
+    for i, key in enumerate(param.keys()):
+        if key == 'discard':
+            # 廃止フラグは先頭に追加する
+            column_name.insert(0, key)
+        else:
+            column_name.append(key)
+    
+    # C列の実行処理種別を見て対象の行を記憶する
+    row_num = ws.max_row
+    col_num = ws.max_column
+    # 登録\更新\廃止\復活
+    msg_reg = g.appmsg.get_api_message('MSG-30004')
+    msg_upd = g.appmsg.get_api_message('MSG-30005')
+    msg_dis = g.appmsg.get_api_message('MSG-30006')
+    msg_res = g.appmsg.get_api_message('MSG-30007')
+    
+    # エクセルに入力されたデータ
+    excel_data = []
+    # 実行処理種別
+    process_type = []
+    for i in range(row_num):
+        # 対象行記憶用
+        target_row = []
+        # 実行処理種別を見る
+        val = ws.cell(row=i + 1, column=3).value
+        if val == msg_reg or val == msg_upd or val == msg_dis or val == msg_res:
+            process_type.append(val)
+            for j in range(4, col_num + 1):
+                target_row.append(ws.cell(row=i + 1, column=j).value)
+                
+            excel_data.append(target_row)
+    
+    parameter = []
+    dict_param = {}
+    file_param = {}
+    
+    # i:対象行の分だけループ
+    if excel_data:
+        for row_i in range(len(excel_data)):
+            dict_param = {}
+            parameter.append({})
+            parameter[row_i]["file"] = file_param
+            # j:項目数の分だけループ
+            for col_j in range(len(excel_data[0])):
+                if column_name[col_j] in exclusion_list:
+                    continue
+                dict_param[column_name[col_j]] = excel_data[row_i][col_j]
+            parameter[row_i]["parameter"] = dict_param
+            parameter[row_i]["maintenance_type"] = process_type[row_i]
+    
+    # メニューのレコード登録/更新(更新/廃止/復活)
+    result_data = menu_maintenance_all.rest_maintenance_all(objdbca, menu, parameter)
+    
+    # 処理が終わったらwbは削除する
+    os.remove(file_path)
+    
+    return result_data, 200

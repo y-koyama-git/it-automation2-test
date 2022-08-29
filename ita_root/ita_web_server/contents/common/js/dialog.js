@@ -11,7 +11,7 @@ class Dialog {
    Constructor
 --------------------------------------------------
 */
-constructor( config, btnFn, callback ) {
+constructor( config, btnFn ) {
     if ( fn ) {
         const d = this;
         d.config = config;
@@ -22,8 +22,6 @@ constructor( config, btnFn, callback ) {
         d.$.body = $('body');
 
         d.focusElements = 'a[href], area[href], input:not([disabled]), button:not([disabled]), object, embed, [tabindex="0"], [contenteditable]';
-        
-        d.init();
     } else {
         window.console.error('Dialog error. "fn" function cannot be found.');
     }
@@ -36,6 +34,8 @@ constructor( config, btnFn, callback ) {
 open( body ) {
     const d = this;
     if ( d.$.dialog === undefined ) {
+        d.init();        
+        
         d.$.originTarget = $(':focus');
         d.$.modalContainer = $('#modalContainer');
         d.$.modalFocus = $('.modalContainerFocus');
