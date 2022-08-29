@@ -143,8 +143,8 @@ def organization_delete(organization_id):  # noqa: E501
     organization_dir = strage_path + organization_id + "/"
     if os.path.isdir(organization_dir):
         shutil.rmtree(organization_dir)
-    else:
-        return '', "ALREADY DELETED"
+    # else:
+    #     return '', "ALREADY DELETED"
 
     g.db_connect_info = {}
     g.db_connect_info["ORGDB_HOST"] = connect_info["DB_HOST"]
@@ -184,7 +184,7 @@ def organization_delete(organization_id):  # noqa: E501
     user_list = gitlab_agent.get_user_by_username(connect_info['GITLAB_USER'])
     for user in user_list:
         gitlab_user_id = user['id']
-        projects = gitlab_agent.get_project_by_user_id(gitlab_user_id)
+        projects = gitlab_agent.get_all_project_by_user_id(gitlab_user_id)
         for project in projects:
             gitlab_agent.delete_project(project['id'])
         gitlab_agent.delete_user(gitlab_user_id)

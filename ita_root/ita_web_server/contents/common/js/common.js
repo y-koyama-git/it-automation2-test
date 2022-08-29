@@ -89,6 +89,48 @@ const fn = ( function() {
 const cmn = {
 /*
 ##################################################
+   script, styleの読み込み
+##################################################
+*/
+loadAssets: function( assets ){
+    const f = function( type, url ){
+        return new Promise(function( resolve, reject ){
+            type = ( type === 'css')? 'link': 'script';
+            
+            const body = document.body,
+                  asset = document.createElement( type );
+            
+            switch ( type ) {
+                case 'script':
+                    asset.src = url;
+                break;
+                case 'link':
+                    asset.href = url;
+                    asset.rel = 'stylesheet';
+                break;
+            }            
+            
+            body.appendChild( asset );
+            
+            asset.onload = function() {
+                resolve();
+            };
+            
+            asset.onerror = function( e ) {
+                reject( e )
+            };
+        });
+    };
+    if ( typeofValue( assets ) === 'array') {
+        return Promise.all(
+            assets.map(function( asset ){
+                return f( asset.type, asset.url );
+            })
+        );
+    }
+},
+/*
+##################################################
    REST API用のURLを返す
 ##################################################
 */
@@ -129,19 +171,36 @@ fetch: function( url, token, method = 'GET', json ) {
             console.log( init );
             fetch( u, init ).then(function( response ){ console.log( response );
                 if( response.ok ) {
+                    //200の場合
                     response.json().then(function( result ){ console.log( result );
-                        if ( result.result === '000-00000') {
                             resolve( result.data );
-                        } else {
-                            reject( result );
-                        }
                     });
-                } else {
-                    throw new Error( response );
+                } else if( response.status === 499 ) {
+                    //バリデーションエラーは呼び出し元に返す
+                     response.json().then(function( result ){ console.log( result );
+                        reject( result );
+                    }).catch(function( e ) {
+                        alert(WD.COMMON.sys_err);
+                        location.replace('system_error/');
+                    }); 
+                }else if ( response.status === 401 ){
+                    //権限無しの場合、トップページに戻す
+                    response.json().then(function( result ){ console.log( result );
+                        alert(result.message);
+                        location.replace('/' + organization_id + '/workspaces/' + workspace_id + '/ita/');
+                    }).catch(function( e ) {
+                        alert(WD.COMMON.sys_err);
+                        location.replace('system_error/');
+                    });
+                }else{
+                    //その他のエラー
+                    alert(WD.COMMON.sys_err);
+                    location.replace('system_error/');
                 }
             }).catch(function( e ){
-                console.log('fetch error')
-                reject( e );
+                console.log('fetch error');
+                alert(WD.COMMON.sys_err);
+                location.replace('system_error/');
             });
         });
     };

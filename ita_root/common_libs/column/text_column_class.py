@@ -94,7 +94,6 @@ class TextColumn(Column):
 
                     # 閾値(正規表現)
                     preg_match = dict_valid.get('preg_match')
-
             # 文字列長
             if max_length is not None:
                 check_val = len(str(val).encode('utf-8'))
@@ -109,7 +108,8 @@ class TextColumn(Column):
             # 正規表現
             if preg_match is not None:
                 if len(preg_match) != 0:
-                    patarn = re.compile(preg_match)
+                    print(preg_match)
+                    patarn = re.compile(r'{}'.format(preg_match), re.DOTALL)
                     tmp_result = patarn.fullmatch(val)
                     if tmp_result is None:
                         retBool = False
