@@ -119,7 +119,6 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
         "sheet_type_id": sheet_type_id,
         "sheet_type_name": sheet_type_name,
         "disp_seq": ret[0].get('DISP_SEQ'),
-        "purpose_id": ret[0].get('PURPOSE'),
         "vertical": vertical,
         "menu_group_for_input_id": menu_group_for_input_id,
         "menu_group_for_subst_id": menu_group_for_subst_id,
@@ -178,8 +177,6 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
                 "display_order": recode.get('DISP_SEQ'),
                 "required": recode.get('REQUIRED'),
                 "uniqued": recode.get('UNIQUED'),
-                "autoreg_hide_item": recode.get('AUTOREG_HIDE_ITEM'),
-                "autoreg_only_item": recode.get('AUTOREG_ONLY_ITEM'),
                 "column_class_id": "",
                 "column_class_name": "",
                 "description": recode.get('DESCRIPTION_' + lang.upper()),
@@ -208,13 +205,13 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
             # カラムクラス「文字列(単一行)」用のパラメータを追加
             if column_class_name == "SingleTextColumn":
                 col_detail["string_maximum_bytes"] = recode.get('SINGLE_MAX_LENGTH')  # 文字列(単一行) 最大バイト数
-                col_detail["string_regular_expression"] = recode.get('SINGLE_REGULAR_MATCH')  # 文字列(単一行) 正規表現
+                col_detail["string_regular_expression"] = recode.get('SINGLE_REGULAR_EXPRESSION')  # 文字列(単一行) 正規表現
                 col_detail["string_default_value"] = recode.get('SINGLE_DEFAULT_VALUE')  # 文字列(単一行) 初期値
             
             # カラムクラス「文字列(複数行)」用のパラメータを追加
             if column_class_name == "MultiTextColumn":
                 col_detail["multi_string_maximum_bytes"] = recode.get('MULTI_MAX_LENGTH')  # 文字列(複数行) 最大バイト数
-                col_detail["multi_string_regular_expression"] = recode.get('MULTI_REGULAR_MATCH')  # 文字列(複数行) 正規表現
+                col_detail["multi_string_regular_expression"] = recode.get('MULTI_REGULAR_EXPRESSION')  # 文字列(複数行) 正規表現
                 col_detail["multi_string_default_value"] = recode.get('MULTI_DEFAULT_VALUE')  # 文字列(複数行) 初期値
             
             # カラムクラス「整数」用のパラメータを追加
@@ -439,12 +436,17 @@ def _create_new_execute(objdbca, create_param):  # noqa: C901
     
     # 登録するためのデータを抽出
     menu_data = check_request_body_key(create_param, 'menu')  # ####メモ： "menu" keyが無かったら400-00002エラー
-    column_data_list = check_request_body_key(create_param, 'column')  # ####メモ： "column" keyが無かったら400-00002エラー
+    column_data_list = create_param.get('column')
     group_data_list = create_param.get('group')
     
     try:
         # トランザクション開始
         objdbca.db_transaction_start()
+        
+        # 登録前バリデーションチェック
+        retbool, msg = _check_before_registar_validate(objdbca, menu_data, column_data_list)
+        if not retbool:
+            raise Exception(msg)
         
         # 「メニュー定義一覧」にレコードを登録
         retbool, menu_create_id, msg = _insert_t_menu_define(objdbca, menu_data)
@@ -513,7 +515,7 @@ def _create_new_execute(objdbca, create_param):  # noqa: C901
     return result_data
 
 
-def _initialize_execute(objdbca, create_param):
+def _initialize_execute(objdbca, create_param):  # noqa: C901
     """
         【内部呼び出し用】「初期化」時のメニュー作成用メニューに対するレコードの登録/更新/廃止
         ARGS:
@@ -539,6 +541,11 @@ def _initialize_execute(objdbca, create_param):
     try:
         # トランザクション開始
         objdbca.db_transaction_start()
+        
+        # 登録前バリデーションチェック
+        retbool, msg = _check_before_registar_validate(objdbca, menu_data, column_data_list)
+        if not retbool:
+            raise Exception(msg)
         
         # 対象の「メニュー定義一覧」のuuidおよびメニュー名を取得
         menu_create_id = menu_data.get('menu_create_id')
@@ -669,7 +676,7 @@ def _initialize_execute(objdbca, create_param):
     return result_data
 
 
-def _edit_execute(objdbca, create_param):
+def _edit_execute(objdbca, create_param):  # noqa: C901
     """
         【内部呼び出し用】「編集」時のメニュー作成用メニューに対するレコードの登録/更新/廃止
         ARGS:
@@ -695,6 +702,11 @@ def _edit_execute(objdbca, create_param):
     try:
         # トランザクション開始
         objdbca.db_transaction_start()
+        
+        # 登録前バリデーションチェック
+        retbool, msg = _check_before_registar_validate(objdbca, menu_data, column_data_list)
+        if not retbool:
+            raise Exception(msg)
         
         # 対象の「メニュー定義一覧」のuuidおよびメニュー名を取得
         menu_create_id = menu_data.get('menu_create_id')
@@ -849,7 +861,6 @@ def _insert_t_menu_define(objdbca, menu_data):
                 "description_ja": menu_data.get('description'),  # 説明(ja)
                 "description_en": menu_data.get('description'),  # 説明(en)
                 "remarks": menu_data.get('remarks'),  # 備考
-                "purpose": menu_data.get('purpose'),  # 用途
                 "vertical": menu_data.get('vertical'),  # 縦メニュー利用有無
                 "menu_group_for_input": menu_data.get('menu_group_for_input'),  # 入力用メニューグループ名
                 "menu_group_for_subst": menu_data.get('menu_group_for_subst'),  # 代入値自動登録用メニューグループ名
@@ -955,7 +966,6 @@ def _update_t_menu_define(objdbca, current_t_menu_define, menu_data, create_type
                 "description_ja": menu_data.get('description'),  # 説明(ja)
                 "description_en": menu_data.get('description'),  # 説明(en)
                 "remarks": menu_data.get('remarks'),  # 備考
-                "purpose": menu_data.get('purpose'),  # 用途
                 "vertical": vertical,  # 縦メニュー利用有無
                 "menu_group_for_input": menu_data.get('menu_group_for_input'),  # 入力用メニューグループ名
                 "menu_group_for_subst": menu_data.get('menu_group_for_subst'),  # 代入値自動登録用メニューグループ名
@@ -1103,8 +1113,6 @@ def _insert_t_menu_column(objdbca, menu_data, column_data_list):
                     "display_order": column_data.get('display_order'),  # 表示順序
                     "required": column_data.get('required'),  # 必須
                     "uniqued": column_data.get('uniqued'),  # 一意制約
-                    "autoreg_hide_item": column_data.get('autoreg_hide_item'),  # 代入値自動登録対象外フラグ
-                    "autoreg_only_item": column_data.get('autoreg_only_item'),  # 対象外自動登録選択フラグ
                     "remarks": column_data.get('remarks'),  # 備考
                 }
                 
@@ -1355,8 +1363,6 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
                     "display_order": column_data.get('display_order'),  # 表示順序
                     "required": column_data.get('required'),  # 必須
                     "uniqued": column_data.get('uniqued'),  # 一意制約
-                    "autoreg_hide_item": column_data.get('autoreg_hide_item'),  # 代入値自動登録対象外フラグ
-                    "autoreg_only_item": column_data.get('autoreg_only_item'),  # 対象外自動登録選択フラグ
                     "remarks": column_data.get('remarks'),  # 備考
                     "last_update_date_time": last_update_date_time  # 最終更新日時
                 }
@@ -1750,3 +1756,41 @@ def _insert_t_menu_create_history(objdbca, menu_create_id, status_id, create_typ
         return False, None, msg
     
     return True, history_id, None
+
+
+def _check_before_registar_validate(objdbca, menu_data, column_data_list):
+    """
+        【内部呼び出し用】レコード登録前バリデーションチェックの実施
+        ARGS:
+            objdbca:DB接クラス  DBConnectWs()
+            menu_data: 登録対象のメニュー情報
+            column_data_list: 登録対象のカラム情報一覧
+        RETRUN:
+            boolean, history_id, msg
+    """
+    # テーブル/ビュー名
+    v_menu_sheet_type = 'V_MENU_SHEET_TYPE'
+    
+    # 変数定義
+    lang = g.get('LANGUAGE')
+    sheet_id = None
+    
+    try:
+        # シートタイプのIDを取得
+        sheet_type_name = menu_data.get('sheet_type')
+        
+        # シートタイプ一覧情報を取得
+        ret = objdbca.table_select(v_menu_sheet_type, 'WHERE DISUSE_FLAG = %s', [0])
+        for recode in ret:
+            check_sheet_type_name = recode.get('SHEET_TYPE_NAME_' + lang.upper())
+            if sheet_type_name == check_sheet_type_name:
+                sheet_id = str(recode.get('SHEET_TYPE_NAME_ID'))
+        
+        # シートタイプが「2: データシート」かつ、登録する項目が無い場合エラー判定
+        if sheet_id == "2" and not column_data_list:
+            raise Exception("シートタイプ「データシート」では項目0件のメニューを作成できません。")
+        
+    except Exception as msg:
+        return False, msg
+    
+    return True, None
