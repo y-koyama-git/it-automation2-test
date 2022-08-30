@@ -701,6 +701,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             "REF_MULTI_LANG": 0,  # False
             "SENSITIVE_COL_NAME": None,
             "FILE_UPLOAD_PLACE": None,
+            "BUTTON_ACTION": None,
             "COL_NAME": "ROW_ID",
             "SAVE_TYPE": None,
             "AUTO_INPUT": 1,  # True
@@ -748,6 +749,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "REF_MULTI_LANG": 0,  # False
                 "SENSITIVE_COL_NAME": None,
                 "FILE_UPLOAD_PLACE": None,
+                "BUTTON_ACTION": None,
                 "COL_NAME": "HOST_ID",
                 "SAVE_TYPE": None,
                 "AUTO_INPUT": 0,  # False
@@ -801,6 +803,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "REF_MULTI_LANG": 0,  # False
                 "SENSITIVE_COL_NAME": None,
                 "FILE_UPLOAD_PLACE": None,
+                "BUTTON_ACTION": None,
                 "COL_NAME": "OPERATION_ID",
                 "SAVE_TYPE": None,
                 "AUTO_INPUT": 0,  # False
@@ -847,6 +850,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                     "REF_MULTI_LANG": 0,  # False
                     "SENSITIVE_COL_NAME": None,
                     "FILE_UPLOAD_PLACE": None,
+                    "BUTTON_ACTION": None,
                     "COL_NAME": "INPUT_ORDER",
                     "SAVE_TYPE": None,
                     "AUTO_INPUT": 0,  # False
@@ -946,6 +950,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "REF_MULTI_LANG": ref_multi_lang,
                 "SENSITIVE_COL_NAME": None,
                 "FILE_UPLOAD_PLACE": None,
+                "BUTTON_ACTION": None,
                 "COL_NAME": "DATA_JSON",
                 "SAVE_TYPE": "JSON",
                 "AUTO_INPUT": 0,  # False
@@ -989,6 +994,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "REF_MULTI_LANG": 0,  # False
                 "SENSITIVE_COL_NAME": None,
                 "FILE_UPLOAD_PLACE": None,
+                "BUTTON_ACTION": None,
                 "COL_NAME": "DATA_JSON",
                 "SAVE_TYPE": "JSON",
                 "AUTO_INPUT": 0,  # False
@@ -1035,6 +1041,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             "REF_MULTI_LANG": 0,  # False
             "SENSITIVE_COL_NAME": None,
             "FILE_UPLOAD_PLACE": None,
+            "BUTTON_ACTION": None,
             "COL_NAME": "NOTE",
             "SAVE_TYPE": None,
             "AUTO_INPUT": 0,  # False
@@ -1080,6 +1087,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             "REF_MULTI_LANG": 0,  # False
             "SENSITIVE_COL_NAME": None,
             "FILE_UPLOAD_PLACE": None,
+            "BUTTON_ACTION": None,
             "COL_NAME": "DISUSE_FLAG",
             "SAVE_TYPE": None,
             "AUTO_INPUT": 1,  # True
@@ -1125,6 +1133,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             "REF_MULTI_LANG": 0,  # False
             "SENSITIVE_COL_NAME": None,
             "FILE_UPLOAD_PLACE": None,
+            "BUTTON_ACTION": None,
             "COL_NAME": "LAST_UPDATE_TIMESTAMP",
             "SAVE_TYPE": None,
             "AUTO_INPUT": 1,  # True
@@ -1170,6 +1179,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             "REF_MULTI_LANG": 0,  # False
             "SENSITIVE_COL_NAME": None,
             "FILE_UPLOAD_PLACE": None,
+            "BUTTON_ACTION": None,
             "COL_NAME": "LAST_UPDATE_USER",
             "SAVE_TYPE": None,
             "AUTO_INPUT": 1,  # True
