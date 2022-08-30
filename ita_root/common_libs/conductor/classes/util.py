@@ -101,6 +101,8 @@ class ConductorCommonLibs():
         data_list = wsdb_istc.table_select('T_COMN_CONDUCTOR_NODE_STATUS', 'WHERE `DISUSE_FLAG`=0')
         for data in data_list:
             self._node_status_list.append(data['STATUS_ID'])
+        ###  暫定追加
+        self._node_status_list.append('__else__')
         # print(self._node_status_list)
 
         data_list = wsdb_istc.table_select('T_COMN_ORCHESTRA', 'WHERE `DISUSE_FLAG`=0')
@@ -153,9 +155,9 @@ class ConductorCommonLibs():
             return False, err_code, res_chk[1]
 
         # check node call loop
-        res_chk = self.chk_call_loop(self.conductor_data['id'], self._node_call_datas)
-        if res_chk[0] is False:
-            return False, err_code, res_chk[1]
+        #  res_chk = self.chk_call_loop(self.conductor_data['id'], self._node_call_datas)
+        # if res_chk[0] is False:
+        #     return False, err_code, res_chk[1]
 
         # check node parallel
         if self.chk_type_parallel() is False:

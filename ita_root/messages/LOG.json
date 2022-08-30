@@ -46,6 +46,7 @@
     "499-00811": "Specified target is not pause. (Conductor instance ID: {}, Node instance ID: {}, Node type: {})",
     "499-00812": "Suspension has been canceled. (Conductor instance ID: {}, Node instance ID: {})",
     "499-00813": "Not paused. (Conductor instance ID: {}, Node instance ID: {}, Status: {})",
+    "499-00814": "The operation cannot be executed under the specified conditions. Check working conditions. ({})",
     "999-00001": "[Database Error] Database({}) connect infomation is not found",
     "999-00002": "[Database Error] Database({}) : {}",
     "999-00003": "[Database Error] Database({}) SQL:{}, {}",
