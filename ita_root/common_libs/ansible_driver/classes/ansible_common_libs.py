@@ -29,6 +29,7 @@ from pprint import pprint
 
 from common_libs.common import *
 from common_libs.loadtable import *
+from common_libs.common.exception import *
 from .AnsibleMakeMessage import AnsibleMakeMessage
 from .AnscConstClass import AnscConst
 from .WrappedStringReplaceAdmin import WrappedStringReplaceAdmin
@@ -517,12 +518,10 @@ class AnsibleCommonLibs():
             host_list = self.getTargetHostList(WS_DB)
             
             return True, template_list, host_list
-
-        ret = self.getCMDBMenuMaster
         
         # インターフェース情報からNULLデータを代入値管理に登録するかのデフォルト値を取得する。
         ret = self.getIFInfoDB(WS_DB)
-        
+
         if ret[0] == 0:
             error_flag = 1
             raise ValidationException(ret[2])
@@ -532,15 +531,15 @@ class AnsibleCommonLibs():
         
         # 代入値自動登録設定からカラム毎の変数の情報を取得
         # トレースメッセージ
-        traceMsg = g.get_api_message("MSG-10804")
+        traceMsg = g.appmsg.get_api_message("MSG-10804")
         frame = inspect.currentframe().f_back
-        g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + traceMsg)
+        g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
         
         ret = self.readValAssign(WS_DB)
         
         if ret[0] == 0:
             error_flag = 1
-            errorMsg = g.get_api_message("MSG-10353")
+            errorMsg = g.appmsg.get_api_message("MSG-10353")
             raise ValidationException(errorMsg)
         
         lv_tableNameToMenuIdList = ret[1]
@@ -550,12 +549,12 @@ class AnsibleCommonLibs():
         # 紐付メニューへのSELECT文を生成する。
         ret = self.createQuerySelectCMDB(lv_tableNameToMenuIdList, lv_tabColNameToValAssRowList, lv_tableNameToPKeyNameList, WS_DB)
         # 代入値紐付メニュー毎のSELECT文配列
-        lv_tableNameToSqlList = ret[0]
+        lv_tableNameToSqlList = ret
         
         # 紐付メニューから具体値を取得する。
-        traceMsg = g.get_api_message("MSG-10805")
+        traceMsg = g.appmsg.get_api_message("MSG-10805")
         frame = inspect.currentframe().f_back
-        g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + traceMsg)
+        g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
         
         ret = self.getCMDBdata(lv_tableNameToSqlList, lv_tableNameToMenuIdList, lv_tabColNameToValAssRowList, WS_DB)
         lv_varsAssList = ret[0]
@@ -563,9 +562,9 @@ class AnsibleCommonLibs():
         warning_flag = ret[2]
         
         # トランザクション開始 
-        traceMsg = g.get_api_message("MSG-10785")
+        traceMsg = g.appmsg.get_api_message("MSG-10785")
         frame = inspect.currentframe().f_back
-        g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + traceMsg)
+        g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
         
         WS_DB.db_transaction_start()
         
@@ -574,7 +573,7 @@ class AnsibleCommonLibs():
         if ret[0] == 0:
             # 異常フラグON  例外処理へ
             error_flag = 1
-            errorMsg = g.get_api_message("MSG-10467")
+            errorMsg = g.appmsg.get_api_message("MSG-10467")
             raise ValidationException(errorMsg)
         
         lv_VarsAssignRecodes = ret[1]
@@ -585,9 +584,9 @@ class AnsibleCommonLibs():
         
         # 一般変数・複数具体値変数を紐付けている紐付メニューの具体値を代入値管理に登録
         # トレースメッセージ
-        traceMsg = g.get_api_message("MSG-10833")
+        traceMsg = g.appmsg.get_api_message("MSG-10833")
         frame = inspect.currentframe().f_back
-        g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + traceMsg)
+        g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
         
         for varsAssRecord in lv_varsAssList.values():
             # 処理対象外のデータかを判定
@@ -604,14 +603,14 @@ class AnsibleCommonLibs():
                 # FileUploadColumnのディレクトリを元に戻す
                 ret = FileUPloadColumnRestore()
                 
-                errorMsg = g.get_api_message("MSG-10466")
+                errorMsg = g.appmsg.get_api_message("MSG-10466")
                 raise ValidationException(errorMsg)
             
             # 多次元変数を紐付けている紐付メニューの具体値を代入値管理に登録
             # トレースメッセージ
-            traceMsg = g.get_api_message("MSG-10834")
+            traceMsg = g.appmsg.get_api_message("MSG-10834")
             frame = inspect.currentframe().f_back
-            g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + traceMsg)
+            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
             
             for varsAssRecord in lv_arrayVarsAssList.values():
                 # 処理対象外のデータかを判定
@@ -624,7 +623,7 @@ class AnsibleCommonLibs():
                     # FileUploadColumnのディレクトリを元に戻す
                     ret = self.FileUPloadColumnRestore()
                     error_flag = 1
-                    errorMsg = g.get_api_message("MSG-10441")
+                    errorMsg = g.appmsg.get_api_message("MSG-10441")
                     raise ValidationException(errorMsg)
                 
                 # 作業対象ホストに登録が必要な情報を退避
@@ -634,16 +633,16 @@ class AnsibleCommonLibs():
                 
             # 代入値管理から不要なデータを削除する
             # トレースメッセージ
-            traceMsg = g.get_api_message("MSG-10809")
+            traceMsg = g.appmsg.get_api_message("MSG-10809")
             frame = inspect.currentframe().f_back
-            g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + traceMsg)
+            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
             
             ret = self.deleteVarsAssign(lv_VarsAssignRecodes)
             if ret[0] == 0:
                 # FileUploadColumnのディレクトリを元に戻す
                 ret = self.FileUPloadColumnRestore()
                 error_flag = 1
-                errorMsg = g.get_api_message("MSG-10372")
+                errorMsg = g.appmsg.get_api_message("MSG-10372")
                 raise ValidationException(errorMsg)
             
             ret = self.deleteVarsAssign(lv_ArryVarsAssignRecodes)
@@ -651,7 +650,7 @@ class AnsibleCommonLibs():
                 # FileUploadColumnのディレクトリを元に戻す
                 ret = self.FileUPloadColumnRestore()
                 error_flag = 1
-                errorMsg = g.get_api_message("MSG-10372")
+                errorMsg = g.appmsg.get_api_message("MSG-10372")
                 raise ValidationException(errorMsg)
             
             del lv_tableNameToMenuIdList
@@ -667,9 +666,9 @@ class AnsibleCommonLibs():
             WS_DB.db_transaction_end(True)
             
             # トレースメッセージ
-            traceMsg = g.get_api_message("MSG-10785")
+            traceMsg = g.appmsg.get_api_message("MSG-10785")
             frame = inspect.currentframe().f_back
-            g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + traceMsg)
+            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
             
             WS_DB.db_transaction_start()
             
@@ -680,9 +679,9 @@ class AnsibleCommonLibs():
             
             # 代入値管理で登録したオペ+作業パターン+ホストが作業対象ホストに登録されているか判定し、未登録の場合は登録する
             # トレースメッセージ
-            traceMsg = g.get_api_message("MSG-10810")
+            traceMsg = g.appmsg.get_api_message("MSG-10810")
             frame = inspect.currentframe().f_back
-            g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + traceMsg)
+            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
             
             for ope_id, ptn_list in lv_phoLinkList.items():
                 for ptn_id, host_list in ptn_list.items():
@@ -693,19 +692,19 @@ class AnsibleCommonLibs():
                         
                         if ret[0] == 0:
                             error_flag = 1
-                            errorMsg = g.get_api_message("MSG-10373")
+                            errorMsg = g.appmsg.get_api_message("MSG-10373")
                             raise ValidationException(errorMsg)
             
             # 作業対象ホストから不要なデータを削除する
             # トレースメッセージ
-            traceMsg = g.get_api_message("MSG-10811")
+            traceMsg = g.appmsg.get_api_message("MSG-10811")
             frame = inspect.currentframe().f_back
-            g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + traceMsg)
+            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
             
             ret = self.deletePhoLink(lv_PhoLinkRecodes)
             if ret == 0:
                 error_flag = 1
-                errorMsg = g.get_api_message("MSG-10374")
+                errorMsg = g.appmsg.get_api_message("MSG-10374")
                 raise ValidationException(errorMsg)
             
             del lv_phoLinkList
@@ -799,20 +798,20 @@ class AnsibleCommonLibs():
             # 最終更新者が自分でない場合、更新処理はスキップする
             if not tgt_row["LAST_UPDATE_USER"] == db_valautostup_user_id:
                 # トレースメッセージ
-                traceMsg = g.get_api_message("MSG-10828", [tgt_row['PHO_LINK_ID']])
+                traceMsg = g.appmsg.get_api_message("MSG-10828", [tgt_row['PHO_LINK_ID']])
                 frame = inspect.currentframe().f_back
-                g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + traceMsg)
+                g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
                 
                 # 更新処理はスキップ
                 return True
             
             # トレースメッセージ
-            traceMsg = g.get_api_message("MSG-10847", [tgt_row['PHO_LINK_ID'],
+            traceMsg = g.appmsg.get_api_message("MSG-10847", [tgt_row['PHO_LINK_ID'],
                                                         tgt_row['OPERATION_ID'],
                                                         tgt_row['MOVEMENT_ID'],
                                                         tgt_row['SYSTEM_ID']])
             frame = inspect.currentframe().f_back
-            g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + traceMsg)
+            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
             
             tgt_row['DISUSE_FLAG'] = "0"
             tgt_row['LAST_UPDATE_USER'] = db_valautostup_user_id
@@ -884,9 +883,9 @@ class AnsibleCommonLibs():
             tgt_row = arrayValue
             
             # トレースメッセージ
-            traceMsg = g.get_api_message("MSG-10821", [in_phoLinkData['OPERATION_ID'], in_phoLinkData["MOVEMENT_ID"], in_phoLinkData["SYSTEM_ID"]])
+            traceMsg = g.appmsg.get_api_message("MSG-10821", [in_phoLinkData['OPERATION_ID'], in_phoLinkData["MOVEMENT_ID"], in_phoLinkData["SYSTEM_ID"]])
             frame = inspect.currentframe().f_back
-            g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + traceMsg)
+            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
         else:
             # 廃止なので復活する。
             action = "UPDATE"
@@ -895,9 +894,9 @@ class AnsibleCommonLibs():
             del in_PhoLinkRecodes[key]
             
             # トレースメッセージ
-            traceMsg = g.get_api_message("MSG-10822", [in_phoLinkData['OPERATION_ID'], in_phoLinkData["MOVEMENT_ID"], in_phoLinkData["SYSTEM_ID"]])
+            traceMsg = g.appmsg.get_api_message("MSG-10822", [in_phoLinkData['OPERATION_ID'], in_phoLinkData["MOVEMENT_ID"], in_phoLinkData["SYSTEM_ID"]])
             frame = inspect.currentframe().f_back
-            g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + traceMsg)
+            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
         
         if action == "INSERT":
             # 更新対象の作業対象ホスト管理主キー値を退避
@@ -1005,16 +1004,16 @@ class AnsibleCommonLibs():
                 continue
             
             # トレースメッセージ
-            traceMsg = g.get_api_message("MSG-10823", [tgt_row['PHO_LINK_ID']])
+            traceMsg = g.appmsg.get_api_message("MSG-10823", [tgt_row['PHO_LINK_ID']])
             frame = inspect.currentframe().f_back
-            g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + traceMsg)
+            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
             
             # 最終更新者が自分でない場合、廃止処理はスキップする。
             if not tgt_row['LAST_UPDATE_USER'] == db_valautostup_user_id:
                 # トレースメッセージ
-                traceMsg = g.get_api_message("MSG-10828", [tgt_row['PHO_LINK_ID']])
+                traceMsg = g.appmsg.get_api_message("MSG-10828", [tgt_row['PHO_LINK_ID']])
                 frame = inspect.currentframe().f_back
-                g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + traceMsg)
+                g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
                 
                 #更新処理はスキップ
                 continue
@@ -1096,7 +1095,7 @@ class AnsibleCommonLibs():
             if col_sql == "":
                 # SELECT対象の項目なし
                 # エラーがあるのでスキップ
-                msgstr = g.get_api_message("MSG-10356", [in_tableNameToMenuIdList[table_name]])
+                msgstr = g.appmsg.get_api_message("MSG-10356", [in_tableNameToMenuIdList[table_name]])
                 frame = inspect.currentframe().f_back
                 g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + msgstr)
                 # 次のテーブルへ
@@ -1341,10 +1340,10 @@ class AnsibleCommonLibs():
                 del in_VarsAssignRecodes[key]
                 
                 # トレースメッセージ
-                traceMsg = g.get_api_message("MSG-10815", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
+                traceMsg = g.appmsg.get_api_message("MSG-10815", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
                                                             in_varsAssignList['MVMT_VAR_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
                 frame = inspect.currentframe().f_back
-                g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + traceMsg)
+                g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
                 
                 return True, in_VarsAssignRecodes
             else:
@@ -1364,19 +1363,19 @@ class AnsibleCommonLibs():
             # 最終更新者が自分でない場合、更新処理はスキップする
             if not tgt_row['LAST_UPDATE_USER'] == db_valautostup_user_id:
                 # トレースメッセージ
-                traceMsg = g.get_api_message("MSG-10835", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
+                traceMsg = g.appmsg.get_api_message("MSG-10835", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
                                                             in_varsAssignList['MVMT_VAR_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
                 frame = inspect.currentframe().f_back
-                g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + traceMsg)
+                g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
                 
                 # 更新処理はスキップ
                 return True
             
             # トレースメッセージ
-            traceMsg = g.get_api_message("MSG-10814", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
+            traceMsg = g.appmsg.get_api_message("MSG-10814", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
                                                         in_varsAssignList['MVMT_VAR_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
             frame = inspect.currentframe().f_back
-            g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + traceMsg)
+            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
             
         VARS_ENTRY_USE_TPFVARS = "0"
         # 具体値にテンプレート変数が記述されているか判定
@@ -1575,10 +1574,10 @@ class AnsibleCommonLibs():
                 in_varsAssignList['VARS_ENTRY_FILE'] = ""
             
             # トレースメッセージ
-            traceMsg = g.get_api_message("MSG-10812", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
+            traceMsg = g.appmsg.get_api_message("MSG-10812", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
                                                             in_varsAssignList['MVMT_VAR_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
             frame = inspect.currentframe().f_back
-            g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + traceMsg)
+            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
         else:
             # 廃止レコードがあるので復活する。
             action = "UPDATE"
@@ -1591,10 +1590,10 @@ class AnsibleCommonLibs():
             del in_ArryVarsAssignRecodes[key]
             
             # トレースメッセージ
-            traceMsg = g.get_api_message("MSG-10813", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
+            traceMsg = g.appmsg.get_api_message("MSG-10813", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
                                                             in_varsAssignList['MVMT_VAR_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
             frame = inspect.currentframe().f_back
-            g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + traceMsg)
+            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
         
         if action == "INSERT":
             
@@ -1767,7 +1766,7 @@ class AnsibleCommonLibs():
             AftFileCpy = ret[2]
             
             if diff == 0:
-                FREE_LOG = g.get_api_message("MSG-10815", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
+                FREE_LOG = g.appmsg.get_api_message("MSG-10815", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
                                                             in_varsAssignList['MVMT_VAR_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
                 frame = inspect.currentframe().f_back
                 g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + FREE_LOG)
@@ -1796,19 +1795,19 @@ class AnsibleCommonLibs():
             # 最終更新者が自分でない場合、更新処理はスキップする
             if not tgt_row['LAST_UPDATE_USER'] == db_valautostup_user_id:
                 # トレースメッセージ
-                traceMsg = g.get_api_message("MSG-10835", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
+                traceMsg = g.appmsg.get_api_message("MSG-10835", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
                                                             in_varsAssignList['MVMT_VAR_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
                 frame = inspect.currentframe().f_back
-                g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + traceMsg)
+                g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
                 
                 # 更新処理はスキップ
                 return True
             
             # トレースメッセージ
-            traceMsg = g.get_api_message("MSG-10814", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
+            traceMsg = g.appmsg.get_api_message("MSG-10814", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
                                                         in_varsAssignList['MVMT_VAR_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
             frame = inspect.currentframe().f_back
-            g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + traceMsg)
+            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
             
         VARS_ENTRY_USE_TPFVARS = "0"
         # 具体値にテンプレート変数が記述されているか判定
@@ -1979,10 +1978,10 @@ class AnsibleCommonLibs():
                 in_varsAssignList['VARS_ENTRY_FILE'] = ""
             
             # トレースメッセージ
-            traceMsg = g.get_api_message("MSG-10812", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
+            traceMsg = g.appmsg.get_api_message("MSG-10812", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
                                                             in_varsAssignList['MVMT_VAR_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
             frame = inspect.currentframe().f_back
-            g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + traceMsg)
+            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
         else:
             # 廃止レコードがあるので復活する。
             action = "UPDATE"
@@ -1996,10 +1995,10 @@ class AnsibleCommonLibs():
             del in_ArryVarsAssignRecodes[key]
             
             # トレースメッセージ
-            traceMsg = g.get_api_message("MSG-10813", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
+            traceMsg = g.appmsg.get_api_message("MSG-10813", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
                                                             in_varsAssignList['MVMT_VAR_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
             frame = inspect.currentframe().f_back
-            g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + traceMsg)
+            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
         
         if action == "INSERT":
             
@@ -2166,9 +2165,9 @@ class AnsibleCommonLibs():
             # 最終更新者が自分でない場合、廃止処理はスキップする。
             if not tgt_row["LAST_UPDATE_USER"] == db_valautostup_user_id:
                 # トレースメッセージ
-                traceMsg = g.get_api_message("MSG-10827", [tgt_row['ASSIGN_ID']])
+                traceMsg = g.appmsg.get_api_message("MSG-10827", [tgt_row['ASSIGN_ID']])
                 frame = inspect.currentframe().f_back
-                g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + traceMsg)
+                g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
             
                 # 更新処理はスキップ
                 continue
@@ -2176,9 +2175,9 @@ class AnsibleCommonLibs():
         # 廃止レコードにする。
         
         # トレースメッセージ
-        traceMsg = g.get_api_message("MSG-10820", [tgt_row['ASSIGN_ID']])
+        traceMsg = g.appmsg.get_api_message("MSG-10820", [tgt_row['ASSIGN_ID']])
         frame = inspect.currentframe().f_back
-        g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + traceMsg)
+        g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
         
         # 具体値にテンプレート変数が記述されているか判定
         if db_update_flg == 0:
@@ -2253,7 +2252,7 @@ class AnsibleCommonLibs():
                 error_msg = FUCobj.GetLastError()
                 
                 if ret == 0:
-                    FREE_LOG = g.get_api_message("MSG-10168", [error_msg])
+                    FREE_LOG = g.appmsg.get_api_message("MSG-10168", [error_msg])
                     frame = inspect.currentframe().f_back
                     g.applogger.error(os.path.basename(__file__) + frame.f_lineno + FREE_LOG)
                     del FUCobj
@@ -2281,7 +2280,7 @@ class AnsibleCommonLibs():
         ret = FUCobj.CreateFileUpLoadMenuColumnDirectory(vg_varass_menuID,"VARS_ENTRY_FILE")
         error_msg = FUCobj.GetLastError()
         if ret == 0:
-            FREE_LOG = g.get_api_message("MSG-10169", [error_msg])
+            FREE_LOG = g.appmsg.get_api_message("MSG-10169", [error_msg])
             frame = inspect.currentframe().f_back
             g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + FREE_LOG)
             del FUCobj
@@ -2291,7 +2290,7 @@ class AnsibleCommonLibs():
         vg_FileUPloadColumnBackupFilePath = ret[1]
         error_msg = FUCobj.GetLastError()
         if ret == 0:
-            FREE_LOG = g.get_api_message("MSG-10167", [error_msg])
+            FREE_LOG = g.appmsg.get_api_message("MSG-10167", [error_msg])
             frame = inspect.currentframe().f_back
             g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + FREE_LOG)
             del FUCobj
@@ -2323,7 +2322,7 @@ class AnsibleCommonLibs():
             ret = FUCobj.CreateFileUpLoadMenuColumnFileDirectory(vg_varass_menuID, "VARS_ENTRY_FILE", Pkey, ".", FilePath, JnlFilePath)
             error_msg = FUCobj.GetLastError()
             if ret == 0:
-                FREE_LOG = g.get_api_message("MSG-10169", [error_msg])
+                FREE_LOG = g.appmsg.get_api_message("MSG-10169", [error_msg])
                 frame = inspect.currentframe().f_back
                 g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + FREE_LOG)
                 del FUCobj
@@ -2336,7 +2335,7 @@ class AnsibleCommonLibs():
                 cmd = "/bin/rm -f %s" % ("'" + tgtFile + "'")
                 cp = subprocess.run(cmd + " 2>&1", capture_output=True)
                 if not cp.returncode == 0:
-                    FREE_LOG = g.get_api_message("MSG-10170", [cmd, cp.stderr])
+                    FREE_LOG = g.appmsg.get_api_message("MSG-10170", [cmd, cp.stderr])
                     frame = inspect.currentframe().f_back
                     g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + FREE_LOG)
                     return False
@@ -2346,7 +2345,7 @@ class AnsibleCommonLibs():
                     cmd = "/bin/rm -f %s %s" % ("'" + From + "'", "'" + FilePath + "'")
                     cp = subprocess.run(cmd + " 2>&1", capture_output=True)
                     if not cp.returncode == 0:
-                        FREE_LOG = g.get_api_message("MSG-10170", [cmd, cp.stderr])
+                        FREE_LOG = g.appmsg.get_api_message("MSG-10170", [cmd, cp.stderr])
                         frame = inspect.currentframe().f_back
                         g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + FREE_LOG)
                         return False
@@ -2354,7 +2353,7 @@ class AnsibleCommonLibs():
                     cmd = "/bin/rm -f %s %s" % ("'" + From + "'", "'" + JnlFilePath + "'")
                     cp = subprocess.run(cmd + " 2>&1", capture_output=True)
                     if not cp.returncode == 0:
-                        FREE_LOG = g.get_api_message("MSG-10170", [cmd, cp.stderr])
+                        FREE_LOG = g.appmsg.get_api_message("MSG-10170", [cmd, cp.stderr])
                         frame = inspect.currentframe().f_back
                         g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + FREE_LOG)
                         return False
@@ -2379,14 +2378,14 @@ class AnsibleCommonLibs():
         ina_if_info = None
         in_error_msg = ""
         
-        for data in data_list:
-            ina_if_info = data
-        
-        if len(data_list) == 0:
-            msgstr = g.get_api_message("MSG-10176")
+        if data_list is None:
+            msgstr = g.appmsg.get_api_message("MSG-10176")
             in_error_msg = msgstr
             g.applogger.debug(msgstr)
             return False, ina_if_info, in_error_msg
+        
+        for data in data_list:
+            ina_if_info = data
         
         return True, ina_if_info, in_error_msg
     
@@ -2426,20 +2425,20 @@ class AnsibleCommonLibs():
         
         continue_flg = 0
         
-        for table_name, sql in in_tableNameToSqlList:
+        for table_name, sql in in_tableNameToSqlList.items():
             if continue_flg == 1:
                 continue
 
             # トレースメッセージ
-            traceMsg = g.get_api_message("MSG-10806", [in_tableNameToMenuIdList[table_name]])
+            traceMsg = g.appmsg.get_api_message("MSG-10806", [in_tableNameToMenuIdList[table_name]])
             frame = inspect.currentframe().f_back
-            g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + traceMsg)
+            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
             
             data_list = WS_DB.sql_execute(sql, [])
             
             # FETCH行数を取得
             if len(data_list) == 0:
-                msgstr = g.get_api_message("MSG-10368", [in_tableNameToMenuIdList[table_name]])
+                msgstr = g.appmsg.get_api_message("MSG-10368", [in_tableNameToMenuIdList[table_name]])
                 frame = inspect.currentframe().f_back
                 g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + msgstr)
                 # 次のテーブルへ
@@ -2449,7 +2448,7 @@ class AnsibleCommonLibs():
                 # 代入値紐付メニューに登録されているオペレーションIDを確認
                 if len(row['OPERATION_ID']) is None:
                     # オペレーションID未登録
-                    msgstr = g.get_api_message("MSG-10360", [in_tableNameToMenuIdList[table_name], row[AnscConst.DF_ITA_LOCAL_PKEY]])
+                    msgstr = g.appmsg.get_api_message("MSG-10360", [in_tableNameToMenuIdList[table_name], row[AnscConst.DF_ITA_LOCAL_PKEY]])
                     frame = inspect.currentframe().f_back
                     g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + msgstr)
                     
@@ -2462,7 +2461,7 @@ class AnsibleCommonLibs():
                 # 代入値紐付メニューに登録されているホストIDの紐付確認
                 if row[AnscConst.DF_ITA_LOCAL_HOST_CNT] == 0:
                     # ホストIDの紐付不正
-                    msgstr = g.get_api_message("MSG-10359", [in_tableNameToMenuIdList[table_name], row[AnscConst.DF_ITA_LOCAL_PKEY], row['HOST_ID']])
+                    msgstr = g.appmsg.get_api_message("MSG-10359", [in_tableNameToMenuIdList[table_name], row[AnscConst.DF_ITA_LOCAL_PKEY], row['HOST_ID']])
                     frame = inspect.currentframe().f_back
                     g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + msgstr)
                     
@@ -2472,7 +2471,7 @@ class AnsibleCommonLibs():
                 
                 # 代入値紐付メニューに登録されているホストIDを確認
                 if len(row['HOST_ID']) is None:
-                    msgstr = g.get_api_message("MSG-10361", [in_tableNameToMenuIdList[table_name], row[AnscConst.DF_ITA_LOCAL_PKEY]])
+                    msgstr = g.appmsg.get_api_message("MSG-10361", [in_tableNameToMenuIdList[table_name], row[AnscConst.DF_ITA_LOCAL_PKEY]])
                     frame = inspect.currentframe().f_back
                     g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + msgstr)
                     
@@ -2522,7 +2521,7 @@ class AnsibleCommonLibs():
                                         col_val = "'{{ col_val }}'"
                         else:
                             # プルダウン選択先のレコードが廃止されている
-                            msgstr = g.get_api_message("MSG-10438", [in_tableNameToMenuIdList[table_name], row[AnscConst.DF_ITA_LOCAL_PKEY], col_data['COL_TITLE']])
+                            msgstr = g.appmsg.get_api_message("MSG-10438", [in_tableNameToMenuIdList[table_name], row[AnscConst.DF_ITA_LOCAL_PKEY], col_data['COL_TITLE']])
                             frame = inspect.currentframe().f_back
                             g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + msgstr)
                             warning_flag = 1
@@ -2539,7 +2538,7 @@ class AnsibleCommonLibs():
                         if not col_val == "":
                             col_filepath = "/uploadfiles" + in_tableNameToMenuIdList[table_name] + col_name_rest
                             if not os.path.exists(col_filepath):
-                                msgstr = g.get_api_message("MSG-10166", [table_name, col_name, col_row_id, col_filepath])
+                                msgstr = g.appmsg.get_api_message("MSG-10166", [table_name, col_name, col_row_id, col_filepath])
                                 frame = inspect.currentframe().f_back
                                 g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + msgstr)
                                 warning_flag = 1
@@ -2738,7 +2737,7 @@ class AnsibleCommonLibs():
         if len(in_col_val) == 0:
             # 具体値が空でも代入値管理NULLデータ連携が有効か判定する
             if not self.getNullDataHandlingID(in_null_data_handling_flg == '1'):
-                msgstr = g.get_api_message("MSG-10375", [in_menu_id, in_row_id, in_menu_title])
+                msgstr = g.appmsg.get_api_message("MSG-10375", [in_menu_id, in_row_id, in_menu_title])
                 frame = inspect.currentframe().f_back
                 g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + msgstr)
                 
@@ -2761,7 +2760,7 @@ class AnsibleCommonLibs():
         """
         # 具体値が空白の場合
         if len(in_col_val) == 0:
-            msgstr = g.get_api_message("MSG-10377", [in_menu_id, in_row_id, in_menu_title])
+            msgstr = g.appmsg.get_api_message("MSG-10377", [in_menu_id, in_row_id, in_menu_title])
             frame = inspect.currentframe().f_back
             g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + msgstr)
             
@@ -2903,7 +2902,7 @@ class AnsibleCommonLibs():
                                 dup_info = ina_vars_ass_chk_list[in_operation_id][in_patten_id][in_host_id][in_vars_link_id][in_vars_assign_seq]
                                 chk_flg = False
                                 
-                                msgstr = g.get_api_message("MSG-10369", [dup_info['COLUMN_ID'], in_column_id, in_column_id, in_operation_id, in_host_id, keyValueType])
+                                msgstr = g.appmsg.get_api_message("MSG-10369", [dup_info['COLUMN_ID'], in_column_id, in_column_id, in_operation_id, in_host_id, keyValueType])
                                 frame = inspect.currentframe().f_back
                                 g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + msgstr)
             if chk_flg == 1:
@@ -2943,7 +2942,7 @@ class AnsibleCommonLibs():
                                     dup_info = ina_array_vars_ass_chk_list[in_operation_id][in_patten_id][in_host_id][in_vars_link_id][in_col_seq_combination_id][in_vars_assign_seq]
                                     chk_flg = False
                                     
-                                    msgstr = g.get_api_message("MSG-10369", [dup_info['COLUMN_ID'], in_column_id, in_column_id, in_operation_id, in_host_id, keyValueType])
+                                    msgstr = g.appmsg.get_api_message("MSG-10369", [dup_info['COLUMN_ID'], in_column_id, in_column_id, in_operation_id, in_host_id, keyValueType])
                                     frame = inspect.currentframe().f_back
                                     g.applogger.debnug(os.path.basename(__file__) + frame.f_lineno + msgstr)
             if chk_flg == 1:
@@ -2993,19 +2992,20 @@ class AnsibleCommonLibs():
         global lv_member_col_comb_tbl
         global lv_ptn_vars_link_tbl
         
-        sql = " SELECT                                                           \n"
+        inout_tableNameToPKeyNameList = {}
+        
+        sql = " SELECT                                                            \n"
         sql += "   TBL_A.COLUMN_ID                                             ,  \n"
         sql += "   TBL_A.MENU_ID                                               ,  \n"
         sql += "   TBL_C.TABLE_NAME                                            ,  \n"
-        sql += "   TBL_C.PKEY_NAME                                             ,  \n"
+        sql += "   TBL_C.PK_COLUMN_NAME_REST                                   ,  \n"
         sql += "   TBL_C.DISUSE_FLAG  AS TBL_DISUSE_FLAG                       ,  \n"
         sql += "   TBL_A.COLUMN_LIST_ID                                        ,  \n"
         sql += "   TBL_B.COL_NAME                                              ,  \n"
-        sql += "   TBL_B.COL_TITLE                                             ,  \n"
         sql += "   TBL_B.REF_TABLE_NAME                                        ,  \n"
         sql += "   TBL_B.REF_PKEY_NAME                                         ,  \n"
         sql += "   TBL_B.REF_COL_NAME                                          ,  \n"
-        sql += "   TBL_B.COL_CLASS                                             ,  \n"
+        sql += "   TBL_B.COLUMN_CLASS                                          ,  \n"
         sql += "   TBL_B.AUTOREG_HIDE_ITEM                                     ,  \n"
         sql += "   TBL_B.AUTOREG_ONLY_ITEM                                     ,  \n"
         
@@ -3016,28 +3016,28 @@ class AnsibleCommonLibs():
         sql += "   TBL_A.NULL_DATA_HANDLING_FLG                                ,  \n"
         
         # 作業パターン詳細の登録確認
-        sql += "   TBL_A.PATTERN_ID                                            ,  \n"
+        sql += "   TBL_A.MOVEMENT_ID                                           ,  \n"
         sql += "   (                                                              \n"
         sql += "     SELECT                                                       \n"
         sql += "       COUNT(*)                                                   \n"
         sql += "     FROM                                                         \n"
         sql += lv_pattern_link_tbl + "                                            \n"
         sql += "     WHERE                                                        \n"
-        sql += "       PATTERN_ID  = TBL_A.PATTERN_ID AND                         \n"
+        sql += "       MOVEMENT_ID  = TBL_A.MOVEMENT_ID AND                       \n"
         sql += "       DISUSE_FLAG = '0'                                          \n"
         sql += "   ) AS PATTERN_CNT                                            ,  \n"
         sql += "                                                                  \n"
         
         # (Val)作業パターン変数紐付の登録確認
-        sql += "   TBL_A.VAL_VARS_LINK_ID                                      ,  \n"
+        sql += "   TBL_A.VAL_MVMT_VAR_LINK_ID                                  ,  \n"
         sql += "   (                                                              \n"
         sql += "     SELECT                                                       \n"
         sql += "       COUNT(*)                                                   \n"
         sql += "     FROM                                                         \n"
         sql += lv_ptn_vars_link_tbl + "                                           \n"
         sql += "     WHERE                                                        \n"
-        sql += "       PATTERN_ID    = TBL_A.PATTERN_ID        AND                \n"
-        sql += "       VARS_LINK_ID  = TBL_A.VAL_VARS_LINK_ID  AND                \n"
+        sql += "       MOVEMENT_ID    = TBL_A.MOVEMENT_ID        AND              \n"
+        sql += "       MVMT_VAR_LINK_ID  = TBL_A.VAL_MVMT_VAR_LINK_ID  AND        \n"
         sql += "       DISUSE_FLAG   = '0'                                        \n"
         sql += "   ) AS VAL_PTN_VARS_LINK_CNT                                  ,  \n"
         
@@ -3049,14 +3049,14 @@ class AnsibleCommonLibs():
         sql += "     FROM                                                         \n"
         sql += lv_member_col_comb_tbl + "                                         \n"
         sql += "     WHERE                                                        \n"
-        sql += "       VARS_NAME_ID IN (                                          \n"
+        sql += "       MVMT_VAR_LINK_ID IN (                                      \n"
         sql += "         SELECT                                                   \n"
-        sql += "           VARS_NAME_ID                                           \n"
+        sql += "           VARS_NAME                                              \n"
         sql += "         FROM                                                     \n"
         sql += lv_ptn_vars_link_tbl + "                                           \n"
         sql += "         WHERE                                                    \n"
-        sql += "           PATTERN_ID    = TBL_A.PATTERN_ID        AND            \n"
-        sql += "           VARS_LINK_ID  = TBL_A.VAL_VARS_LINK_ID  AND            \n"
+        sql += "           MOVEMENT_ID    = TBL_A.MOVEMENT_ID        AND          \n"
+        sql += "           MVMT_VAR_LINK_ID  = TBL_A.VAL_MVMT_VAR_LINK_ID  AND    \n"
         sql += "           DISUSE_FLAG   = '0'                                    \n"
         sql += "         )                                                        \n"
         sql += "       AND                                                        \n"
@@ -3072,14 +3072,14 @@ class AnsibleCommonLibs():
         sql += "     FROM                                                         \n"
         sql += lv_array_member_tbl + "                                            \n"
         sql += "     WHERE                                                        \n"
-        sql += "       VARS_NAME_ID IN (                                          \n"
+        sql += "       MVMT_VAR_LINK_ID IN (                                      \n"
         sql += "         SELECT                                                   \n"
-        sql += "           VARS_NAME_ID                                           \n"
+        sql += "           VARS_NAME                                              \n"
         sql += "         FROM                                                     \n"
         sql += lv_ptn_vars_link_tbl + "                                           \n"
         sql += "         WHERE                                                    \n"
-        sql += "           PATTERN_ID    = TBL_A.PATTERN_ID        AND            \n"
-        sql += "           VARS_LINK_ID  = TBL_A.VAL_VARS_LINK_ID  AND            \n"
+        sql += "           MOVEMENT_ID    = TBL_A.MOVEMENT_ID        AND          \n"
+        sql += "           MVMT_VAR_LINK_ID  = TBL_A.VAL_MVMT_VAR_LINK_ID  AND    \n"
         sql += "           DISUSE_FLAG   = '0'                                    \n"
         sql += "         )                                                        \n"
         sql += "       AND                                                        \n"
@@ -3097,38 +3097,17 @@ class AnsibleCommonLibs():
         sql += "   ) AS VAL_ASSIGN_SEQ_NEED                                    ,  \n"
         
         # (Key)作業パターン変数紐付の登録確認
-        sql += "   TBL_A.KEY_VARS_LINK_ID                                      ,  \n"
+        sql += "   TBL_A.KEY_MVMT_VAR_LINK_ID                                  ,  \n"
         sql += "   (                                                              \n"
         sql += "     SELECT                                                       \n"
         sql += "       COUNT(*)                                                   \n"
         sql += "     FROM                                                         \n"
         sql += lv_ptn_vars_link_tbl + "                                           \n"
         sql += "     WHERE                                                        \n"
-        sql += "       PATTERN_ID    = TBL_A.PATTERN_ID        AND                \n"
-        sql += "       VARS_LINK_ID  = TBL_A.KEY_VARS_LINK_ID  AND                \n"
+        sql += "       MOVEMENT_ID    = TBL_A.MOVEMENT_ID        AND              \n"
+        sql += "       MVMT_VAR_LINK_ID  = TBL_A.KEY_MVMT_VAR_LINK_ID  AND        \n"
         sql += "       DISUSE_FLAG   = '0'                                        \n"
         sql += "   ) AS KEY_PTN_VARS_LINK_CNT                                  ,  \n"
-        
-        # (Key)変数名一覧
-        sql += "   (                                                              \n"
-        sql += "     SELECT                                                       \n"
-        sql += "       VARS_NAME                                                  \n"
-        sql += "     FROM                                                         \n"
-        sql += "       $lv_vars_master_tbl                                        \n"
-        sql += "     WHERE                                                        \n"
-        sql += "       VARS_NAME_ID IN (                                          \n"
-        sql += "         SELECT                                                   \n"
-        sql += "           VARS_NAME_ID                                           \n"
-        sql += "         FROM                                                     \n"
-        sql += lv_ptn_vars_link_tbl + "                                           \n"
-        sql += "         WHERE                                                    \n"
-        sql += "           PATTERN_ID    = TBL_A.PATTERN_ID        AND            \n"
-        sql += "           VARS_LINK_ID  = TBL_A.KEY_VARS_LINK_ID  AND            \n"
-        sql += "           DISUSE_FLAG   = '0'                                    \n"
-        sql += "         )                                                        \n"
-        sql += "       AND                                                        \n"
-        sql += "       DISUSE_FLAG   = '0'                                        \n"
-        sql += "   ) AS KEY_VARS_NAME                                          ,  \n"
         
         # (Key)多次元変数配列組合せ管理
         sql += "   TBL_A.KEY_COL_SEQ_COMBINATION_ID                            ,  \n"
@@ -3138,14 +3117,14 @@ class AnsibleCommonLibs():
         sql += "     FROM                                                         \n"
         sql += lv_member_col_comb_tbl + "                                         \n"
         sql += "     WHERE                                                        \n"
-        sql += "       VARS_NAME_ID IN (                                          \n"
+        sql += "       VAL_MVMT_VAR_LINK_ID IN (                                  \n"
         sql += "         SELECT                                                   \n"
-        sql += "           VARS_NAME_ID                                           \n"
+        sql += "           VARS_NAME                                              \n"
         sql += "         FROM                                                     \n"
         sql += lv_ptn_vars_link_tbl + "                                           \n"
         sql += "         WHERE                                                    \n"
-        sql += "           PATTERN_ID    = TBL_A.PATTERN_ID        AND            \n"
-        sql += "           VARS_LINK_ID  = TBL_A.KEY_VARS_LINK_ID  AND            \n"
+        sql += "           MOVEMENT_ID    = TBL_A.MOVEMENT_ID        AND          \n"
+        sql += "           MVMT_VAR_LINK_ID  = TBL_A.KEY_MVMT_VAR_LINK_ID  AND    \n"
         sql += "           DISUSE_FLAG   = '0'                                    \n"
         sql += "         )                                                        \n"
         sql += "       AND                                                        \n"
@@ -3161,14 +3140,14 @@ class AnsibleCommonLibs():
         sql += "     FROM                                                         \n"
         sql += lv_array_member_tbl + "                                            \n"
         sql += "     WHERE                                                        \n"
-        sql += "       VARS_NAME_ID IN (                                          \n"
+        sql += "       MVMT_VAR_LINK_ID IN (                                      \n"
         sql += "         SELECT                                                   \n"
-        sql += "           VARS_NAME_ID                                           \n"
+        sql += "           VARS_NAME                                              \n"
         sql += "         FROM                                                     \n"
         sql += lv_ptn_vars_link_tbl + "                                           \n"
         sql += "         WHERE                                                    \n"
-        sql += "           PATTERN_ID    = TBL_A.PATTERN_ID        AND            \n"
-        sql += "           VARS_LINK_ID  = TBL_A.KEY_VARS_LINK_ID  AND            \n"
+        sql += "           MOVEMENT_ID    = TBL_A.MOVEMENT_ID        AND          \n"
+        sql += "           MVMT_VAR_LINK_ID  = TBL_A.KEY_MVMT_VAR_LINK_ID  AND    \n"
         sql += "           DISUSE_FLAG   = '0'                                    \n"
         sql += "         )                                                        \n"
         sql += "       AND                                                        \n"
@@ -3187,7 +3166,7 @@ class AnsibleCommonLibs():
         sql += "   TBL_D.DISUSE_FLAG AS ANSIBLE_TARGET_TABLE                      \n"
         sql += " FROM                                                             \n"
         sql += lv_val_assign_tbl + "  TBL_A                                       \n"
-        sql += "   LEFT JOIN T_COMN_MENU_COLUMN_LINK TBL_B ON             \n"
+        sql += "   LEFT JOIN T_COMN_MENU_COLUMN_LINK TBL_B ON                     \n"
         sql += "          (TBL_A.COLUMN_LIST_ID = TBL_B.COLUMN_DEFINITION_ID)     \n"
         sql += "          OR (TBL_B.AUTOREG_ONLY_ITEM = 1)                        \n"
         sql += "   LEFT JOIN T_COMN_MENU_TABLE_LINK          TBL_C ON             \n"
@@ -3196,7 +3175,7 @@ class AnsibleCommonLibs():
         sql += "          (TBL_C.MENU_ID        = TBL_D.MENU_ID)                  \n"
         sql += " WHERE                                                            \n"
         sql += "   TBL_A.DISUSE_FLAG='0'                                          \n"
-        sql += "   AND TBL_B.AUTOREG_HIDE_ITEM='0'                                          \n"
+        sql += "   AND TBL_B.AUTOREG_HIDE_ITEM='0'                                \n"
         sql += " ORDER BY TBL_A.COLUMN_ID                                         \n"
 
         data_list = WS_DB.sql_execute(sql)
@@ -3235,7 +3214,7 @@ class AnsibleCommonLibs():
                 raise ValidationException("MSG-10338", [data['COLUMN_ID']])
             
             # CMDB代入値紐付メニューの主キーが登録されているか判定
-            if len(data['PKEY_NAME']) is None:
+            if len(data['PK_COLUMN_NAME_REST']) is None:
                 msgstr = g.get_api_message("MSG-10404", [data['COLUMN_ID']])
                 # 次のカラムへ
                 raise ValidationException("MSG-10404", [data['COLUMN_ID']])
@@ -3245,12 +3224,6 @@ class AnsibleCommonLibs():
                 msgstr = g.get_api_message("MSG-10340", [data['COLUMN_ID']])
                 # 次のカラムへ
                 raise ValidationException("MSG-10340", [data['COLUMN_ID']])
-            
-            # CMDB代入値紐付メニューのカラムタイトルが未登録か判定
-            if len(data['COL_TITLE']) is None:
-                msgstr = g.get_api_message("MSG-10341", [data['COLUMN_ID']])
-                # 次のカラムへ
-                raise ValidationException("MSG-10341", [data['COLUMN_ID']])
             
             type_chk = [AnscConst.DF_COL_TYPE_VAL, AnscConst.DF_COL_TYPE_KEY]
             col_type = data['COL_TYPE']
@@ -3267,23 +3240,45 @@ class AnsibleCommonLibs():
             # カラムタイプにより処理分岐
             
             if col_type == AnscConst.DF_COL_TYPE_VAL:
-                ret = valAssColumnValidate()
+                ret = self.valAssColumnValidate("Value",
+                                                val_vars_attr,
+                                                data,
+                                                "VAL_VARS_LINK_ID",
+                                                "VAL_VARS_NAME",
+                                                "VAL_PTN_VARS_LINK_CNT",
+                                                "VAL_VARS_ATTRIBUTE_01",
+                                                "VAL_COL_SEQ_COMBINATION_ID",
+                                                "VAL_COL_COMBINATION_MEMBER_ALIAS",
+                                                "VAL_ASSIGN_SEQ",
+                                                "VAL_ASSIGN_SEQ_NEED"
+                                                )
             
-            if ret == 0:
-                continue
+                if ret == 0:
+                    continue
             
             if col_type == AnscConst.DF_COL_TYPE_KEY:
-                ret = valAssColumnValidate()
+                ret = self.valAssColumnValidate("Key",
+                                                key_vars_attr,
+                                                data,
+                                                "KEY_VARS_LINK_ID",
+                                                "KEY_VARS_NAME",
+                                                "KEY_PTN_VARS_LINK_CNT",
+                                                "KEY_VARS_ATTRIBUTE_01",
+                                                "KEY_COL_SEQ_COMBINATION_ID",
+                                                "KEY_COL_COMBINATION_MEMBER_ALIAS",
+                                                "KEY_ASSIGN_SEQ",
+                                                "KEY_ASSIGN_SEQ_NEED"
+                                                )
             
-            if ret == 0:
-                continue
+                if ret == 0:
+                    continue
 
             inout_tableNameToMenuIdList[data['TABLE_NAME']] = data['MENU_ID']
             
             # PasswordColumnかを判定
             key_sensitive_flg = AnscConst.DF_SENSITIVE_OFF
             value_sensitive_flg = AnscConst.DF_SENSITIVE_OFF
-            if data['COL_CLASS'] == 'PasswordColumn':
+            if data['COLUMN_CLASS'] == 'PasswordColumn':
                 value_sensitive_flg = AnscConst.DF_SENSITIVE_ON
             
             inout_tabColNameToValAssRowList[data['TABLE_NAME']] = {}
@@ -3291,31 +3286,29 @@ class AnsibleCommonLibs():
             inout_tabColNameToValAssRowList[data['TABLE_NAME']][data['COL_NAME']]['data'] = {
                                                                             'COLUMN_ID': data['COLUMN_ID'],
                                                                             'COL_TYPE': data['COL_TYPE'],
-                                                                            'COL_TITLE': data['COL_TITLE'],
-                                                                            'COL_CLASS': data['COL_CLASS'],
+                                                                            'COLUMN_CLASS': data['COLUMN_CLASS'],
                                                                             'REF_TABLE_NAME': data['REF_TABLE_NAME'],
                                                                             'REF_PKEY_NAME': data['REF_PKEY_NAME'],
                                                                             'REF_COL_NAME': data['REF_COL_NAME'],
-                                                                            'PATTERN_ID': data['PATTERN_ID'],
-                                                                            'VAL_VARS_LINK_ID': data['VAL_VARS_LINK_ID'],
+                                                                            'MOVEMENT_ID': data['MOVEMENT_ID'],
+                                                                            'VAL_MVMT_VAR_LINK_ID': data['VAL_MVMT_VAR_LINK_ID'],
                                                                             'VAL_VAR_TYPE': val_vars_attr,
                                                                             'VAL_COL_SEQ_COMBINATION_ID': data['VAL_COL_SEQ_COMBINATION_ID'],
                                                                             'VAL_COL_COMBINATION_MEMBER_ALIAS': data['VAL_COL_COMBINATION_MEMBER_ALIAS'],
                                                                             'VAL_ASSIGN_SEQ': data['VAL_ASSIGN_SEQ'],
                                                                             'VALUE_SENSITIVE_FLAG': value_sensitive_flg,
-                                                                            'KEY_VARS_LINK_ID': data['KEY_VARS_LINK_ID'],
-                                                                            'KEY_VARS_NAME': data['KEY_VARS_NAME'],
+                                                                            'KEY_MVMT_VAR_LINK_ID': data['KEY_MVMT_VAR_LINK_ID'],
                                                                             'KEY_VAR_TYPE': key_vars_attr,
                                                                             'KEY_COL_SEQ_COMBINATION_ID': data['KEY_COL_SEQ_COMBINATION_ID'],
                                                                             'KEY_ASSIGN_SEQ': data['KEY_ASSIGN_SEQ'],
                                                                             'NULL_DATA_HANDLING_FLG': data['NULL_DATA_HANDLING_FLG'],
                                                                             'KEY_SENSITIVE_FLAG': key_sensitive_flg}
         
-        # テーブルの主キー名退避
-        inout_tableNameToPKeyNameList = {}
-        inout_tableNameToPKeyNameList[data['TABLE_NAME']] = data['PKEY_NAME']
+            # テーブルの主キー名退避
+            inout_tableNameToPKeyNameList = {data['TABLE_NAME']: data['PK_COLUMN_NAME_REST']}
         
         return True, inout_tableNameToMenuIdList, inout_tabColNameToValAssRowList, inout_tableNameToPKeyNameList
+
     
     def valAssColumnValidate(WS_DB, 
                             in_col_type, 
@@ -3341,26 +3334,26 @@ class AnsibleCommonLibs():
         
         # 変数の選択判定
         if len(row[in_vars_link_id]) is None:
-            msgstr = g.get_api_message("MSG-10354", [row['COLUMN_ID'], in_col_type])
+            msgstr = g.appmsg.get_api_message("MSG-10354", [row['COLUMN_ID'], in_col_type])
             g.applogger.debnug(msgstr)
             return False
         
         # 変数が作業パターン変数紐付にあるか判定
         if len(row[in_ptn_vars_link_cnt]) is None:
-            msgstr = g.get_api_message("MSG-10348", [row['COLUMN_ID'], in_col_type])
+            msgstr = g.appmsg.get_api_message("MSG-10348", [row['COLUMN_ID'], in_col_type])
             g.applogger.debnug(msgstr)
             return False
         
         # 設定されている変数が変数一覧にあるか判定
         if len(row[in_vars_name]) is None:
-            msgstr = g.get_api_message("MSG-10345", [row['COLUMN_ID'], in_col_type])
+            msgstr = g.appmsg.get_api_message("MSG-10345", [row['COLUMN_ID'], in_col_type])
             g.applogger.debnug(msgstr)
             return False
         
         if row[in_vars_attribute_01] in [AnscConst.GC_VARS_ATTR_STD, AnscConst.GC_VARS_ATTR_LIST, AnscConst.GC_VARS_ATTR_M_ARRAY]:
             inout_vars_attr = row[in_vars_attribute_01]
         else:
-            msgstr = g.get_api_message("MSG-10439", [row['COLUMN_ID'], in_col_type])
+            msgstr = g.appmsg.get_api_message("MSG-10439", [row['COLUMN_ID'], in_col_type])
             g.applogger.debnug(msgstr)
             return False
         
@@ -3368,30 +3361,30 @@ class AnsibleCommonLibs():
         if inout_vars_attr == AnscConst.GC_VARS_ATTR_STD:
             # メンバー変数の選択判定
             if len(row[in_col_seq_combination_id]) is None:
-                msgstr = g.get_api_message("MSG-10419", [row['COLUMN_ID'], in_col_type])
+                msgstr = g.appmsg.get_api_message("MSG-10419", [row['COLUMN_ID'], in_col_type])
                 g.applogger.debnug(msgstr)
                 return False
         
             # カラムタイプ型に設定されているメンバー変数がメンバー変数一覧にあるか判定
             if len(row[in_col_combination_member_alias]) is None:
-                msgstr = g.get_api_message("MSG-10349", [row['COLUMN_ID'], in_col_type])
+                msgstr = g.appmsg.get_api_message("MSG-10349", [row['COLUMN_ID'], in_col_type])
                 g.applogger.debnug(msgstr)
                 return False
         else:
             if not len(row[in_col_seq_combination_id]) is None:
-                msgstr = g.get_api_message("MSG-10418", [row['COLUMN_ID'], in_col_type])
+                msgstr = g.appmsg.get_api_message("MSG-10418", [row['COLUMN_ID'], in_col_type])
                 g.applogger.debnug(msgstr)
                 return False
         
         if inout_vars_attr == AnscConst.GC_VARS_ATTR_LIST:
             if len(row[in_assign_seq]) is None:
-                msgstr = g.get_api_message("MSG-10350", [row['COLUMN_ID'], in_col_type])
+                msgstr = g.appmsg.get_api_message("MSG-10350", [row['COLUMN_ID'], in_col_type])
                 g.applogger.debnug(msgstr)
                 return False
         
         elif inout_vars_attr == AnscConst.GC_VARS_ATTR_M_ARRAY:
             if row[in_assign_seq_need] == 1 and row[in_assign_seq] is None:
-                msgstr = g.get_api_message("MSG-10350", [row['COLUMN_ID'], in_col_type])
+                msgstr = g.appmsg.get_api_message("MSG-10350", [row['COLUMN_ID'], in_col_type])
                 g.applogger.debnug(msgstr)
                 return False
         
