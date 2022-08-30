@@ -77,7 +77,6 @@ class Column():
     base_valid_list = {
         "min_length": None,  # 最大バイト数
         "max_length": None,  # 最大バイト数
-        "preg_match": None,  # 正規表現
         "int_max": None,  # 最大値(整数)
         "int_min": None,  # 最小値(整数)
         "float_max": None,  # 最大値(小数)
@@ -359,6 +358,14 @@ class Column():
         """
         return self.get_objcol().get('UNIQUE_ITEM')
 
+    def get_reg_exp(self):
+        """
+            正規表現を設定
+            RETRUN:
+                reg_exp
+        """
+        return self.get_objcol().get('VALIDATE_REG_EXP')
+
     def set_valid_value(self):
         """
             バリデーション閾値の設定（テンプレートのキー以外除外）
@@ -585,6 +592,7 @@ class Column():
         # バリデーション閾値の設定（テンプレートのキー以外除外）
         self.set_valid_value()
         # バリデーション閾値の設定（テンプレートのキー以外除外）
+        self.set_valid_value()
         if val is not None:
             result = self.check_basic_valid(val, option)
         else:
@@ -648,12 +656,12 @@ class Column():
             if val is None:
                 retBool = False
                 status_code = '499-00213'
-                msg_args = [self.get_rest_key_name()]
+                msg_args = []
                 msg = g.appmsg.get_api_message(status_code, msg_args)
             elif len(str(val)) == 0:
                 retBool = False
                 status_code = '499-00213'
-                msg_args = [self.get_rest_key_name()]
+                msg_args = []
                 msg = g.appmsg.get_api_message(status_code, msg_args)
                     
         return retBool, msg,

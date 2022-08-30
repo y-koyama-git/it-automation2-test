@@ -25,7 +25,7 @@
     "499-00210": "The execution type is invalid.({})",
     "499-00211": "last_update_date_time is invalid ({})",
     "499-00212": "The input parameter key is invalid. ({})",
-    "499-00213": "{} is required field.",
+    "499-00213": "Required fields.",
     "499-00214": "{} is out of the input range. (Minimum value: {}, Maximum value: {}, Input value: {})",
     "499-00215": "{} is less than or equal to the minimum value (minimum value: {}, input value: {})",
     "499-00216": "{} is greater than or equal to the maximum value (maximum value: {}, input value: {})",

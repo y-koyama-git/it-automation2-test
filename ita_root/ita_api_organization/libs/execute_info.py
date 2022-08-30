@@ -225,6 +225,7 @@ def collect_menu_info(objdbca, menu):
             'ref_col_name': recode.get('REF_COL_NAME'),
             'ref_sort_conditions': recode.get('REF_SORT_CONDITIONS'),
             'ref_multi_lang': recode.get('REF_MULTI_LANG'),
+            'button_action': recode.get('BUTTON_ACTION'),
             'col_name': recode.get('COL_NAME'),
             'save_type': recode.get('SAVE_TYPE'),
             'auto_input': recode.get('AUTO_INPUT'),
