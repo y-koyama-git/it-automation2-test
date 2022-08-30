@@ -259,7 +259,7 @@ class AnsibleCommonLibs():
                             tpf_file_name = ret[1][0]['ANS_TEMPLATE_FILE']
                             role_only_flag = ret[1][0]['ROLE_ONLY_FLAG']
                             vars_list = ret[1][0]['VARS_LIST']
-                            var_struct_anal_json_string = ret[1][0]['VARSTRUCT_ANAL_JSON_STRING']
+                            var_struct_anal_json_string = ret[1][0]['VAR_STRUCT_ANAL_JSON_STRING']
                         
                         # TPF変数名が未登録の場合
                         if tpf_key == "":

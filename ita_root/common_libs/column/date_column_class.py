@@ -2,9 +2,9 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -12,8 +12,10 @@
 # limitations under the License.
 #
 
+import re
 from datetime import datetime
 from .column_class import Column
+from flask import g
 
 
 class DateColumn(Column):
@@ -56,6 +58,15 @@ class DateColumn(Column):
 
         self.cmd_type = cmd_type
 
+        # 下限値
+        self.min_value = '1000/01/01'
+        # 上限値
+        self.max_value = '9999/12/31'
+        # datetime変換用フォーマット
+        self.format_datetime = '%Y/%m/%d'
+        # ログ出力用フォーマット
+        self.format_for_log = 'YYYY/MM/DD'
+
     def check_basic_valid(self, val, option={}):
         """
             バリデーション処理(カラムクラス毎)
@@ -65,31 +76,54 @@ class DateColumn(Column):
                 True / エラーメッセージ
         """
         retBool = True
+
         # 閾値(最小値)
-        min_datetime = datetime.strptime('1000/01/01 00:00:00', '%Y/%m/%d %H:%M:%S')
+        min_datetime = datetime.strptime(self.min_value, self.format_datetime)
         # 閾値(最大値)
-        max_datetime = datetime.strptime('9999/12/31 23:59:59', '%Y/%m/%d %H:%M:%S')
-        
+        max_datetime = datetime.strptime(self.max_value, self.format_datetime)
+
         if len(val) == 0:
             return retBool,
-        
-        # 日付形式に変換
-        try:
-            dt_val = datetime.strptime(val, '%Y/%m/%d %H:%M:%S')
-        except ValueError as msg:
+
+        # 日付形式のチェック
+        # YYYY/MM/DDの場合OK
+        if re.match(r'^[0-9]{4}/[0-9]{2}/[0-9]{2}$', val) is not None:
+            retBool = True
+        else:
+            msg = g.appmsg.get_api_message("MSG-00002", [self.format_for_log, val])
             retBool = False
             return retBool, msg
 
-        # 文字列長
+        # 日付形式に変換
+        try:
+            dt_val = datetime.strptime(val, self.format_datetime)
+        except ValueError as msg:
+            msg = g.appmsg.get_api_message("MSG-00002", [self.format_for_log, val])
+            retBool = False
+            return retBool, msg
+
+        # 上限、下限チェック
         if min_datetime is not None and max_datetime is not None:
-            check_val = dt_val.timestamp()
-            if check_val < .000000:
+            if min_datetime > dt_val or dt_val > max_datetime:
                 retBool = False
-                msg = "正常に処理できる範囲外です。(値{})[{}]".format(check_val, self.rest_key_name)
+                msg = g.appmsg.get_api_message("MSG-00003", [self.min_value, self.max_value, val])
                 return retBool, msg
-            elif check_val != 0:
-                if min_datetime >= dt_val or dt_val >= max_datetime:
-                    retBool = False
-                    msg = "範囲外({}<={}<={})[{}]".format(min_datetime, dt_val, max_datetime, self.rest_key_name)
-                    return retBool, msg
+
         return retBool,
+
+    # [load_table] 出力用の値へ変換
+    def convert_value_output(self, val=''):
+        """
+            出力用の値へ変換
+            ARGS:
+                val:値
+            RETRUN:
+                retBool, msg, val
+        """
+        retBool = True
+        msg = ''
+
+        if val is not None and len(val) > 0:
+            val = val[0:9]
+
+        return retBool, msg, val

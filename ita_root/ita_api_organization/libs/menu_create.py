@@ -48,6 +48,7 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
     t_menu_column = 'T_MENU_COLUMN'
     t_menu_column_group = 'T_MENU_COLUMN_GROUP'
     t_menu_unique_constraint = 'T_MENU_UNIQUE_CONSTRAINT'
+    t_menu_role = ('T_MENU_ROLE')
     
     # 変数定義
     lang = g.get('LANGUAGE')
@@ -100,7 +101,16 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
     
     # 縦メニュー利用の有無を取得
     vertical = ret[0].get('VERTICAL')
-
+    
+    # 「メニュー-ロール作成情報」から対象のレコードを取得
+    selected_role_list = []
+    ret_role_list = objdbca.table_select(t_menu_role, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
+    if ret_role_list:
+        for recode in ret_role_list:
+            role_id = recode.get('ROLE_ID')
+            if role_id:
+                selected_role_list.append(role_id)
+    
     # メニューデータを格納
     menu = {
         "menu_create_id": menu_create_id,
@@ -117,6 +127,7 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
         "menu_group_for_input": menu_group_for_input,
         "menu_group_for_subst": menu_group_for_subst,
         "menu_group_for_ref": menu_group_for_ref,
+        "selected_role_id": selected_role_list,
         "description": ret[0].get('DESCRIPTION_' + lang.upper()),
         "remarks": ret[0].get('NOTE'),
         "menu_create_done_status_id": ret[0].get('MENU_CREATE_DONE_STATUS'),
@@ -333,9 +344,7 @@ def _collect_common_menu_create_data(objdbca):
         pulldown_item_list.append({'link_id': link_id, 'menu_id': menu_id, 'link_pulldown': link_pulldown})
     
     # ロールの選択肢一覧
-    # ####メモ：共通基盤と結合後、ロール取得APIを実施して対象のロールを取得する。
-    # 選択可能なロールは、Workspaceが持っているロールすべて。
-    role_list = ["dummy_role1", "dummy_role2", "dummy_role3"]
+    role_list = util.get_workspace_roles()  # noqa: F405
     
     common_data = {
         "column_class_list": column_class_list,
@@ -458,6 +467,14 @@ def _create_new_execute(objdbca, create_param):  # noqa: C901
         if not retbool:
             raise Exception(msg)
         
+        # 「メニュー-ロール作成情報」にレコードを登録
+        menu_name = menu_data.get('menu_name')
+        role_list = menu_data.get('role_list')
+        if role_list:
+            retbool, msg = _insert_t_menu_role(objdbca, menu_name, role_list)
+            if not retbool:
+                raise Exception(msg)
+        
         # 「メニュー作成履歴」にレコードを登録
         status_id = "1"  # (1:未実行)
         create_type = "1"  # (1:新規作成)
@@ -509,6 +526,7 @@ def _initialize_execute(objdbca, create_param):
     t_menu_define = 'T_MENU_DEFINE'
     t_menu_column = 'T_MENU_COLUMN'
     t_menu_unique_constraint = 'T_MENU_UNIQUE_CONSTRAINT'
+    t_menu_role = 'T_MENU_ROLE'
     
     # 変数定義
     user_id = g.get('USER_ID')
@@ -522,8 +540,9 @@ def _initialize_execute(objdbca, create_param):
         # トランザクション開始
         objdbca.db_transaction_start()
         
-        # 対象の「メニュー定義一覧」のuuidを取得
+        # 対象の「メニュー定義一覧」のuuidおよびメニュー名を取得
         menu_create_id = menu_data.get('menu_create_id')
+        menu_name = menu_data.get('menu_name')
         
         # 現在の「メニュー定義一覧」のレコードを取得
         current_t_menu_define = objdbca.table_select(t_menu_define, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
@@ -580,6 +599,38 @@ def _initialize_execute(objdbca, create_param):
             if not retbool:
                 raise Exception(msg)
         
+        # 「ロール選択」の値を取得
+        role_list = menu_data.get('role_list')
+        if not role_list:
+            role_list = []
+        
+        # 現在の「メニュー-ロール作成情報」のレコードを取得
+        current_t_menu_role = objdbca.table_select(t_menu_role, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
+        current_role_list = []
+        current_role_dict = {}
+        if current_t_menu_role:
+            for recode in current_t_menu_role:
+                menu_role_id = recode.get('MENU_ROLE_ID')
+                role = recode.get('ROLE_ID')
+                last_update_timestamp = recode.get('LAST_UPDATE_TIMESTAMP')
+                last_update_date_time = last_update_timestamp.strftime('%Y/%m/%d %H:%M:%S.%f')
+                current_role_list.append(role)
+                current_role_dict[role] = {"menu_role_id": menu_role_id, 'last_update_date_time': last_update_date_time}
+        
+        # 新規に登録するロールの対象一覧を取得し、レコードを追加
+        add_role_list = set(role_list) - set(current_role_list)
+        if list(add_role_list):
+            retbool, msg = _insert_t_menu_role(objdbca, menu_name, list(add_role_list))
+            if not retbool:
+                raise Exception(msg)
+        
+        # 廃止するロールの対象一覧を取得し、レコードを廃止
+        disuse_role_list = set(current_role_list) - set(role_list)
+        if list(disuse_role_list):
+            retbool, msg = _disuse_t_menu_role(objdbca, list(disuse_role_list), current_role_dict)
+            if not retbool:
+                raise Exception(msg)
+        
         # 「メニュー作成履歴」にレコードを登録
         status_id = "1"  # (1:未実行)
         create_type = "2"  # (2:初期化)
@@ -631,6 +682,7 @@ def _edit_execute(objdbca, create_param):
     t_menu_define = 'T_MENU_DEFINE'
     t_menu_column = 'T_MENU_COLUMN'
     t_menu_unique_constraint = 'T_MENU_UNIQUE_CONSTRAINT'
+    t_menu_role = 'T_MENU_ROLE'
     
     # 変数定義
     user_id = g.get('USER_ID')
@@ -644,8 +696,9 @@ def _edit_execute(objdbca, create_param):
         # トランザクション開始
         objdbca.db_transaction_start()
         
-        # 対象の「メニュー定義一覧」のuuidを取得
+        # 対象の「メニュー定義一覧」のuuidおよびメニュー名を取得
         menu_create_id = menu_data.get('menu_create_id')
+        menu_name = menu_data.get('menu_name')
         
         # 現在の「メニュー定義一覧」のレコードを取得
         current_t_menu_define = objdbca.table_select(t_menu_define, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
@@ -702,6 +755,38 @@ def _edit_execute(objdbca, create_param):
             if not retbool:
                 raise Exception(msg)
         
+        # 「ロール選択」の値を取得
+        role_list = menu_data.get('role_list')
+        if not role_list:
+            role_list = []
+        
+        # 現在の「メニュー-ロール作成情報」のレコードを取得
+        current_t_menu_role = objdbca.table_select(t_menu_role, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
+        current_role_list = []
+        current_role_dict = {}
+        if current_t_menu_role:
+            for recode in current_t_menu_role:
+                menu_role_id = recode.get('MENU_ROLE_ID')
+                role = recode.get('ROLE_ID')
+                last_update_timestamp = recode.get('LAST_UPDATE_TIMESTAMP')
+                last_update_date_time = last_update_timestamp.strftime('%Y/%m/%d %H:%M:%S.%f')
+                current_role_list.append(role)
+                current_role_dict[role] = {"menu_role_id": menu_role_id, 'last_update_date_time': last_update_date_time}
+        
+        # 新規に登録するロールの対象一覧を取得し、レコードを追加
+        add_role_list = set(role_list) - set(current_role_list)
+        if list(add_role_list):
+            retbool, msg = _insert_t_menu_role(objdbca, menu_name, list(add_role_list))
+            if not retbool:
+                raise Exception(msg)
+        
+        # 廃止するロールの対象一覧を取得し、レコードを廃止
+        disuse_role_list = set(current_role_list) - set(role_list)
+        if list(disuse_role_list):
+            retbool, msg = _disuse_t_menu_role(objdbca, list(disuse_role_list), current_role_dict)
+            if not retbool:
+                raise Exception(msg)
+        
         # 「メニュー作成履歴」にレコードを登録
         status_id = "1"  # (1:未実行)
         create_type = "3"  # (3:編集)
@@ -749,17 +834,7 @@ def _insert_t_menu_define(objdbca, menu_data):
         RETRUN:
             boolean, menu_create_id, msg
     """
-    # テーブル名
-    t_menu_create_done_status = 'T_MENU_CREATE_DONE_STATUS'
-    
-    # 変数定義
-    lang = g.get('LANGUAGE')
-    
     try:
-        # 「メニュー作成状態」のステータス名称(未作成)を取得
-        ret = objdbca.table_select(t_menu_create_done_status, 'WHERE DONE_STATUS_ID = %s AND DISUSE_FLAG = %s', [1, 0])
-        menu_create_done_status = ret[0].get('DONE_STATUS_NAME_' + lang.upper())
-        
         # loadTableの呼び出し
         objmenu = load_table.loadTable(objdbca, 'menu_definition_list')  # noqa: F405
         
@@ -778,8 +853,7 @@ def _insert_t_menu_define(objdbca, menu_data):
                 "vertical": menu_data.get('vertical'),  # 縦メニュー利用有無
                 "menu_group_for_input": menu_data.get('menu_group_for_input'),  # 入力用メニューグループ名
                 "menu_group_for_subst": menu_data.get('menu_group_for_subst'),  # 代入値自動登録用メニューグループ名
-                "menu_group_for_ref": menu_data.get('menu_group_for_ref'),  # 参照用メニューグループ名
-                "menu_create_done_status": menu_create_done_status
+                "menu_group_for_ref": menu_data.get('menu_group_for_ref')  # 参照用メニューグループ名
             },
             "type": "Register"
         }
@@ -1379,7 +1453,6 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
                 
                 # 更新を実行
                 exec_result = objmenu.exec_maintenance(parameters, create_column_id)  # noqa: F405
-                
                 if not exec_result[0]:
                     print("「メニュー項目作成情報」にレコードを登録する際にエラーが起きた。")
                     raise Exception(exec_result[2])
@@ -1523,7 +1596,6 @@ def _update_t_menu_unique_constraint(objdbca, menu_data, target_recode):
         
         # 更新を実行
         exec_result = objmenu.exec_maintenance(parameters, unique_constraint_id)  # noqa: F405
-        print(exec_result)
         if not exec_result[0]:
             print("「一意制約(複数項目)」のレコードを更新する際にエラーが起きた。")
             raise Exception(exec_result[2])
@@ -1559,12 +1631,83 @@ def _disuse_t_menu_unique_constraint(objdbca, target_recode):
             "type": "Discard"
         }
         
-        # 更新を実行
+        # 廃止を実行
         exec_result = objmenu.exec_maintenance(parameters, unique_constraint_id)  # noqa: F405
-        print(exec_result)
         if not exec_result[0]:
             print("「一意制約(複数項目)」のレコードを廃止する際にエラーが起きた。")
             raise Exception(exec_result[2])
+            
+    except Exception as msg:
+        return False, msg
+    
+    return True, None
+
+
+def _insert_t_menu_role(objdbca, menu_name, role_list):
+    """
+        【内部呼び出し用】「メニュー-ロール作成情報」にレコードを登録する
+        ARGS:
+            objdbca:DB接クラス  DBConnectWs()
+            menu_name: 対象のメニュー名
+            role_list: 対象のロール一覧(list)
+        RETRUN:
+            boolean, msg
+    """
+    try:
+        # loadTableの呼び出し
+        objmenu = load_table.loadTable(objdbca, 'menu_role_creation_info')  # noqa: F405
+        for role_name in role_list:
+            parameters = {
+                "parameter": {
+                    "menu_name": menu_name,
+                    "role_name": role_name
+                },
+                "type": "Register"
+            }
+            
+            # 登録を実行
+            exec_result = objmenu.exec_maintenance(parameters)  # noqa: F405
+            if not exec_result[0]:
+                print("「メニュー-ロール作成情報」にレコードを登録する際にエラーが起きた。")
+                raise Exception(exec_result[2])
+            
+    except Exception as msg:
+        return False, msg
+    
+    return True, None
+
+
+def _disuse_t_menu_role(objdbca, role_list, current_role_dict):
+    """
+        【内部呼び出し用】「メニュー-ロール作成情報」のレコードを廃止する
+        ARGS:
+            objdbca:DB接クラス  DBConnectWs()
+            menu_name: 対象のメニュー名
+            role_list: 廃止対象のロール一覧(list)
+            current_role_dict: 廃止対象を指定するためのdict
+        RETRUN:
+            boolean, msg
+    """
+    try:
+        # loadTableの呼び出し
+        objmenu = load_table.loadTable(objdbca, 'menu_role_creation_info')  # noqa: F405
+        for role_name in role_list:
+            role_data = current_role_dict.get(role_name)
+            menu_role_id = role_data.get('menu_role_id')
+            last_update_date_time = role_data.get('last_update_date_time')
+            parameters = {
+                "parameter": {
+                    "last_update_date_time": last_update_date_time
+                },
+                "type": "Discard"
+            }
+            
+            # 廃止を実行
+            exec_result = objmenu.exec_maintenance(parameters, menu_role_id)  # noqa: F405
+            
+            if not exec_result[0]:
+                print("「メニュー-ロール作成情報」のレコードを廃止する際にエラーが起きた。")
+                raise Exception(exec_result[2])
             
     except Exception as msg:
         return False, msg

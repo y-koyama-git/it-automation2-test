@@ -2,7 +2,7 @@
 CREATE TABLE T_COMN_CONDUCTOR_IF_INFO
 (
     CONDUCTOR_IF_INFO_ID            VARCHAR(40),                                -- ConductorインターフェースID
-    CONDUCTOR_STORAGE_PATH_ITA      VARCHAR(255),                               -- Conductor名称
+    CONDUCTOR_STORAGE_PATH_ITA      VARCHAR(255),                               -- データリレイストレージパス(ITA)
     CONDUCTOR_REFRESH_INTERVAL      INT,                                        -- 状態監視周期(単位ミリ秒)
     NOTE                            VARCHAR(4000),                              -- 備考
     DISUSE_FLAG                     VARCHAR(1)  ,                               -- 廃止フラグ
@@ -17,7 +17,7 @@ CREATE TABLE T_COMN_CONDUCTOR_IF_INFO_JNL
     JOURNAL_REG_DATETIME            DATETIME(6),                                -- 履歴用変更日時
     JOURNAL_ACTION_CLASS            VARCHAR (8),                                -- 履歴用変更種別
     CONDUCTOR_IF_INFO_ID            VARCHAR(40),                                -- ConductorインターフェースID
-    CONDUCTOR_STORAGE_PATH_ITA      VARCHAR(255),                               -- Conductor名称
+    CONDUCTOR_STORAGE_PATH_ITA      VARCHAR(255),                               -- データリレイストレージパス(ITA)
     CONDUCTOR_REFRESH_INTERVAL      INT,                                        -- 状態監視周期(単位ミリ秒)
     NOTE                            VARCHAR(4000),                              -- 備考
     DISUSE_FLAG                     VARCHAR(1)  ,                               -- 廃止フラグ
@@ -62,6 +62,7 @@ CREATE TABLE T_COMN_CONDUCTOR_CLASS_JNL
 CREATE TABLE T_COMN_CONDUCTOR_INSTANCE
 (
     CONDUCTOR_INSTANCE_ID           VARCHAR(40),                                -- ConductorインスタンスID
+    CONDUCTOR_INSTANCE_NAME         VARCHAR(40),                                -- Conductorインスタンス名
     I_CONDUCTOR_CLASS_ID            VARCHAR(40),                                -- インスタンス元のクラスID
     I_CONDUCTOR_NAME                VARCHAR(255),                               -- インスタンス元のクラス名
     I_CLASS_JSON                    TEXT,                                       -- インスタンス元の設定
@@ -97,6 +98,7 @@ CREATE TABLE T_COMN_CONDUCTOR_INSTANCE_JNL
     JOURNAL_REG_DATETIME            DATETIME(6),                                -- 履歴用変更日時
     JOURNAL_ACTION_CLASS            VARCHAR (8),                                -- 履歴用変更種別
     CONDUCTOR_INSTANCE_ID           VARCHAR(40),                                -- ConductorインスタンスID
+    CONDUCTOR_INSTANCE_NAME         VARCHAR(40),                                -- Conductorインスタンス名
     I_CONDUCTOR_CLASS_ID            VARCHAR(40),                                -- インスタンス元のクラスID
     I_CONDUCTOR_NAME                VARCHAR(255),                               -- インスタンス元のクラス名
     I_CLASS_JSON                    TEXT,                                       -- インスタンス元の設定

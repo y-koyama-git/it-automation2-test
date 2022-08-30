@@ -25,7 +25,7 @@ const WD = ( function() {
 const ja = {
     // common.js
     COMMON: {
-        
+        sys_err: 'システムエラー',
     },
     // UI
     UI: {
@@ -49,7 +49,9 @@ const ja = {
         AllDownloadHistoryExcelText: '登録している項目一覧の変更履歴全件をエクセルシートでダウンロードします。',
     },
     TABLE: {
-    
+        confirm: '表示推奨件数を超えていますが、表示してもよろしいですか?',
+        limit: '表示可能件数の上限を超えました。',
+        invalid: 'バリデーションエラーです。',
     }
 };
 

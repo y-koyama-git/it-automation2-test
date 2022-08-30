@@ -69,7 +69,7 @@ def menu_define_valid(objdbca, objtable, option):
         # ---------縦メニュー利用---------
         # 縦メニュー利用が設定されている場合、エラー
         vertical = entry_parameter.get("vertical")
-        if vertical:
+        if vertical == '1':
             retBool = False
             msg = "「データシート」を設定した場合、「縦メニュー利用」は設定できません。"
         # ---------縦メニュー利用---------
@@ -109,5 +109,7 @@ def menu_define_valid(objdbca, objtable, option):
     
     # ---------メニュー定義一覧---------
     # 新規なら未作成にする
+    if cmd_type == "Register":
+        entry_parameter.update([('menu_create_done_status', '1')])
     # 個別処理
     return retBool, msg, option

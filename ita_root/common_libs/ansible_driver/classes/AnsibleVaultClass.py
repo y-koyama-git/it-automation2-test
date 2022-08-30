@@ -156,7 +156,7 @@ class AnsibleVault:
             result = False
         return result, mt_encode_value
 
-    def setValutPasswdIndento(val, indento):
+    def setValutPasswdIndento(self, val, indento):
         """
           ansible-vaulで暗号化された文字列に所定のインデントを付加
           Arguments:
