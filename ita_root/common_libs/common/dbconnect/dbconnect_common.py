@@ -499,7 +499,7 @@ class DBConnectCommon:
         user_password = self.password_generate()
         return user_name, user_password
 
-    def password_generate(self, escape=True):
+    def password_generate(self):
         """
         generate password
         
@@ -511,9 +511,6 @@ class DBConnectCommon:
         length = 16
         mysql_available_symbol = "!#%&()*+,-./;<=>?@[]^_{|}~"
         password = generate_secrets(length, mysql_available_symbol)
-
-        if escape is True:
-            password = re.sub(r'([{}])'.format(mysql_available_symbol), r'\$1', password)
 
         return password
 
