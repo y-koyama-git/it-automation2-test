@@ -44,7 +44,6 @@ CREATE TABLE T_COMN_MENU
     MENU_NAME_JA                    VARCHAR(255),                               -- メニュー名(ja)
     MENU_NAME_EN                    VARCHAR(255),                               -- メニュー名(en)
     MENU_NAME_REST                  VARCHAR(255),                               -- メニュー名(REST)
-    LOGIN_NECESSITY                 VARCHAR(2),                                 -- 認証有無
     DISP_SEQ                        INT,                                        -- メニューグループ内表示順序
     AUTOFILTER_FLG                  VARCHAR(2),                                 -- オートフィルタチェック
     INITIAL_FILTER_FLG              VARCHAR(2),                                 -- 初回フィルタ
@@ -69,7 +68,6 @@ CREATE TABLE T_COMN_MENU_JNL
     MENU_NAME_JA                    VARCHAR(255),                               -- メニュー名(ja)
     MENU_NAME_EN                    VARCHAR(255),                               -- メニュー名(en)
     MENU_NAME_REST                  VARCHAR(255),                               -- メニュー名(REST)
-    LOGIN_NECESSITY                 VARCHAR(2),                                 -- 認証有無
     DISP_SEQ                        INT,                                        -- メニューグループ内表示順序
     AUTOFILTER_FLG                  VARCHAR(2),                                 -- オートフィルタチェック
     INITIAL_FILTER_FLG              VARCHAR(2),                                 -- 初回フィルタ
@@ -200,6 +198,7 @@ CREATE TABLE T_COMN_MENU_COLUMN_LINK
     REF_MULTI_LANG                  VARCHAR(2),                                 -- ID連携多言語対応有無
     SENSITIVE_COL_NAME              VARCHAR(64),                                -- Sensitive設定用カラム名
     FILE_UPLOAD_PLACE               VARCHAR(255),                               -- ファイルアップロード配置場所
+    BUTTON_ACTION                   TEXT,                                       -- ボタンアクション
     COL_NAME                        VARCHAR(64),                                -- カラム名
     SAVE_TYPE                       VARCHAR(64),                                -- DB上の保存形式
     AUTO_INPUT                      VARCHAR(2),                                 -- 自動入力フラグ
@@ -211,6 +210,7 @@ CREATE TABLE T_COMN_MENU_COLUMN_LINK
     AUTOREG_ONLY_ITEM               VARCHAR(2),                                 -- 代入値自動登録選択項目フラグ
     INITIAL_VALUE                   TEXT,                                       -- 初期値
     VALIDATE_OPTION                 TEXT,                                       -- バリデーション値
+    VALIDATE_REG_EXP                TEXT,                                       -- 正規表現バリデーション
     BEFORE_VALIDATE_REGISTER        TEXT,                                       -- 個別バリデーション前
     AFTER_VALIDATE_REGISTER         TEXT,                                       -- 個別バリデーション後
     DESCRIPTION_JA                  TEXT,                                       -- 説明(ja)
@@ -242,6 +242,7 @@ CREATE TABLE T_COMN_MENU_COLUMN_LINK_JNL
     REF_MULTI_LANG                  VARCHAR(2),                                 -- ID連携多言語対応有無
     SENSITIVE_COL_NAME              VARCHAR(64),                                -- Sensitive設定用カラム名
     FILE_UPLOAD_PLACE               VARCHAR(255),                               -- ファイルアップロード配置場所
+    BUTTON_ACTION                   TEXT,                                       -- ボタンアクション
     COL_NAME                        VARCHAR(64),                                -- カラム名
     SAVE_TYPE                       VARCHAR(64),                                -- DB上の保存形式
     AUTO_INPUT                      VARCHAR(2),                                 -- 自動入力フラグ
@@ -253,6 +254,7 @@ CREATE TABLE T_COMN_MENU_COLUMN_LINK_JNL
     AUTOREG_ONLY_ITEM               VARCHAR(2),                                 -- 代入値自動登録選択項目フラグ
     INITIAL_VALUE                   TEXT,                                       -- 初期値
     VALIDATE_OPTION                 TEXT,                                       -- バリデーション値
+    VALIDATE_REG_EXP                TEXT,                                       -- 正規表現バリデーション
     BEFORE_VALIDATE_REGISTER        TEXT,                                       -- 個別バリデーション前
     AFTER_VALIDATE_REGISTER         TEXT,                                       -- 個別バリデーション後
     DESCRIPTION_JA                  TEXT,                                       -- 説明(ja)

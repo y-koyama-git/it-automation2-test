@@ -77,7 +77,6 @@ class TextColumn(Column):
         
         min_length = 0
         max_length = None
-        preg_match = None
 
         if val is not None:
             val = str(val)
@@ -92,8 +91,6 @@ class TextColumn(Column):
                     if min_length is None:
                         min_length = 0
 
-                    # 閾値(正規表現)
-                    preg_match = dict_valid.get('preg_match')
             # 文字列長
             if max_length is not None:
                 check_val = len(str(val).encode('utf-8'))
@@ -106,6 +103,7 @@ class TextColumn(Column):
                         return retBool, msg
 
             # 正規表現
+            preg_match = self.get_reg_exp()
             if preg_match is not None:
                 if len(preg_match) != 0:
                     print(preg_match)

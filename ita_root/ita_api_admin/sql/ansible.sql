@@ -592,6 +592,7 @@ CREATE TABLE T_ANSR_EXEC_STS_INST
     SYMPHONY_NAME                   VARCHAR(255),                               -- 呼出元Symphony
     CONDUCTOR_NAME                  VARCHAR(255),                               -- 呼出元Conductor
     EXECUTION_USER                  VARCHAR(255),                               -- 実行ユーザ
+    TIME_REGISTER                   DATETIME(6),                                -- 登録日時
     MOVEMENT_ID                     VARCHAR(40),                                -- Movement/ID
     I_MOVEMENT_NAME                 VARCHAR(255),                               -- Movement/名称
     I_TIME_LIMIT                    INT,                                        -- Movement/遅延タイマー
@@ -636,6 +637,7 @@ CREATE TABLE T_ANSR_EXEC_STS_INST_JNL
     SYMPHONY_NAME                   VARCHAR(255),                               -- 呼出元Symphony
     CONDUCTOR_NAME                  VARCHAR(255),                               -- 呼出元Conductor
     EXECUTION_USER                  VARCHAR(255),                               -- 実行ユーザ
+    TIME_REGISTER                   DATETIME(6),                                -- 登録日時
     MOVEMENT_ID                     VARCHAR(40),                                -- Movement/ID
     I_MOVEMENT_NAME                 VARCHAR(255),                               -- Movement/名称
     I_TIME_LIMIT                    INT,                                        -- Movement/遅延タイマー
