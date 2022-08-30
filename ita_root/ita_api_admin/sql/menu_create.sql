@@ -217,14 +217,14 @@ CREATE TABLE T_MENU_UNIQUE_CONSTRAINT_JNL
 -- メニューロール作成情報
 CREATE TABLE T_MENU_ROLE
 (
-    UNIQUE_CONSTRAINT_ID            VARCHAR(40),                                -- 項番(UUID)
+    MENU_ROLE_ID                    VARCHAR(40),                                -- 項番(UUID)
     MENU_CREATE_ID                  VARCHAR(40),                                -- メニュー定義一覧のID
     ROLE_ID                         VARCHAR(40),                                -- ロールID
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1)   ,                              -- 廃止フラグ
     LAST_UPDATE_TIMESTAMP           DATETIME(6)  ,                              -- 最終更新日時
     LAST_UPDATE_USER                VARCHAR(40),                                -- 最終更新者
-    PRIMARY KEY(UNIQUE_CONSTRAINT_ID)
+    PRIMARY KEY(MENU_ROLE_ID)
 )ENGINE = InnoDB, CHARSET = utf8mb4, COLLATE = utf8mb4_bin, ROW_FORMAT=COMPRESSED ,KEY_BLOCK_SIZE=8;
 
 CREATE TABLE T_MENU_ROLE_JNL
@@ -232,7 +232,7 @@ CREATE TABLE T_MENU_ROLE_JNL
     JOURNAL_SEQ_NO                  VARCHAR(40),                                -- 履歴用シーケンス
     JOURNAL_REG_DATETIME            DATETIME(6),                                -- 履歴用変更日時
     JOURNAL_ACTION_CLASS            VARCHAR (8),                                -- 履歴用変更種別
-    UNIQUE_CONSTRAINT_ID            VARCHAR(40),                                -- 項番(UUID)
+    MENU_ROLE_ID                    VARCHAR(40),                                -- 項番(UUID)
     MENU_CREATE_ID                  VARCHAR(40),                                -- メニュー定義一覧のID
     ROLE_ID                         VARCHAR(40),                                -- ロールID
     NOTE                            TEXT,                                       -- 備考

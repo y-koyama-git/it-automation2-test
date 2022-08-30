@@ -109,20 +109,64 @@ def conductor_maintenance(objdbca, menu, conductor_data, target_uuid=''):
         api_msg_args = []
         raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
 
-    status_code, result, msg = objmenu.rest_maintenance(parameter, target_uuid)
+    try:
+        # 対象メニューのload_table生成(conductor_instance_list,conductor_node_instance_list,movement_list)
+        cc_menu = 'conductor_class_edit'
+        m_menu = 'movement_list'
+        objmovement = load_table.loadTable(objdbca, m_menu)  # noqa: F405
+        objcclass = load_table.loadTable(objdbca, cc_menu)  # noqa: F405
 
-    if status_code != '000-00000':
-        if status_code is None:
-            status_code = '999-99999'
-        elif len(status_code) == 0:
-            status_code = '999-99999'
-        if isinstance(msg, list):
-            log_msg_args = msg
-            api_msg_args = msg
-        else:
-            log_msg_args = [msg]
-            api_msg_args = [msg]
+        if (objmovement.get_objtable() is False or
+                objcclass.get_objtable() is False):
+            raise Exception()
+        
+        objmenus = {
+            "objmovement": objmovement,
+            "objcclass": objcclass
+        }
+    except Exception:
+        status_code = "401-00003"
+        log_msg_args = [menu]
+        api_msg_args = [menu]
         raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
+
+    try:
+        objCexec = ConductorExecuteLibs(objdbca, menu, objmenus)
+        # トランザクション開始
+        objdbca.db_transaction_start()
+
+        # conductor instanceテーブルへのレコード追加
+        tmp_result = objCexec.conductor_class_exec_maintenance(parameter, target_uuid)
+        if tmp_result[0] is not True:
+            errs_info = objcclass.get_message('ERROR')
+            err_all = {}
+            tmp_errs = {}
+            status_code = '499-00201'
+            err_msg_count_flg = 0
+            for err_key, err_info in errs_info.items():
+                tmp_errs = {}
+                for err_key, err_info in errs_info.items():
+                    for err_megs in err_info:
+                        tmp_errs.setdefault(err_key, [])
+                        tmp_errs[err_key].append(err_megs.get('msg'))
+                err_all[0] = tmp_errs.copy()
+
+            if err_msg_count_flg == 0:
+                msg = json.dumps(err_all, ensure_ascii=False)
+            raise Exception()
+
+        objdbca.db_transaction_end(True)
+
+    except Exception:
+        # ロールバック トランザクション終了
+        objdbca.db_transaction_end(False)
+        # status_code = '499-00201'
+        log_msg_args = [msg]
+        api_msg_args = [msg]
+        raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
+    result = {
+        "conductor_class_id": conductor_class_id
+    }
 
     return result
 
@@ -365,8 +409,8 @@ def conductor_execute(objdbca, menu, parameter):
     sheet_type_list = ['15']
     menu_table_link_record = check_sheet_type(menu, sheet_type_list, objdbca)  # noqa: F841
 
+    # 実行準備:loadtable読込
     try:
-
         conductor_class_id = parameter.get('conductor_class_id')
         operation_id = parameter.get('operation_id')
         schedule_date = parameter.get('schedule_date')
@@ -393,8 +437,28 @@ def conductor_execute(objdbca, menu, parameter):
             "objmovement": objmovement,
             "objcclass": objcclass
         }
+    except Exception:
+        status_code = "499-00804"
+        log_msg_args = [conductor_class_id, operation_id, schedule_date]
+        api_msg_args = [conductor_class_id, operation_id, schedule_date]
+        raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
 
+    # 実行:パラメータチェック
+    try:
+        # 入力パラメータ フォーマットチェック
         objCexec = ConductorExecuteLibs(objdbca, menu, objmenus)
+        chk_parameter = objCexec.chk_execute_parameter_format(parameter)
+        if chk_parameter[0] is not True:
+            status_code = '499-00814'
+            log_msg_args = chk_parameter[1]
+            api_msg_args = chk_parameter[1]
+            raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
+    except Exception as e:
+        raise AppException(e)  # noqa: F405
+
+    # 実行:パラメータ生成
+    try:
+        # Conductor実行　パラメータ生成
         create_parameter = objCexec.create_execute_register_parameter(parameter)
         if create_parameter[0] != '000-00000':
             raise Exception()
@@ -404,6 +468,7 @@ def conductor_execute(objdbca, menu, parameter):
         api_msg_args = [conductor_class_id, operation_id, schedule_date]
         raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
     
+    # 実行:Instance登録 maintenance
     try:
         # conducror_instance_id発番、load_table用パラメータ
         conductor_parameter = create_parameter[1].get('conductor')
@@ -416,9 +481,9 @@ def conductor_execute(objdbca, menu, parameter):
         objdbca.db_transaction_start()
 
         # 対象メニューのテーブルと「ロック対象テーブル」を昇順でロック
-        locktable_list = objconductor.get_locktable()
+        locktable_list = [objconductor.get_table_name(), objnode.get_table_name()]
         if locktable_list is not None:
-            tmp_result = objdbca.table_lock([locktable_list])
+            tmp_result = objdbca.table_lock(locktable_list)
         else:
             tmp_result = objdbca.table_lock([objconductor.get_table_name(), objnode.get_table_name()])  # noqa: F841
 

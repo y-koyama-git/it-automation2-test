@@ -54,9 +54,6 @@ def organization_create(body, organization_id):  # noqa: E501
         return '', "ALREADY EXISTS"
 
     try:
-        org_root_db = None
-        gitlab_agent = None
-
         # make organization-db connect infomation
         username, user_password = common_db.userinfo_generate("ORG")
         org_db_name = username
@@ -108,11 +105,11 @@ def organization_create(body, organization_id):  # noqa: E501
         shutil.rmtree(organization_dir)
         common_db.db_rollback()
 
-        if org_root_db:
+        if 'org_root_db' in locals():
             org_root_db.database_drop(org_db_name)
             org_root_db.user_drop(username)
 
-        if gitlab_agent:
+        if 'gitlab_agent' in locals():
             user_list = gitlab_agent.get_user_by_username(username)
             for user in user_list:
                 gitlab_agent.delete_user(user['id'])

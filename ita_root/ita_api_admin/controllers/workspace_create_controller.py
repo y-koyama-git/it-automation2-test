@@ -61,8 +61,6 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
         return '', "ALREADY EXISTS"
 
     try:
-        org_root_db = None
-
         # make storage directory for workspace job
         dir_list = [
             ['driver', 'ansible', 'legacy'],
@@ -174,10 +172,11 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
         org_db.db_commit()
     except Exception as e:
         shutil.rmtree(workspace_dir)
-        ws_db.db_rollback()
+        if 'ws_db' in locals():
+            ws_db.db_rollback()
         org_db.db_rollback()
 
-        if org_root_db:
+        if 'org_root_db' in locals():
             org_root_db.database_drop(ws_db_name)
             org_root_db.user_drop(username)
 
