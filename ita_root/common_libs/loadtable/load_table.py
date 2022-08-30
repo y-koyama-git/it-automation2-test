@@ -1328,6 +1328,9 @@ class loadTable():
                 entry_parameter = target_menu_option.get('entry_parameter').get('parameter')
                 entry_file = target_menu_option.get('entry_parameter').get('file')
 
+            # 不要パラメータの除外(個別処理で追加されたキーも対象か確認)
+            entry_parameter = self.exclusion_parameter(cmd_type, entry_parameter)
+
             # レコード操作前エラー確認
             if self.get_message_count(MSG_LEVEL_ERROR) > 0:
                 retBool = False
