@@ -12,8 +12,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 import os
-from pickle import FALSE
-import sys
 import shutil
 import re
 import inspect
@@ -4289,6 +4287,8 @@ class CreateAnsibleExecFiles():
                 UpData["LOGIN_PW_ANSIBLE_VAULT"] = out_vaultpass
                 UpData["SYSTEM_ID"] = in_system_id
                 ret = self.lv_objDBCA.table_update("T_ANSC_DEVICE", UpData, "SYSTEM_ID", False)
+                # Autocommitがoffになっており、呼び元でトランザクションもoffなのでcommitする。
+                self.lv_objDBCA.db_commit()
                 # 機器一覧の暗号化パスワードを更新済設定
                 self.lv_vault_pass_update_list[update_key] = 'update'
         else:
