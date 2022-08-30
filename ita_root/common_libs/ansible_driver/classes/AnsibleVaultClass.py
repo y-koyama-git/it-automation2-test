@@ -79,7 +79,7 @@ class AnsibleVault:
 
         strExecshellName = "{}/ansible_vault_execute_shell_{}.sh".format(get_AnsibleDriverTmpPath(), os.getpid())
 
-        if engine_virtualenv_path != "":
+        if engine_virtualenv_path:
             virtualenv_flg = "__define__"
             engine_virtualenv_path += "/bin/activate"
             ansible_path = ""
@@ -97,7 +97,7 @@ class AnsibleVault:
         fd.close()
 
         # ansibleインストールバスが設定されている場合に/を追加
-        if ansible_path.strip() != "":
+        if ansible_path:
             ansible_path += "/"
 
         # ansible-vault commad 生成
