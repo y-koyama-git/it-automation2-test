@@ -134,8 +134,10 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
     
     try:
         # メニュー作成用の各テーブルからレコードを取得
-        recode_t_menu_define, recode_t_menu_column_group, recode_t_menu_column, recode_t_menu_unique_constraint, recode_t_menu_role, recode_t_menu_other_link \
+        result, msg, recode_t_menu_define, recode_t_menu_column_group, recode_t_menu_column, recode_t_menu_unique_constraint, recode_t_menu_role, recode_t_menu_other_link \
             = _collect_menu_create_data(objdbca, menu_create_id)  # noqa: E501
+        if not result:
+            raise Exception(msg)
         
         # テーブル名を生成
         create_table_name = 'T_CMDB_' + str(menu_create_id)
@@ -296,6 +298,8 @@ def _collect_menu_create_data(objdbca, menu_create_id):
             objdbca: DB接クラス DBConnectWs()
             menu_create_id: メニュー作成の対象となる「メニュー定義一覧」のレコードのID
         RETRUN:
+            result,
+            msg,
             recode_t_menu_define, # 「メニュー定義一覧」から対象のレコード(1件)
             recode_t_menu_column_group, # 「カラムグループ作成情報」のレコード(全件)
             recode_t_menu_column, # 「メニュー項目作成情報」から対象のレコード(複数)
@@ -311,30 +315,36 @@ def _collect_menu_create_data(objdbca, menu_create_id):
     t_menu_role = 'T_MENU_ROLE'  # メニューロール作成情報
     t_menu_other_link = 'T_MENU_OTHER_LINK'  # 他メニュー連携
     
-    # 「メニュー定義一覧」から対象のレコードを取得
-    recode_t_menu_define = objdbca.table_select(t_menu_define, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
-    if not recode_t_menu_define:
-        print("メニュー定義一覧に対象が無いのでエラー判定")
-    recode_t_menu_define = recode_t_menu_define[0]
+    try:
+        # 「メニュー定義一覧」から対象のレコードを取得
+        recode_t_menu_define = objdbca.table_select(t_menu_define, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
+        if not recode_t_menu_define:
+            raise Exception("「メニュー定義一覧」に対象が無いのでエラー判定")
+        recode_t_menu_define = recode_t_menu_define[0]
+        
+        # 「カラムグループ作成情報」から全てのレコードを取得
+        recode_t_menu_column_group = objdbca.table_select(t_menu_column_group, 'WHERE DISUSE_FLAG = %s', [0])
+        
+        # 「メニュー項目作成情報」から対象のレコードを取得
+        recode_t_menu_column = objdbca.table_select(t_menu_column, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s ORDER BY DISP_SEQ ASC', [menu_create_id, 0])  # noqa: E501
+        
+        # 「一意制約(複数項目)作成情報」から対象のレコードを取得
+        recode_t_menu_unique_constraint = objdbca.table_select(t_menu_unique_constraint, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])  # noqa: E501
+        if recode_t_menu_unique_constraint:
+            recode_t_menu_unique_constraint = recode_t_menu_unique_constraint[0]
+        
+        # 「メニューロール作成情報」から対象のレコードを取得
+        recode_t_menu_role = objdbca.table_select(t_menu_role, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
+        if not recode_t_menu_role:
+            raise Exception("「メニューロール作成情報」に対象が無いのでエラー判定")
+        
+        # 「他メニュー連携」から全てのレコードを取得
+        recode_t_menu_other_link = objdbca.table_select(t_menu_other_link, 'WHERE DISUSE_FLAG = %s', [0])
     
-    # 「カラムグループ作成情報」から全てのレコードを取得
-    recode_t_menu_column_group = objdbca.table_select(t_menu_column_group, 'WHERE DISUSE_FLAG = %s', [0])
+    except Exception as msg:
+        return False, msg, None, None, None, None, None, None
     
-    # 「メニュー項目作成情報」から対象のレコードを取得
-    recode_t_menu_column = objdbca.table_select(t_menu_column, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s ORDER BY DISP_SEQ ASC', [menu_create_id, 0])  # noqa: E501
-    
-    # 「一意制約(複数項目)作成情報」から対象のレコードを取得
-    recode_t_menu_unique_constraint = objdbca.table_select(t_menu_unique_constraint, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])  # noqa: E501
-    if recode_t_menu_unique_constraint:
-        recode_t_menu_unique_constraint = recode_t_menu_unique_constraint[0]
-    
-    # 「メニューロール作成情報」から対象のレコードを取得
-    recode_t_menu_role = objdbca.table_select(t_menu_role, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
-    
-    # 「他メニュー連携」から全てのレコードを取得
-    recode_t_menu_other_link = objdbca.table_select(t_menu_other_link, 'WHERE DISUSE_FLAG = %s', [0])
-    
-    return recode_t_menu_define, recode_t_menu_column_group, recode_t_menu_column, recode_t_menu_unique_constraint, recode_t_menu_role, recode_t_menu_other_link  # noqa: E501
+    return True, None, recode_t_menu_define, recode_t_menu_column_group, recode_t_menu_column, recode_t_menu_unique_constraint, recode_t_menu_role, recode_t_menu_other_link  # noqa: E501
 
 
 def _insert_t_comn_menu(objdbca, recode_t_menu_define, menu_group_col_name):
