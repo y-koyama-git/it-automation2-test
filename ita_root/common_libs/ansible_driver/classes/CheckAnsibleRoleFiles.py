@@ -146,7 +146,7 @@ class CheckAnsibleRoleFiles():
 
         except Exception:
             msgstr = g.appmsg.get_api_message("MSG-10259")
-            self.SetLastError(inspect.currentframe().f_code.co_filename, inspect.currentframe().f_lineno, msgstr)
+            self.SetLastError(os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno, msgstr)
             return False
 
         return True
@@ -234,7 +234,7 @@ class CheckAnsibleRoleFiles():
         errormsg = ""
         ret, files, errormsg = self.RoleDirectoryAnalysis(in_dir, files, self.lv_objMTS, errormsg)
         if not ret:
-            self.SetLastError(inspect.currentframe().f_code.co_filename, inspect.currentframe().f_lineno, errormsg)
+            self.SetLastError(os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno, errormsg)
             return False, ina_def_vars_list, ina_err_vars_list, ina_def_varsval_list, ina_def_array_vars_list, ina_copyvars_list, ina_tpfvars_list, ina_ITA2User_var_list, ina_User2ITA_var_list, ina_comb_err_vars_list
 
         for fullpath, role_name in files.items():
@@ -423,13 +423,13 @@ class CheckAnsibleRoleFiles():
             # 文字コードとBOM付をチェック
             ret, errmsg = self.FileCharacterCodeCheck(translation_table_file, errmsg)
             if not ret:
-                self.SetLastError(inspect.currentframe().f_code.co_filename, inspect.currentframe().f_lineno, errmsg)
+                self.SetLastError(os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno, errmsg)
                 return False, ina_def_vars_list, ina_def_varsval_list, ina_def_array_vars_list, ina_copyvars_list, ina_tpfvars_list, ina_ITA2User_var_list, ina_User2ITA_var_list
 
             # 該当ロールの読替表を読込
             ret, ITA2User_var_list, User2ITA_var_list, errmsg = self.readTranslationFile(translation_table_file, ITA2User_var_list, User2ITA_var_list, errmsg)
             if not ret:
-                self.SetLastError(inspect.currentframe().f_code.co_filename, inspect.currentframe().f_lineno, errmsg)
+                self.SetLastError(os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno, errmsg)
                 return False, ina_def_vars_list, ina_def_varsval_list, ina_def_array_vars_list, ina_copyvars_list, ina_tpfvars_list, ina_ITA2User_var_list, ina_User2ITA_var_list
         """
 
@@ -455,7 +455,7 @@ class CheckAnsibleRoleFiles():
             # 文字コードとBOM付をチェック
             ret, errmsg = self.FileCharacterCodeCheck(user_vars_file, errmsg)
             if not ret:
-                self.SetLastError(inspect.currentframe().f_code.co_filename, inspect.currentframe().f_lineno, errmsg)
+                self.SetLastError(os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno, errmsg)
                 return False, ina_def_vars_list, ina_def_varsval_list, ina_def_array_vars_list, ina_copyvars_list, ina_tpfvars_list, ina_ITA2User_var_list, ina_User2ITA_var_list
 
             tgt_role_pkg_name = self.lva_msg_role_pkg_name
@@ -475,7 +475,7 @@ class CheckAnsibleRoleFiles():
                     errmsg,
                     g.appmsg.get_api_message("MSG-10643", [self.lva_msg_role_pkg_name, in_rolename, tgt_file_name])
                 )
-                self.SetLastError(inspect.currentframe().f_code.co_filename, inspect.currentframe().f_lineno, errmsg)
+                self.SetLastError(os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno, errmsg)
                 return False, ina_def_vars_list, ina_def_varsval_list, ina_def_array_vars_list, ina_copyvars_list, ina_tpfvars_list, ina_ITA2User_var_list, ina_User2ITA_var_list
 
             parent_vars_list = {}
@@ -489,7 +489,7 @@ class CheckAnsibleRoleFiles():
             )
             if not ret:
                 errmsg = '%s(%s)' % (errmsg, f_line)
-                self.SetLastError(inspect.currentframe().f_code.co_filename, inspect.currentframe().f_lineno, errmsg)
+                self.SetLastError(os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno, errmsg)
                 return False, ina_def_vars_list, ina_def_varsval_list, ina_def_array_vars_list, ina_copyvars_list, ina_tpfvars_list, ina_ITA2User_var_list, ina_User2ITA_var_list
 
             user_vars_list = {}
@@ -507,7 +507,7 @@ class CheckAnsibleRoleFiles():
             if not ret:
                 # defaults=>main.ymlからの変数取得失敗
                 errmsg = '%s(%s)' % (errmsg, f_line)
-                self.SetLastError(inspect.currentframe().f_code.co_filename, inspect.currentframe().f_lineno, errmsg)
+                self.SetLastError(os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno, errmsg)
                 return False, ina_def_vars_list, ina_def_varsval_list, ina_def_array_vars_list, ina_copyvars_list, ina_tpfvars_list, ina_ITA2User_var_list, ina_User2ITA_var_list
             
             # ita readmeに定義されている変数(親)を取り出す
@@ -627,7 +627,7 @@ class CheckAnsibleRoleFiles():
                         os.path.basename(translation_table_file), errmsg
                     )
                     if not ret:
-                        self.SetLastError(inspect.currentframe().f_code.co_filename, inspect.currentframe().f_lineno, errmsg)
+                        self.SetLastError(os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno, errmsg)
                         return False, ina_def_vars_list, ina_def_varsval_list, ina_def_array_vars_list, ina_copyvars_list, ina_tpfvars_list, ina_ITA2User_var_list, ina_User2ITA_var_list
                     """
 
@@ -665,7 +665,7 @@ class CheckAnsibleRoleFiles():
                 all_parent_vars_list, User2ITA_var_list, os.path.basename(translation_table_file), errmsg
             )
             if not ret:
-                self.SetLastError(inspect.currentframe().f_code.co_filename, inspect.currentframe().f_lineno, errmsg)
+                self.SetLastError(os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno, errmsg)
                 return False, ina_def_vars_list, ina_def_varsval_list, ina_def_array_vars_list, ina_copyvars_list, ina_tpfvars_list, ina_ITA2User_var_list, ina_User2ITA_var_list
             """
 
@@ -691,7 +691,7 @@ class CheckAnsibleRoleFiles():
         if not tasks_dir:
             # MSG-10260 = "｛｝にtasksディレクトリがありません。"
             msgstr = g.appmsg.get_api_message("MSG-10260", ['./roles/%s' % (in_rolename)])
-            self.SetLastError(inspect.currentframe().f_code.co_filename, inspect.currentframe().f_lineno, msgstr)
+            self.SetLastError(os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno, msgstr)
             return False, ina_def_vars_list, ina_def_varsval_list, ina_def_array_vars_list, ina_copyvars_list, ina_tpfvars_list, ina_ITA2User_var_list, ina_User2ITA_var_list
 
         return True, ina_def_vars_list, ina_def_varsval_list, ina_def_array_vars_list, ina_copyvars_list, ina_tpfvars_list, ina_ITA2User_var_list, ina_User2ITA_var_list
@@ -775,7 +775,7 @@ class CheckAnsibleRoleFiles():
                 errmsg = chkObj.GetLastError()
                 chkObj = None
 
-                self.SetLastError(inspect.currentframe().f_code.co_filename, inspect.currentframe().f_lineno, errmsg)
+                self.SetLastError(os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno, errmsg)
                 return False, ina_parent_vars_list, ina_vars_list, ina_array_vars_list, ina_varsval_list
 
             chkObj = None
@@ -788,7 +788,7 @@ class CheckAnsibleRoleFiles():
                     msgstr = g.appmsg.get_api_message(
                         "MSG-10614", [in_role_pkg_name, in_rolename, parent_var_name]
                     )
-                    self.SetLastError(inspect.currentframe().f_code.co_filename, inspect.currentframe().f_lineno, msgstr)
+                    self.SetLastError(os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno, msgstr)
                     return False, ina_parent_vars_list, ina_vars_list, ina_array_vars_list, ina_varsval_list
 
                 parent_vars_list[parent_var_name] = 0
@@ -855,7 +855,7 @@ class CheckAnsibleRoleFiles():
                         "MSG-10277",
                         ['./roles/%s/%s/%s' % (in_rolename, in_dirname, file)]
                     )
-                    self.SetLastError(inspect.currentframe().f_code.co_filename, inspect.currentframe().f_lineno, msgstr)
+                    self.SetLastError(os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno, msgstr)
                     return False, ina_copyvars_list, ina_tpfvars_list
 
             if os.path.isfile(fullpath):
@@ -864,7 +864,7 @@ class CheckAnsibleRoleFiles():
                     errmsg = ""
                     ret, errmsg = self.FileCharacterCodeCheck(fullpath, errmsg)
                     if not ret:
-                        self.SetLastError(inspect.currentframe().f_code.co_filename, inspect.currentframe().f_lineno, errmsg)
+                        self.SetLastError(os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno, errmsg)
                         return False, ina_copyvars_list, ina_tpfvars_list
 
                 if file == "main.yml":
@@ -973,7 +973,7 @@ class CheckAnsibleRoleFiles():
                 "MSG-10257",
                 ['./roles/%s/%s/' % (in_rolename, in_dirname)]
             )
-            self.SetLastError(inspect.currentframe().f_code.co_filename, inspect.currentframe().f_lineno, msgstr)
+            self.SetLastError(os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno, msgstr)
             return False, ina_copyvars_list, ina_tpfvars_list
 
         return True, ina_copyvars_list, ina_tpfvars_list
@@ -2191,7 +2191,7 @@ class DefaultVarsFileAnalysis():
           true: 正常  false:異常
         """
 
-        in_f_line = inspect.currentframe().f_code.co_filename
+        in_f_line = os.path.basename(inspect.currentframe().f_code.co_filename)
         if type(in_var_array) in (dict, list):
             ret = self.is_assoc(in_var_array)
             if ret == -1:
@@ -2673,7 +2673,7 @@ class DefaultVarsFileAnalysis():
                     col_array_f = "I"
 
             MultiValueVar_f = self.chkMultiValueVariableSub(val)
-            if len(in_var_name) > 0:
+            if len(str(in_var_name)) > 0:
                 wk_var_name_path = '%s%s%s' % (in_var_name_path, demiritta_ch, var)
                 if self.is_num(var) is False:
                     wk_var_name = '%s%s%s' % (in_var_name, demiritta_ch, var)
@@ -2719,7 +2719,7 @@ class DefaultVarsFileAnalysis():
             if in_fastarry_f is True:
                 ina_vars_chain_list[parent_var_key][in_chl_var_key]['ARRAY_STYLE'] = "1"
 
-            if isinstance(val, list) is False:
+            if type(val) not in (dict, list):
                 continue
 
             ret, ina_vars_chain_list, in_error_code, in_line, in_col_count, in_assign_count, in_chl_var_key = self.MakeMultiArrayToFirstVarChainArray(
@@ -3316,7 +3316,7 @@ class DefaultVarsFileAnalysis():
           false:  異常
         """
 
-        in_f_name = inspect.currentframe().f_code.co_filename
+        in_f_name = os.path.basename(inspect.currentframe().f_code.co_filename)
         out_errmsg = ""
         parent_vars_list = {}
         Duplicat_list = {}
@@ -3634,9 +3634,13 @@ class YAMLFileAnalysis():
         yaml_parse_array = obj.Parse(defvarfile)
         errmsg = obj.GetLastError()
         obj = None
+
+        if yaml_parse_array is None:
+            yaml_parse_array = {}
+
         if yaml_parse_array is False:
             errmsg = "%s\n%s" % (errmsg, g.appmsg.get_api_message(error_code, error_ary))
-            self.SetLastError(inspect.currentframe().f_code.co_filename, inspect.currentframe().f_lineno, errmsg)
+            self.SetLastError(os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno, errmsg)
             return False, in_parent_vars_list, ina_vars_list, ina_array_vars_list, ina_varval_list
 
         parent_vars_list = []
@@ -3650,7 +3654,7 @@ class YAMLFileAnalysis():
         )
         if not ret:
             errmsg = "%s(%s)" % (errmsg, f_line)
-            self.SetLastError(inspect.currentframe().f_code.co_filename, inspect.currentframe().f_lineno, errmsg)
+            self.SetLastError(os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno, errmsg)
             return False, in_parent_vars_list, ina_vars_list, ina_array_vars_list, ina_varval_list
 
         vars_list = {}
@@ -3668,7 +3672,7 @@ class YAMLFileAnalysis():
         if not ret:
             # 変数取得失敗
             errmsg = "%s(%s)" % (errmsg, f_line)
-            self.SetLastError(inspect.currentframe().f_code.co_filename, inspect.currentframe().f_lineno, errmsg)
+            self.SetLastError(os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno, errmsg)
             return False, in_parent_vars_list, ina_vars_list, ina_array_vars_list, ina_varval_list
 
         # ファイルに定義されている変数(親)を取り出す
@@ -4658,7 +4662,7 @@ class VarStructAnalysisFileAccess():
 
         if len(all_err_vars_list) > 0:
             var_struct_errmag = self.VarsStructErrmsgEdit(all_err_vars_list, tgt_role_pkg_name, error_msg_code)
-            self.SetLastError(inspect.currentframe().f_code.co_filename, inspect.currentframe().f_lineno, var_struct_errmag)
+            self.SetLastError(os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno, var_struct_errmag)
             return False
 
         return True
