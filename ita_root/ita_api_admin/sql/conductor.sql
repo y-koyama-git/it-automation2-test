@@ -79,7 +79,7 @@ CREATE TABLE T_COMN_CONDUCTOR_INSTANCE
     NOTICE_DEFINITION               TEXT,                                       -- 通知定義
     STATUS_ID                       VARCHAR(40),                                -- ステータスID
     ABORT_EXECUTE_FLAG              VARCHAR(1),                                 -- 緊急停止フラグ
-    TIME_REGISTER                   DATETIME(5),                                -- 登録日時
+    TIME_REGISTER                   DATETIME(6),                                -- 登録日時
     TIME_BOOK                       DATETIME(6),                                -- 予約日時
     TIME_START                      DATETIME(6),                                -- 開始日時
     TIME_END                        DATETIME(6),                                -- 終了日時
@@ -115,7 +115,7 @@ CREATE TABLE T_COMN_CONDUCTOR_INSTANCE_JNL
     NOTICE_DEFINITION               TEXT,                                       -- 通知定義
     STATUS_ID                       VARCHAR(40),                                -- ステータスID
     ABORT_EXECUTE_FLAG              VARCHAR(1),                                 -- 緊急停止フラグ
-    TIME_REGISTER                   DATETIME(5),                                -- 登録日時
+    TIME_REGISTER                   DATETIME(6),                                -- 登録日時
     TIME_BOOK                       DATETIME(6),                                -- 予約日時
     TIME_START                      DATETIME(6),                                -- 開始日時
     TIME_END                        DATETIME(6),                                -- 終了日時

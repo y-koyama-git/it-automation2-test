@@ -152,7 +152,7 @@ def conductor_maintenance(objdbca, menu, conductor_data, target_uuid=''):
                 err_all[0] = tmp_errs.copy()
 
             if err_msg_count_flg == 0:
-                msg = json.dumps(err_all, ensure_ascii=False)
+                msg = json.dumps(err_all, ensure_ascii=False)  # noqa: F405
             raise Exception()
 
         objdbca.db_transaction_end(True)
@@ -714,4 +714,66 @@ def conductor_execute_action(objdbca, menu, mode='', conductor_instance_id='', n
 
     result = msg
 
+    return result
+
+
+def create_movement_zip(objdbca, menu, data_type, conductor_instance_id):
+    """
+        Conductorで実行したMovementのファイルをZIP、base64出力
+        ARGS:
+            objdbca:DB接クラス  DBConnectWs()
+            menu:メニュー名 string
+            data_type: input/result
+            conductor_instance_id:
+        RETRUN:
+            data
+    """
+    result = {}
+    # メニューに対するロール権限をチェック
+    privilege = check_auth_menu(menu, objdbca)
+    if privilege == '2':
+        status_code = "401-00001"
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['15', '16']
+    menu_table_link_record = check_sheet_type(menu, sheet_type_list, objdbca)  # noqa: F841
+
+    try:
+        if data_type == '' or data_type is None:
+            raise Exception()
+        if conductor_instance_id == '' or conductor_instance_id is None:
+            raise Exception()
+        
+        # 対象メニューのload_table生成(conductor_instance_list,conductor_node_instance_list,movement_list)
+        c_menu = 'conductor_instance_list'
+        n_menu = 'conductor_node_instance_list'
+        objconductor = load_table.loadTable(objdbca, c_menu)  # noqa: F405
+        objnode = load_table.loadTable(objdbca, n_menu)  # noqa: F405
+
+        if (objconductor.get_objtable() is False or
+                objnode.get_objtable() is False):
+            raise Exception()
+
+        objmenus = {
+            "objconductor": objconductor,
+            "objnode": objnode,
+        }
+
+        objCexec = ConductorExecuteLibs(objdbca, '', objmenus)
+        result = objCexec.create_movement_zip(data_type,conductor_instance_id)
+    
+    except Exception:
+        status_code = "499-00806"
+        log_msg_args = [conductor_instance_id]
+        api_msg_args = [conductor_instance_id]
+        raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
+
+    try:
+        pass
+    except Exception:
+        raise Exception()
+    
     return result

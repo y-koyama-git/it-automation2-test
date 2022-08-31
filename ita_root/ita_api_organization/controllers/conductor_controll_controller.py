@@ -491,8 +491,16 @@ def get_conductor_input_data(organization_id, workspace_id, menu, conductor_inst
 
     :rtype: InlineResponse20015
     """
-    return 'do some magic!'
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
 
+    # メニューに対するロール権限をチェック（Falseなら権限エラー）
+    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
+    
+    # 入力データ収集
+    data_type = 'input'
+    result_data = conductor_controll.create_movement_zip(objdbca, menu, data_type, conductor_instance_id)
+    return result_data,
 
 @api_filter
 def get_conductor_result_data(organization_id, workspace_id, menu, conductor_instance_id):  # noqa: E501
@@ -511,4 +519,13 @@ def get_conductor_result_data(organization_id, workspace_id, menu, conductor_ins
 
     :rtype: InlineResponse20016
     """
-    return 'do some magic!'
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+
+    # メニューに対するロール権限をチェック（Falseなら権限エラー）
+    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
+    
+    # 結果データ収集
+    data_type = 'result'
+    result_data = conductor_controll.create_movement_zip(objdbca, menu, data_type, conductor_instance_id)
+    return result_data,
