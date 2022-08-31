@@ -58,10 +58,8 @@ setUi() {
     ui.$.menu = $('#menu');
     ui.$.content = $('#content');
         
-    // Set events
-    ui.setTextWidthAdjustmentEvent();
-    ui.setPopupEvent();
-    ui.setToggleButtonEvent();
+    // Set common events
+    fn.setCommonEvents();
     
     // REST API URLs
     const restApiUrls = [
@@ -206,10 +204,38 @@ headerMenu() {
     
     const html = `
     <ul class="headerMenuList">
-        <li class="userIndo headerMenuItem">${ui.userInfo()}</li>
+        <li class="userInfomation headerMenuItem">${ui.userInfo()}</li>
     </ul>`;
     
     ui.$.header.find('.headerMenu').html( html );
+    
+    ui.$.header.find('.headerMenuButton').on('click', function(){
+        const $button = $( this ),
+              $userInfo = $button.next('.userInfoContainer');
+        
+        if ( $userInfo.is('.open') ) {
+            $userInfo.removeClass('open');
+        } else {
+            $userInfo.addClass('open');
+            ui.$.window.on('pointerdown.userInfo', function( e ){
+                if ( !$( e.target ).closest('.userInfomation').length ) {
+                    $userInfo.removeClass('open');
+                    ui.$.window.off('pointerdown.userInfo');
+                }
+            });
+        }
+    });
+    
+    // ワークスペース切替
+    ui.$.header.find('.userInfoWorkspaceButton').on('click', function(){
+        const workspaceId =  $( this ).attr('data-workspace');
+        window.location.href = fn.getWorkspaceChangeUrl( workspaceId );        
+    });
+    
+    // ログアウト
+    ui.$.header.find('.userInfoMenuButton').on('click', function(){
+        CommonAuth.logout({ redirectUri: ui.params.path });
+    });
 }
 /*
 ##################################################
@@ -224,11 +250,58 @@ userInfo() {
           roles = fn.cv( ui.rest.user.roles, []),
           workspaces = fn.cv( ui.rest.user.workspaces, []);
     
+    const workspaceList = [];
+    for ( const work of workspaces ) {
+        workspaceList.push(`<li class="userinfoWorkspaceItem">`
+            + `<button class="userInfoWorkspaceButton" data-workspace="${work}">${work}</button>`
+        + `</li>`);
+    }
+    
+    const roleList = [];
+    for ( const role of roles ) {
+        roleList.push(`<li class="userinfoRoleItem">`
+            + role
+        + `</li>`);
+    }
+    
     return `
     <button class="headerMenuButton">
         <span class="icon icon-user"></span>
         <span class="userName">${name}</span>
-    </button>`;
+    </button>
+    <div class="userInfoContainer">
+        <div class="userInfoBlock userInfo">
+            <div class="userInfoBody">
+                <div class="userInfoName">${name}</div>
+                <div class="userInfoId">${id}</div>
+            </div>
+        </div>
+        <div class="userInfoBlock userInfoWorkspace">
+            <div class="userInfoTitle">ワークスペース切替</div>
+            <div class="userInfoBody">
+                <ul class="userInfoWorkspaceList">
+                    ${workspaceList.join('')}
+                </ul>
+            </div>
+        </div>
+        <div class="userInfoBlock userInfoRole">
+            <div class="userInfoTitle">ロール一覧</div>
+            <div class="userInfoBody">
+                <ul class="userInfoRoleList">
+                    ${roleList.join('')}
+                </ul>
+            </div>
+        </div>
+        <div class="userInfoBlock userInfoMenu">
+            <div class="userInfoBody">
+                <ul class="userInfoMenuList">
+                    <li class="userInfoMenuItem">
+                        ${fn.html.button('ログアウト', ['userInfoMenuButton', 'itaButton'], { type: 'logout', action: 'positive'})}
+                    </li>
+                </div>
+            </div>
+        </div>
+    </div>`;
 } 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -732,19 +805,14 @@ defaultMenu() {
         const $button = $( this ),
               type = $button.attr('data-type');
         
-        
-        const disabledFalse = function(){
-            fn.disabledTimer( $button, false, 1000 );
-        }
         const downloadFile = function( type, url, fileName ){
             $button.prop('disabled', true );
             
             fn.fetch( url ).then(function( result ){
                 fn.download( type, result, fileName );
-                disabledFalse();
+                fn.disabledTimer( $button, false, 1000 );
             }).catch(function( error ){
                 alert( error.message );
-                disabledFalse();
                 location.replace('system_error/');
             });
         };
@@ -759,24 +827,11 @@ defaultMenu() {
             case 'newDwonloadExcel':
                 downloadFile('excel', `/menu/${ui.params.menuNameRest}/excel/format/`, ui.currentPage.title + '_format');
             break;
-            case 'fileUpload':
-                fn.fileSelect('file', null, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet').then(function( result ){
-                    
-                    fetch( fn.getRestApiUrl(`/menu/${ui.params.menuNameRest}/excel/maintenance`), {
-                        method: 'POST',
-                        headers: {
-                          'Authorization': `Bearer ${CommonAuth.getToken()}`,
-                        },
-                        body: result
-                    }).then(function( res ){
-    
-                        res.text().then(function( text ){ console.log(text)});
-                        
-                    });
-                }).catch(function( error ){
-                    alert( error.message );
-                    location.replace('system_error/');
-                });
+            case 'excelUpload':
+                ui.fileRegister( $button, 'excel');
+            break;
+            case 'jsonUpload':
+                ui.fileRegister( $button, 'json');
             break;
             case 'allHistoryDwonloadExcel':
                 downloadFile('excel', `/menu/${ui.params.menuNameRest}/excel/journal/`, ui.currentPage.title + '_journal');
@@ -800,7 +855,7 @@ defaultMenu() {
 }
 /*
 ##################################################
-   ファイル一括登録
+   全件ダウンロード・ファイル一括登録
 ##################################################
 */
 dataDownload() {
@@ -808,20 +863,98 @@ dataDownload() {
         { title: WD.UI.AllDownloadExcel, description: WD.UI.AllDownloadExcelText, type: 'allDwonloadExcel'},
         { title: WD.UI.AllDownloadJson, description: WD.UI.AllDownloadJsonText, type: 'allDwonloadJson'}
     ];
-    // 新規登録用エクセル
-    if ( this.flag.insert ) list.push({ title: WD.UI.NewDownloadExcel, description: WD.UI.NewDownloadExcelText, type: 'newDwonloadExcel'});
-    if ( this.flag.edit ) list.push({ title: WD.UI.FileUpload, description: WD.UI.FileUploadText, type: 'fileUpload'});
+    
+    if ( this.flag.insert ) {
+        list.push({ title: WD.UI.NewDownloadExcel, description: WD.UI.NewDownloadExcelText, type: 'newDwonloadExcel'});
+    } 
+    
     list.push({ title: WD.UI.AllDownloadHistoryExcel, description: WD.UI.AllDownloadHistoryExcelText, type: 'allHistoryDwonloadExcel'});
+    
+    if ( this.flag.edit ) {
+        list.push({ title: WD.UI.ExcelUpload, description: WD.UI.ExcelUploadText, type: 'excelUpload', action: 'positive'});
+        list.push({ title: WD.UI.JsonUpload, description: WD.UI.JsonUploadText, type: 'jsonUpload', action: 'positive'});
+    }
     
     const html = [];
     for ( const item of list ) {
+        const attr = { type: item.type };
+        if ( item.action ) attr.action = item.action;
         html.push(`<div class="operationBlock">`
-            + `<div class="operationTitle">${fn.html.button( item.title, ['operationButton', 'itaButton'], { type: item.type})}</div>`
+            + `<div class="operationTitle">${fn.html.button( item.title, ['operationButton', 'itaButton'], attr )}</div>`
             + `<div class="operationDescription">${item.description}</div>`
         + `</div>`);
     }
     
     return html.join('');
+}
+/*
+##################################################
+   ファイル一括登録
+##################################################
+*/
+fileRegister( $button, type ) {
+    const ui = this;
+    
+    const fileType = ( type === 'excel')? 'base64': 'json',
+          fileMime = ( type === 'excel')? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'application/json',
+          restUrl = ( type === 'excel')? `excel/maintenance/`: `maintenance/all/`;
+    
+    // ボタンを無効
+    $button.prop('disabled', true );
+    
+    // ファイル選択
+    fn.fileSelect( fileType, null, fileMime ).then(function( selectFile ){
+        const postData = ( type === 'excel')? { excel: selectFile.base64 }: selectFile.json;
+        
+        // 登録するか確認する
+        const buttons = {
+            ok: { text: '一括登録開始', action: 'positive'},
+            cancel: { text: 'キャンセル', action: 'normal'}
+        };
+        
+        const table = { tbody: []};
+        table.tbody.push(['ファイルネーム', selectFile.name ]);
+        table.tbody.push(['ファイルサイズ', selectFile.size.toLocaleString() + ' byte']);
+        
+        if ( fileType === 'json') {
+            try {
+                table.tbody.push(['件数', selectFile.json.length.toLocaleString() ]);
+            } catch( e ) {
+                throw new Error('JSONの形式が正しくありません。');
+            }
+        }
+        
+        fn.alert('一括登録確認', fn.html.table( table, 'fileSelectTable', 1 ), 'confirm', buttons ).then( function( flag ){
+            if ( flag ) {
+            
+                const processing = fn.processingModal('一括登録処理中');
+                
+                // POST（登録）
+                fn.fetch(`/menu/${ui.params.menuNameRest}/${restUrl}`, null, 'POST', postData ).then(function( result ){
+                    // 登録成功
+                    fn.resultModal( result ).then(function(){
+                        ui.contentTabOpen('#dataList');
+                        ui.mainTable.changeViewMode();
+                    });
+                }).catch(function( error ){
+                    // 登録失敗
+                    fn.errorModal( error, ui.currentPage.title );
+                }).then(function(){
+                    // ボタンを戻す
+                    fn.disabledTimer( $button, false, 1000 );
+                    processing.close();
+                });
+            } else {
+                // キャンセル
+                fn.disabledTimer( $button, false, 0 );
+            }
+        });
+    }).catch(function( error ){
+        if ( error !== 'cancel') {
+            alert( error );
+        }
+        fn.disabledTimer( $button, false, 0 );
+    });
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -864,155 +997,5 @@ condcutor( mode ) {
         conductor.setup();
     });
 }
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//   Common events
-//
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-/*
-##################################################
-   input text, textarea の幅を入力に合わせる
-##################################################
-*/
-setTextWidthAdjustmentEvent() {
-    const ui = this;
-    
-    ui.$.body.on('input.textWidthAdjustment', '.inputTextWidthAdjustment', function(){
-        const $text = $( this ),
-              value = $text.val();
-        $text.next('.inputTextWidthAdjustmentText').text( value );
-    });
-
-}
-
-/*
-##################################################
-   切替ボタン
-##################################################
-*/
-setToggleButtonEvent() {
-    const ui = this;
-    
-    ui.$.body.on('click', '.toggleButton', function(){
-        const $button = $( this ),
-              flag = ( $button.attr('data-toggle') === 'on')? 'off': 'on';
-
-        $button.attr('data-toggle', flag );
-    });
-}
-
-/*
-##################################################
-   titel の内容をポップアップ
-##################################################
-*/
-setPopupEvent() {
-    const ui = this;
-    
-    ui.$.body.on('pointerenter.popup', '.popup', function(){
-        const $t = $( this ),
-              ttl = $t.attr('title');
-        if ( ttl !== undefined ) {
-            $t.removeAttr('title');
-
-            const $p = $('<div/>', {
-                'class': 'popupBlock',
-                'html': fn.escape( ttl, true )
-            }).append('<div class="popupArrow"><span></span></div>');
-            
-            const $arrow = $p.find('.popupArrow');
-
-            ui.$.body.append( $p );
-
-            const r = $t[0].getBoundingClientRect(),
-                  m = 8,
-                  wW = ui.$.window.width(),
-                  tW = $t.outerWidth(),
-                  tH = $t.outerHeight(),
-                  tL = r.left,
-                  tT = r.top,
-                  pW = $p.outerWidth(),
-                  pH = $p.outerHeight(),
-                  wsL = ui.$.window.scrollLeft();
-
-            let l = ( tL + tW / 2 ) - ( pW / 2 ) - wsL,
-                t = tT - pH - m;
-
-            if ( t <= 0 ) {
-                $p.addClass('popupBottom');
-                t = tT + tH + m;
-            } else {
-                $p.addClass('popupTop');
-            }
-            if ( wW < l + pW ) l = wW - pW - m;
-            if ( l <= 0 ) l = m;
-
-            $p.css({
-                'width': pW,
-                'height': pH,
-                'left': l,
-                'top': t
-            });
-            
-            // 矢印の位置
-            let aL = 0;
-            if ( tL - wsL + tW > wW ) {
-                const twW = tW - ( tL - wsL + tW - wW );
-                if ( twW > pW || wW < twW ) {
-                    aL = pW / 2;
-                } else {
-                    aL = pW - ( twW / 2 );
-                    if ( pW - aL < 20 ) aL = pW - 20;
-                }    
-            } else if ( tL < wsL ) {
-                const twW = tL + tW - wsL;
-                if ( twW > pW ) {
-                    aL = pW / 2;
-                } else {
-                    aL = twW / 2;
-                    if (aL < 20 ) aL = 20;
-                }
-            } else {
-                aL = ( tL + ( tW / 2 )) - l - wsL;
-            }
-            $arrow.css('left', aL );
-
-            if ( $t.is('.popupHide') ) {
-                $p.addClass('popupHide');
-            }
-
-            $t.on('pointerleave.popup', function(){
-                const $p = ui.$.body.find('.popupBlock'),
-                      title = ttl;
-                $p.remove();
-                $t.off('pointerleave.popup click.popup').attr('title', title );
-            });
-
-            $t.on('click', function(){
-                if ( $t.attr('data-popup') === 'click') {
-                   if ( $t.is('.popupHide') ) {
-                        $t.add( $p ).removeClass('popupHide');
-                    } else {
-                        $t.add( $p ).addClass('popupHide');
-                    }
-                }
-            });
-
-            const targetCheck = function(){
-                if ( $t.is(':visible') ) {
-                    if ( $p.is(':visible') ) {
-                        setTimeout( targetCheck, 200 );
-                    }
-                } else {
-                    $p.remove();
-                }              
-            };
-            targetCheck();
-        }
-    });
-}
-
 
 }

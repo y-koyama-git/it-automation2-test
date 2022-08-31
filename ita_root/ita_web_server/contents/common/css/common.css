@@ -430,18 +430,21 @@ white-space: nowrap;
 /* 無効 */
 .button:disabled,
 .standBy .button {
-cursor: default!important;
+cursor: no-drop!important;
 }
-.button:disabled > .inner,
-.standBy .button > .inner,
-.standBy .button:hover > .inner,
-.standBy .button:active > .inner {
+.button:disabled > .inner {
 transform: none!important;
 background-color: var(--black20)!important;
 background-image: none!important;
 box-shadow: none;
 color: var(--black40)!important;
 opacity: .5!important;
+}
+.standBy .button > .inner,
+.standBy .button:hover > .inner,
+.standBy .button:active > .inner {
+transform: none!important;
+background-image: none!important;
 }
 
 /*
@@ -482,7 +485,6 @@ border-top: 1px solid var(--black100);
 ##################################################
 */
 #header {
-overflow: hidden;
 display: flex;
 position: relative;
 z-index: 100;
@@ -504,6 +506,122 @@ min-width: 0;
 flex: 0 0 240px;
 border-right: 1px solid rgba(0,0,0,.3);
 }
+.userInfoContainer {
+overflow: hidden;
+display: none;
+flex-direction: column;
+position: absolute;
+z-index: 9999;
+right: 8px; top: 60px;
+width: 304px;
+max-height: calc( 100vh - 76px );
+min-height: calc( 640px - 76px );
+background-color: var(--white100);
+box-shadow: 0 0 16px rgba( 0,0,0,.3 );
+border-radius: 0 0 8px 8px;
+border: 1px solid var(--black40);
+border-top: 8px solid var(--mainColor100);
+}
+.userInfoContainer.open {
+display: flex;
+}
+.userInfoBlock {
+overflow: auto;
+border-bottom: 1px solid var(--black20);
+}
+.userInfoBlock:last-child {
+border-bottom: none;
+}
+.userInfo,
+.userInfoMenu {
+flex: 0 0 auto;
+}
+.userInfo {
+background-image: linear-gradient( rgba(0,0,0,0), rgba(0,0,0,.1) );
+}
+.userInfoName {
+padding: 24px 16px 4px 16px;
+line-height: 1.5;
+font-size: 18px;
+}
+.userInfoId {
+padding: 4px 16px 24px;
+line-height: 1;
+font-size: 12px;
+color: var(--black60);
+}
+.userInfoTitle {
+position: sticky;
+top: 0;
+z-index: 1;
+padding: 8px 16px;
+background-color: var(--mainColor60);
+background-image: linear-gradient(rgba(255,255,255,.075), rgba(255,255,255,0));
+line-height: 1;
+letter-spacing: .25px;
+text-shadow: 1px 1px 1px rgb( 0,0,0,.2 );
+font-size: 14px;
+font-weight: bold;
+color: var(--white100);
+}
+.userInfoWorkspaceButton {
+width: 100%;
+padding: 12px 16px;
+background-color: transparent;
+border: none;
+font-size: 12px;
+cursor: pointer;
+}
+.userInfoWorkspaceButton {
+position: relative;
+z-index: 0;
+padding-right: 32px;
+text-align: left;
+}
+.userInfoWorkspaceButton:hover {
+background-color: var(--mainColor10);
+}
+.userInfoWorkspaceButton::after {
+content: '';
+display: block;
+position: absolute;
+z-index: 1;
+right: 12px; top: 50%;
+transition-duration: .2s;
+transform: translateY(-50%) rotate(45deg);
+width: 8px; height: 8px;
+border-right: 2px solid var(--black30);
+border-top: 2px solid var(--black30);
+}
+.userInfoWorkspaceButton:hover::after {
+transform: translate(2px,-50%) rotate(45deg);
+border-top-color: var(--mainColor100);
+border-right-color: var(--mainColor100);
+}
+.userinfoWorkspaceItem {
+border-top: 1px solid var(--black10);
+}
+.userinfoRoleItem {
+padding: 12px 16px;
+border-top: 1px solid var(--black10);
+font-size: 14px;
+}
+.userinfoWorkspaceItem:first-child,
+.userinfoRoleItem:first-child {
+border-top: none;
+}
+.userInfoMenu {
+background-color: var(--black10);
+}
+.userInfoMenuItem {
+padding: 8px;
+}
+.userInfoMenuButton {
+width: 100%;
+height: 32px;
+line-height: 32px;
+}
+
 /*
 ##################################################
   Topic path
@@ -1147,7 +1265,8 @@ display: none;
 .historyStandBy .tableFooter,
 .tableStandBy .tableErrorMessage,
 .filterStandBy .tableErrorMessage,
-.noData .tableFooter {
+.noData .tableFooter,
+.autoFilterStandBy .tableFooter {
 display: none!important;
 }
 .filterStandBy .tableBody {
@@ -1178,22 +1297,30 @@ animation: loading 1s infinite;
 @keyframes loading{
 to { transform: rotate(360deg); }
 }
+.autoFilterStandBy .tableBody,
 .noData .tableBody {
 flex: 0 0 auto;
 }
+.autoFilterStandBy .tableMessage,
+.historyStandBy .tableMessage,
 .noData .tableMessage {
 flex: 1 1 auto;
 display: flex;
 align-items: center;
 justify-content: center;
 margin-top: 8px;
-background-color: var(--mainColor20);
-border: 2px solid var(--mainColor30);
-border-radius: 8px;
+/*background-image: linear-gradient( 45deg, transparent 25%, rgba(0,0,0,.01) 25%, rgba(0,0,0,.01) 50%, transparent 50%, transparent 75%, rgba(0,0,0,.01) 75%);*/
+background-color: var(--mainColor10);
+background-size: 64px 64px;
+border: 1px solid var(--mainColor30);
+box-shadow: 0 0 32px rgba(0,0,0,.1) inset;
 letter-spacing: .5px;
-font-size: 16px;
-color: var(--mainColor100);
+line-height: 1.5;
+font-size: 20px;
+font-weight: bold;
+color: var(--black60);
 }
+
 .tableError .tableBody {
 display: block;
 flex: 3 1 0;
@@ -1265,10 +1392,17 @@ line-height: 28px;
 padding: 0 8px;
 font-size: 12px;
 }
+.tableHeaderMessage {
+display: flex;
+align-items: center;
+letter-spacing: .25px;
+line-height: 1.5;
+font-size: 16px;
+color: var(--black80);
+}
 .tableBody {
 overflow: auto;
 flex: 1 1 auto;
-background-color: var(--white100);
 }
 
 /* Table general */
@@ -1352,6 +1486,7 @@ color: var(--white100);
 }
 .tHeadSort {
 cursor: pointer;
+user-select: none;
 }
 .tHeadSort > .ci::after {
 content: '';
@@ -1591,6 +1726,12 @@ font-size: 12px;
 text-shadow: none;
 color: var(--black80);
 }
+.tHeadFilterHeaderNarrow .icon {
+font-size: 16px;
+}
+.tHeadFilterHeaderNarrow .tHeadFilterTitle {
+display: none;
+}
 .tHeadFilterInput {
 vertical-align: top;
 }
@@ -1690,17 +1831,32 @@ display: flex;
 align-items: center;
 padding-left: 8px;
 }
-.filterInputDatePicker {
+.filterInputDatePicker,
+.inputDateCalendarButton {
 width: 32px;
 }
-.filterInputDatePicker > .inner {
+.filterInputDatePicker > .inner,
+.inputDateCalendarButton  > .inner {
 text-overflow: inherit;
 text-align: center;
 font-size: 16px;
 }
-.filterInputDatePicker .icon {
+.filterInputDatePicker .icon,
+.inputDateCalendarButton .icon {
 margin: 0;
 opacity: 1;
+}
+/* Input date */
+.inputDateContainer {
+display: flex;
+gap: 8px;
+width: 208px;
+}
+.inputDateBody {
+flex: 0 0 168px;
+}
+.inputDateCalendar {
+flex: 0 0 32px;
 }
 
 /* Footer */
@@ -1887,7 +2043,6 @@ padding: 0 8px;
 .tBodyInputTd > .ci {
 padding: 4px;
 }
-
 .errorTableContainer {
 overflow: auto;
 height: 100%;
@@ -1903,7 +2058,63 @@ word-break: break-all;
 .errorTable .tHeadLeftSticky {
 width: 8px;
 }
-
+.resultContainer,
+.errorContainer {
+overflow: auto;
+height: 100%;
+padding: 16px;
+}
+.resultList {
+display: table;
+width: 100%;
+margin-bottom: 16px; padding: 1px;
+background-color: var(--mainColor20);
+border-radius: 4px;
+}
+.resultList:last-child {
+margin-bottom: 0;
+}
+.resultType {
+display: table-cell;
+width: 200px;
+padding: 0 16px;
+background-color: var(--rowHeadColor);
+line-height: 48px;
+font-size: 20px;
+color: var(--black80);
+}
+.resultType::before {
+content: '';
+display: inline-block;
+width: 32px; height: 32px;
+margin-right: 16px;
+border-radius: 50%;
+vertical-align: middle;
+}
+.resultTypeRegister .resultType::before {
+background-color: var(--buttonColor);
+}
+.resultTypeUpdate .resultType::before {
+background-color: #56B20C;
+}
+.resultTypeDiscard .resultType::before {
+background-color: #FFDD00;
+}
+.resultTypeRestore .resultType::before {
+background-color: #0078DC;
+}
+.resultNumber {
+display: table-cell;
+padding: 0 16px;
+background-color: var(--rowColor);
+text-align: right;
+line-height: 48px;
+font-size: 24px;
+color: var(--black90);
+}
+.fileSelectTable {
+width: 100%;
+}
 
 .operationBlock {
 display: flex;
