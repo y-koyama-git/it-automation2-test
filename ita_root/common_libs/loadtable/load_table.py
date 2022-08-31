@@ -133,7 +133,6 @@ class loadTable():
 
         # ユーザー
         self.user = g.USER_ID
-        self.user = '1'
 
         # DBのカラム、PK
         self.primary_key = ''

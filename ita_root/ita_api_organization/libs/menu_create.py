@@ -382,6 +382,7 @@ def menu_create_define(objdbca, create_param):
         print('タイプは：' + str(type))
         result = _create_new_execute(objdbca, create_param)
         
+        menu_name_rest = result.get('menu_name_rest')
         history_id = result.get('history_id')
         message = result.get('message')
         # if not status:
@@ -393,6 +394,7 @@ def menu_create_define(objdbca, create_param):
         print('タイプは：' + str(type))
         result = _initialize_execute(objdbca, create_param)
         
+        menu_name_rest = result.get('menu_name_rest')
         history_id = result.get('history_id')
         message = result.get('message')
         # if not status:
@@ -404,6 +406,7 @@ def menu_create_define(objdbca, create_param):
         print('タイプは：' + str(type))
         result = _edit_execute(objdbca, create_param)
         
+        menu_name_rest = result.get('menu_name_rest')
         history_id = result.get('history_id')
         message = result.get('message')
         # if not status:
@@ -418,7 +421,7 @@ def menu_create_define(objdbca, create_param):
         api_msg_args = [msg]
         raise AppException('499-00212', log_msg_args, api_msg_args)  # noqa: F405
     
-    result_data = {'history_id': history_id, 'message': message}
+    result_data = {'menu_name_rest': menu_name_rest, 'history_id': history_id, 'message': message}
     return result_data
 
 
@@ -438,6 +441,7 @@ def _create_new_execute(objdbca, create_param):  # noqa: C901
     menu_data = check_request_body_key(create_param, 'menu')  # ####メモ： "menu" keyが無かったら400-00002エラー
     column_data_list = create_param.get('column')
     group_data_list = create_param.get('group')
+    menu_name_rest = menu_data.get('menu_name_rest')
     
     try:
         # トランザクション開始
@@ -472,10 +476,9 @@ def _create_new_execute(objdbca, create_param):  # noqa: C901
         # 「メニュー-ロール作成情報」にレコードを登録
         menu_name = menu_data.get('menu_name')
         role_list = menu_data.get('role_list')
-        if role_list:
-            retbool, msg = _insert_t_menu_role(objdbca, menu_name, role_list)
-            if not retbool:
-                raise Exception(msg)
+        retbool, msg = _insert_t_menu_role(objdbca, menu_name, role_list)
+        if not retbool:
+            raise Exception(msg)
         
         # 「メニュー作成履歴」にレコードを登録
         status_id = "1"  # (1:未実行)
@@ -489,25 +492,27 @@ def _create_new_execute(objdbca, create_param):  # noqa: C901
         
         message = ''
         
-    except Exception as e:
+    except Exception as msg:
         # ####メモ：失敗時のメッセージはちゃんと取り出したいので、作りこみ予定。
         # ロールバック トランザクション終了
         print("エラー発生のためロールバック")
         objdbca.db_transaction_end(False)
-        print(e)
-        if len(e.args) == 2:
-            status_code = '{}'.format(e.args[0])
-            msg_args = '{}'.format(e.args[1])
-            msg = g.appmsg.get_api_message(status_code, [msg_args])
-        else:
-            status_code = '999-99999'
-            msg_args = '{}'.format(*e.args)
-            msg = g.appmsg.get_api_message(status_code, [msg_args])
+        # print(e)
+        # if len(e.args) == 2:
+        #     status_code = '{}'.format(e.args[0])
+        #     msg_args = '{}'.format(e.args[1])
+        #     msg = g.appmsg.get_api_message(status_code, [msg_args])
+        # else:
+        #     status_code = '999-99999'
+        #     msg_args = '{}'.format(*e.args)
+        #     msg = g.appmsg.get_api_message(status_code, [msg_args])
         
-        message = msg
-        history_id = None
+        log_msg_args = [msg]
+        api_msg_args = [msg]
+        raise AppException('499-00201', log_msg_args, api_msg_args)  # noqa: F405
 
     result_data = {
+        'menu_name_rest': menu_name_rest,
         'history_id': history_id,
         'message': message
     }
@@ -537,6 +542,7 @@ def _initialize_execute(objdbca, create_param):  # noqa: C901
     menu_data = check_request_body_key(create_param, 'menu')  # "menu" keyが無かったら400-00002エラー
     column_data_list = check_request_body_key(create_param, 'column')  # "column" keyが無かったら400-00002エラー
     group_data_list = create_param.get('group')
+    menu_name_rest = menu_data.get('menu_name_rest')
     
     try:
         # トランザクション開始
@@ -608,8 +614,6 @@ def _initialize_execute(objdbca, create_param):  # noqa: C901
         
         # 「ロール選択」の値を取得
         role_list = menu_data.get('role_list')
-        if not role_list:
-            role_list = []
         
         # 現在の「メニュー-ロール作成情報」のレコードを取得
         current_t_menu_role = objdbca.table_select(t_menu_role, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
@@ -650,25 +654,27 @@ def _initialize_execute(objdbca, create_param):  # noqa: C901
         
         message = ''
 
-    except Exception as e:
+    except Exception as msg:
         # ####メモ：失敗時のメッセージはちゃんと取り出したいので、作りこみ予定。
         # ロールバック トランザクション終了
         print("エラー発生のためロールバック")
         objdbca.db_transaction_end(False)
-        print(e)
-        if len(e.args) == 2:
-            status_code = '{}'.format(e.args[0])
-            msg_args = '{}'.format(e.args[1])
-            msg = g.appmsg.get_api_message(status_code, [msg_args])
-        else:
-            status_code = '999-99999'
-            msg_args = '{}'.format(*e.args)
-            msg = g.appmsg.get_api_message(status_code, [msg_args])
-
-        message = msg
-        history_id = None
+        # print(e)
+        # if len(e.args) == 2:
+        #     status_code = '{}'.format(e.args[0])
+        #     msg_args = '{}'.format(e.args[1])
+        #     msg = g.appmsg.get_api_message(status_code, [msg_args])
+        # else:
+        #     status_code = '999-99999'
+        #     msg_args = '{}'.format(*e.args)
+        #     msg = g.appmsg.get_api_message(status_code, [msg_args])
+        
+        log_msg_args = [msg]
+        api_msg_args = [msg]
+        raise AppException('499-00201', log_msg_args, api_msg_args)  # noqa: F405
 
     result_data = {
+        'menu_name_rest': menu_name_rest,
         'history_id': history_id,
         'message': message
     }
@@ -698,6 +704,7 @@ def _edit_execute(objdbca, create_param):  # noqa: C901
     menu_data = check_request_body_key(create_param, 'menu')  # "menu" keyが無かったら400-00002エラー
     column_data_list = check_request_body_key(create_param, 'column')  # "column" keyが無かったら400-00002エラー
     group_data_list = create_param.get('group')
+    menu_name_rest = menu_data.get('menu_name_rest')
     
     try:
         # トランザクション開始
@@ -769,8 +776,6 @@ def _edit_execute(objdbca, create_param):  # noqa: C901
         
         # 「ロール選択」の値を取得
         role_list = menu_data.get('role_list')
-        if not role_list:
-            role_list = []
         
         # 現在の「メニュー-ロール作成情報」のレコードを取得
         current_t_menu_role = objdbca.table_select(t_menu_role, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
@@ -811,25 +816,27 @@ def _edit_execute(objdbca, create_param):  # noqa: C901
         
         message = ''
 
-    except Exception as e:
+    except Exception as msg:
         # ####メモ：失敗時のメッセージはちゃんと取り出したいので、作りこみ予定。
         # ロールバック トランザクション終了
         print("エラー発生のためロールバック")
         objdbca.db_transaction_end(False)
-        print(e)
-        if len(e.args) == 2:
-            status_code = '{}'.format(e.args[0])
-            msg_args = '{}'.format(e.args[1])
-            msg = g.appmsg.get_api_message(status_code, [msg_args])
-        else:
-            status_code = '999-99999'
-            msg_args = '{}'.format(*e.args)
-            msg = g.appmsg.get_api_message(status_code, [msg_args])
-
-        message = msg
-        history_id = None
+        # print(e)
+        # if len(e.args) == 2:
+        #     status_code = '{}'.format(e.args[0])
+        #     msg_args = '{}'.format(e.args[1])
+        #     msg = g.appmsg.get_api_message(status_code, [msg_args])
+        # else:
+        #     status_code = '999-99999'
+        #     msg_args = '{}'.format(*e.args)
+        #     msg = g.appmsg.get_api_message(status_code, [msg_args])
+        
+        log_msg_args = [msg]
+        api_msg_args = [msg]
+        raise AppException('499-00201', log_msg_args, api_msg_args)  # noqa: F405
 
     result_data = {
+        'menu_name_rest': menu_name_rest,
         'history_id': history_id,
         'message': message
     }
@@ -1789,6 +1796,11 @@ def _check_before_registar_validate(objdbca, menu_data, column_data_list):
         # シートタイプが「2: データシート」かつ、登録する項目が無い場合エラー判定
         if sheet_id == "2" and not column_data_list:
             raise Exception("シートタイプ「データシート」では項目0件のメニューを作成できません。")
+        
+        # ロールを取得
+        role_list = menu_data.get('role_list')
+        if not role_list:
+            raise Exception("ロールが選択されていません。")
         
     except Exception as msg:
         return False, msg
