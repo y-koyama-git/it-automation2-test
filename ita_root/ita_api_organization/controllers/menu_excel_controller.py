@@ -1257,6 +1257,7 @@ def get_excel_format(organization_id, workspace_id, menu):  # noqa: E501
         return result
 
 
+@api_filter
 def get_excel_journal(organization_id, workspace_id, menu):  # noqa: E501
     """get_excel_journal
 
@@ -1810,7 +1811,7 @@ def post_excel_maintenance(organization_id, workspace_id, menu, body=None):  # n
     
     wbDecode = base64.b64decode(excel_data.encode('utf-8'))
     
-    # 受け取ったデータをエクセルファイルに保存
+    # 受け取ったデータを編集用として一時的にエクセルファイルに保存
     strage_path = os.environ.get('STORAGEPATH')
     excel_dir = strage_path + "/".join([organization_id, workspace_id]) + "/tmp/excel"
     file_name = 'post_excel_maintenance_tmp.xlsx'
@@ -1831,21 +1832,21 @@ def post_excel_maintenance(organization_id, workspace_id, menu, body=None):  # n
     
     ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
     
-    # 除外する項目リスト
-    exclusion_list = []
+    # 登録時に除外する項目リスト
+    register_list = []
     for recode in ret:
         column_name_rest = str(recode.get('COLUMN_NAME_REST'))
         column_class_id = str(recode.get('COLUMN_CLASS'))
         auto_input = str(recode.get('AUTO_INPUT'))
         input_item = str(recode.get('INPUT_ITEM'))
         
-        # 登録更新不可のものは除外する
+        # 登録時に不要な項目
         if auto_input == '1' or input_item == '0':
-            exclusion_list.append(column_name_rest)
+            register_list.append(column_name_rest)
         
         # カラムクラスIDがファイルアップロードのものは除外する
         if column_class_id == '9':
-            exclusion_list.append(column_name_rest)
+            register_list.append(column_name_rest)
     
     # 先頭のシートを選択する
     ws = wb.worksheets[0]
@@ -1875,12 +1876,14 @@ def post_excel_maintenance(organization_id, workspace_id, menu, body=None):  # n
     # 実行処理種別
     process_type = []
     for i in range(row_num):
+        # val = ''
         # 対象行記憶用
         target_row = []
         # 実行処理種別を見る
-        val = ws.cell(row=i + 1, column=3).value
-        if val == msg_reg or val == msg_upd or val == msg_dis or val == msg_res:
-            process_type.append(val)
+        men_type = ws.cell(row=i + 1, column=3).value
+        
+        if men_type == msg_reg or men_type == msg_upd or men_type == msg_dis or men_type == msg_res:
+            process_type.append(men_type)
             for j in range(4, col_num + 1):
                 target_row.append(ws.cell(row=i + 1, column=j).value)
                 
@@ -1898,11 +1901,23 @@ def post_excel_maintenance(organization_id, workspace_id, menu, body=None):  # n
             parameter[row_i]["file"] = file_param
             # j:項目数の分だけループ
             for col_j in range(len(excel_data[0])):
-                if column_name[col_j] in exclusion_list:
-                    continue
+                if process_type[row_i] == msg_reg:
+                    if column_name[col_j] in register_list:
+                        continue
                 dict_param[column_name[col_j]] = excel_data[row_i][col_j]
             parameter[row_i]["parameter"] = dict_param
-            parameter[row_i]["maintenance_type"] = process_type[row_i]
+            if process_type[row_i] == msg_reg:
+                process_type[row_i] = "Register"
+            elif process_type[row_i] == msg_upd:
+                process_type[row_i] = "Update"
+            elif process_type[row_i] == msg_dis:
+                process_type[row_i] = "Update"
+                parameter[row_i]["parameter"]["discard"] = "1"
+            elif process_type[row_i] == msg_res:
+                process_type[row_i] = "Update"
+                parameter[row_i]["parameter"]["discard"] = "0"
+                
+            parameter[row_i]["type"] = process_type[row_i]
     
     # メニューのレコード登録/更新(更新/廃止/復活)
     result_data = menu_maintenance_all.rest_maintenance_all(objdbca, menu, parameter)
