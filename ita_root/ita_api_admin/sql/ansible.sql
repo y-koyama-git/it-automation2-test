@@ -918,10 +918,10 @@ CREATE TABLE T_ANSC_COLLECT_STATUS
 
 
 -- M013_Ansible共通変数利用リスト_変数種別マスタ
-CREATE TABLE T_ANSC_COMVRAS_USLIST_F_ID
+CREATE TABLE T_ANSC_COMVRAS_USLIST_V_ID
 (
     ROW_ID                          VARCHAR(2),                                 -- UUID
-    NAME                            VARCHAR(64),                                -- 素材種別
+    NAME                            VARCHAR(64),                                -- 変数種別
     DISP_SEQ                        INT,                                        -- 表示順序
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1),                                 -- 廃止フラグ
@@ -934,10 +934,10 @@ CREATE TABLE T_ANSC_COMVRAS_USLIST_F_ID
 
 
 -- M014_Ansible共通変数利用リスト_ファイル種別マスタ
-CREATE TABLE T_ANSC_COMVRAS_USLIST_V_ID
+CREATE TABLE T_ANSC_COMVRAS_USLIST_F_ID
 (
     ROW_ID                          VARCHAR(2),                                 -- UUID
-    NAME                            VARCHAR(64),                                -- 変数種別
+    NAME                            VARCHAR(64),                                -- 素材種別
     DISP_SEQ                        INT,                                        -- 表示順序
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1),                                 -- 廃止フラグ
