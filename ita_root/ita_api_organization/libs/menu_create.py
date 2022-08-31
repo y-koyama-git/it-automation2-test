@@ -382,6 +382,7 @@ def menu_create_define(objdbca, create_param):
         print('タイプは：' + str(type))
         result = _create_new_execute(objdbca, create_param)
         
+        menu_name_rest = result.get('menu_name_rest')
         history_id = result.get('history_id')
         message = result.get('message')
         # if not status:
@@ -393,6 +394,7 @@ def menu_create_define(objdbca, create_param):
         print('タイプは：' + str(type))
         result = _initialize_execute(objdbca, create_param)
         
+        menu_name_rest = result.get('menu_name_rest')
         history_id = result.get('history_id')
         message = result.get('message')
         # if not status:
@@ -404,6 +406,7 @@ def menu_create_define(objdbca, create_param):
         print('タイプは：' + str(type))
         result = _edit_execute(objdbca, create_param)
         
+        menu_name_rest = result.get('menu_name_rest')
         history_id = result.get('history_id')
         message = result.get('message')
         # if not status:
@@ -418,7 +421,7 @@ def menu_create_define(objdbca, create_param):
         api_msg_args = [msg]
         raise AppException('499-00212', log_msg_args, api_msg_args)  # noqa: F405
     
-    result_data = {'history_id': history_id, 'message': message}
+    result_data = {'menu_name_rest': menu_name_rest, 'history_id': history_id, 'message': message}
     return result_data
 
 
@@ -438,6 +441,7 @@ def _create_new_execute(objdbca, create_param):  # noqa: C901
     menu_data = check_request_body_key(create_param, 'menu')  # ####メモ： "menu" keyが無かったら400-00002エラー
     column_data_list = create_param.get('column')
     group_data_list = create_param.get('group')
+    menu_name_rest = menu_data.get('menu_name_rest')
     
     try:
         # トランザクション開始
@@ -508,6 +512,7 @@ def _create_new_execute(objdbca, create_param):  # noqa: C901
         raise AppException('499-00201', log_msg_args, api_msg_args)  # noqa: F405
 
     result_data = {
+        'menu_name_rest': menu_name_rest,
         'history_id': history_id,
         'message': message
     }
@@ -537,6 +542,7 @@ def _initialize_execute(objdbca, create_param):  # noqa: C901
     menu_data = check_request_body_key(create_param, 'menu')  # "menu" keyが無かったら400-00002エラー
     column_data_list = check_request_body_key(create_param, 'column')  # "column" keyが無かったら400-00002エラー
     group_data_list = create_param.get('group')
+    menu_name_rest = menu_data.get('menu_name_rest')
     
     try:
         # トランザクション開始
@@ -668,6 +674,7 @@ def _initialize_execute(objdbca, create_param):  # noqa: C901
         raise AppException('499-00201', log_msg_args, api_msg_args)  # noqa: F405
 
     result_data = {
+        'menu_name_rest': menu_name_rest,
         'history_id': history_id,
         'message': message
     }
@@ -697,6 +704,7 @@ def _edit_execute(objdbca, create_param):  # noqa: C901
     menu_data = check_request_body_key(create_param, 'menu')  # "menu" keyが無かったら400-00002エラー
     column_data_list = check_request_body_key(create_param, 'column')  # "column" keyが無かったら400-00002エラー
     group_data_list = create_param.get('group')
+    menu_name_rest = menu_data.get('menu_name_rest')
     
     try:
         # トランザクション開始
@@ -828,6 +836,7 @@ def _edit_execute(objdbca, create_param):  # noqa: C901
         raise AppException('499-00201', log_msg_args, api_msg_args)  # noqa: F405
 
     result_data = {
+        'menu_name_rest': menu_name_rest,
         'history_id': history_id,
         'message': message
     }
