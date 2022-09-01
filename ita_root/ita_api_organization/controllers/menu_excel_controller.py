@@ -238,6 +238,12 @@ def get_excel_filter(organization_id, workspace_id, menu, body=None):  # noqa: E
                         if key == 'discard':
                             column_num = 4
                             column_flg = True
+                            # 廃止
+                            msg = g.appmsg.get_api_message('MSG-30006')
+                            if value == '1':
+                                value = msg
+                            else:
+                                value = ''
                         else:
                             column_num = startClm + i + 1
                             if column_flg:
@@ -1442,10 +1448,15 @@ def get_excel_journal(organization_id, workspace_id, menu):  # noqa: E501
                             dv.add(ws.cell(row=startDetailRow, column=3))
                             ws.add_data_validation(dv)
                             dataVaridationDict[get_column_letter(3)] = 'FILTER_ROW_EDIT_BY_FILE'
+                        
                         if key == 'journal_action':
                             continue
                         elif key == 'discard':
                             column_flg = True
+                            if value == '1':
+                                # 廃止
+                                msg = g.appmsg.get_api_message('MSG-30006')
+                                ws.cell(row=startDetailRow, column=3, value=msg)
                         else:
                             column_num = i + 1
                             if column_flg:
@@ -1692,6 +1703,12 @@ def post_excel_filter(organization_id, workspace_id, menu, body=None):  # noqa: 
                         if key == 'discard':
                             column_num = 4
                             column_flg = True
+                            # 廃止
+                            msg = g.appmsg.get_api_message('MSG-30006')
+                            if value == '1':
+                                value = msg
+                            else:
+                                value = ''
                         else:
                             column_num = startClm + i + 1
                             if column_flg:
