@@ -139,7 +139,7 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
     if ret:
         str_unique_constraint = json.dumps(ret[0].get('UNIQUE_CONSTRAINT_ITEM'))
         unique_constraint_current = json.loads(str_unique_constraint)
-        menu['unique_constraint_current'] = unique_constraint_current
+        menu['unique_constraint_current'] = json.loads(unique_constraint_current)
     
     # メニュー情報を格納
     menu_info['menu'] = menu
@@ -337,8 +337,10 @@ def _collect_common_menu_create_data(objdbca):
     for recode in ret:
         link_id = recode.get('LINK_ID')
         menu_id = recode.get('MENU_ID')
+        menu_name_rest = recode.get('MENU_NAME_REST')
+        column_name_rest = recode.get('REF_COL_NAME_REST')
         link_pulldown = recode.get('LINK_PULLDOWN_' + lang.upper())
-        pulldown_item_list.append({'link_id': link_id, 'menu_id': menu_id, 'link_pulldown': link_pulldown})
+        pulldown_item_list.append({'link_id': link_id, 'menu_id': menu_id, 'menu_name_rest': menu_name_rest, 'column_name_rest': column_name_rest, 'link_pulldown': link_pulldown})  # noqa: E501
     
     # ロールの選択肢一覧
     role_list = util.get_workspace_roles()  # noqa: F405
