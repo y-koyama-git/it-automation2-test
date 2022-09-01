@@ -3,8 +3,7 @@ import codecs
 import os
 import subprocess
 import sys
-from common_libs.ansible_driver.classes import *
-from common_libs.ansible_driver.functions import *
+from common_libs.ansible_driver.functions.util import *
 from common_libs.common import *
 
 """
@@ -30,7 +29,6 @@ class AnsibleVault:
             VaultPasswordFilePath = "{}/.tmp/.tmpkey".format(ansiblePlaybookVaultPath)
         return VaultPasswordFilePath
 
-
     def CreateVaultPasswordFile(self, VaultPasswordFilePath, vaultPassword):
         """
           ansible-vaultパスワードファイル生成
@@ -46,7 +44,6 @@ class AnsibleVault:
         fd.close()
         return True
 
-
     def RemoveVaultPasswordFile(self):
         """
           ansible-vaultパスワードファイル削除
@@ -56,7 +53,6 @@ class AnsibleVault:
             なし
         """
         os.remove(self.VaultPasswordFilePath)
-
 
     def Vault(self, ansible_path, exec_user, password_file, value, indento, engine_virtualenv_path, passwdFileDel=True):
         """
