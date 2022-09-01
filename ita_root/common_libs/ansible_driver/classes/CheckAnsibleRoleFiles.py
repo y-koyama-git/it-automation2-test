@@ -2408,15 +2408,15 @@ class DefaultVarsFileAnalysis():
                 # 具体値がある場合は排除する
                 if type(val) not in (dict, list):
                     if in_var_name_path not in ina_varval_list:
-                        in_var_name_path[ina_varval_list] = {}
+                        ina_varval_list[in_var_name_path] = {}
 
-                    if 1 not in in_var_name_path[ina_varval_list]:
-                        in_var_name_path[ina_varval_list][1] = {}
+                    if 1 not in ina_varval_list[in_var_name_path]:
+                        ina_varval_list[in_var_name_path][1] = {}
 
-                    if in_col_index_str not in in_var_name_path[ina_varval_list][1]:
-                        in_var_name_path[ina_varval_list][1][in_col_index_str] = {}
+                    if in_col_index_str not in ina_varval_list[in_var_name_path][1]:
+                        ina_varval_list[in_var_name_path][1][in_col_index_str] = {}
 
-                    if var + 1 not in in_var_name_path[ina_varval_list][1][in_col_index_str]:
+                    if var + 1 not in ina_varval_list[in_var_name_path][1][in_col_index_str]:
                         ina_varval_list[in_var_name_path][1][in_col_index_str][var + 1] = None
 
                     # 代入順序を1オリジンにする
@@ -2781,14 +2781,14 @@ class DefaultVarsFileAnalysis():
                 info_array['ARRAY_NEST_LEVEL'] = vars_info['NEST_LEVEL']
 
                 # 複数具体値なので代入順序が必要なのでマークする
-                if vars_info['LIST_STYLE'] != "0":
+                if str(vars_info['LIST_STYLE']) != "0":
                     info_array['ASSIGN_SEQ_NEED'] = "1"
 
                 else:
                     info_array['ASSIGN_SEQ_NEED'] = "0"
 
                 # 配列変数より下の階層にある変数なので列順序になる変数の候補にマークする
-                if vars_info['ARRAY_STYLE'] != "0":
+                if str(vars_info['ARRAY_STYLE']) != "0":
                     info_array['COL_SEQ_MEMBER'] = "1"
 
                 else:
@@ -2800,12 +2800,12 @@ class DefaultVarsFileAnalysis():
                 info_array['VRAS_NAME_ALIAS'] = vars_info['VAR_NAME_ALIAS']
 
                 # 配列階層(変数名が0)の場合に配列数を設定する
-                if info_array['VARS_NAME'] == "0":
-                    if info_array['VRAS_NAME_PATH'] not in array_col_count_list \
-                    or array_col_count_list[info_array['VRAS_NAME_PATH']] is None \
+                if str(info_array['VARS_NAME']) == "0":
+                    if str(info_array['VRAS_NAME_PATH']) not in array_col_count_list \
+                    or array_col_count_list[str(info_array['VRAS_NAME_PATH'])] is None \
                     or (
-                        type(array_col_count_list[info_array['VRAS_NAME_PATH']]) in (list, dict)
-                        and len(array_col_count_list[info_array['VRAS_NAME_PATH']]) <= 0
+                        type(array_col_count_list[str(info_array['VRAS_NAME_PATH'])]) in (list, dict)
+                        and len(array_col_count_list[str(info_array['VRAS_NAME_PATH'])]) <= 0
                     ):
                         # MSG-10301 = "変数定義の解析に失敗しました。{}"
                         in_error_code = "MSG-10301"
@@ -2813,7 +2813,7 @@ class DefaultVarsFileAnalysis():
                         return False, ina_vars_chain_list, in_error_code, in_line
 
                     else:
-                        info_array['MAX_COL_SEQ'] = array_col_count_list[info_array['VRAS_NAME_PATH']]
+                        info_array['MAX_COL_SEQ'] = array_col_count_list[str(info_array['VRAS_NAME_PATH'])]
 
                 else:
                     info_array['MAX_COL_SEQ'] = "0"
