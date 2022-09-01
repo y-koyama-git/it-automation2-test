@@ -204,9 +204,9 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
             # カラムクラスに応じて必要な値を格納
             # カラムクラス「文字列(単一行)」用のパラメータを追加
             if column_class_name == "SingleTextColumn":
-                col_detail["string_maximum_bytes"] = recode.get('SINGLE_MAX_LENGTH')  # 文字列(単一行) 最大バイト数
-                col_detail["string_regular_expression"] = recode.get('SINGLE_REGULAR_EXPRESSION')  # 文字列(単一行) 正規表現
-                col_detail["string_default_value"] = recode.get('SINGLE_DEFAULT_VALUE')  # 文字列(単一行) 初期値
+                col_detail["single_string_maximum_bytes"] = recode.get('SINGLE_MAX_LENGTH')  # 文字列(単一行) 最大バイト数
+                col_detail["single_string_regular_expression"] = recode.get('SINGLE_REGULAR_EXPRESSION')  # 文字列(単一行) 正規表現
+                col_detail["single_string_default_value"] = recode.get('SINGLE_DEFAULT_VALUE')  # 文字列(単一行) 初期値
             
             # カラムクラス「文字列(複数行)」用のパラメータを追加
             if column_class_name == "MultiTextColumn":
@@ -1130,9 +1130,9 @@ def _insert_t_menu_column(objdbca, menu_data, column_data_list):
                 
                 # カラムクラス「文字列(単一行)」用のパラメータを追加
                 if column_class == "SingleTextColumn":
-                    parameter["string_maximum_bytes"] = column_data.get('single_maximum_bytes')  # 文字列(単一行) 最大バイト数
-                    parameter["string_regular_expression"] = column_data.get('string_regular_expression')  # 文字列(単一行) 正規表現
-                    parameter["string_default_value"] = column_data.get('single_default_value')  # 文字列(単一行) 初期値
+                    parameter["single_string_maximum_bytes"] = column_data.get('single_string_maximum_bytes')  # 文字列(単一行) 最大バイト数
+                    parameter["single_string_regular_expression"] = column_data.get('single_string_regular_expression')  # 文字列(単一行) 正規表現
+                    parameter["single_string_default_value"] = column_data.get('single_string_default_value')  # 文字列(単一行) 初期値
                 
                 # カラムクラス「文字列(複数行)」用のパラメータを追加
                 if column_class == "MultiTextColumn":
@@ -1273,9 +1273,9 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
                     # カラムクラス「文字列(単一行)」の場合のバリデーションチェック
                     if column_class == "SingleTextColumn":
                         # 最大バイト数が既存の値よりも下回っている場合エラー判定
-                        current_string_maximum_bytes = int(target_recode.get('SINGLE_MAX_LENGTH'))
-                        update_string_maximum_bytes = int(column_data.get('single_maximum_bytes'))
-                        if current_string_maximum_bytes > update_string_maximum_bytes:
+                        current_single_string_maximum_bytes = int(target_recode.get('SINGLE_MAX_LENGTH'))
+                        update_single_string_maximum_bytes = int(column_data.get('single_string_maximum_bytes'))
+                        if current_single_string_maximum_bytes > update_single_string_maximum_bytes:
                             msg = "「編集」の際は既存項目の「最大バイト数」が下回る変更はできません。"
                             raise Exception(msg)
                     
@@ -1380,9 +1380,9 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
                     parameter["column_group"] = column_group  # カラムグループ(「カラムグループ作成情報」のフルカラムグループ名)
                 
                 # 各カラムクラスに対応するparameterにNoneを挿入
-                parameter["string_maximum_bytes"] = None  # 文字列(単一行) 最大バイト数
-                parameter["string_regular_expression"] = None  # 文字列(単一行) 正規表現
-                parameter["string_default_value"] = None  # 文字列(単一行) 初期値
+                parameter["single_string_maximum_bytes"] = None  # 文字列(単一行) 最大バイト数
+                parameter["single_string_regular_expression"] = None  # 文字列(単一行) 正規表現
+                parameter["single_string_default_value"] = None  # 文字列(単一行) 初期値
                 parameter["multi_string_maximum_bytes"] = None  # 文字列(複数行) 最大バイト数
                 parameter["multi_string_regular_expression"] = None  # 文字列(複数行) 正規表現
                 parameter["multi_string_default_value"] = None  # 文字列(複数行) 初期値
@@ -1405,9 +1405,9 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
                 
                 # カラムクラス「文字列(単一行)」用のパラメータを追加
                 if column_class == "SingleTextColumn":
-                    parameter["string_maximum_bytes"] = column_data.get('single_maximum_bytes')  # 文字列(単一行) 最大バイト数
-                    parameter["string_regular_expression"] = column_data.get('string_regular_expression')  # 文字列(単一行) 正規表現
-                    parameter["string_default_value"] = column_data.get('single_default_value')  # 文字列(単一行) 初期値
+                    parameter["single_string_maximum_bytes"] = column_data.get('single_string_maximum_bytes')  # 文字列(単一行) 最大バイト数
+                    parameter["single_string_regular_expression"] = column_data.get('single_string_regular_expression')  # 文字列(単一行) 正規表現
+                    parameter["single_string_default_value"] = column_data.get('single_string_default_value')  # 文字列(単一行) 初期値
                 
                 # カラムクラス「文字列(複数行)」用のパラメータを追加
                 if column_class == "MultiTextColumn":
