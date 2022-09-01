@@ -316,6 +316,7 @@ CREATE TABLE T_MENU_OTHER_LINK
     REF_TABLE_NAME                  VARCHAR(64),                                -- ID連携テーブル
     REF_PKEY_NAME                   VARCHAR(64),                                -- ID連携テーブルPK
     REF_COL_NAME                    VARCHAR(64),                                -- ID連携項目名
+    REF_COL_NAME_REST               VARCHAR(255),                               -- ID連携項目名(REST)
     REF_SORT_CONDITIONS             TEXT,                                       -- ID連携ソート条件
     REF_MULTI_LANG                  VARCHAR(2),                                 -- ID連携多言語対応有無
     COLUMN_CLASS                    VARCHAR(2),                                 -- カラムクラス
@@ -339,6 +340,7 @@ CREATE TABLE T_MENU_OTHER_LINK_JNL
     REF_TABLE_NAME                  VARCHAR(64),                                -- ID連携テーブル
     REF_PKEY_NAME                   VARCHAR(64),                                -- ID連携テーブルPK
     REF_COL_NAME                    VARCHAR(64),                                -- ID連携項目名
+    REF_COL_NAME_REST               VARCHAR(255),                               -- ID連携項目名(REST)
     REF_SORT_CONDITIONS             TEXT,                                       -- ID連携ソート条件
     REF_MULTI_LANG                  VARCHAR(2),                                 -- ID連携多言語対応有無
     COLUMN_CLASS                    VARCHAR(2),                                 -- カラムクラス
@@ -358,6 +360,8 @@ SELECT TAB_A.LINK_ID                       ,
        TAB_C.MENU_GROUP_ID                 ,
        TAB_A.MENU_ID                       ,
        TAB_A.MENU_ID MENU_ID_CLONE         ,
+       TAB_B.MENU_NAME_JA                  ,
+       TAB_B.MENU_NAME_EN                  ,
        TAB_A.COLUMN_DISP_NAME_JA           ,
        TAB_A.COLUMN_DISP_NAME_EN           ,
        CONCAT(TAB_C.MENU_GROUP_NAME_JA,':',TAB_B.MENU_NAME_JA,':',TAB_A.COLUMN_DISP_NAME_JA) LINK_PULLDOWN_JA,
@@ -365,6 +369,7 @@ SELECT TAB_A.LINK_ID                       ,
        TAB_A.REF_TABLE_NAME                ,
        TAB_A.REF_PKEY_NAME                 ,
        TAB_A.REF_COL_NAME                  ,
+       TAB_A.REF_COL_NAME_REST             ,
        TAB_A.REF_SORT_CONDITIONS           ,
        TAB_A.REF_MULTI_LANG                ,
        TAB_A.COLUMN_CLASS                  ,
@@ -386,6 +391,8 @@ SELECT TAB_A.JOURNAL_SEQ_NO                ,
        TAB_C.MENU_GROUP_ID                 ,
        TAB_A.MENU_ID                       ,
        TAB_A.MENU_ID MENU_ID_CLONE         ,
+       TAB_B.MENU_NAME_JA                  ,
+       TAB_B.MENU_NAME_EN                  ,
        TAB_A.COLUMN_DISP_NAME_JA           ,
        TAB_A.COLUMN_DISP_NAME_EN           ,
        CONCAT(TAB_C.MENU_GROUP_NAME_JA,':',TAB_B.MENU_NAME_JA,':',TAB_A.COLUMN_DISP_NAME_JA) LINK_PULLDOWN_JA,
@@ -393,6 +400,7 @@ SELECT TAB_A.JOURNAL_SEQ_NO                ,
        TAB_A.REF_TABLE_NAME                ,
        TAB_A.REF_PKEY_NAME                 ,
        TAB_A.REF_COL_NAME                  ,
+       TAB_A.REF_COL_NAME_REST             ,
        TAB_A.REF_SORT_CONDITIONS           ,
        TAB_A.REF_MULTI_LANG                ,
        TAB_A.COLUMN_CLASS                  ,
