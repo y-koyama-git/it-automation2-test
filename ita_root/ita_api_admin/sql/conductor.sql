@@ -152,7 +152,7 @@ CREATE TABLE T_COMN_CONDUCTOR_NODE_INSTANCE
     EXECUTION_ID                    VARCHAR(40),                                -- 作業実行ID
     STATUS_ID                       VARCHAR(40),                                -- ステータスID
     STATUS_FILE                     VARCHAR(40),                                -- ステータスファイル
-    RELEASED_FLAG                   VARCHAR(1)  ,                               -- 保留
+    RELEASED_FLAG                   VARCHAR(1)  ,                               -- 保留解除フラグ
     EXE_SKIP_FLAG                   VARCHAR(1)  ,                               -- スキップ
     END_TYPE                        VARCHAR(1)  ,                               -- 終了タイプ
     OVRD_OPERATION_ID               VARCHAR(40),                                -- 個別オペレーションID
@@ -191,7 +191,7 @@ CREATE TABLE T_COMN_CONDUCTOR_NODE_INSTANCE_JNL
     EXECUTION_ID                    VARCHAR(40),                                -- 作業実行ID
     STATUS_ID                       VARCHAR(40),                                -- ステータスID
     STATUS_FILE                     VARCHAR(40),                                -- ステータスファイル
-    RELEASED_FLAG                   VARCHAR(1)  ,                               -- 保留
+    RELEASED_FLAG                   VARCHAR(1)  ,                               -- 保留解除フラグ
     EXE_SKIP_FLAG                   VARCHAR(1)  ,                               -- スキップ
     END_TYPE                        VARCHAR(1)  ,                               -- 終了タイプ
     OVRD_OPERATION_ID               VARCHAR(40),                                -- 個別オペレーションID
