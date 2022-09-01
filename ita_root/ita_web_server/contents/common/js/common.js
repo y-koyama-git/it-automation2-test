@@ -131,6 +131,14 @@ loadAssets: function( assets ){
 },
 /*
 ##################################################
+   ワークスペース切替用URL
+##################################################
+*/
+getWorkspaceChangeUrl: function( changeId ) {
+    return `/${organization_id}/workspaces/${changeId}/ita/`;
+},
+/*
+##################################################
    REST API用のURLを返す
 ##################################################
 */
@@ -147,6 +155,8 @@ fetch: function( url, token, method = 'GET', json ) {
     if ( !token ) {
         token = CommonAuth.getToken();
     }
+    
+    let errorCount = 0;
     
     const f = function( u ){
         return new Promise(function( resolve, reject ){
@@ -169,38 +179,39 @@ fetch: function( url, token, method = 'GET', json ) {
             }
             console.log( u );
             console.log( init );
-            fetch( u, init ).then(function( response ){ console.log( response );
-                if( response.ok ) {
-                    //200の場合
-                    response.json().then(function( result ){ console.log( result );
-                            resolve( result.data );
-                    });
-                } else if( response.status === 499 ) {
-                    //バリデーションエラーは呼び出し元に返す
-                     response.json().then(function( result ){ console.log( result );
-                        reject( result );
-                    }).catch(function( e ) {
-                        alert(WD.COMMON.sys_err);
-                        location.replace('system_error/');
-                    }); 
-                }else if ( response.status === 401 ){
-                    //権限無しの場合、トップページに戻す
-                    response.json().then(function( result ){ console.log( result );
-                        alert(result.message);
-                        location.replace('/' + organization_id + '/workspaces/' + workspace_id + '/ita/');
-                    }).catch(function( e ) {
-                        alert(WD.COMMON.sys_err);
-                        location.replace('system_error/');
-                    });
-                }else{
-                    //その他のエラー
-                    alert(WD.COMMON.sys_err);
-                    location.replace('system_error/');
+            fetch( u, init ).then(function( response ){
+                console.log( response );
+                if ( errorCount === 0 ) {
+                    if( response.ok ) {
+                        //200の場合
+                        response.json().then(function( result ){ console.log( result );
+                                resolve( result.data );
+                        });
+                    } else {
+                        errorCount++;
+                        if( response.status === 499 ) {
+                            //バリデーションエラーは呼び出し元に返す
+                             response.json().then(function( result ){ console.log( result );
+                                reject( result );
+                            }).catch(function( e ) {
+                                cmn.systemErrorAlert();
+                            }); 
+                        } else if ( response.status === 401 ){
+                            //権限無しの場合、トップページに戻す
+                            response.json().then(function( result ){ console.log( result );
+                                alert(result.message);
+                                location.replace('/' + organization_id + '/workspaces/' + workspace_id + '/ita/');
+                            }).catch(function( e ) {
+                                cmn.systemErrorAlert();
+                            });
+                        } else {
+                            //その他のエラー
+                            cmn.systemErrorAlert();
+                        }
+                    }
                 }
-            }).catch(function( e ){
-                console.log('fetch error');
-                alert(WD.COMMON.sys_err);
-                location.replace('system_error/');
+            }).catch(function( error ){
+                reject( error );
             });
         });
     };
@@ -216,16 +227,29 @@ fetch: function( url, token, method = 'GET', json ) {
 },
 /*
 ##################################################
+   システムエラーAleat
+##################################################
+*/
+systemErrorAlert: function() {
+    alert(WD.COMMON.sys_err);
+    // location.replace('system_error/');
+},
+/*
+##################################################
    編集フラグ
 ##################################################
 */
 editFlag: function( menuInfo ) {
     const flag  = {};
-    flag.insert = ( menuInfo.row_insert_flag !== '0')? true: false;
-    flag.update = ( menuInfo.row_update_flag !== '0')? true: false;
-    flag.disuse = ( menuInfo.row_disuse_flag !== '0')? true: false;
-    flag.reuse = ( menuInfo.row_reuse_flag !== '0')? true: false;
-    flag.edit = ( menuInfo.row_insert_flag !== '0' && menuInfo.row_update_flag !== '0')? true: false;
+    flag.filter = ( menuInfo.initial_filter_flg === '1')? true: false;
+    flag.autoFilter = ( menuInfo.auto_filter_flg === '1')? true: false;
+    flag.history = ( menuInfo.history_table_flag === '1')? true: false;
+    
+    flag.insert = ( menuInfo.row_insert_flag === '1')? true: false;
+    flag.update = ( menuInfo.row_update_flag === '1')? true: false;
+    flag.disuse = ( menuInfo.row_disuse_flag === '1')? true: false;
+    flag.reuse = ( menuInfo.row_reuse_flag === '1')? true: false;
+    flag.edit = ( menuInfo.row_insert_flag === '1' && menuInfo.row_update_flag === '1')? true: false;
     
     return flag;
 },
@@ -351,12 +375,9 @@ deselection: function() {
    日付フォーマット
 ##################################################
 */
-date: function( date, format, timezoneFlag ) {
+date: function( date, format ) {
     if ( date ) {
         const d = new Date(date);
-        
-        if ( timezoneFlag === true ) d.setMinutes( d.getMinutes() - d.getTimezoneOffset() );
-        if ( timezoneFlag === false ) d.setMinutes( d.getMinutes() + d.getTimezoneOffset() );
         
         format = format.replace(/yyyy/g, d.getFullYear());
         format = format.replace(/MM/g, ('0' + (d.getMonth() + 1)).slice(-2));
@@ -465,13 +486,14 @@ download: function( type, data, fileName = 'noname') {
 },
 /*
 ##################################################
-   ファイルを選択しbase64で返す
+   ファイルを選択
 ##################################################
 */
 fileSelect: function( type = 'base64', limitFileSize, accept ){
     return new Promise( function( resolve, reject ) {
         const file = document.createElement('input');
-
+        let cancelFlag = true;
+        
         file.type = 'file'; 
         if ( accept !== undefined ) file.accept = accept;
         
@@ -479,8 +501,10 @@ fileSelect: function( type = 'base64', limitFileSize, accept ){
             const file = this.files[0],
                   reader = new FileReader();
             
+            cancelFlag = false;
+
             if ( limitFileSize && file.size >= limitFileSize ) {
-                reject('File size limit over');
+                reject('File size limit over.');
             }
             
             if ( type === 'base64') {
@@ -501,10 +525,37 @@ fileSelect: function( type = 'base64', limitFileSize, accept ){
                 const formData = new FormData();
                 formData.append('file', file );
                 resolve( formData );
+            } else if ( type === 'json') {
+                reader.readAsText( file );
+                
+                reader.onload = function(){
+                    try {
+                        const json = JSON.parse( reader.result );
+                        resolve({
+                            json: json,
+                            name: file.name,
+                            size: file.size
+                        });
+                    } catch( e ) {
+                        reject('JSONの形式が正しくありません。');
+                    }                    
+                };
+
+                reader.onerror = function(){
+                    reject( reader.error );
+                };                
             }
         });
 
         file.click();
+        
+        // bodyフォーカスでダイアログを閉じたか判定
+        document.body.onfocus = function(){
+            setTimeout( function(){
+                if ( cancelFlag ) reject('cancel');
+                document.body.onfocus = null;
+            }, 1000 );
+        };
     });
 },
 /*
@@ -513,9 +564,13 @@ fileSelect: function( type = 'base64', limitFileSize, accept ){
 ##################################################
 */
 disabledTimer: function( $element, flag, time ) {
-    setTimeout( function(){
+    if ( time !== 0 ) {
+        setTimeout( function(){
+            $element.prop('disabled', flag );
+        }, time );
+    } else {
         $element.prop('disabled', flag );
-    }, time );
+    }
 },
 /*
 ##################################################
@@ -950,8 +1005,8 @@ datePickerDialog: function( type, timeFlag, title, date ){
             $dataPicker.addClass('datePickerFromToContainer').html(`<div class="datePickerFrom"></div>`
             + `<div class="datePickerTo"></div>`);
 
-            $dataPicker.find('.datePickerFrom').html( cmn.datePicker( true, 'datePickerFromDateText', date.from, null, date.to ) );
-            $dataPicker.find('.datePickerTo').html( cmn.datePicker( true, 'datePickerToDateText', date.to, date.from, null ) );
+            $dataPicker.find('.datePickerFrom').html( cmn.datePicker( timeFlag, 'datePickerFromDateText', date.from, null, date.to ) );
+            $dataPicker.find('.datePickerTo').html( cmn.datePicker( timeFlag, 'datePickerToDateText', date.to, date.from, null ) );
             
             // 日付の入力をチェックする
             $dataPicker.find('.datePickerFromDateText').on('change', function(){
@@ -963,6 +1018,8 @@ datePickerDialog: function( type, timeFlag, title, date ){
                 $dataPicker.find('.datePickerFrom').find('.datePickerDateEnd').val( val ).change();
             });
             
+        } else {
+            $dataPicker.html( cmn.datePicker( timeFlag, null, date ) );
         }
         
         dialog.open( $dataPicker );
@@ -1269,9 +1326,313 @@ html: {
         + `<${type} ${attr.join(' ')}}>`
             + `<div class="ci">${element}</div>`
         + `</${type}>`;
+    },
+    table: function( tableData, className, thNumber ) {
+        className = classNameCheck( className, 'table');
+ 
+        const table = [];
+        for ( const type in tableData ) {
+            table.push(`<${type}>`);
+            const row = [];
+            for ( const cells of tableData[ type ] ) {
+                const cellLength = cells.length,
+                      cell = [];
+                for ( let i = 0; i < cellLength; i++ ) {
+                    const cellData = cells[i];
+                    if ( type === 'thead') {
+                        cell.push( cmn.html.cell( cellData, ['tHeadTh', 'th'], 'th') );
+                    } else {
+                        if ( i < thNumber ) {
+                            cell.push( cmn.html.cell( cellData, ['tBodyTh', 'th'], 'th') );
+                        } else {
+                            cell.push( cmn.html.cell( cellData, ['tBodyTd', 'td'], 'td') );
+                        }
+                    }
+                }
+                const rowClass = ( type === 'thead')? 'tHeadTr': 'tBodyTr';
+                row.push( cmn.html.row( cell.join(''), [ rowClass, 'tr'] ) )
+            }
+            table.push( row.join('') );
+            table.push(`</${type}>`);
+        }
+        
+        return `<table class="${className.join(' ')}">${table.join('')}</table>`;
+    },
+    dateInput: function( timeFlag, className, value, name, attrs = {} ) {
+        className = classNameCheck( className, 'inputDate');
+        
+        const placeholder = ( timeFlag )? 'yyyy-MM-dd HH:mm:ss': 'yyyy-MM-dd';
+        attrs.placeholder = placeholder;
+                
+        return `<div class="inputDateContainer">`
+            + `<div class="inputDateBody">`
+                + fn.html.inputText( className, value, name, attrs )
+            + `</div>`
+            + `<div class="inputDateCalendar">`
+                + fn.html.button('<span class="icon icon-cal"></span>', ['itaButton', 'inputDateCalendarButton'], { action: 'normal'} )
+            + `</div>`
+        + `</div>`;
     }
 },
+/*
+##################################################
+   処理中モーダル
+##################################################
+*/
+processingModal: function( title ) {
+    const config = {
+        mode: 'modeless',
+        position: 'center',
+        header: {
+            title: title
+        },
+        width: '320px'
+    };
+    
+    const dialog = new Dialog( config );
+    dialog.open(`<div class="processingContainer"></div>`);
+    
+    return dialog;
+},
+/*
+##################################################
+   登録成功モーダル
+##################################################
+*/
+resultModal: function( result ) {
+    return new Promise(function( resolve ){
+        const funcs = {};
+        funcs.ok = function(){
+            dialog.close();
+            resolve( true );
+        };
+        const config = {
+            mode: 'modeless',
+            position: 'center',
+            header: {
+                title: '登録成功'
+            },
+            width: '480px',
+            footer: {
+                button: { ok: { text: '閉じる', action: 'normal'}}
+            }
+        };
+        const html = []
+    
+        const listOrder = ['Register', 'Update', 'Discard', 'Restore'];
+        for ( const key of listOrder ) {
+              html.push(`<dl class="resultList resultType${key}">`
+                  + `<dt class="resultType">${key}</dt>`
+                  + `<dd class="resultNumber">${result[key]}</dd>`
+              + `</dl>`);
+        }    
+        
+        const dialog = new Dialog( config, funcs );
+        dialog.open(`<div class="resultContainer">${html.join('')}</div>`);
+    });
+},
+/*
+##################################################
+   登録失敗エラーモーダル
+##################################################
+*/
+errorModal: function( error, pageName ) {
+    return new Promise(function( resolve ){
+        let errorMessage;
+        try {
+            errorMessage = JSON.parse(error.message);
+        } catch ( e ) {
+            //JSONを作成
+            errorMessage = {"0":{"共通":[error.message]}};
+        }
+        const errorHtml = [];
+        for ( const item in errorMessage ) {
+            for ( const error in errorMessage[item] ) {
+                const number = Number( item ) + 1,
+                      name = cmn.cv( error, '', true ),
+                      body = cmn.cv( errorMessage[item][error].join(''), '?', true );
 
+                errorHtml.push(`<tr class="tBodyTr tr">`
+                + cmn.html.cell( number, ['tBodyTh', 'tBodyLeftSticky'], 'th')
+                + cmn.html.cell( name, 'tBodyTd')
+                + cmn.html.cell( body, 'tBodyTd')
+                + `</tr>`);
+            }
+        }
+
+        const html = `
+        <div class="errorTableContainer">
+            <table class="table errorTable">
+                <thead class="thead">
+                    <tr class="tHeadTr tr">
+                        <th class="tHeadTh tHeadLeftSticky th"><div class="ci">No.</div></th>
+                        <th class="tHeadTh th"><div class="ci">エラー列</div></th>
+                        <th class="tHeadTh th"><div class="ci">エラー内容</div></th>
+                    </tr>
+                </thead>
+                <tbody class="tbody">
+                    ${errorHtml.join('')}
+                </tbody>
+            </table>
+        </div>`;
+        
+        const funcs = {};
+        funcs.ok = function() {
+            dialog.close();
+            resolve( true );
+        };
+        funcs.download = function() {
+            cmn.download('json', errorMessage, pageName + '_register_error_log');
+        };
+        const config = {
+            mode: 'modeless',
+            position: 'center',
+            header: {
+                title: '登録失敗'
+            },
+            width: 'auto',
+            footer: {
+                button: {
+                  download: { text: 'エラーログJSONダウンロード', action: 'default'},
+                  ok: { text: '閉じる', action: 'normal'}
+              }
+            }
+        };
+        
+        const dialog = new Dialog( config, funcs );
+        dialog.open(`<div class="errorContainer">${html}</div>`);
+    });
+    
+},
+/*
+##################################################
+   Common events
+##################################################
+*/
+setCommonEvents: function() {
+    const $window = $( window ),
+          $body = $('body');
+    
+    // input text, textarea の幅を入力に合わせる
+    $body.on('input.textWidthAdjustment', '.inputTextWidthAdjustment', function(){
+        const $text = $( this ),
+              value = $text.val();
+        $text.next('.inputTextWidthAdjustmentText').text( value );
+    });
+    
+    // 切替ボタン
+    $body.on('click', '.toggleButton', function(){
+        const $button = $( this ),
+              flag = ( $button.attr('data-toggle') === 'on')? 'off': 'on';
+        if ( !$button.closest('.standBy').length ) {
+            $button.attr('data-toggle', flag );
+        }
+    });
+    
+    // titel の内容をポップアップ
+    $body.on('pointerenter.popup', '.popup', function(){
+        const $t = $( this ),
+              ttl = $t.attr('title');
+        if ( ttl !== undefined ) {
+            $t.removeAttr('title');
+
+            const $p = $('<div/>', {
+                'class': 'popupBlock',
+                'html': fn.escape( ttl, true )
+            }).append('<div class="popupArrow"><span></span></div>');
+            
+            const $arrow = $p.find('.popupArrow');
+
+            $body.append( $p );
+
+            const r = $t[0].getBoundingClientRect(),
+                  m = 8,
+                  wW = $window.width(),
+                  tW = $t.outerWidth(),
+                  tH = $t.outerHeight(),
+                  tL = r.left,
+                  tT = r.top,
+                  pW = $p.outerWidth(),
+                  pH = $p.outerHeight(),
+                  wsL = $window.scrollLeft();
+
+            let l = ( tL + tW / 2 ) - ( pW / 2 ) - wsL,
+                t = tT - pH - m;
+
+            if ( t <= 0 ) {
+                $p.addClass('popupBottom');
+                t = tT + tH + m;
+            } else {
+                $p.addClass('popupTop');
+            }
+            if ( wW < l + pW ) l = wW - pW - m;
+            if ( l <= 0 ) l = m;
+
+            $p.css({
+                'width': pW,
+                'height': pH,
+                'left': l,
+                'top': t
+            });
+            
+            // 矢印の位置
+            let aL = 0;
+            if ( tL - wsL + tW > wW ) {
+                const twW = tW - ( tL - wsL + tW - wW );
+                if ( twW > pW || wW < twW ) {
+                    aL = pW / 2;
+                } else {
+                    aL = pW - ( twW / 2 );
+                    if ( pW - aL < 20 ) aL = pW - 20;
+                }    
+            } else if ( tL < wsL ) {
+                const twW = tL + tW - wsL;
+                if ( twW > pW ) {
+                    aL = pW / 2;
+                } else {
+                    aL = twW / 2;
+                    if (aL < 20 ) aL = 20;
+                }
+            } else {
+                aL = ( tL + ( tW / 2 )) - l - wsL;
+            }
+            $arrow.css('left', aL );
+
+            if ( $t.is('.popupHide') ) {
+                $p.addClass('popupHide');
+            }
+
+            $t.on('pointerleave.popup', function(){
+                const $p = $body.find('.popupBlock'),
+                      title = ttl;
+                $p.remove();
+                $t.off('pointerleave.popup click.popup').attr('title', title );
+            });
+
+            $t.on('click', function(){
+                if ( $t.attr('data-popup') === 'click') {
+                   if ( $t.is('.popupHide') ) {
+
+                        $t.add( $p ).removeClass('popupHide');
+                    } else {
+                        $t.add( $p ).addClass('popupHide');
+                    }
+                }
+            });
+
+            const targetCheck = function(){
+                if ( $t.is(':visible') ) {
+                    if ( $p.is(':visible') ) {
+                        setTimeout( targetCheck, 200 );
+                    }
+                } else {
+                    $p.remove();
+                }              
+            };
+            targetCheck();
+        }
+    });
+}
 
 };
 

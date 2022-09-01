@@ -7,7 +7,6 @@ CREATE TABLE T_MENU_DEFINE
     MENU_NAME_REST                  VARCHAR(255),                               -- メニュー名_REST
     SHEET_TYPE                      VARCHAR(2) ,                                -- シートタイプ
     DISP_SEQ                        INT,                                        -- 表示順序
-    PURPOSE                         VARCHAR(2) ,                                -- 用途(ホスト用/ホストグループ用)
     VERTICAL                        VARCHAR(2) ,                                -- 縦メニュー利用
     MENU_GROUP_ID_INPUT             VARCHAR(40),                                -- 入力用メニューグループ
     MENU_GROUP_ID_SUBST             VARCHAR(40),                                -- 代入値自動登録用メニューグループ
@@ -33,7 +32,6 @@ CREATE TABLE T_MENU_DEFINE_JNL
     MENU_NAME_REST                  VARCHAR(255),                               -- メニュー名_REST
     SHEET_TYPE                      VARCHAR(2) ,                                -- シートタイプ
     DISP_SEQ                        INT,                                        -- 表示順序
-    PURPOSE                         VARCHAR(2) ,                                -- 用途(ホスト用/ホストグループ用)
     VERTICAL                        VARCHAR(2) ,                                -- 縦メニュー利用
     MENU_GROUP_ID_INPUT             VARCHAR(40),                                -- 入力用メニューグループ
     MENU_GROUP_ID_SUBST             VARCHAR(40),                                -- 代入値自動登録用メニューグループ
@@ -101,13 +99,11 @@ CREATE TABLE T_MENU_COLUMN
     DISP_SEQ                        INT,                                        -- 表示順序
     REQUIRED                        VARCHAR(2) ,                                -- 必須
     UNIQUED                         VARCHAR(2) ,                                -- 一意制約
-    AUTOREG_HIDE_ITEM               VARCHAR(2) ,                                -- 代入値自動登録対象外フラグ
-    AUTOREG_ONLY_ITEM               VARCHAR(2) ,                                -- 代入値自動登録選択フラグ
     SINGLE_MAX_LENGTH               TEXT,                                       -- 文字列(単一行) 最大バイト数
-    SINGLE_REGULAR_MATCH            TEXT,                                       -- 文字列(単一行) 正規表現
+    SINGLE_REGULAR_EXPRESSION       TEXT,                                       -- 文字列(単一行) 正規表現
     SINGLE_DEFAULT_VALUE            TEXT,                                       -- 文字列(単一行) 初期値
     MULTI_MAX_LENGTH                TEXT,                                       -- 文字列(複数行) 最大バイト数
-    MULTI_REGULAR_MATCH             TEXT,                                       -- 文字列(複数行) 正規表現
+    MULTI_REGULAR_EXPRESSION        TEXT,                                       -- 文字列(複数行) 正規表現
     MULTI_DEFAULT_VALUE             TEXT,                                       -- 文字列(複数行) 初期値
     NUM_MAX                         INT,                                        -- 整数 最大値
     NUM_MIN                         INT,                                        -- 整数 最小値
@@ -150,13 +146,11 @@ CREATE TABLE T_MENU_COLUMN_JNL
     DISP_SEQ                        INT,                                        -- 表示順序
     REQUIRED                        VARCHAR(2) ,                                -- 必須
     UNIQUED                         VARCHAR(2) ,                                -- 一意制約
-    AUTOREG_HIDE_ITEM               VARCHAR(2) ,                                -- 代入値自動登録対象外フラグ
-    AUTOREG_ONLY_ITEM               VARCHAR(2) ,                                -- 代入値自動登録選択フラグ
     SINGLE_MAX_LENGTH               TEXT,                                       -- 文字列(単一行) 最大バイト数
-    SINGLE_REGULAR_MATCH            TEXT,                                       -- 文字列(単一行) 正規表現
+    SINGLE_REGULAR_EXPRESSION       TEXT,                                       -- 文字列(単一行) 正規表現
     SINGLE_DEFAULT_VALUE            TEXT,                                       -- 文字列(単一行) 初期値
     MULTI_MAX_LENGTH                TEXT,                                       -- 文字列(複数行) 最大バイト数
-    MULTI_REGULAR_MATCH             TEXT,                                       -- 文字列(複数行) 正規表現
+    MULTI_REGULAR_EXPRESSION        TEXT,                                       -- 文字列(複数行) 正規表現
     MULTI_DEFAULT_VALUE             TEXT,                                       -- 文字列(複数行) 初期値
     NUM_MAX                         INT,                                        -- 整数 最大値
     NUM_MIN                         INT,                                        -- 整数 最小値

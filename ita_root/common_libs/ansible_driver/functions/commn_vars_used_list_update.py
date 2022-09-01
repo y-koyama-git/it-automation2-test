@@ -13,14 +13,18 @@ def CommnVarsUsedListUpdate(objdbca, option, ContensID, FileID, VarsAry):
     ret = objdbca.table_columns_get(MasterTableName)
     for i in ret[0]:
         MemberAry[i] = ""
-
+    print("takigawa9")
+    
     PkeyMember = ret[1][0]
+    print(VarsAry)
     for VarID, VarNameList in VarsAry.items():
         for VarName, dummy in VarNameList.items():
-            sql = "WHERE FILE_ID='%s' AND VRA_ID='%s' AND CONTENTS_ID='%s' AND VAR_NAME='%s' "
+            sql = "WHERE FILE_ID= %s AND VRA_ID= %s AND CONTENTS_ID= %s AND VAR_NAME= %s "
+            print(sql)
             ret = objdbca.table_select(MasterTableName, sql, [FileID, VarID, ContensID, VarName])
             arrayValue = MemberAry
             arrayConfig = MemberAry
+            print(len(ret))
             if len(ret) == 0:
                 action = 'INSERT'
                 arrayValue['FILE_ID'] = FileID
@@ -42,7 +46,7 @@ def CommnVarsUsedListUpdate(objdbca, option, ContensID, FileID, VarsAry):
                     arrayValue['DISUSE_FLAG']            = '0'
                     arrayValue['LAST_UPDATE_USER']       = option["user"]  # 最終更新者
                     # 最終更新日時は振ってくれるので問題なし
-                msg = ("Duplicate error. (Table:{} {}").format(MasterTableName, sql)
+                msg = "Duplicate error. (Table:{} {}".format(MasterTableName, sql)
                 return False, msg
             if action == 'NONE':
                 UsedPkeyList.append(arrayValue[PkeyMember])
@@ -58,9 +62,10 @@ def CommnVarsUsedListUpdate(objdbca, option, ContensID, FileID, VarsAry):
                     'DISUSE_FLAG': arrayValue['DISUSE_FLAG'],
                     'LAST_UPDATE_USER': arrayValue['LAST_UPDATE_USER']
                 }
+                print("takigawa10")
                 ret = objdbca.table_insert(MasterTableName, data_list, PkeyMember, False)
                 if ret is False:
-                    msg = ""
+                    msg = g.appmsg.get_api_message("MSG-10178", os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno)
                     return False, msg
                 PkeyID = ret[0]["ROW_ID"]
                 UsedPkeyList.append(PkeyID)
@@ -76,10 +81,10 @@ def CommnVarsUsedListUpdate(objdbca, option, ContensID, FileID, VarsAry):
 
     if len(UsedPkeyList) != 0:
         # 不要レコードを抽出
-        sql = "WHERE FILE_ID = %s AND CONTENTS_ID='%s' AND %s NOT IN (%s) "
+        sql = "WHERE FILE_ID = %s AND CONTENTS_ID= %s AND %s NOT IN (%s) "
         ret = objdbca.table_select(MasterTableName, sql, [FileID, ContensID, PkeyMember, ",".join(UsedPkeyList)])
     else:
-        sql = "WHERE FILE_ID = %s AND CONTENTS_ID='%s' "
+        sql = "WHERE FILE_ID = %s AND CONTENTS_ID= %s "
         ret = objdbca.table_select(MasterTableName, sql, [FileID, ContensID])
 
     # 不要なレコードを廃止
@@ -91,32 +96,34 @@ def CommnVarsUsedListUpdate(objdbca, option, ContensID, FileID, VarsAry):
         if row['DISUSE_FLAG'] == '1':
             continue
         else:
-            arrayValue['REVIVAL_FLAG']           = '0'
-            arrayValue['DISUSE_FLAG']            = '1'
-            arrayValue['LAST_UPDATE_USER']       = option["user"]
+            arrayValue['REVIVAL_FLAG'] = '0'
+            arrayValue['DISUSE_FLAG'] = '1'
+            arrayValue['LAST_UPDATE_USER'] = option["user"]
             primary_key_name = "ROW_ID"
             data_list = {primary_key_name: row[primary_key_name], 'REVIVAL_FLAG': arrayValue['REVIVAL_FLAG'], 'DISUSE_FLAG': arrayValue['DISUSE_FLAG'], 'LAST_UPDATE_USER': option["user"]}
             primary_key_name = "ROW_ID"
             result = objdbca.table_update(MasterTableName, data_list, primary_key_name, False)
             if result is False:
-                return False
+                msg = g.appmsg.get_api_message("MSG-10178", os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno)
+                return False, msg
 
-    return True
+    return True, msg
 
 
 def CommnVarsUsedListDisuseSet(objdbca, option, ContensID, FileID):
     MasterTableName = "T_ANSC_COMVRAS_USLIST"
     MemberAry = {}
     PkeyMember = ""
+    msg = ""
     ret = objdbca.table_columns_get(MasterTableName)
     for i in ret[0]:
         MemberAry[i] = ""
     # get directory
     PkeyMember = ret[1][0]
-    sql = "WHERE FILE_ID='%s' AND CONTENTS_ID='%s' "
+    sql = "WHERE FILE_ID = %s AND CONTENTS_ID = %s "
     ret = objdbca.table_select(MasterTableName, sql, [FileID, ContensID])
     if len(ret) == 0:
-        return False
+        return False, msg
     for row in ret:
         arrayValue = MemberAry
         arrayConfig = MemberAry
@@ -133,7 +140,8 @@ def CommnVarsUsedListDisuseSet(objdbca, option, ContensID, FileID):
             data_list = {PkeyMember: row[PkeyMember], 'REVIVAL_FLAG': arrayValue['REVIVAL_FLAG'], 'DISUSE_FLAG': arrayValue['DISUSE_FLAG'], 'LAST_UPDATE_USER': option["user"]}
             result = objdbca.table_update(MasterTableName, data_list, PkeyMember, False)
             if result is False:
-                return False
+                msg = g.appmsg.get_api_message("MSG-10178", os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno)
+                return False, msg
 
         else:
             # 復活時の有効レコードフラグが設定されているレコードのみ復活
@@ -145,5 +153,6 @@ def CommnVarsUsedListDisuseSet(objdbca, option, ContensID, FileID):
             data_list = {PkeyMember: row[PkeyMember], 'REVIVAL_FLAG': arrayValue['REVIVAL_FLAG'], 'DISUSE_FLAG': arrayValue['DISUSE_FLAG'], 'LAST_UPDATE_USER': option["user"]}
             result = objdbca.table_update(MasterTableName, data_list, PkeyMember, False)
             if ret is False:
-                return False
-    return True
+                msg = g.appmsg.get_api_message("MSG-10178", os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno)
+                return False, msg
+    return True, msg

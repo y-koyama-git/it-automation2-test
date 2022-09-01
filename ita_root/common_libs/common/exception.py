@@ -50,7 +50,7 @@ class ValidationException(Exception):
     """
     exception class for application
     """
-    
+
     def __init__(self, *args):
         """
         constructor

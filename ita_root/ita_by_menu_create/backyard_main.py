@@ -134,8 +134,10 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
     
     try:
         # メニュー作成用の各テーブルからレコードを取得
-        recode_t_menu_define, recode_t_menu_column_group, recode_t_menu_column, recode_t_menu_unique_constraint, recode_t_menu_role, recode_t_menu_other_link \
+        result, msg, recode_t_menu_define, recode_t_menu_column_group, recode_t_menu_column, recode_t_menu_unique_constraint, recode_t_menu_role, recode_t_menu_other_link \
             = _collect_menu_create_data(objdbca, menu_create_id)  # noqa: E501
+        if not result:
+            raise Exception(msg)
         
         # テーブル名を生成
         create_table_name = 'T_CMDB_' + str(menu_create_id)
@@ -166,6 +168,11 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
             file_upload_only_flag = _check_file_upload_column(recode_t_menu_column)
         
         elif sheet_type == "2":  # データシート
+            # 「データシート」かつ「項目が0件」の場合はエラー判定
+            if not recode_t_menu_column:
+                msg = "シートタイプ「データシート」では項目0件のメニューを作成できません。"
+                raise Exception(msg)
+            
             # データシート用テーブル作成SQL
             sql_file_path = "./sql/data_sheet_cmdb.sql"  # ####メモ：ファイルの格納先ディレクトリとかは定数で管理したほうがいいかも。
             
@@ -173,8 +180,8 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
             target_menu_group_list = ['MENU_GROUP_ID_INPUT']
         
         else:
-            print("シートタイプが不正")
-            return False
+            msg = "シートタイプが不正です"
+            raise Exception(msg)
         
         # 「新規作成」「初期化」の場合のみ、テーブル作成SQLを実行
         if create_type == 'create_new' or create_type == 'initialize':
@@ -225,7 +232,7 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
             
             # 「ロール-メニュー紐付管理」にレコードを登録
             # ####メモ：未実装。一時的な対処として、仮のレコードを登録する。
-            result, msg = _insert_t_comn_role_menu_link(objdbca, menu_uuid)
+            result, msg = _insert_t_comn_role_menu_link(objdbca, menu_uuid, recode_t_menu_role)
             if not result:
                 raise Exception(msg)
             
@@ -239,7 +246,7 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
                 result, msg = _insert_t_comn_column_group(objdbca, target_column_group_list, dict_t_menu_column_group)
                 if not result:
                     raise Exception(msg)
-            
+                
                 # 「カラムグループ管理」から全てのレコードを取得
                 recode_t_comn_column_group = objdbca.table_select(t_comn_column_group, 'WHERE DISUSE_FLAG = %s', [0])
                 
@@ -291,6 +298,8 @@ def _collect_menu_create_data(objdbca, menu_create_id):
             objdbca: DB接クラス DBConnectWs()
             menu_create_id: メニュー作成の対象となる「メニュー定義一覧」のレコードのID
         RETRUN:
+            result,
+            msg,
             recode_t_menu_define, # 「メニュー定義一覧」から対象のレコード(1件)
             recode_t_menu_column_group, # 「カラムグループ作成情報」のレコード(全件)
             recode_t_menu_column, # 「メニュー項目作成情報」から対象のレコード(複数)
@@ -306,31 +315,36 @@ def _collect_menu_create_data(objdbca, menu_create_id):
     t_menu_role = 'T_MENU_ROLE'  # メニューロール作成情報
     t_menu_other_link = 'T_MENU_OTHER_LINK'  # 他メニュー連携
     
-    # 「メニュー定義一覧」から対象のレコードを取得
-    recode_t_menu_define = objdbca.table_select(t_menu_define, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
-    if not recode_t_menu_define:
-        print("メニュー定義一覧に対象が無いのでエラー判定")
-    recode_t_menu_define = recode_t_menu_define[0]
+    try:
+        # 「メニュー定義一覧」から対象のレコードを取得
+        recode_t_menu_define = objdbca.table_select(t_menu_define, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
+        if not recode_t_menu_define:
+            raise Exception("「メニュー定義一覧」に対象が無いのでエラー判定")
+        recode_t_menu_define = recode_t_menu_define[0]
+        
+        # 「カラムグループ作成情報」から全てのレコードを取得
+        recode_t_menu_column_group = objdbca.table_select(t_menu_column_group, 'WHERE DISUSE_FLAG = %s', [0])
+        
+        # 「メニュー項目作成情報」から対象のレコードを取得
+        recode_t_menu_column = objdbca.table_select(t_menu_column, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s ORDER BY DISP_SEQ ASC', [menu_create_id, 0])  # noqa: E501
+        
+        # 「一意制約(複数項目)作成情報」から対象のレコードを取得
+        recode_t_menu_unique_constraint = objdbca.table_select(t_menu_unique_constraint, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])  # noqa: E501
+        if recode_t_menu_unique_constraint:
+            recode_t_menu_unique_constraint = recode_t_menu_unique_constraint[0]
+        
+        # 「メニューロール作成情報」から対象のレコードを取得
+        recode_t_menu_role = objdbca.table_select(t_menu_role, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
+        if not recode_t_menu_role:
+            raise Exception("「メニューロール作成情報」に対象が無いのでエラー判定")
+        
+        # 「他メニュー連携」から全てのレコードを取得
+        recode_t_menu_other_link = objdbca.table_select(t_menu_other_link, 'WHERE DISUSE_FLAG = %s', [0])
     
-    # 「カラムグループ作成情報」から全てのレコードを取得
-    recode_t_menu_column_group = objdbca.table_select(t_menu_column_group, 'WHERE DISUSE_FLAG = %s', [0])
+    except Exception as msg:
+        return False, msg, None, None, None, None, None, None
     
-    # 「メニュー項目作成情報」から対象のレコードを取得
-    recode_t_menu_column = objdbca.table_select(t_menu_column, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s ORDER BY DISP_SEQ ASC', [menu_create_id, 0])  # noqa: E501
-    if not recode_t_menu_column:
-        print("メニュー項目作成情報に対象が無いのでエラー判定")
-    
-    # 「一意制約(複数項目)作成情報」から対象のレコードを取得
-    recode_t_menu_unique_constraint = objdbca.table_select(t_menu_unique_constraint, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])  # noqa: E501
-    recode_t_menu_unique_constraint = recode_t_menu_unique_constraint[0]
-    
-    # 「メニューロール作成情報」から対象のレコードを取得
-    recode_t_menu_role = objdbca.table_select(t_menu_role, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
-    
-    # 「他メニュー連携」から全てのレコードを取得
-    recode_t_menu_other_link = objdbca.table_select(t_menu_other_link, 'WHERE DISUSE_FLAG = %s', [0])
-    
-    return recode_t_menu_define, recode_t_menu_column_group, recode_t_menu_column, recode_t_menu_unique_constraint, recode_t_menu_role, recode_t_menu_other_link  # noqa: E501
+    return True, None, recode_t_menu_define, recode_t_menu_column_group, recode_t_menu_column, recode_t_menu_unique_constraint, recode_t_menu_role, recode_t_menu_other_link  # noqa: E501
 
 
 def _insert_t_comn_menu(objdbca, recode_t_menu_define, menu_group_col_name):
@@ -373,7 +387,6 @@ def _insert_t_comn_menu(objdbca, recode_t_menu_define, menu_group_col_name):
             "MENU_NAME_JA": menu_name_ja,
             "MENU_NAME_EN": menu_name_en,
             "MENU_NAME_REST": menu_name_rest,
-            "LOGIN_NECESSITY": "1",
             "DISP_SEQ": recode_t_menu_define.get('DISP_SEQ'),
             "AUTOFILTER_FLG": "0",
             "INITIAL_FILTER_FLG": "0",
@@ -425,7 +438,6 @@ def _update_t_comn_menu(objdbca, recode_t_menu_define, menu_group_col_name):
                 "MENU_GROUP_ID": target_menu_group_id,
                 "MENU_NAME_JA": recode_t_menu_define.get('MENU_NAME_JA'),
                 "MENU_NAME_EN": recode_t_menu_define.get('MENU_NAME_EN'),
-                "LOGIN_NECESSITY": "1",
                 "DISP_SEQ": recode_t_menu_define.get('DISP_SEQ'),
                 "AUTOFILTER_FLG": "0",
                 "INITIAL_FILTER_FLG": "0",
@@ -446,12 +458,13 @@ def _update_t_comn_menu(objdbca, recode_t_menu_define, menu_group_col_name):
     return result, None
 
 
-def _insert_t_comn_role_menu_link(objdbca, menu_uuid):
+def _insert_t_comn_role_menu_link(objdbca, menu_uuid, recode_t_menu_role):
     """
         「ロール-メニュー紐付管理」メニューのテーブルにレコードを追加する
         ARGS:
             objdbca: DB接クラス DBConnectWs()
             menu_uuid: 対象のメニュー（「メニュー管理」のレコード）のUUID
+            recode_t_menu_role: 「メニュー-ロール作成情報」の対象レコード一覧
         RETRUN:
             result, msg
     """
@@ -459,15 +472,21 @@ def _insert_t_comn_role_menu_link(objdbca, menu_uuid):
     t_comn_role_menu_link = 'T_COMN_ROLE_MENU_LINK'
     
     try:
-        data_list = {
-            "MENU_ID": menu_uuid,
-            "ROLE_ID": "abc123",  # ####メモ：一時的な値
-            "PRIVILEGE": 1,
-            "DISUSE_FLAG": "0",
-            "LAST_UPDATE_USER": "9999"  # ####メモ：メニュー作成機能バックヤード用ユーザを用意してそのIDを採用する。
-        }
-        primary_key_name = 'LINK_ID'
-        result = objdbca.table_insert(t_comn_role_menu_link, data_list, primary_key_name)
+        if recode_t_menu_role:
+            for recode in recode_t_menu_role:
+                role_id = recode.get('ROLE_ID')
+                data_list = {
+                    "MENU_ID": menu_uuid,
+                    "ROLE_ID": role_id,
+                    "PRIVILEGE": 1,
+                    "DISUSE_FLAG": "0",
+                    "LAST_UPDATE_USER": "9999"  # ####メモ：メニュー作成機能バックヤード用ユーザを用意してそのIDを採用する。
+                }
+                primary_key_name = 'LINK_ID'
+                result = objdbca.table_insert(t_comn_role_menu_link, data_list, primary_key_name)
+        # else:
+            # ####未実装
+            # ####メモ：メニュー作成を実行したユーザが所属する全てのロールを紐付けの対象とする
     
     except Exception as msg:
         print(msg)
@@ -692,6 +711,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             "REF_MULTI_LANG": 0,  # False
             "SENSITIVE_COL_NAME": None,
             "FILE_UPLOAD_PLACE": None,
+            "BUTTON_ACTION": None,
             "COL_NAME": "ROW_ID",
             "SAVE_TYPE": None,
             "AUTO_INPUT": 1,  # True
@@ -699,10 +719,11 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             "VIEW_ITEM": 1,  # True
             "UNIQUE_ITEM": 1,  # True
             "REQUIRED_ITEM": 1,  # True
-            "AUTOREG_HIDE_ITEM": 0,  # False
+            "AUTOREG_HIDE_ITEM": 1,  # True
             "AUTOREG_ONLY_ITEM": 0,  # False
             "INITIAL_VALUE": None,
             "VALIDATE_OPTION": None,
+            "VALIDATE_REG_EXP": None,
             "BEFORE_VALIDATE_REGISTER": None,
             "AFTER_VALIDATE_REGISTER": None,
             "DESCRIPTION_JA": "自動採番のため編集不可。実行処理種別が【登録】の場合、空白のみ可。",  # ####メモ：メッセージ一覧から取得する
@@ -738,6 +759,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "REF_MULTI_LANG": 0,  # False
                 "SENSITIVE_COL_NAME": None,
                 "FILE_UPLOAD_PLACE": None,
+                "BUTTON_ACTION": None,
                 "COL_NAME": "HOST_ID",
                 "SAVE_TYPE": None,
                 "AUTO_INPUT": 0,  # False
@@ -745,10 +767,11 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "VIEW_ITEM": 1,  # True
                 "UNIQUE_ITEM": 0,  # False
                 "REQUIRED_ITEM": 1,  # True
-                "AUTOREG_HIDE_ITEM": 0,  # False
+                "AUTOREG_HIDE_ITEM": 1,  # True
                 "AUTOREG_ONLY_ITEM": 0,  # False
                 "INITIAL_VALUE": None,
                 "VALIDATE_OPTION": None,
+                "VALIDATE_REG_EXP": None,
                 "BEFORE_VALIDATE_REGISTER": None,
                 "AFTER_VALIDATE_REGISTER": None,
                 "DESCRIPTION_JA": "ホストを選択",  # ####メモ：メッセージ一覧から取得する
@@ -790,6 +813,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "REF_MULTI_LANG": 0,  # False
                 "SENSITIVE_COL_NAME": None,
                 "FILE_UPLOAD_PLACE": None,
+                "BUTTON_ACTION": None,
                 "COL_NAME": "OPERATION_ID",
                 "SAVE_TYPE": None,
                 "AUTO_INPUT": 0,  # False
@@ -797,10 +821,11 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "VIEW_ITEM": 1,  # True
                 "UNIQUE_ITEM": 0,  # False
                 "REQUIRED_ITEM": 1,  # True
-                "AUTOREG_HIDE_ITEM": 0,  # False
+                "AUTOREG_HIDE_ITEM": 1,  # True
                 "AUTOREG_ONLY_ITEM": 0,  # False
                 "INITIAL_VALUE": None,
                 "VALIDATE_OPTION": None,
+                "VALIDATE_REG_EXP": None,
                 "BEFORE_VALIDATE_REGISTER": None,
                 "AFTER_VALIDATE_REGISTER": None,
                 "DESCRIPTION_JA": "オペレーションを選択",  # ####メモ：メッセージ一覧から取得する
@@ -835,6 +860,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                     "REF_MULTI_LANG": 0,  # False
                     "SENSITIVE_COL_NAME": None,
                     "FILE_UPLOAD_PLACE": None,
+                    "BUTTON_ACTION": None,
                     "COL_NAME": "INPUT_ORDER",
                     "SAVE_TYPE": None,
                     "AUTO_INPUT": 0,  # False
@@ -842,10 +868,11 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                     "VIEW_ITEM": 1,  # True
                     "UNIQUE_ITEM": 0,  # False
                     "REQUIRED_ITEM": 1,  # True
-                    "AUTOREG_HIDE_ITEM": 0,  # False
+                    "AUTOREG_HIDE_ITEM": 1,  # True
                     "AUTOREG_ONLY_ITEM": 0,  # False
                     "INITIAL_VALUE": None,
                     "VALIDATE_OPTION": None,
+                    "VALIDATE_REG_EXP": None,
                     "BEFORE_VALIDATE_REGISTER": None,
                     "AFTER_VALIDATE_REGISTER": None,
                     "DESCRIPTION_JA": "メニューの縦メニューから横メニューに変換する際に、左から昇順で入力されます。",  # ####メモ：メッセージ一覧から取得する
@@ -875,7 +902,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             initial_value = _create_initial_value(recode)
             
             # バリデーションに登録する値を生成
-            validate_option = _create_validate_option(recode)
+            validate_option, validate_regular_expression = _create_validate_option(recode)
             
             # IDColumn用の値
             ref_table_name = None
@@ -933,6 +960,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "REF_MULTI_LANG": ref_multi_lang,
                 "SENSITIVE_COL_NAME": None,
                 "FILE_UPLOAD_PLACE": None,
+                "BUTTON_ACTION": None,
                 "COL_NAME": "DATA_JSON",
                 "SAVE_TYPE": "JSON",
                 "AUTO_INPUT": 0,  # False
@@ -944,10 +972,55 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "AUTOREG_ONLY_ITEM": 0,  # False
                 "INITIAL_VALUE": initial_value,
                 "VALIDATE_OPTION": validate_option,
+                "VALIDATE_REG_EXP": validate_regular_expression,
                 "BEFORE_VALIDATE_REGISTER": None,
                 "AFTER_VALIDATE_REGISTER": None,
                 "DESCRIPTION_JA": recode.get('DESCRIPTION_JA'),
                 "DESCRIPTION_EN": recode.get('DESCRIPTION_EN'),
+                "DISUSE_FLAG": "0",
+                "LAST_UPDATE_USER": "9999"  # ####メモ：メニュー作成機能バックヤード用ユーザを用意してそのIDを採用する。
+            }
+            primary_key_name = 'COLUMN_DEFINITION_ID'
+            objdbca.table_insert(t_comn_menu_column_link, data_list, primary_key_name)
+            
+            # 表示順序を加算
+            disp_seq_num = int(disp_seq_num) + 10
+        
+        # 「メニュー作成機能で作成した項目」が0件の場合、特殊な項目を作成
+        if not recode_t_menu_column:
+            validate_option = '{"min_length": 0,"max_length": 255}'
+            data_list = {
+                "MENU_ID": menu_uuid,
+                "COLUMN_NAME_JA": "ダミー項目",  # ####メモ：項目名要検討
+                "COLUMN_NAME_EN": "Dummy",  # ####メモ：項目名要検討
+                "COLUMN_NAME_REST": "dummy_item",  # ####メモ：項目REST名要検討
+                "COL_GROUP_ID": None,
+                "COLUMN_CLASS": "1",
+                "COLUMN_DISP_SEQ": disp_seq_num,
+                "REF_TABLE_NAME": None,
+                "REF_PKEY_NAME": None,
+                "REF_COL_NAME": None,
+                "REF_SORT_CONDITIONS": None,
+                "REF_MULTI_LANG": 0,  # False
+                "SENSITIVE_COL_NAME": None,
+                "FILE_UPLOAD_PLACE": None,
+                "BUTTON_ACTION": None,
+                "COL_NAME": "DATA_JSON",
+                "SAVE_TYPE": "JSON",
+                "AUTO_INPUT": 0,  # False
+                "INPUT_ITEM": 1,  # True
+                "VIEW_ITEM": 1,  # True
+                "UNIQUE_ITEM": 1,  # True
+                "REQUIRED_ITEM": 1,  # True
+                "AUTOREG_HIDE_ITEM": 0,  # False
+                "AUTOREG_ONLY_ITEM": 1,  # True
+                "INITIAL_VALUE": None,
+                "VALIDATE_OPTION": validate_option,
+                "VALIDATE_REG_EXP": None,
+                "BEFORE_VALIDATE_REGISTER": None,
+                "AFTER_VALIDATE_REGISTER": None,
+                "DESCRIPTION_JA": "代入値自動登録設定用のダミー項目",  # ####メモ：メッセージ一覧から取得する
+                "DESCRIPTION_EN": "Dummy item for substitution value auto-registration setting",  # ####メモ：メッセージ一覧から取得する
                 "DISUSE_FLAG": "0",
                 "LAST_UPDATE_USER": "9999"  # ####メモ：メニュー作成機能バックヤード用ユーザを用意してそのIDを採用する。
             }
@@ -962,6 +1035,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
         if not res_valid:
             raise Exception("「メニュー-カラム紐付管理」に同じメニューとカラム名(rest)の組み合わせが既に存在している。")
         
+        validate_option = '{"min_length": 0,"max_length": 4000}'
         data_list = {
             "MENU_ID": menu_uuid,
             "COLUMN_NAME_JA": "備考",  # ####メモ：メッセージ一覧から取得する
@@ -977,6 +1051,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             "REF_MULTI_LANG": 0,  # False
             "SENSITIVE_COL_NAME": None,
             "FILE_UPLOAD_PLACE": None,
+            "BUTTON_ACTION": None,
             "COL_NAME": "NOTE",
             "SAVE_TYPE": None,
             "AUTO_INPUT": 0,  # False
@@ -984,10 +1059,11 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             "VIEW_ITEM": 1,  # True
             "UNIQUE_ITEM": 0,  # False
             "REQUIRED_ITEM": 0,  # False
-            "AUTOREG_HIDE_ITEM": 0,  # False
+            "AUTOREG_HIDE_ITEM": 1,  # True
             "AUTOREG_ONLY_ITEM": 0,  # False
             "INITIAL_VALUE": None,
-            "VALIDATE_OPTION": None,
+            "VALIDATE_OPTION": validate_option,
+            "VALIDATE_REG_EXP": None,
             "BEFORE_VALIDATE_REGISTER": None,
             "AFTER_VALIDATE_REGISTER": None,
             "DESCRIPTION_JA": "自由記述欄。レコードの廃止・復活時にも記載可能。",  # ####メモ：メッセージ一覧から取得する
@@ -1021,6 +1097,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             "REF_MULTI_LANG": 0,  # False
             "SENSITIVE_COL_NAME": None,
             "FILE_UPLOAD_PLACE": None,
+            "BUTTON_ACTION": None,
             "COL_NAME": "DISUSE_FLAG",
             "SAVE_TYPE": None,
             "AUTO_INPUT": 1,  # True
@@ -1028,10 +1105,11 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             "VIEW_ITEM": 1,  # True
             "UNIQUE_ITEM": 0,  # False
             "REQUIRED_ITEM": 1,  # True
-            "AUTOREG_HIDE_ITEM": 0,  # False
+            "AUTOREG_HIDE_ITEM": 1,  # True
             "AUTOREG_ONLY_ITEM": 0,  # False
             "INITIAL_VALUE": None,
             "VALIDATE_OPTION": None,
+            "VALIDATE_REG_EXP": None,
             "BEFORE_VALIDATE_REGISTER": None,
             "AFTER_VALIDATE_REGISTER": None,
             "DESCRIPTION_JA": "廃止フラグ。復活以外のオペレーションは不可",  # ####メモ：メッセージ一覧から取得する
@@ -1065,6 +1143,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             "REF_MULTI_LANG": 0,  # False
             "SENSITIVE_COL_NAME": None,
             "FILE_UPLOAD_PLACE": None,
+            "BUTTON_ACTION": None,
             "COL_NAME": "LAST_UPDATE_TIMESTAMP",
             "SAVE_TYPE": None,
             "AUTO_INPUT": 1,  # True
@@ -1072,10 +1151,11 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             "VIEW_ITEM": 1,  # True
             "UNIQUE_ITEM": 0,  # False
             "REQUIRED_ITEM": 1,  # True
-            "AUTOREG_HIDE_ITEM": 0,  # False
+            "AUTOREG_HIDE_ITEM": 1,  # True
             "AUTOREG_ONLY_ITEM": 0,  # False
             "INITIAL_VALUE": None,
             "VALIDATE_OPTION": None,
+            "VALIDATE_REG_EXP": None,
             "BEFORE_VALIDATE_REGISTER": None,
             "AFTER_VALIDATE_REGISTER": None,
             "DESCRIPTION_JA": "レコードの最終更新日。自動登録のため編集不可。",  # ####メモ：メッセージ一覧から取得する
@@ -1109,6 +1189,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             "REF_MULTI_LANG": 0,  # False
             "SENSITIVE_COL_NAME": None,
             "FILE_UPLOAD_PLACE": None,
+            "BUTTON_ACTION": None,
             "COL_NAME": "LAST_UPDATE_USER",
             "SAVE_TYPE": None,
             "AUTO_INPUT": 1,  # True
@@ -1116,10 +1197,11 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             "VIEW_ITEM": 1,  # True
             "UNIQUE_ITEM": 0,  # False
             "REQUIRED_ITEM": 1,  # True
-            "AUTOREG_HIDE_ITEM": 0,  # False
+            "AUTOREG_HIDE_ITEM": 1,  # True
             "AUTOREG_ONLY_ITEM": 0,  # False
             "INITIAL_VALUE": None,
             "VALIDATE_OPTION": None,
+            "VALIDATE_REG_EXP": None,
             "BEFORE_VALIDATE_REGISTER": None,
             "AFTER_VALIDATE_REGISTER": None,
             "DESCRIPTION_JA": "更新者。ログインユーザのIDが自動的に登録される。編集不可。",  # ####メモ：メッセージ一覧から取得する
@@ -1177,28 +1259,30 @@ def _create_validate_option(recode):
         ARGS:
             recode: 「メニュー項目作成情報」のレコード
         RETRUN:
-            validate_option
+            validate_option, validate_regular_expression
     """
     validate_option = None
+    # ####メモ：正規表現をデータベースに登録する際に、エスケープ処理をする必要があるかも。
+    validate_regular_expression = None
     tmp_validate_option = {}
     column_class = str(recode.get('COLUMN_CLASS'))
     
     # カラムクラスに応じて処理を分岐
     if column_class == "1":  # SingleTextColumn
         single_max_length = str(recode.get('SINGLE_MAX_LENGTH'))
-        single_regular_match = str(recode.get('SINGLE_REGULAR_MATCH'))
+        single_regular_expression = str(recode.get('SINGLE_REGULAR_EXPRESSION'))
         tmp_validate_option['min_length'] = "0"
         tmp_validate_option['max_length'] = single_max_length
-        if single_regular_match:
-            tmp_validate_option['preg_match'] = single_regular_match
+        if single_regular_expression:
+            validate_regular_expression = single_regular_expression
         
     elif column_class == "2":  # MultiTextColumn
         multi_max_length = str(recode.get('MULTI_MAX_LENGTH'))
-        multi_regular_match = str(recode.get('MULTI_REGULAR_MATCH'))
+        multi_regular_expression = str(recode.get('MULTI_REGULAR_EXPRESSION'))
         tmp_validate_option['min_length'] = "0"
         tmp_validate_option['max_length'] = multi_max_length
-        if multi_regular_match:
-            tmp_validate_option['preg_match'] = multi_regular_match
+        if multi_regular_expression:
+            validate_regular_expression = multi_regular_expression
         
     elif column_class == "3":  # NumColumn
         num_min = str(recode.get('NUM_MIN'))
@@ -1239,7 +1323,7 @@ def _create_validate_option(recode):
     if tmp_validate_option:
         validate_option = json.dumps(tmp_validate_option)
     
-    return validate_option
+    return validate_option, validate_regular_expression
 
 
 def _create_initial_value(recode):

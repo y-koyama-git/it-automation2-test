@@ -19,12 +19,9 @@ from common_libs.loadtable import *  # noqa: F403
 from common_libs.conductor.classes.util import ConductorCommonLibs  # noqa: F401
 from common_libs.conductor.classes.exec_util import *  # noqa: F403
 
-import os
-from pprint import pprint  # noqa: F401
-
-
+import sys
+import traceback
 backyard_name = 'ita_by_conductor_synchronize'
-backyard_name = ''
 
 
 def backyard_main(organization_id, workspace_id):
@@ -53,41 +50,46 @@ def backyard_main(organization_id, workspace_id):
     retBool = True
     result = {}
     # g.applogger.set_level("INFO") # ["ERROR", "INFO", "DEBUG"]
-    
-    tmp_msg = 'Process Start'
-    g.applogger.debug(addline_msg('{}'.format(tmp_msg), backyard_name))  # noqa: F405  # noqa: F405
 
-    # DB接続
-    objdbca = DBConnectWs(workspace_id)  # noqa: F405
-    
     # 環境情報設定
     # 言語情報
     if 'LANGUAGE' not in g:
         g.LANGUAGE = 'ja'
     if 'USER_ID' not in g:
-        g.USER_ID = '1'
+        g.USER_ID = 'cm'
 
-    # storageパス
-    strage_path = os.environ.get('STORAGEPATH')
+    local_env = {
+        'language': g.LANGUAGE,
+        'user': g.USER_ID,
+        'organization_id': organization_id,
+        'workspace_id': workspace_id,
+        'conductor_storage_path_ita': None,
+        'base_storage_path_ita': None
+    }
+
     # 実行制限数初期値
     execute_limit = 10000
     execute_limit_key = 'CONDUCTOR_LIMIT'
+        
+    tmp_msg = 'Process Start'
+    g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
+
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
 
     # conductor backyard lib読込
-    objcbkl = ConductorExecuteBkyLibs(objdbca)  # noqa: F405
+    objcbkl = ConductorExecuteBkyLibs(objdbca, local_env)  # noqa: F405
     if objcbkl.get_objmenus() is False:
-        tmp_msg = 'ConductorExecuteBkyLibs Error'
-        # tmp_msg = g.appmsg.get_log_message(status_code, [msg_args])
-        g.applogger.debug(addline_msg('{}'.format(tmp_msg), backyard_name))  # noqa: F405
-        exit()
+        tmp_msg = 'ConductorExecuteBkyLibs Load Error'
+        g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
+        return False,
 
     # Sysrtem configの取得
     tmp_result = objcbkl.get_system_config()
     if tmp_result[0] is not True:
         tmp_msg = 'get_system_config Error'
-        # tmp_msg = g.appmsg.get_log_message(status_code, [msg_args])
-        g.applogger.debug(addline_msg('{}'.format(tmp_msg), backyard_name))  # noqa: F405
-        exit()
+        g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
+        return False,
     
     # conductor実行制限
     system_config = tmp_result[1]
@@ -96,67 +98,53 @@ def backyard_main(organization_id, workspace_id):
         if tmp_execute_limit is not None:
             execute_limit = tmp_execute_limit
             
-    # conductorif からstoragepath 取得
-    tmp_result = objcbkl.get_conductor_interface()
+    # storage path 設定
+    tmp_result = objcbkl.set_storage_path()
     if tmp_result[0] is not True:
-        tmp_msg = 'get_conductor_interface Error'
-        # tmp_msg = g.appmsg.get_log_message(status_code, [msg_args])
-        g.applogger.debug(addline_msg('{}'.format(tmp_msg), backyard_name))  # noqa: F405
-        exit()
-    conductor_storage_path_ita = tmp_result[1].get('CONDUCTOR_STORAGE_PATH_ITA')
-    base_conductor_storage_path = "{}{}/{}{}".format(strage_path, organization_id, workspace_id, conductor_storage_path_ita)
-
-    # Orchestra毎 MVIF情報取得
-    #
-    #
-    #
+        tmp_msg = 'set_storage_path Error'
+        g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
+        return False,
+    base_conductor_storage_path = objcbkl.get_conductor_storage_path()
 
     # 作業対象のConductorの取得
     tmp_result = objcbkl.get_execute_conductor_list(execute_limit)
     if tmp_result[0] is not True:
         tmp_msg = 'get_execute_conductor_list Error'
-        # tmp_msg = g.appmsg.get_log_message(status_code, [msg_args])
-        g.applogger.debug(addline_msg('{}'.format(tmp_msg), backyard_name))  # noqa: F405
-        exit()
+        g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
+        return False,
     target_conductor_list = tmp_result[1]
     
     # 作業対象無しで終了
     if len(target_conductor_list) == 0:
         tmp_msg = 'No Execute Conductor'
-        # tmp_msg = g.appmsg.get_log_message(status_code, [msg_args])
-        g.applogger.debug(addline_msg('{}'.format(tmp_msg), backyard_name))  # noqa: F405
-        exit()
-        
-    # 参照系リスト取得
-    instance_info_data = objcbkl.get_instance_info_data()
-    start_status = []
-    for tmp_status in ['1', '2']:
-        start_status.append(instance_info_data.get('dict').get('conductor_status').get(tmp_status))
-    end_status = []
-    for tmp_status in ['6', '7', '8', '11', '9']:
-        end_status.append(instance_info_data.get('dict').get('conductor_status').get(tmp_status))
+        g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
+        return True,
 
-    # 作業実行件数
-    tmp_msg = 'EXECUTE COUNT:{} '.format(len(target_conductor_list))
-    g.applogger.debug(addline_msg('{}'.format(tmp_msg), backyard_name))  # noqa: F405
-    
     # Conductor毎に繰り返し処理
     execute_conductor_cnt = 0
     for conductor_instance_id, tmp_info in target_conductor_list.items():
-        tmp_msg = 'ID:{} Start'.format(conductor_instance_id)
-        g.applogger.debug(addline_msg('{}'.format(tmp_msg), backyard_name))  # noqa: F405
+        tmp_msg = 'conductor instance:{} Start'.format(conductor_instance_id)
+        g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
         ci_status = tmp_info.get('status')
 
         # トランザクション開始
         objdbca.db_transaction_start()
+        tmp_msg = 'db_transaction_start'
+        g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
+
+        # テーブルロック
         locktable_list = ['T_COMN_CONDUCTOR_INSTANCE', 'T_COMN_CONDUCTOR_NODE_INSTANCE']
         tmp_result = objdbca.table_lock(locktable_list)
+        tmp_msg = 'table_lock'
+        g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
         
         # update_flg = ON
         ci_update_flg = 1
         ni_update_flg = 1
         
         # Conductor instance処理_1
+        tmp_msg = 'conductor instance first run process start'
+        g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
         try:
             # 共有パスを生成
             conductor_storage_path = "{}/{}".format(base_conductor_storage_path, conductor_instance_id)
@@ -164,8 +152,7 @@ def backyard_main(organization_id, workspace_id):
             tmp_result = objcbkl.create_data_storage_path(conductor_storage_path, ci_status_id)
             if tmp_result is False:
                 tmp_msg = 'Create storage path Error'
-                # tmp_msg = g.appmsg.get_log_message(status_code, [msg_args])
-                g.applogger.debug(addline_msg('{}'.format(tmp_msg), backyard_name))  # noqa: F405
+                g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
                 raise Exception()
             
             # 未実行,未実行(予約)時、ステータス更新＋開始時刻
@@ -174,27 +161,35 @@ def backyard_main(organization_id, workspace_id):
                 tmp_result = objcbkl.conductor_status_update(conductor_instance_id)
                 if tmp_result[0] is not True:
                     tmp_msg = 'Update Conductor instance Error'
-                    # tmp_msg = g.appmsg.get_log_message(status_code, [msg_args])
-                    g.applogger.debug(addline_msg('{}'.format(tmp_msg), backyard_name))  # noqa: F405
+                    g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
                     raise Exception()
 
         except Exception:
             ci_update_flg = 0
-
+            tmp_msg = 'conductor instance first run process error'
+            g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
+            g.applogger.error(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))  # noqa: F405
+            type_, value, traceback_ = sys.exc_info()
+            msg = traceback.format_exception(type_, value, traceback_)
+            g.applogger.error(msg)
+            
+        tmp_msg = 'conductor instance first run process end'
+        g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
+        
         # Node instance処理
+        tmp_msg = 'node instance process start'
+        g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
         try:
             if ni_update_flg != 1 and ci_update_flg != 1:
                 tmp_msg = ' Conductor Node instance update Error'
-                # tmp_msg = g.appmsg.get_log_message(status_code, [msg_args])
-                g.applogger.debug(addline_msg('{}'.format(tmp_msg), backyard_name))  # noqa: F405
+                g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
                 raise Exception()
 
             # Node instance取得
             tmp_result = objcbkl.get_filter_node(conductor_instance_id)
             if tmp_result[0] is not True:
                 tmp_msg = 'Get Filter Node instance Error'
-                # tmp_msg = g.appmsg.get_log_message(status_code, [msg_args])
-                g.applogger.debug(addline_msg('{}'.format(tmp_msg), backyard_name))  # noqa: F405
+                g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
                 raise Exception()
             all_node_filter = tmp_result[1]
             
@@ -202,8 +197,7 @@ def backyard_main(organization_id, workspace_id):
             tmp_result = objcbkl.get_execute_all_node_list(conductor_instance_id)
             if tmp_result[0] is not True:
                 tmp_msg = 'Get Node instance Status Error'
-                # tmp_msg = g.appmsg.get_log_message(status_code, [msg_args])
-                g.applogger.debug(addline_msg('{}'.format(tmp_msg), backyard_name))  # noqa: F405
+                g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
                 raise Exception()
             target_all_node_list = tmp_result[1]
 
@@ -211,8 +205,7 @@ def backyard_main(organization_id, workspace_id):
             tmp_result = objcbkl.get_start_node(conductor_instance_id)
             if tmp_result[0] is not True:
                 tmp_msg = 'Get Start Node instance Error'
-                # tmp_msg = g.appmsg.get_log_message(status_code, [msg_args])
-                g.applogger.debug(addline_msg('{}'.format(tmp_msg), backyard_name))  # noqa: F405
+                g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
                 raise Exception()
             start_node_instance_id = tmp_result[1]
 
@@ -223,8 +216,7 @@ def backyard_main(organization_id, workspace_id):
                 tmp_result = objcbkl.execute_node_action(conductor_instance_id, start_node_instance_id, all_node_filter)
                 if tmp_result[0] is not True:
                     tmp_msg = 'Execute Start Node instance Error'
-                    # tmp_msg = g.appmsg.get_log_message(status_code, [msg_args])
-                    g.applogger.debug(addline_msg('{}'.format(tmp_msg), backyard_name))  # noqa: F405
+                    g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
                     raise Exception()
 
             # Conductor実行中
@@ -238,62 +230,76 @@ def backyard_main(organization_id, workspace_id):
                             tmp_result = objcbkl.execute_node_action(conductor_instance_id, node_instance_id, all_node_filter)
                             if tmp_result[0] is not True:
                                 tmp_msg = 'Execute Node Error'
-                                # tmp_msg = g.appmsg.get_log_message(status_code, [msg_args])
-                                g.applogger.debug(addline_msg('{}'.format(tmp_msg), backyard_name))  # noqa: F405
+                                g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
                                 raise Exception()
-        except Exception:
+        except Exception as e:
             ni_update_flg = 0
+            tmp_msg = 'node instance process error'
+            g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
+            g.applogger.error(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))  # noqa: F405
+            type_, value, traceback_ = sys.exc_info()
+            msg = traceback.format_exception(type_, value, traceback_)
+            g.applogger.error(msg)
 
+        tmp_msg = 'node instance process end'
+        g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
+        
         # Conductor instance処理_2
+        tmp_msg = 'conductor instance process start'
+        g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
         try:
             if ni_update_flg != 1 or ci_update_flg != 1:
                 tmp_msg = ' Conductor Node instance update Error'
-                # tmp_msg = g.appmsg.get_log_message(status_code, [msg_args])
-                g.applogger.debug(addline_msg('{}'.format(tmp_msg), backyard_name))  # noqa: F405
+                g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
                 raise Exception()
             # Conductor instanceステータス更新
             tmp_result = objcbkl.conductor_status_update(conductor_instance_id)
             if tmp_result[0] is not True:
-                tmp_msg = 'Update Conductor instance Error'
-                # tmp_msg = g.appmsg.get_log_message(status_code, [msg_args])
-                g.applogger.debug(addline_msg('{}'.format(tmp_msg), backyard_name))  # noqa: F405
+                tmp_msg = 'pdate Conductor instance Error'
+                g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
                 raise Exception()
             
-        except Exception:
+        except Exception as e:
             ci_update_flg = 0
+            tmp_msg = 'conductor instance process error'
+            g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
+            g.applogger.error(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))  # noqa: F405
+            type_, value, traceback_ = sys.exc_info()
+            msg = traceback.format_exception(type_, value, traceback_)
+            g.applogger.error(msg)
+
+        tmp_msg = 'onductor instance process end'
+        g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
 
         try:
             if (ni_update_flg == 1 and ci_update_flg == 1) is True:
                 # トランザクション終了
                 objdbca.db_transaction_end(True)
-                tmp_msg = 'db_transaction_end(True)'.format()
-                g.applogger.debug(addline_msg('{}'.format(tmp_msg), backyard_name))  # noqa: F405
+                tmp_msg = 'db_transaction_end(True)'
+                g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
             else:
                 retBool = False
                 # トランザクション終了
                 objdbca.db_transaction_end(False)
-                tmp_msg = 'db_transaction_end(False)'.format()
-                g.applogger.debug(addline_msg('{}'.format(tmp_msg), backyard_name))  # noqa: F405
-        except Exception:
+                tmp_msg = 'db_transaction_end(False)'
+                g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
+        except Exception as e:
             retBool = False
             # トランザクション終了
             objdbca.db_transaction_end(False)
-            tmp_msg = 'db_transaction_end(False)'.format()
-            g.applogger.debug(addline_msg('{}'.format(tmp_msg), backyard_name))  # noqa: F405
+            tmp_msg = 'db_transaction_end(False)'
+            g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
+            g.applogger.error(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))  # noqa: F405
+            type_, value, traceback_ = sys.exc_info()
+            msg = traceback.format_exception(type_, value, traceback_)
+            g.applogger.error(msg)
         finally:
             execute_conductor_cnt = execute_conductor_cnt + 1
 
-        tmp_msg = 'ID:{} END'.format(conductor_instance_id)
-        g.applogger.debug(addline_msg('{}'.format(tmp_msg), backyard_name))  # noqa: F405
-        # print(execute_conductor_cnt, execute_limit, execute_conductor_cnt <= execute_limit)
-        if (execute_conductor_cnt <= execute_limit) is False:
-            tmp_msg = 'execute_limit:{}'.format(execute_limit)
-            # tmp_msg = g.appmsg.get_log_message(status_code, [msg_args])
-            # g.applogger.debug(addline_msg('{}'.format(tmp_msg), backyard_name))  # noqa: F405
-            break
+        tmp_msg = 'conductor instance:{} END'.format(conductor_instance_id)
+        g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
 
     tmp_msg = 'Process End'
-    g.applogger.debug(addline_msg('{}'.format(tmp_msg), backyard_name))  # noqa: F405
-    # tmp_msg = g.appmsg.get_log_message(status_code, [msg_args])
+    g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
     
     return retBool, result,

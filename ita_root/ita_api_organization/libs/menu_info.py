@@ -182,6 +182,7 @@ def collect_menu_info(objdbca, menu):
                 'ref_sort_conditions': recode.get('REF_SORT_CONDITIONS'),
                 'ref_multi_lang': recode.get('REF_MULTI_LANG'),
                 'col_name': recode.get('COL_NAME'),
+                'button_action': recode.get('BUTTON_ACTION'),
                 'save_type': recode.get('SAVE_TYPE'),
                 'auto_input': recode.get('AUTO_INPUT'),
                 'input_item': recode.get('INPUT_ITEM'),

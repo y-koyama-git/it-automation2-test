@@ -46,11 +46,13 @@ workStart( type, time = 50 ) {
     const tb = this;
     if ( tb.workType ) window.console.warn('"table.js" workStart() warning.');
     
+    // 読み込み中になったら
     tb.$.window.trigger( tb.id + '__tableStandBy');
+    
     tb.workType = type;
     
     const standBy = function() {
-        tb.$.container.removeClass('noData noDataHeader');
+        tb.$.container.removeClass('noData');
         tb.$.message.empty();
         tb.$.container.addClass(`standBy ${tb.workType}StandBy`);
     };
@@ -69,7 +71,9 @@ workEnd() {
     if ( tb.workTimer ) clearTimeout( tb.workTimer );
     tb.$.container.removeClass(`standBy ${tb.workType}StandBy`);
     
+    // 完了したら
     tb.$.window.trigger( tb.id + '__tableReady');
+    
     tb.workType = undefined;
 }
 get checkWork() {
@@ -203,19 +207,14 @@ setup() {
     
     // フラグ
     tb.flag = fn.editFlag( tb.info.menu_info );
-    tb.flag.autoFilter = false;
     
     // モード別
     switch ( tb.mode ) {
         case 'view': case 'edit':
             tb.workStart('table', 0 );
         break;
-        case 'history':
-            tb.$.container.addClass('historyStandBy');
-        break;
     }
 
-    // ページ表示時に一覧を表示する
     tb.setTable( tb.mode );
     
     return tb.$.container;
@@ -260,8 +259,6 @@ setTable( mode ) {
     tb.$.tbody = tb.$.container.find('.tbody');
     tb.setInitSort();
     
-    // フィルター欄
-    // tb.$.table.addClass('filterShow');
     
     // Table内各種イベントセット
     tb.setTableEvents();    
@@ -278,6 +275,10 @@ setTable( mode ) {
             // 権限チェック
             if ( tb.flag.insert ) tableHeaderMenuList.Main.push({ name: 'tableNew', icon: 'edit', title: '登録', action: 'positive', width: '200px'});
             if ( tb.flag.update ) tableHeaderMenuList.Main.push({ name: 'tableEdit', icon: 'edit', title: '編集', action: 'positive', width: '200px', 'disabled': true });
+            
+            if ( tableHeaderMenuList.Main.length === 0 ) {
+                 tableHeaderMenuList.Main.push({ message: 'このメニューは閲覧のみ可能です。', action: 'message'});
+            }
             
             tb.$.header.html( tb.tableHeaderMenuHtml( tableHeaderMenuList ) );
             
@@ -303,10 +304,14 @@ setTable( mode ) {
                 }
             });
             // tbody表示
-            if ( tb.data.body ) {
-                tb.setTbody();
+            if ( tb.flag.filter ) {
+                if ( tb.data.body ) {
+                    tb.setTbody();
+                } else {
+                    tb.requestTbody();
+                }
             } else {
-                tb.requestTbody();
+                tb.setFilterStandBy();
             }
         } break;
         case 'edit': {            
@@ -421,6 +426,10 @@ setTable( mode ) {
             };
             tb.$.header.html( tb.tableHeaderMenuHtml( tableHeaderMenuList ) );
             
+            const historyMessage = `<div class="historyStandByMessage">対象の${tb.idName}を入力し、<br>履歴表示を押下してください。</div>`;
+            tb.$.container.addClass('historyStandBy');
+            tb.$.message.html( historyMessage );
+            
             // メニューボタン
             const $show = tb.$.header.find('.itaButton[data-type="tableShowHistory"]'),
                   $reset = tb.$.header.find('.itaButton[data-type="tableResetHistory"]'),
@@ -433,11 +442,14 @@ setTable( mode ) {
                 $reset.prop('disabled', false );
             });
             
+            // 履歴リセット
             $reset.on('click', function(){
                 tb.$.container.addClass('historyStandBy');
+                tb.$.message.html( historyMessage );
+                
                 tb.$.tbody.empty();
                 tb.data.body = null;
-                $input.val('');
+                $input.val('').trigger('input');
                 $reset.prop('disabled', true );
                 $show.prop('disabled', true );
             });
@@ -475,12 +487,18 @@ tableHeaderMenuHtml( headerList ) {
             if ( item.width ) attr['style'] = `width:${item.width};`;
             if ( item.toggle ) toggle = item.toggle;
             if ( item.icon ) title = fn.html.icon( item.icon ) + title;
-            if ( item.action !== 'input') {
-                html.push(`<li class="${itemClassName.join(' ')}">${fn.html.button( title,
-                    ['itaButton', `tableHeader${type}MenuButton`], attr, toggle )}</li>`);
-            } else {
-                const input = fn.html.inputText( [`tableHeader${type}MenuInput`],'', null, {}, { widthAdjustment: true, before: item.title });
-                html.push(`<li class="${itemClassName.join(' ')}">${input}</li>`);
+            
+            switch ( item.action ) {
+                case 'input': {
+                    const input = fn.html.inputText( [`tableHeader${type}MenuInput`],'', null, {}, { widthAdjustment: true, before: item.title });
+                    html.push(`<li class="${itemClassName.join(' ')}">${input}</li>`);
+                } break;
+                case 'message':
+                    html.push(`<li class="tableHeaderMessage">${item.message}</li>`);
+                break;
+                default:
+                    html.push(`<li class="${itemClassName.join(' ')}">${fn.html.button( title,
+                        ['itaButton', `tableHeader${type}MenuButton`], attr, toggle )}</li>`);
             }
         }
         html.push(`</ul>`);
@@ -518,7 +536,7 @@ tableHtml() {
     const headRowspan = rowLength + 1;
     switch ( tb.mode ) {
         case 'view':
-            html[0] += fn.html.cell('選択', ['tHeadTh', 'tHeadLeftSticky', 'tHeadRowSelect'], 'th', headRowspan );
+            if ( tb.flag.edit ) html[0] += fn.html.cell('選択', ['tHeadTh', 'tHeadLeftSticky', 'tHeadRowSelect'], 'th', headRowspan );
             html[0] += fn.html.cell( fn.html.icon('ellipsis_v'), ['tHeadTh', 'tHeadLeftSticky', 'tHeadRowMenu'], 'th', headRowspan );
         break;
         case 'edit':
@@ -617,9 +635,14 @@ filterHtml() {
     const info = tb.info.column_info,
           keys = tb.data.columnKeys;
     
-    const filterIcon = `${fn.html.icon('filter')}<span class="tHeadFilterTitle">Filter</span>`,
+    const filterIcon = `${fn.html.icon('filter')}<span class="tHeadFilterTitle">フィルタ</span>`,
           rows = [],
-          cells = [ fn.html.cell( filterIcon, ['tHeadFilter', 'tHeadLeftSticky', 'tHeadFilterHeader'], 'th', 2, 2 ) ];
+          colspan = ( tb.flag.edit )? 2: 1,
+          className = ['tHeadFilter', 'tHeadLeftSticky', 'tHeadFilterHeader'];
+    
+    if ( colspan === 1 ) className.push('tHeadFilterHeaderNarrow');
+    
+    const cells = [ fn.html.cell( filterIcon, className, 'th', 2, colspan ) ];
     
     const pulldownOpen = function( name, rest ) {
         return ``
@@ -650,6 +673,7 @@ filterHtml() {
                 case 'HostInsideLinkTextColumn': case 'LinkIDColumn': case 'NoteColumn':
                 case 'LastUpdateUserColumn': case 'AppIDColumn': case 'JsonColumn':
                 case 'FileUploadColumn': case 'FileUploadEncryptColumn':
+                case 'EnvironmentIDColumn':
                     cellHtml.push( fn.html.inputText(['filterInput', 'filterInputText'], '', name, { rest: rest } ) );
                     cellHtml.push( pulldownOpen( name, rest ) );
                 break;
@@ -674,7 +698,7 @@ filterHtml() {
                             + fn.html.inputText(['filterInput', 'filterToDate'], '', name, { rest: rest, placeholder: 'To' } )
                         + `</div>`
                         + `<div class="filterInputDateCalendar">`
-                            + fn.html.button('<span class="icon icon-cal"></span>', ['itaButton','filterInputDatePicker'], { rest: rest, action: 'normal'})
+                            + fn.html.button('<span class="icon icon-cal"></span>', ['itaButton', 'filterInputDatePicker'], { rest: rest, action: 'normal'})
                         + `</div>`
                     + `</div>`);
                 break;
@@ -688,7 +712,7 @@ filterHtml() {
                             + fn.html.inputText(['filterInput', 'filterToDate'], '', name, { rest: rest, placeholder: 'To' } )
                         + `</div>`
                         + `<div class="filterInputDateCalendar">`
-                            + fn.html.button('<span class="icon icon-cal"></span>', 'itaButton')
+                            + fn.html.button('<span class="icon icon-cal"></span>', ['itaButton', 'filterInputDatePicker'], { rest: rest, action: 'normal'})
                         + `</div>`
                     + `</div>`);
                 break;
@@ -718,11 +742,8 @@ filterHtml() {
         if ( item.name === 'auto') {
             // オートフィルターチェックボックス
             const attr = { type: item.name }
-            if ( tb.info.menu_info_auto_filter_flg === '1') {
-                attr.checked = 'checked';
-                tb.flag.autoFilter = true;
-            }
-            menuListHtml.push(`<li class="${listClassName.join(' ')}">${fn.html.checkboxText('filterMenuAutoFilter', item.title, tb.id + '_AutoFilter', { type: item.name } )}</li>`)
+            if ( tb.flag.autoFilter ) attr.checked = 'checked';
+            menuListHtml.push(`<li class="${listClassName.join(' ')}">${fn.html.checkboxText('filterMenuAutoFilter', item.title, tb.id + '_AutoFilter', attr )}</li>`)
         } else {
             menuListHtml.push(`<li class="${listClassName.join(' ')}">${fn.html.button( item.title,
                 ['filterMenuButton', 'itaButton'], { type: item.name, action: item.action })}</li>`);
@@ -754,7 +775,7 @@ setTableEvents() {
             }
         });
         
-        // フィルターファイルダウンロード
+        // フィルター欄、ファイルダウンロード
         const downloadFile = function( $button, type, url ){
             tb.filterParams = tb.getFilerParameter();
             const fileName = fn.cv( tb.info.menu_info.menu_name, 'file') + '_filter';
@@ -773,11 +794,18 @@ setTableEvents() {
         };
         
         // オートフィルター
-        tb.$.thead.on('change', '.filterMenuAutoFilter', function(){
-            tb.flag.autoFilter = $( this ).prop('checked');
-        });
+        tb.$.thead.on({
+            'change': function(){
+                tb.flag.autoFilter = $( this ).prop('checked');
+            },
+            'click': function( e ){
+                if ( !tb.checkWork ) return;
+                e.preventDefault();
+            }
+        }, '.filterMenuAutoFilter');
+        
         tb.$.thead.on('change', '.filterInput', function(){
-            if ( tb.flag.autoFilter ) {
+            if ( !tb.checkWork && tb.flag.autoFilter ) {
                 tb.$.thead.find('.filterMenuButton[data-type="filter"]').click();
             }
         });
@@ -793,7 +821,6 @@ setTableEvents() {
                         tb.workStart('filter');
                         tb.setInitSort();
                         tb.requestTbody.call( tb, 'filter'); 
-                        console.log( tb.filterParams );
                     break;
                     case 'clear':
                         tb.workStart('table', 0 );
@@ -832,21 +859,23 @@ setTableEvents() {
           
         // フィルタカレンダー
         tb.$.thead.find('.filterInputDatePicker').on('click', function(){
-            const $button = $( this ),
-                  rest = $button.attr('data-rest');
-            
-            const $from = tb.$.thead.find(`.filterFromDate[data-rest="${rest}"]`),
-                  $to = tb.$.thead.find(`.filterToDate[data-rest="${rest}"]`);
-            
-            const from = $from.val(),
-                  to = $to.val();
-            
-            fn.datePickerDialog('fromTo', true, tb.data.restNames[ rest ], { from: from, to: to } ).then(function( result ){
-                if ( result !== 'cancel') {
-                    $from.val( result.from );
-                    $to.val( result.to );
-                }
-            });
+            if ( !tb.checkWork ) {
+                const $button = $( this ),
+                      rest = $button.attr('data-rest');
+
+                const $from = tb.$.thead.find(`.filterFromDate[data-rest="${rest}"]`),
+                      $to = tb.$.thead.find(`.filterToDate[data-rest="${rest}"]`);
+
+                const from = $from.val(),
+                      to = $to.val();
+
+                fn.datePickerDialog('fromTo', true, tb.data.restNames[ rest ], { from: from, to: to } ).then(function( result ){
+                    if ( result !== 'cancel') {
+                        $from.val( result.from );
+                        $to.val( result.to );
+                    }
+                });
+            }
         });
         
         // ソート
@@ -875,19 +904,21 @@ setTableEvents() {
         
         // 個別メニュー
         tb.$.tbody.on('click', '.tBodyRowMenu', function(){
-            const $row = $( this );
-            if ( $row.is('.open') ) {
-                $row.removeClass('open');
-                tb.$.window.off('pointerdown.rowMenu');
-            } else {
-                $row.addClass('open');
-                tb.$.window.on('pointerdown.rowMenu', function( e ){
-                    const $target = $( e.target );
-                    if ( !$target.closest( $row ).length ) {
-                        $row.removeClass('open');
-                        tb.$.window.off('pointerdown.rowMenu');
-                    }
-                });
+            if ( !tb.checkWork ) {
+                const $row = $( this );
+                if ( $row.is('.open') ) {
+                    $row.removeClass('open');
+                    tb.$.window.off('pointerdown.rowMenu');
+                } else {
+                    $row.addClass('open');
+                    tb.$.window.on('pointerdown.rowMenu', function( e ){
+                        const $target = $( e.target );
+                        if ( !$target.closest( $row ).length ) {
+                            $row.removeClass('open');
+                            tb.$.window.off('pointerdown.rowMenu');
+                        }
+                    });
+                }
             }
         });
         
@@ -942,8 +973,9 @@ setTableEvents() {
                 }
                 
             }).catch(function( error ){
-                console.log( error );
-                alert( error.message );
+                if ( error !== 'cancel') {
+                    alert( error );
+                }
             });
         });
         
@@ -977,6 +1009,20 @@ setTableEvents() {
                 }
             }            
             
+        });
+        
+        // データピッカー
+        tb.$.tbody.on('click', '.inputDateCalendarButton', function(){
+            const $button = $( this ),
+                  $input = $button.closest('.inputDateContainer').find('.inputDate'),
+                  rest = $input.attr('data-key'),
+                  value = $input.val();
+                  
+            fn.datePickerDialog('date', true, tb.data.restNames[ rest ], value ).then(function( result ){
+                if ( result !== 'cancel') {
+                    $input.val('');
+                }
+            });
         });
 
         // textareaの幅と高さを調整する
@@ -1333,11 +1379,11 @@ getFilerParameter() {
             } else if ( $input.is('.filterFromNumber') || $input.is('.filterFromDate') ) {
                 // From
                 if ( !filterParams[ rest ].RANGE ) filterParams[ rest ].RANGE = {};
-                filterParams[ rest ].RANGE.START = fn.date( value, 'yyyy/MM/dd HH:mm:ss', false );
+                filterParams[ rest ].RANGE.START = fn.date( value, 'yyyy/MM/dd HH:mm:ss');
             } else if ( $input.is('.filterToNumber') || $input.is('.filterToDate') ) {
                 // To
                 if ( !filterParams[ rest ].RANGE ) filterParams[ rest ].RANGE = {};
-                filterParams[ rest ].RANGE.END = fn.date( value, 'yyyy/MM/dd HH:mm:ss', false );
+                filterParams[ rest ].RANGE.END = fn.date( value, 'yyyy/MM/dd HH:mm:ss');
             } else if ( $input.is('.filterInputDiscard') ) {
                 // 廃止
                 if ( value === '全レコード') {
@@ -1493,6 +1539,11 @@ setWorkerEvent() {
 setTbody() {
     const tb = this;
     
+    if ( tb.flag.autoFilter ) {
+        tb.$.container.removeClass('autoFilterStandBy');
+    }
+    
+    
     if ( tb.mode === 'history') {
         tb.$.container.removeClass('historyStandBy');
     }
@@ -1502,7 +1553,9 @@ setTbody() {
         tb.$.message.html('<div class="noDataMessage">表示できる内容がありません。</div>');
     } else {
         tb.$.container.removeClass('noData');
-        if ( tb.mode === 'view' && tb.flag.update ) tb.$.header.find('.itaButton[data-type="tableEdit"]').prop('disabled', false );
+        if ( tb.mode === 'view' && tb.flag.update ) {
+            tb.$.header.find('.itaButton[data-type="tableEdit"]').prop('disabled', false );
+        }
     }
     
     tb.$.tbody.html( tb.tbodyHtml() );
@@ -1515,6 +1568,37 @@ setTbody() {
     } else {
         tb.$.tbody.find('.textareaAdjustment').each( tb.textareaAdjustment );
     }
+    
+    tb.stickyWidth();
+    
+}
+/*
+##################################################
+   Set filter standby
+   > 初期フィルターオフ用
+##################################################
+*/
+setFilterStandBy() {
+    const tb = this;
+    
+    tb.$.header.find('.itaButton[data-type="filterToggle"]').attr('data-toggle', 'on');
+    tb.$.container.addClass('autoFilterStandBy');
+    tb.$.message.html('<div class="autoFilterStandByMessage">初期フィルタがオフです。<br>表示するにはフィルタしてください。</div>');
+    
+    tb.$.table.addClass('filterShow');
+    
+    tb.$.table.ready(function(){
+        tb.workEnd();
+        tb.stickyWidth();
+    });
+}
+/*
+##################################################
+   Headerの調整
+##################################################
+*/
+stickyWidth() {
+    const tb = this;
     
     const style = [];
     
@@ -1532,7 +1616,6 @@ setTbody() {
     style.push(`.tHeadGroup>.ci{left:${leftStickyWidth}px;}`);    
     
     tb.$.style.html( style.join('') );
-    
 }
 /*
 ##################################################
@@ -1585,7 +1668,7 @@ tbodyHtml() {
             if ( tb.select[ tb.mode ].indexOf( rowId ) !== -1 ) {
                 attrs['checked'] = 'checked';
             }
-            
+
             const checkboxId = `${tb.id}__ROWSELECT__${rowId}`,
                   checkbox = fn.html.check('tBodyRowCheck', rowId, checkboxId, attrs );
             return fn.html.cell( checkbox, ['tBodyLeftSticky', 'tBodyRowSelect', 'tBodyTh'], 'th');
@@ -1599,8 +1682,9 @@ tbodyHtml() {
                 }
                 if ( tb.flag.insert ) viewMenu.push({ type: 'rowDup', text: '複製', action: 'duplicat', id: rowId, className: 'tBodyRowMenuTb'});
                 viewMenu.push({ type: 'rowHistory', text: '履歴', action: 'history', id: rowId, className: 'tBodyRowMenuUi'});
-                
-                rowHtml.push( rowCheckInput() );
+                if ( tb.flag.edit ) {
+                    rowHtml.push( rowCheckInput() );
+                }
                 rowHtml.push( fn.html.cell( tb.rowMenuHtml( viewMenu ), ['tBodyLeftSticky', 'tBodyRowMenu', 'tBodyTh'], 'th'));
             } break;
             case 'edit':
@@ -1612,7 +1696,7 @@ tbodyHtml() {
             } break;
             case 'history':
                 const num = fn.cv( rowParameter.journal_id, '', true ),
-                      date = fn.date( fn.cv( rowParameter.journal_datetime, '', true ), 'yyyy/MM/dd HH:mm:ss', true ),
+                      date = fn.date( fn.cv( rowParameter.journal_datetime, '', true ), 'yyyy/MM/dd HH:mm:ss'),
                       action = fn.cv( rowParameter.journal_action, '', true );
                 rowHtml.push( fn.html.cell( action, ['tBodyLeftSticky', 'tBodyTh'], 'th') );
                 rowHtml.push( fn.html.cell( num, ['tBodyTd'], 'td') );
@@ -1706,20 +1790,21 @@ viewCellHtml( parameter, columnKey, journal ) {
         // そのまま表示
         case 'SingleTextColumn': case 'NumColumn': case 'FloatColumn':
         case 'IDColumn': case 'HostInsideLinkTextColumn': case 'LinkIDColumn':
-        case 'LastUpdateUserColumn': case 'AppIDColumn': case 'JsonColumn':    
+        case 'LastUpdateUserColumn': case 'RoleIDColumn': case 'JsonColumn': 
+        case 'EnvironmentIDColumn':
             return checkJournal( value );
         
         // 日付
         case 'DateColumn':
-            return checkJournal( fn.date( value, 'yyyy/MM/dd') );
+            return checkJournal( value );
             
         // 日時
         case 'DateTimeColumn':
-            return checkJournal( fn.date( value, 'yyyy/MM/dd HH:mm:ss') );
+            return checkJournal( value );
             
-        // 最終更新日（タイムゾーンを合わせる）    
+        // 最終更新日    
         case 'LastUpdateDateColumn':
-            return checkJournal( fn.date( value, 'yyyy/MM/dd HH:mm:ss', true ) );
+            return checkJournal( fn.date( value, 'yyyy/MM/dd HH:mm:ss') );
             
         // 改行を<br>に置換
         case 'MultiTextColumn': case 'NoteColumn':
@@ -1732,7 +1817,7 @@ viewCellHtml( parameter, columnKey, journal ) {
         // ********で表示
         case 'PasswordColumn': case 'MaskColumn':
         case 'SensitiveSingleTextColumn': case 'SensitiveMultiTextColumn':
-            return autoInput;
+            return '********';
             
         // ファイル名がリンクになっていてダウンロード可能
         case 'FileUploadColumn':
@@ -1823,9 +1908,28 @@ editCellHtml( parameter, columnKey ) {
         return fn.html.span( inputClassName, value, name, attr );
     }
     
+    // 最終更新日時
+    if ( columnType === 'LastUpdateDateColumn') {
+        if ( value !== '') {
+            return fn.date( value, 'yyyy/MM/dd HH:mm:ss');
+        } else {
+            return autoInput;
+        }
+    }
+    
+    // 編集不可（input_item）
+    if ( columnInfo.input_item === '0' || columnType === 'LastUpdateUserColumn') {
+        if ( value !== '') {
+            return value;
+        } else {
+            return autoInput;
+        }
+    }
+    
     switch ( columnType ) {
         // 文字列入力（単一行）
         case 'SingleTextColumn': case 'HostInsideLinkTextColumn': case 'JsonColumn':
+        case 'SensitiveSingleTextColumn':
             inputClassName.push('tableEditInputText');
             return fn.html.inputText( inputClassName, value, name, attr, { widthAdjustment: true });
 
@@ -1843,14 +1947,20 @@ editCellHtml( parameter, columnKey ) {
         case 'FloatColumn':
             inputClassName.push('tableEditInputNumber');
             return fn.html.inputNumber( inputClassName, value, name, attr );
-
-        // 日時カレンダー
+        
+        // 日付
+        case 'DateColumn':
+            inputClassName.push('tableEditInputText');
+            return fn.html.dateInput( false, inputClassName, value, name, attr );
+            
+        // 日時
         case 'DateTimeColumn':
             inputClassName.push('tableEditInputText');
-            return fn.html.inputText( inputClassName, value, name, attr, { widthAdjustment: true });
+            return fn.html.dateInput( true, inputClassName, value, name, attr );
 
         // プルダウン
-        case 'IDColumn': case 'LinkIDColumn': case 'AppIDColumn':
+        case 'IDColumn': case 'LinkIDColumn': case 'RoleIDColumn':
+        case 'EnvironmentIDColumn':
             return fn.html.select( fn.cv( tb.data.editSelect[columnName], {}), inputClassName, value, name, attr );
 
         // パスワード
@@ -1862,20 +1972,6 @@ editCellHtml( parameter, columnKey ) {
         case 'FileUploadColumn': case 'FileUploadEncryptColumn':
             inputClassName.push('tableEditSelectFile');
             return fn.html.button( value, inputClassName, attr );
-            
-        // 自動入力（入力不可）
-        case 'LastUpdateUserColumn': case 'SensitiveSingleTextColumn':
-            if ( value !== '') {
-                return value;
-            } else {
-                return autoInput;
-            }
-        case 'LastUpdateDateColumn':
-            if ( value !== '') {
-                return fn.date( value, 'yyyy/MM/dd HH:mm:ss', true )
-            } else {
-                return autoInput;
-            }
         
         // 不明
         default:
@@ -2079,7 +2175,7 @@ changeEdtiMode( changeMode ) {
     tb.paging.page = 1;
     tb.edit.addId = -1;
     
-    tb.$.container.removeClass('viewTable');
+    tb.$.container.removeClass('viewTable autoFilterStandBy');
     tb.$.container.addClass('editTable');
 
     // セレクトデータを取得後に表示する
@@ -2208,8 +2304,9 @@ reflectEdits() {
                     modalTable.workStart('table', 0 );
                     tb.editOk.call( tb ).then(function( result ){
                         modal.close().then( function(){
-                            tb.changeViewMode.call( tb );
-                            fn.alert('反映結果', JSON.stringify( result, null, '<br>') );
+                            fn.resultModal( result ).then(function(){
+                                tb.changeViewMode.call( tb );
+                            });
                         });
                     }).catch(function( result ){
                         modal.close().then( function(){

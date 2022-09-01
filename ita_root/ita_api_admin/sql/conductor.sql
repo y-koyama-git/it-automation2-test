@@ -62,7 +62,7 @@ CREATE TABLE T_COMN_CONDUCTOR_CLASS_JNL
 CREATE TABLE T_COMN_CONDUCTOR_INSTANCE
 (
     CONDUCTOR_INSTANCE_ID           VARCHAR(40),                                -- ConductorインスタンスID
-    CONDUCTOR_INSTANCE_NAME         VARCHAR(40),                                -- Conductorインスタンス名
+    CONDUCTOR_INSTANCE_NAME         VARCHAR(255),                               -- Conductorインスタンス名
     I_CONDUCTOR_CLASS_ID            VARCHAR(40),                                -- インスタンス元のクラスID
     I_CONDUCTOR_NAME                VARCHAR(255),                               -- インスタンス元のクラス名
     I_CLASS_JSON                    TEXT,                                       -- インスタンス元の設定
@@ -79,7 +79,7 @@ CREATE TABLE T_COMN_CONDUCTOR_INSTANCE
     NOTICE_DEFINITION               TEXT,                                       -- 通知定義
     STATUS_ID                       VARCHAR(40),                                -- ステータスID
     ABORT_EXECUTE_FLAG              VARCHAR(1),                                 -- 緊急停止フラグ
-    TIME_REGISTER                   DATETIME(5),                                -- 登録日時
+    TIME_REGISTER                   DATETIME(6),                                -- 登録日時
     TIME_BOOK                       DATETIME(6),                                -- 予約日時
     TIME_START                      DATETIME(6),                                -- 開始日時
     TIME_END                        DATETIME(6),                                -- 終了日時
@@ -98,7 +98,7 @@ CREATE TABLE T_COMN_CONDUCTOR_INSTANCE_JNL
     JOURNAL_REG_DATETIME            DATETIME(6),                                -- 履歴用変更日時
     JOURNAL_ACTION_CLASS            VARCHAR (8),                                -- 履歴用変更種別
     CONDUCTOR_INSTANCE_ID           VARCHAR(40),                                -- ConductorインスタンスID
-    CONDUCTOR_INSTANCE_NAME         VARCHAR(40),                                -- Conductorインスタンス名
+    CONDUCTOR_INSTANCE_NAME         VARCHAR(255),                               -- Conductorインスタンス名
     I_CONDUCTOR_CLASS_ID            VARCHAR(40),                                -- インスタンス元のクラスID
     I_CONDUCTOR_NAME                VARCHAR(255),                               -- インスタンス元のクラス名
     I_CLASS_JSON                    TEXT,                                       -- インスタンス元の設定
@@ -115,7 +115,7 @@ CREATE TABLE T_COMN_CONDUCTOR_INSTANCE_JNL
     NOTICE_DEFINITION               TEXT,                                       -- 通知定義
     STATUS_ID                       VARCHAR(40),                                -- ステータスID
     ABORT_EXECUTE_FLAG              VARCHAR(1),                                 -- 緊急停止フラグ
-    TIME_REGISTER                   DATETIME(5),                                -- 登録日時
+    TIME_REGISTER                   DATETIME(6),                                -- 登録日時
     TIME_BOOK                       DATETIME(6),                                -- 予約日時
     TIME_START                      DATETIME(6),                                -- 開始日時
     TIME_END                        DATETIME(6),                                -- 終了日時

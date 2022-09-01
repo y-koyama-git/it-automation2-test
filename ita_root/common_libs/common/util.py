@@ -354,7 +354,7 @@ def get_exastro_platform_workspaces():
     port = os.environ.get('PLATFORM_API_PORT')
     user_id = g.get('USER_ID')
     language = g.get('LANGUAGE')
-    workspaces = []
+    workspaces = {}
     environments_list = []
     environments = []
 
@@ -378,17 +378,19 @@ def get_exastro_platform_workspaces():
         response_data = json.loads(request_response.text)
 
         if request_response.status_code != 200:
-            raise AppException("999-00005", [api_url, response_data])
+            raise AppException('999-00005', [api_url, response_data])
 
         # workspaceの一覧を取得
-        for record in response_data["data"]:
-            workspaces.append(record["name"])
-            if workspace_id == record["id"]:
-                if "informations" in record and "environments" in record["informations"]:
-                    environments_list = record["informations"]["environments"]
+        for record in response_data['data']:
+            # workspaces[record['id']] = record['name']
+            workspaces = []
+            workspaces.append(record['name'])
+            if workspace_id == record['id']:
+                if 'informations' in record and 'environments' in record['informations']:
+                    environments_list = record['informations']['environments']
 
         for value in environments_list:
-            environments.append(value["name"])
+            environments.append(value['name'])
 
         # gに値を設定しておく
         g.PLATFORM_WORKSPACES = workspaces
@@ -433,11 +435,11 @@ def get_workspace_roles():
         response_data = json.loads(request_response.text)
 
         if request_response.status_code != 200:
-            raise AppException("999-00005", [api_url, response_data])
+            raise AppException('999-00005', [api_url, response_data])
 
         # workspaceの一覧を取得
-        for record in response_data["data"]:
-            roles.append(record["name"])
+        for record in response_data['data']:
+            roles.append(record['name'])
 
         # gに値を設定しておく
         g.WORKSPACE_ROLES = roles
@@ -481,11 +483,11 @@ def get_exastro_platform_users():
         response_data = json.loads(request_response.text)
 
         if request_response.status_code != 200:
-            raise AppException("999-00005", [api_url, response_data])
+            raise AppException('999-00005', [api_url, response_data])
 
         # workspaceの一覧を取得
-        for record in response_data["data"]:
-            users[record["id"]] = record["name"]
+        for record in response_data['data']:
+            users[record['id']] = record['name']
 
         # gに値を設定しておく
         g.PLATFORM_USERS = users

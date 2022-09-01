@@ -119,7 +119,6 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
         "sheet_type_id": sheet_type_id,
         "sheet_type_name": sheet_type_name,
         "disp_seq": ret[0].get('DISP_SEQ'),
-        "purpose_id": ret[0].get('PURPOSE'),
         "vertical": vertical,
         "menu_group_for_input_id": menu_group_for_input_id,
         "menu_group_for_subst_id": menu_group_for_subst_id,
@@ -178,8 +177,6 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
                 "display_order": recode.get('DISP_SEQ'),
                 "required": recode.get('REQUIRED'),
                 "uniqued": recode.get('UNIQUED'),
-                "autoreg_hide_item": recode.get('AUTOREG_HIDE_ITEM'),
-                "autoreg_only_item": recode.get('AUTOREG_ONLY_ITEM'),
                 "column_class_id": "",
                 "column_class_name": "",
                 "description": recode.get('DESCRIPTION_' + lang.upper()),
@@ -207,14 +204,14 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
             # カラムクラスに応じて必要な値を格納
             # カラムクラス「文字列(単一行)」用のパラメータを追加
             if column_class_name == "SingleTextColumn":
-                col_detail["string_maximum_bytes"] = recode.get('SINGLE_MAX_LENGTH')  # 文字列(単一行) 最大バイト数
-                col_detail["string_regular_expression"] = recode.get('SINGLE_REGULAR_MATCH')  # 文字列(単一行) 正規表現
-                col_detail["string_default_value"] = recode.get('SINGLE_DEFAULT_VALUE')  # 文字列(単一行) 初期値
+                col_detail["single_string_maximum_bytes"] = recode.get('SINGLE_MAX_LENGTH')  # 文字列(単一行) 最大バイト数
+                col_detail["single_string_regular_expression"] = recode.get('SINGLE_REGULAR_EXPRESSION')  # 文字列(単一行) 正規表現
+                col_detail["single_string_default_value"] = recode.get('SINGLE_DEFAULT_VALUE')  # 文字列(単一行) 初期値
             
             # カラムクラス「文字列(複数行)」用のパラメータを追加
             if column_class_name == "MultiTextColumn":
                 col_detail["multi_string_maximum_bytes"] = recode.get('MULTI_MAX_LENGTH')  # 文字列(複数行) 最大バイト数
-                col_detail["multi_string_regular_expression"] = recode.get('MULTI_REGULAR_MATCH')  # 文字列(複数行) 正規表現
+                col_detail["multi_string_regular_expression"] = recode.get('MULTI_REGULAR_EXPRESSION')  # 文字列(複数行) 正規表現
                 col_detail["multi_string_default_value"] = recode.get('MULTI_DEFAULT_VALUE')  # 文字列(複数行) 初期値
             
             # カラムクラス「整数」用のパラメータを追加
@@ -385,6 +382,7 @@ def menu_create_define(objdbca, create_param):
         print('タイプは：' + str(type))
         result = _create_new_execute(objdbca, create_param)
         
+        menu_name_rest = result.get('menu_name_rest')
         history_id = result.get('history_id')
         message = result.get('message')
         # if not status:
@@ -396,6 +394,7 @@ def menu_create_define(objdbca, create_param):
         print('タイプは：' + str(type))
         result = _initialize_execute(objdbca, create_param)
         
+        menu_name_rest = result.get('menu_name_rest')
         history_id = result.get('history_id')
         message = result.get('message')
         # if not status:
@@ -407,6 +406,7 @@ def menu_create_define(objdbca, create_param):
         print('タイプは：' + str(type))
         result = _edit_execute(objdbca, create_param)
         
+        menu_name_rest = result.get('menu_name_rest')
         history_id = result.get('history_id')
         message = result.get('message')
         # if not status:
@@ -421,7 +421,7 @@ def menu_create_define(objdbca, create_param):
         api_msg_args = [msg]
         raise AppException('499-00212', log_msg_args, api_msg_args)  # noqa: F405
     
-    result_data = {'history_id': history_id, 'message': message}
+    result_data = {'menu_name_rest': menu_name_rest, 'history_id': history_id, 'message': message}
     return result_data
 
 
@@ -439,12 +439,18 @@ def _create_new_execute(objdbca, create_param):  # noqa: C901
     
     # 登録するためのデータを抽出
     menu_data = check_request_body_key(create_param, 'menu')  # ####メモ： "menu" keyが無かったら400-00002エラー
-    column_data_list = check_request_body_key(create_param, 'column')  # ####メモ： "column" keyが無かったら400-00002エラー
+    column_data_list = create_param.get('column')
     group_data_list = create_param.get('group')
+    menu_name_rest = menu_data.get('menu_name_rest')
     
     try:
         # トランザクション開始
         objdbca.db_transaction_start()
+        
+        # 登録前バリデーションチェック
+        retbool, msg = _check_before_registar_validate(objdbca, menu_data, column_data_list)
+        if not retbool:
+            raise Exception(msg)
         
         # 「メニュー定義一覧」にレコードを登録
         retbool, menu_create_id, msg = _insert_t_menu_define(objdbca, menu_data)
@@ -470,10 +476,9 @@ def _create_new_execute(objdbca, create_param):  # noqa: C901
         # 「メニュー-ロール作成情報」にレコードを登録
         menu_name = menu_data.get('menu_name')
         role_list = menu_data.get('role_list')
-        if role_list:
-            retbool, msg = _insert_t_menu_role(objdbca, menu_name, role_list)
-            if not retbool:
-                raise Exception(msg)
+        retbool, msg = _insert_t_menu_role(objdbca, menu_name, role_list)
+        if not retbool:
+            raise Exception(msg)
         
         # 「メニュー作成履歴」にレコードを登録
         status_id = "1"  # (1:未実行)
@@ -487,25 +492,27 @@ def _create_new_execute(objdbca, create_param):  # noqa: C901
         
         message = ''
         
-    except Exception as e:
+    except Exception as msg:
         # ####メモ：失敗時のメッセージはちゃんと取り出したいので、作りこみ予定。
         # ロールバック トランザクション終了
         print("エラー発生のためロールバック")
         objdbca.db_transaction_end(False)
-        print(e)
-        if len(e.args) == 2:
-            status_code = '{}'.format(e.args[0])
-            msg_args = '{}'.format(e.args[1])
-            msg = g.appmsg.get_api_message(status_code, [msg_args])
-        else:
-            status_code = '999-99999'
-            msg_args = '{}'.format(*e.args)
-            msg = g.appmsg.get_api_message(status_code, [msg_args])
+        # print(e)
+        # if len(e.args) == 2:
+        #     status_code = '{}'.format(e.args[0])
+        #     msg_args = '{}'.format(e.args[1])
+        #     msg = g.appmsg.get_api_message(status_code, [msg_args])
+        # else:
+        #     status_code = '999-99999'
+        #     msg_args = '{}'.format(*e.args)
+        #     msg = g.appmsg.get_api_message(status_code, [msg_args])
         
-        message = msg
-        history_id = None
+        log_msg_args = [msg]
+        api_msg_args = [msg]
+        raise AppException('499-00201', log_msg_args, api_msg_args)  # noqa: F405
 
     result_data = {
+        'menu_name_rest': menu_name_rest,
         'history_id': history_id,
         'message': message
     }
@@ -513,7 +520,7 @@ def _create_new_execute(objdbca, create_param):  # noqa: C901
     return result_data
 
 
-def _initialize_execute(objdbca, create_param):
+def _initialize_execute(objdbca, create_param):  # noqa: C901
     """
         【内部呼び出し用】「初期化」時のメニュー作成用メニューに対するレコードの登録/更新/廃止
         ARGS:
@@ -535,10 +542,16 @@ def _initialize_execute(objdbca, create_param):
     menu_data = check_request_body_key(create_param, 'menu')  # "menu" keyが無かったら400-00002エラー
     column_data_list = check_request_body_key(create_param, 'column')  # "column" keyが無かったら400-00002エラー
     group_data_list = create_param.get('group')
+    menu_name_rest = menu_data.get('menu_name_rest')
     
     try:
         # トランザクション開始
         objdbca.db_transaction_start()
+        
+        # 登録前バリデーションチェック
+        retbool, msg = _check_before_registar_validate(objdbca, menu_data, column_data_list)
+        if not retbool:
+            raise Exception(msg)
         
         # 対象の「メニュー定義一覧」のuuidおよびメニュー名を取得
         menu_create_id = menu_data.get('menu_create_id')
@@ -601,8 +614,6 @@ def _initialize_execute(objdbca, create_param):
         
         # 「ロール選択」の値を取得
         role_list = menu_data.get('role_list')
-        if not role_list:
-            role_list = []
         
         # 現在の「メニュー-ロール作成情報」のレコードを取得
         current_t_menu_role = objdbca.table_select(t_menu_role, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
@@ -643,25 +654,27 @@ def _initialize_execute(objdbca, create_param):
         
         message = ''
 
-    except Exception as e:
+    except Exception as msg:
         # ####メモ：失敗時のメッセージはちゃんと取り出したいので、作りこみ予定。
         # ロールバック トランザクション終了
         print("エラー発生のためロールバック")
         objdbca.db_transaction_end(False)
-        print(e)
-        if len(e.args) == 2:
-            status_code = '{}'.format(e.args[0])
-            msg_args = '{}'.format(e.args[1])
-            msg = g.appmsg.get_api_message(status_code, [msg_args])
-        else:
-            status_code = '999-99999'
-            msg_args = '{}'.format(*e.args)
-            msg = g.appmsg.get_api_message(status_code, [msg_args])
-
-        message = msg
-        history_id = None
+        # print(e)
+        # if len(e.args) == 2:
+        #     status_code = '{}'.format(e.args[0])
+        #     msg_args = '{}'.format(e.args[1])
+        #     msg = g.appmsg.get_api_message(status_code, [msg_args])
+        # else:
+        #     status_code = '999-99999'
+        #     msg_args = '{}'.format(*e.args)
+        #     msg = g.appmsg.get_api_message(status_code, [msg_args])
+        
+        log_msg_args = [msg]
+        api_msg_args = [msg]
+        raise AppException('499-00201', log_msg_args, api_msg_args)  # noqa: F405
 
     result_data = {
+        'menu_name_rest': menu_name_rest,
         'history_id': history_id,
         'message': message
     }
@@ -669,7 +682,7 @@ def _initialize_execute(objdbca, create_param):
     return result_data
 
 
-def _edit_execute(objdbca, create_param):
+def _edit_execute(objdbca, create_param):  # noqa: C901
     """
         【内部呼び出し用】「編集」時のメニュー作成用メニューに対するレコードの登録/更新/廃止
         ARGS:
@@ -691,10 +704,16 @@ def _edit_execute(objdbca, create_param):
     menu_data = check_request_body_key(create_param, 'menu')  # "menu" keyが無かったら400-00002エラー
     column_data_list = check_request_body_key(create_param, 'column')  # "column" keyが無かったら400-00002エラー
     group_data_list = create_param.get('group')
+    menu_name_rest = menu_data.get('menu_name_rest')
     
     try:
         # トランザクション開始
         objdbca.db_transaction_start()
+        
+        # 登録前バリデーションチェック
+        retbool, msg = _check_before_registar_validate(objdbca, menu_data, column_data_list)
+        if not retbool:
+            raise Exception(msg)
         
         # 対象の「メニュー定義一覧」のuuidおよびメニュー名を取得
         menu_create_id = menu_data.get('menu_create_id')
@@ -757,8 +776,6 @@ def _edit_execute(objdbca, create_param):
         
         # 「ロール選択」の値を取得
         role_list = menu_data.get('role_list')
-        if not role_list:
-            role_list = []
         
         # 現在の「メニュー-ロール作成情報」のレコードを取得
         current_t_menu_role = objdbca.table_select(t_menu_role, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
@@ -799,25 +816,27 @@ def _edit_execute(objdbca, create_param):
         
         message = ''
 
-    except Exception as e:
+    except Exception as msg:
         # ####メモ：失敗時のメッセージはちゃんと取り出したいので、作りこみ予定。
         # ロールバック トランザクション終了
         print("エラー発生のためロールバック")
         objdbca.db_transaction_end(False)
-        print(e)
-        if len(e.args) == 2:
-            status_code = '{}'.format(e.args[0])
-            msg_args = '{}'.format(e.args[1])
-            msg = g.appmsg.get_api_message(status_code, [msg_args])
-        else:
-            status_code = '999-99999'
-            msg_args = '{}'.format(*e.args)
-            msg = g.appmsg.get_api_message(status_code, [msg_args])
-
-        message = msg
-        history_id = None
+        # print(e)
+        # if len(e.args) == 2:
+        #     status_code = '{}'.format(e.args[0])
+        #     msg_args = '{}'.format(e.args[1])
+        #     msg = g.appmsg.get_api_message(status_code, [msg_args])
+        # else:
+        #     status_code = '999-99999'
+        #     msg_args = '{}'.format(*e.args)
+        #     msg = g.appmsg.get_api_message(status_code, [msg_args])
+        
+        log_msg_args = [msg]
+        api_msg_args = [msg]
+        raise AppException('499-00201', log_msg_args, api_msg_args)  # noqa: F405
 
     result_data = {
+        'menu_name_rest': menu_name_rest,
         'history_id': history_id,
         'message': message
     }
@@ -849,7 +868,6 @@ def _insert_t_menu_define(objdbca, menu_data):
                 "description_ja": menu_data.get('description'),  # 説明(ja)
                 "description_en": menu_data.get('description'),  # 説明(en)
                 "remarks": menu_data.get('remarks'),  # 備考
-                "purpose": menu_data.get('purpose'),  # 用途
                 "vertical": menu_data.get('vertical'),  # 縦メニュー利用有無
                 "menu_group_for_input": menu_data.get('menu_group_for_input'),  # 入力用メニューグループ名
                 "menu_group_for_subst": menu_data.get('menu_group_for_subst'),  # 代入値自動登録用メニューグループ名
@@ -955,7 +973,6 @@ def _update_t_menu_define(objdbca, current_t_menu_define, menu_data, create_type
                 "description_ja": menu_data.get('description'),  # 説明(ja)
                 "description_en": menu_data.get('description'),  # 説明(en)
                 "remarks": menu_data.get('remarks'),  # 備考
-                "purpose": menu_data.get('purpose'),  # 用途
                 "vertical": vertical,  # 縦メニュー利用有無
                 "menu_group_for_input": menu_data.get('menu_group_for_input'),  # 入力用メニューグループ名
                 "menu_group_for_subst": menu_data.get('menu_group_for_subst'),  # 代入値自動登録用メニューグループ名
@@ -1103,8 +1120,6 @@ def _insert_t_menu_column(objdbca, menu_data, column_data_list):
                     "display_order": column_data.get('display_order'),  # 表示順序
                     "required": column_data.get('required'),  # 必須
                     "uniqued": column_data.get('uniqued'),  # 一意制約
-                    "autoreg_hide_item": column_data.get('autoreg_hide_item'),  # 代入値自動登録対象外フラグ
-                    "autoreg_only_item": column_data.get('autoreg_only_item'),  # 対象外自動登録選択フラグ
                     "remarks": column_data.get('remarks'),  # 備考
                 }
                 
@@ -1115,9 +1130,9 @@ def _insert_t_menu_column(objdbca, menu_data, column_data_list):
                 
                 # カラムクラス「文字列(単一行)」用のパラメータを追加
                 if column_class == "SingleTextColumn":
-                    parameter["string_maximum_bytes"] = column_data.get('single_maximum_bytes')  # 文字列(単一行) 最大バイト数
-                    parameter["string_regular_expression"] = column_data.get('string_regular_expression')  # 文字列(単一行) 正規表現
-                    parameter["string_default_value"] = column_data.get('single_default_value')  # 文字列(単一行) 初期値
+                    parameter["single_string_maximum_bytes"] = column_data.get('single_string_maximum_bytes')  # 文字列(単一行) 最大バイト数
+                    parameter["single_string_regular_expression"] = column_data.get('single_string_regular_expression')  # 文字列(単一行) 正規表現
+                    parameter["single_string_default_value"] = column_data.get('single_string_default_value')  # 文字列(単一行) 初期値
                 
                 # カラムクラス「文字列(複数行)」用のパラメータを追加
                 if column_class == "MultiTextColumn":
@@ -1258,9 +1273,9 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
                     # カラムクラス「文字列(単一行)」の場合のバリデーションチェック
                     if column_class == "SingleTextColumn":
                         # 最大バイト数が既存の値よりも下回っている場合エラー判定
-                        current_string_maximum_bytes = int(target_recode.get('SINGLE_MAX_LENGTH'))
-                        update_string_maximum_bytes = int(column_data.get('single_maximum_bytes'))
-                        if current_string_maximum_bytes > update_string_maximum_bytes:
+                        current_single_string_maximum_bytes = int(target_recode.get('SINGLE_MAX_LENGTH'))
+                        update_single_string_maximum_bytes = int(column_data.get('single_string_maximum_bytes'))
+                        if current_single_string_maximum_bytes > update_single_string_maximum_bytes:
                             msg = "「編集」の際は既存項目の「最大バイト数」が下回る変更はできません。"
                             raise Exception(msg)
                     
@@ -1355,8 +1370,6 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
                     "display_order": column_data.get('display_order'),  # 表示順序
                     "required": column_data.get('required'),  # 必須
                     "uniqued": column_data.get('uniqued'),  # 一意制約
-                    "autoreg_hide_item": column_data.get('autoreg_hide_item'),  # 代入値自動登録対象外フラグ
-                    "autoreg_only_item": column_data.get('autoreg_only_item'),  # 対象外自動登録選択フラグ
                     "remarks": column_data.get('remarks'),  # 備考
                     "last_update_date_time": last_update_date_time  # 最終更新日時
                 }
@@ -1367,9 +1380,9 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
                     parameter["column_group"] = column_group  # カラムグループ(「カラムグループ作成情報」のフルカラムグループ名)
                 
                 # 各カラムクラスに対応するparameterにNoneを挿入
-                parameter["string_maximum_bytes"] = None  # 文字列(単一行) 最大バイト数
-                parameter["string_regular_expression"] = None  # 文字列(単一行) 正規表現
-                parameter["string_default_value"] = None  # 文字列(単一行) 初期値
+                parameter["single_string_maximum_bytes"] = None  # 文字列(単一行) 最大バイト数
+                parameter["single_string_regular_expression"] = None  # 文字列(単一行) 正規表現
+                parameter["single_string_default_value"] = None  # 文字列(単一行) 初期値
                 parameter["multi_string_maximum_bytes"] = None  # 文字列(複数行) 最大バイト数
                 parameter["multi_string_regular_expression"] = None  # 文字列(複数行) 正規表現
                 parameter["multi_string_default_value"] = None  # 文字列(複数行) 初期値
@@ -1392,9 +1405,9 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
                 
                 # カラムクラス「文字列(単一行)」用のパラメータを追加
                 if column_class == "SingleTextColumn":
-                    parameter["string_maximum_bytes"] = column_data.get('single_maximum_bytes')  # 文字列(単一行) 最大バイト数
-                    parameter["string_regular_expression"] = column_data.get('string_regular_expression')  # 文字列(単一行) 正規表現
-                    parameter["string_default_value"] = column_data.get('single_default_value')  # 文字列(単一行) 初期値
+                    parameter["single_string_maximum_bytes"] = column_data.get('single_string_maximum_bytes')  # 文字列(単一行) 最大バイト数
+                    parameter["single_string_regular_expression"] = column_data.get('single_string_regular_expression')  # 文字列(単一行) 正規表現
+                    parameter["single_string_default_value"] = column_data.get('single_string_default_value')  # 文字列(単一行) 初期値
                 
                 # カラムクラス「文字列(複数行)」用のパラメータを追加
                 if column_class == "MultiTextColumn":
@@ -1750,3 +1763,46 @@ def _insert_t_menu_create_history(objdbca, menu_create_id, status_id, create_typ
         return False, None, msg
     
     return True, history_id, None
+
+
+def _check_before_registar_validate(objdbca, menu_data, column_data_list):
+    """
+        【内部呼び出し用】レコード登録前バリデーションチェックの実施
+        ARGS:
+            objdbca:DB接クラス  DBConnectWs()
+            menu_data: 登録対象のメニュー情報
+            column_data_list: 登録対象のカラム情報一覧
+        RETRUN:
+            boolean, history_id, msg
+    """
+    # テーブル/ビュー名
+    v_menu_sheet_type = 'V_MENU_SHEET_TYPE'
+    
+    # 変数定義
+    lang = g.get('LANGUAGE')
+    sheet_id = None
+    
+    try:
+        # シートタイプのIDを取得
+        sheet_type_name = menu_data.get('sheet_type')
+        
+        # シートタイプ一覧情報を取得
+        ret = objdbca.table_select(v_menu_sheet_type, 'WHERE DISUSE_FLAG = %s', [0])
+        for recode in ret:
+            check_sheet_type_name = recode.get('SHEET_TYPE_NAME_' + lang.upper())
+            if sheet_type_name == check_sheet_type_name:
+                sheet_id = str(recode.get('SHEET_TYPE_NAME_ID'))
+        
+        # シートタイプが「2: データシート」かつ、登録する項目が無い場合エラー判定
+        if sheet_id == "2" and not column_data_list:
+            raise Exception("シートタイプ「データシート」では項目0件のメニューを作成できません。")
+        
+        # ロールを取得
+        role_list = menu_data.get('role_list')
+        if not role_list:
+            raise Exception("ロールが選択されていません。")
+        
+    except Exception as msg:
+        return False, msg
+    
+    return True, None

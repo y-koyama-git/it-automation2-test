@@ -147,7 +147,11 @@ sort() {
                 if ( !isNaN( paramA ) && !isNaN( paramB ) ) {
                     paramA = Number( paramA );
                     paramB = Number( paramB );
+                } else {
+                    paramA = String( paramA );
+                    paramB = String( paramB );
                 }
+                
                 if ( paramA < paramB ) {
                     return flag;
                 } else if ( paramA > paramB ) {
