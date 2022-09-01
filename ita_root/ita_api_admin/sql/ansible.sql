@@ -603,9 +603,8 @@ CREATE TABLE T_ANSR_EXEC_STS_INST
     I_ENGINE_VIRTUALENV_NAME        VARCHAR(255),                               -- Movement/Ansible-Core利用情報/virtualenv
     I_EXECUTION_ENVIRONMENT_NAME    VARCHAR(255),                               -- Movement/Ansible Automation Controller利用情報/実行環境
     I_ANSIBLE_CONFIG_FILE           VARCHAR(255),                               -- Movement/ansible.cfg
-    OPERATION_NO_UAPK               VARCHAR(40),                                -- オペレーション/No.
+    OPERATION_ID                    VARCHAR(40),                                -- オペレーション/No.
     I_OPERATION_NAME                VARCHAR(255),                               -- オペレーション/名称
-    I_OPERATION_NO_IDBH             VARCHAR(40),                                -- オペレーション/ID
     FILE_INPUT                      VARCHAR(1024),                              -- 入力データ/投入データ
     FILE_RESULT                     VARCHAR(1024),                              -- 出力データ/結果データ
     TIME_BOOK                       DATETIME(6),                                -- 作業状況/予約日時
@@ -648,9 +647,8 @@ CREATE TABLE T_ANSR_EXEC_STS_INST_JNL
     I_ENGINE_VIRTUALENV_NAME        VARCHAR(255),                               -- Movement/Ansible-Core利用情報/virtualenv
     I_EXECUTION_ENVIRONMENT_NAME    VARCHAR(255),                               -- Movement/Ansible Automation Controller利用情報/実行環境
     I_ANSIBLE_CONFIG_FILE           VARCHAR(255),                               -- Movement/ansible.cfg
-    OPERATION_NO_UAPK               VARCHAR(40),                                -- オペレーション/No.
+    OPERATION_ID                    VARCHAR(40),                                -- オペレーション/No.
     I_OPERATION_NAME                VARCHAR(255),                               -- オペレーション/名称
-    I_OPERATION_NO_IDBH             VARCHAR(40),                                -- オペレーション/ID
     FILE_INPUT                      VARCHAR(1024),                              -- 入力データ/投入データ
     FILE_RESULT                     VARCHAR(1024),                              -- 出力データ/結果データ
     TIME_BOOK                       DATETIME(6),                                -- 作業状況/予約日時
@@ -918,10 +916,10 @@ CREATE TABLE T_ANSC_COLLECT_STATUS
 
 
 -- M013_Ansible共通変数利用リスト_変数種別マスタ
-CREATE TABLE T_ANSC_COMVRAS_USLIST_F_ID
+CREATE TABLE T_ANSC_COMVRAS_USLIST_V_ID
 (
     ROW_ID                          VARCHAR(2),                                 -- UUID
-    NAME                            VARCHAR(64),                                -- 素材種別
+    NAME                            VARCHAR(64),                                -- 変数種別
     DISP_SEQ                        INT,                                        -- 表示順序
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1),                                 -- 廃止フラグ
@@ -934,10 +932,10 @@ CREATE TABLE T_ANSC_COMVRAS_USLIST_F_ID
 
 
 -- M014_Ansible共通変数利用リスト_ファイル種別マスタ
-CREATE TABLE T_ANSC_COMVRAS_USLIST_V_ID
+CREATE TABLE T_ANSC_COMVRAS_USLIST_F_ID
 (
     ROW_ID                          VARCHAR(2),                                 -- UUID
-    NAME                            VARCHAR(64),                                -- 変数種別
+    NAME                            VARCHAR(64),                                -- 素材種別
     DISP_SEQ                        INT,                                        -- 表示順序
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1),                                 -- 廃止フラグ
