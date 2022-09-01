@@ -67,6 +67,7 @@ COLNAME_ROW_UPDATE_FLAG = 'ROW_UPDATE_FLAG'
 COLNAME_ROW_DISUSE_FLAG = 'ROW_DISUSE_FLAG'
 COLNAME_ROW_REUSE_FLAG = 'ROW_REUSE_FLAG'
 COLNAME_SHEET_TYPE = 'SHEET_TYPE'
+COLNAME_HISTORY_TABLE_FLAG = 'HISTORY_TABLE_FLAG'
 
 COLNAME_SORT_KEY = 'SORT_KEY'
 COLNAME_COL_NAME = 'COL_NAME'
@@ -560,6 +561,35 @@ class loadTable():
             result = self.get_objtable().get(MENUINFO).get(COLNAME_SHEET_TYPE)
         except Exception:
             result = 0
+        return result
+
+    def set_history_flg(self, val=True):
+        """
+            履歴テーブル有無を設定
+            ARGS: 0 /1
+        """
+        try:
+            if val is False:
+                self.objtable[MENUINFO][COLNAME_HISTORY_TABLE_FLAG] = '0'
+            else:
+                self.objtable[MENUINFO][COLNAME_HISTORY_TABLE_FLAG] = '1'
+        except Exception:
+            self.objtable[MENUINFO][COLNAME_HISTORY_TABLE_FLAG] = '1'
+
+    def get_history_flg(self):
+        """
+            履歴テーブル有無を取得
+            RETRUN:
+                bool
+        """
+        try:
+            tmp_result = self.get_objtable().get(MENUINFO).get(COLNAME_HISTORY_TABLE_FLAG)
+            if tmp_result in [0, '0']:
+                result = False
+            else:
+                result = True
+        except Exception:
+            result = True
         return result
 
     def get_col_name(self, rest_key):
@@ -1151,6 +1181,7 @@ class loadTable():
         column_list = self.get_column_list()
         primary_key = self.get_primary_key()
         sheet_type = self.get_sheet_type()
+        history_flg = self.get_history_flg()
 
         # 各カラム単位の基本処理（前）、個別処理（前）を実施
         # REST用キーのパラメータ、ファイル(base64)
@@ -1363,13 +1394,13 @@ class loadTable():
             colname_parameter = self.convert_restkey_colname(entry_parameter, current_row)
             # 登録・更新処理
             if cmd_type == CMD_REGISTER:
-                result = self.objdbca.table_insert(self.get_table_name(), colname_parameter, primary_key)
+                result = self.objdbca.table_insert(self.get_table_name(), colname_parameter, primary_key, history_flg)
             elif cmd_type == CMD_UPDATE:
-                result = self.objdbca.table_update(self.get_table_name(), colname_parameter, primary_key)
+                result = self.objdbca.table_update(self.get_table_name(), colname_parameter, primary_key, history_flg)
             elif cmd_type == CMD_DISCARD:
-                result = self.objdbca.table_update(self.get_table_name(), colname_parameter, primary_key)
+                result = self.objdbca.table_update(self.get_table_name(), colname_parameter, primary_key, history_flg)
             elif cmd_type == CMD_RESTORE:
-                result = self.objdbca.table_update(self.get_table_name(), colname_parameter, primary_key)
+                result = self.objdbca.table_update(self.get_table_name(), colname_parameter, primary_key, history_flg)
 
             result_uuid = ''
             result_uuid_jnl = ''
@@ -1382,7 +1413,8 @@ class loadTable():
                 self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR)
             else:
                 result_uuid = result[0].get(primary_key_list[0])
-                result_uuid_jnl = self.get_maintenance_uuid(result_uuid)[0].get(COLNAME_JNL_SEQ_NO)
+                if history_flg is True:
+                    result_uuid_jnl = self.get_maintenance_uuid(result_uuid)[0].get(COLNAME_JNL_SEQ_NO)
                 temp_rows = {primary_key_list[0]: result[0].get(primary_key_list[0])}
                 tmp_result = self.convert_colname_restkey(temp_rows)
                 result = tmp_result[0]
