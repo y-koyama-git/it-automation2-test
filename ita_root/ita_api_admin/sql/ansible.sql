@@ -603,9 +603,8 @@ CREATE TABLE T_ANSR_EXEC_STS_INST
     I_ENGINE_VIRTUALENV_NAME        VARCHAR(255),                               -- Movement/Ansible-Core利用情報/virtualenv
     I_EXECUTION_ENVIRONMENT_NAME    VARCHAR(255),                               -- Movement/Ansible Automation Controller利用情報/実行環境
     I_ANSIBLE_CONFIG_FILE           VARCHAR(255),                               -- Movement/ansible.cfg
-    OPERATION_NO_UAPK               VARCHAR(40),                                -- オペレーション/No.
+    OPERATION_ID                    VARCHAR(40),                                -- オペレーション/No.
     I_OPERATION_NAME                VARCHAR(255),                               -- オペレーション/名称
-    I_OPERATION_NO_IDBH             VARCHAR(40),                                -- オペレーション/ID
     FILE_INPUT                      VARCHAR(1024),                              -- 入力データ/投入データ
     FILE_RESULT                     VARCHAR(1024),                              -- 出力データ/結果データ
     TIME_BOOK                       DATETIME(6),                                -- 作業状況/予約日時
@@ -648,9 +647,8 @@ CREATE TABLE T_ANSR_EXEC_STS_INST_JNL
     I_ENGINE_VIRTUALENV_NAME        VARCHAR(255),                               -- Movement/Ansible-Core利用情報/virtualenv
     I_EXECUTION_ENVIRONMENT_NAME    VARCHAR(255),                               -- Movement/Ansible Automation Controller利用情報/実行環境
     I_ANSIBLE_CONFIG_FILE           VARCHAR(255),                               -- Movement/ansible.cfg
-    OPERATION_NO_UAPK               VARCHAR(40),                                -- オペレーション/No.
+    OPERATION_ID                    VARCHAR(40),                                -- オペレーション/No.
     I_OPERATION_NAME                VARCHAR(255),                               -- オペレーション/名称
-    I_OPERATION_NO_IDBH             VARCHAR(40),                                -- オペレーション/ID
     FILE_INPUT                      VARCHAR(1024),                              -- 入力データ/投入データ
     FILE_RESULT                     VARCHAR(1024),                              -- 出力データ/結果データ
     TIME_BOOK                       DATETIME(6),                                -- 作業状況/予約日時
