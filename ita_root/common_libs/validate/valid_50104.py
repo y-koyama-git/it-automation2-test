@@ -25,11 +25,11 @@ def menu_column_valid(objdbca, objtable, option):
     column_class = entry_parameter.get("column_class")
 
     # 文字列(単一行)最大バイト数
-    string_maximum_bytes = entry_parameter.get("string_maximum_bytes")
+    single_string_maximum_bytes = entry_parameter.get("single_string_maximum_bytes")
     # 文字列(単一行)正規表現
-    string_regular_expression = entry_parameter.get("string_regular_expression")
+    single_string_regular_expression = entry_parameter.get("single_string_regular_expression")
     # 初期値(文字列(単一行))
-    string_default_value = entry_parameter.get("string_default_value")
+    single_string_default_value = entry_parameter.get("single_string_default_value")
     # 文字列(複数行)最大バイト数
     multi_string_maximum_bytes = entry_parameter.get("multi_string_maximum_bytes")
     # 文字列(複数行)正規表現
@@ -76,7 +76,7 @@ def menu_column_valid(objdbca, objtable, option):
     # 入力方式が文字列(単一行)の場合
     if column_class == "1":
         # 文字列(単一行)最大バイト数が設定されていない場合、エラー
-        if retBool and string_maximum_bytes is None:
+        if retBool and single_string_maximum_bytes is None:
             retBool = False
             msg = "「文字列(単一行)」を設定した場合、「最大バイト数」は必須です。"
         # 文字列(複数行)最大バイト数が設定されている場合、エラー
@@ -160,17 +160,17 @@ def menu_column_valid(objdbca, objtable, option):
             retBool = False
             msg = "「文字列(単一行)」を設定した場合、「パラメータシート参照/メニューグループ：メニュー：項目」は設定できません。"
         # 最大バイト数と初期値の条件一致をチェック
-        if retBool and string_default_value:
-            hex_value = str(string_default_value)
+        if retBool and single_string_default_value:
+            hex_value = str(single_string_default_value)
             hex_value = binascii.b2a_hex(hex_value.encode('utf-8'))
-            if int(string_maximum_bytes) < int(len(hex_value)) / 2:
+            if int(single_string_maximum_bytes) < int(len(hex_value)) / 2:
                 retBool = False
                 msg = "「初期値」の値が指定した「最大バイト数」を超えています。"
             # 正規表現と初期値の条件一致をチェック
-            if retBool and string_regular_expression:
-                patarn = string_regular_expression
+            if retBool and single_string_regular_expression:
+                patarn = single_string_regular_expression
                 patarn = re.compile(r'{}'.format(patarn), re.DOTALL)
-                tmp_result = patarn.fullmatch(string_default_value)
+                tmp_result = patarn.fullmatch(single_string_default_value)
                 if tmp_result is None:
                     retBool = False
                     msg = "「初期値」の値が指定した「正規表現」とマッチしません。"
@@ -182,11 +182,11 @@ def menu_column_valid(objdbca, objtable, option):
             retBool = False
             msg = "「文字列(複数行)」を設定した場合、「文字列(複数行)最大バイト数」は必須です。"
         # 文字列(単一行)最大バイト数が設定されている場合、エラー
-        if retBool and string_maximum_bytes:
+        if retBool and single_string_maximum_bytes:
             retBool = False
             msg = "「文字列(複数行)」を設定した場合、「文字列(単一行)最大バイト数」は設定できません。"
         # 文字列(単一行)正規表現が設定されている場合、エラー
-        if retBool and string_regular_expression:
+        if retBool and single_string_regular_expression:
             retBool = False
             msg = "「文字列(複数行)」を設定した場合、「文字列(単一行)正規表現」は設定できません。"
         # 整数最小値が設定されている場合、エラー
@@ -230,7 +230,7 @@ def menu_column_valid(objdbca, objtable, option):
             retBool = False
             msg = "「文字列(複数行)」を設定した場合、「参照項目」は設定できません。"
         # 初期値(文字列(単一行))が設定されている場合、エラー
-        if retBool and string_default_value:
+        if retBool and single_string_default_value:
             retBool = False
             msg = "「文字列(複数行)」を設定した場合、「初期値(文字列(単一行))」は設定できません。"
         # 初期値(整数)が設定されている場合、エラー
@@ -282,11 +282,11 @@ def menu_column_valid(objdbca, objtable, option):
     # 入力方式が整数の場合
     elif column_class == "3":
         # 文字列(単一行)最大バイト数が設定されている場合、エラー
-        if retBool and string_maximum_bytes:
+        if retBool and single_string_maximum_bytes:
             retBool = False
             msg = "「整数」を設定した場合、「文字列(単一行)最大バイト数」は設定できません。"
         # 文字列(単一行)正規表現が設定されている場合、エラー
-        if retBool and string_regular_expression:
+        if retBool and single_string_regular_expression:
             retBool = False
             msg = "「整数」を設定した場合、「文字列(単一行)正規表現」は設定できません。"
         # 文字列(複数行)最大バイト数が設定されている場合、エラー
@@ -340,7 +340,7 @@ def menu_column_valid(objdbca, objtable, option):
             retBool = False
             msg = "「整数」を設定した場合、「参照項目」は設定できません。"
         # 初期値(文字列(単一行))が設定されている場合、エラー
-        if retBool and string_default_value:
+        if retBool and single_string_default_value:
             retBool = False
             msg = "「整数」を設定した場合、「初期値(文字列(単一行))」は設定できません。"
         # 初期値(文字列(複数行))が設定されている場合、エラー
@@ -380,11 +380,11 @@ def menu_column_valid(objdbca, objtable, option):
     # 入力方式が小数の場合
     elif column_class == "4":
         # 文字列(単一行)最大バイト数が設定されている場合、エラー
-        if retBool and string_maximum_bytes:
+        if retBool and single_string_maximum_bytes:
             retBool = False
             msg = "「小数」を設定した場合、「文字列(単一行)最大バイト数」は設定できません。"
         # 文字列(単一行)正規表現が設定されている場合、エラー
-        if retBool and string_regular_expression:
+        if retBool and single_string_regular_expression:
             retBool = False
             msg = "「小数」を設定した場合、「文字列(単一行)正規表現」は設定できません。"
         # 文字列(複数行)最大バイト数が設定されている場合、エラー
@@ -434,7 +434,7 @@ def menu_column_valid(objdbca, objtable, option):
             retBool = False
             msg = "「小数」を設定した場合、「参照項目」は設定できません。"
         # 初期値(文字列(単一行))が設定されている場合、エラー
-        if retBool and string_default_value:
+        if retBool and single_string_default_value:
             retBool = False
             msg = "「小数」を設定した場合、「初期値(文字列(単一行))」は設定できません。"
         # 初期値(文字列(複数行))が設定されている場合、エラー
@@ -485,11 +485,11 @@ def menu_column_valid(objdbca, objtable, option):
     # 入力方式が日時の場合
     elif column_class == "5":
         # 文字列(単一行)最大バイト数が設定されている場合、エラー
-        if retBool and string_maximum_bytes:
+        if retBool and single_string_maximum_bytes:
             retBool = False
             msg = "「日時」を設定した場合、「文字列(単一行)最大バイト数」は設定できません。"
         # 文字列(単一行)正規表現が設定されている場合、エラー
-        if retBool and string_regular_expression:
+        if retBool and single_string_regular_expression:
             retBool = False
             msg = "「日時」を設定した場合、「文字列(単一行)正規表現」は設定できません。"
         # 文字列(複数行)最大バイト数が設定されている場合、エラー
@@ -541,7 +541,7 @@ def menu_column_valid(objdbca, objtable, option):
             retBool = False
             msg = "「日時」を設定した場合、「参照項目」は設定できません。"
         # 初期値(文字列(単一行))が設定されている場合、エラー
-        if retBool and string_default_value:
+        if retBool and single_string_default_value:
             retBool = False
             msg = "「日時」を設定した場合、「初期値(文字列(単一行))」は設定できません。"
         # 初期値(文字列(複数行))が設定されている場合、エラー
@@ -576,11 +576,11 @@ def menu_column_valid(objdbca, objtable, option):
     # 入力方式が日付の場合
     elif column_class == "6":
         # 文字列(単一行)最大バイト数が設定されている場合、エラー
-        if retBool and string_maximum_bytes:
+        if retBool and single_string_maximum_bytes:
             retBool = False
             msg = "「日付」を設定した場合、「文字列(単一行)最大バイト数」は設定できません。"
         # 文字列(単一行)正規表現が設定されている場合、エラー
-        if retBool and string_regular_expression:
+        if retBool and single_string_regular_expression:
             retBool = False
             msg = "「日付」を設定した場合、「文字列(単一行)正規表現」は設定できません。"
         # 文字列(複数行)最大バイト数が設定されている場合、エラー
@@ -632,7 +632,7 @@ def menu_column_valid(objdbca, objtable, option):
             retBool = False
             msg = "「日付」を設定した場合、「参照項目」は設定できません。"
         # 初期値(文字列(単一行))が設定されている場合、エラー
-        if retBool and string_default_value:
+        if retBool and single_string_default_value:
             retBool = False
             msg = "「日付」を設定した場合、「初期値(文字列(単一行))」は設定できません。"
         # 初期値(文字列(複数行))が設定されている場合、エラー
@@ -668,11 +668,11 @@ def menu_column_valid(objdbca, objtable, option):
     # 入力方式がプルダウンの場合
     # elif column_class == "7":
         # # 文字列(単一行)最大バイト数が設定されている場合、エラー
-        # if retBool and string_maximum_bytes:
+        # if retBool and single_string_maximum_bytes:
         #     retBool = False
         #     msg = "「プルダウン選択」を設定した場合、「文字列(単一行)最大バイト数」は設定できません。"
         # # 文字列(単一行)正規表現が設定されている場合、エラー
-        # if retBool and string_regular_expression:
+        # if retBool and single_string_regular_expression:
         #     retBool = False
         #     msg = "「プルダウン選択」を設定した場合、「文字列(単一行)正規表現」は設定できません。"
         # # 文字列(複数行)最大バイト数が設定されている場合、エラー
@@ -720,7 +720,7 @@ def menu_column_valid(objdbca, objtable, option):
         #     retBool = False
         #     msg = "「プルダウン選択」を設定した場合、「リンク/最大バイト数」は設定できません。"
         # # 初期値(文字列(単一行))が設定されている場合、エラー
-        # if retBool and string_default_value:
+        # if retBool and single_string_default_value:
         #     retBool = False
         #     msg = "「プルダウン選択」を設定した場合、「初期値(文字列(単一行))」は設定できません。"
         # # 初期値(文字列(複数行))が設定されている場合、エラー
@@ -843,11 +843,11 @@ def menu_column_valid(objdbca, objtable, option):
     # 入力方式がパスワードの場合
     elif column_class == "8":
         # 文字列(単一行)最大バイト数が設定されている場合、エラー
-        if retBool and string_maximum_bytes:
+        if retBool and single_string_maximum_bytes:
             retBool = False
             msg = "「パスワード」を設定した場合、「文字列(単一行)最大バイト数」は設定できません。"
         # 文字列(単一行)正規表現が設定されている場合、エラー
-        if retBool and string_regular_expression:
+        if retBool and single_string_regular_expression:
             retBool = False
             msg = "「パスワード」を設定した場合、「文字列(単一行)正規表現」は設定できません。"
         # 文字列(複数行)最大バイト数が設定されている場合、エラー
@@ -899,7 +899,7 @@ def menu_column_valid(objdbca, objtable, option):
             retBool = False
             msg = "「パスワード」を設定した場合、「参照項目」は設定できません。"
         # 初期値(文字列(単一行))が設定されている場合、エラー
-        if retBool and string_default_value:
+        if retBool and single_string_default_value:
             retBool = False
             msg = "「パスワード」を設定した場合、「初期値(文字列(単一行))」は設定できません。"
         # 初期値(文字列(複数行))が設定されている場合、エラー
@@ -938,11 +938,11 @@ def menu_column_valid(objdbca, objtable, option):
     # 入力方式がファイルアップロードの場合
     elif column_class == "9":
         # 文字列(単一行)最大バイト数が設定されている場合、エラー
-        if retBool and string_maximum_bytes:
+        if retBool and single_string_maximum_bytes:
             retBool = False
             msg = "「ファイルアップロード」を設定した場合、「文字列(単一行)最大バイト数」は設定できません。"
         # 文字列(単一行)正規表現が設定されている場合、エラー
-        if retBool and string_regular_expression:
+        if retBool and single_string_regular_expression:
             retBool = False
             msg = "「ファイルアップロード」を設定した場合、「文字列(単一行)正規表現」は設定できません。"
         # 文字列(複数行)最大バイト数が設定されている場合、エラー
@@ -994,7 +994,7 @@ def menu_column_valid(objdbca, objtable, option):
             retBool = False
             msg = "「ファイルアップロード」を設定した場合、「参照項目」は設定できません。"
         # 初期値(文字列(単一行))が設定されている場合、エラー
-        if retBool and string_default_value:
+        if retBool and single_string_default_value:
             retBool = False
             msg = "「ファイルアップロード」を設定した場合、「初期値(文字列(単一行))」は設定できません。"
         # 初期値(文字列(複数行))が設定されている場合、エラー
@@ -1033,11 +1033,11 @@ def menu_column_valid(objdbca, objtable, option):
     # 入力方式がリンクの場合
     elif column_class == "10":
         # 文字列(単一行)最大バイト数が設定されている場合、エラー
-        if retBool and string_maximum_bytes:
+        if retBool and single_string_maximum_bytes:
             retBool = False
             msg = "「リンク」を設定した場合、「文字列(単一行)最大バイト数」は設定できません。"
         # 文字列(単一行)正規表現が設定されている場合、エラー
-        if retBool and string_regular_expression:
+        if retBool and single_string_regular_expression:
             retBool = False
             msg = "「リンク」を設定した場合、「文字列(単一行)正規表現」は設定できません。"
         # 文字列(複数行)最大バイト数が設定されている場合、エラー
@@ -1089,7 +1089,7 @@ def menu_column_valid(objdbca, objtable, option):
             retBool = False
             msg = "「リンク」を設定した場合、「参照項目」は設定できません。"
         # 初期値(文字列(単一行))が設定されている場合、エラー
-        if retBool and string_default_value:
+        if retBool and single_string_default_value:
             retBool = False
             msg = "「リンク」を設定した場合、「初期値(文字列(単一行))」は設定できません。"
         # 初期値(文字列(複数行))が設定されている場合、エラー
