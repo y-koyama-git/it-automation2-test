@@ -84,7 +84,7 @@ class LastUpdateDateColumn(Column):
         # 閾値(最大値)
         max_datetime = datetime.strptime(self.max_value, self.format_datetime)
 
-        if len(val) == 0:
+        if len(str(val)) == 0:
             return retBool,
         
         # 登録時はチェックしない

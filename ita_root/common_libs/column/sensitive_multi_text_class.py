@@ -68,7 +68,7 @@ class SensitiveMultiTextColumn(MultiTextColumn):
         msg = ''
 
         if val is not None:
-            if len(val) >= 0:
+            if len(str(val)) >= 0:
                 retBool, msg, val = super().convert_value_input(val)
                 val = ky_encrypt(val)  # noqa: F405
             else:

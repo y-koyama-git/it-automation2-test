@@ -99,9 +99,6 @@ class Column():
         # rest用項目名
         self.rest_key_name = ''
 
-        # バリデーション閾値キー
-        self.base_valid_list = base_valid_list
-
         self.db_qm = "'"
 
         self.objdbca = objdbca
@@ -128,6 +125,7 @@ class Column():
                 self.objtable
         """
         return self.objtable
+
     # column_listの設定,取得
     def set_column_list(self, column_list):
         """
@@ -414,7 +412,7 @@ class Column():
         """
         retBool = True
         msg = ''
-        parameter = {}
+
         # 標準バリデーションレコード操作前
         result_1 = self.before_iud_validate_check(val, option)
         if result_1[0] is not True:
@@ -506,11 +504,11 @@ class Column():
         retBool = True
         msg = ''
         exec_config = self.get_call_before_valid_info()
-        parameter = option.get('parameter')
+
         external_validate_path = 'common_libs.validate.valid_{}'.format(self.get_menu())
         if exec_config is not None:
             if exec_config is not None:
-                exec_func = importlib.import_module(external_validate_path)
+                exec_func = importlib.import_module(external_validate_path)   # noqa: F841
                 eval_str = 'exec_func.{}(self.objdbca, self.objtable, option)'.format(exec_config)
                 tmp_exec = eval(eval_str)
                 if tmp_exec[0] is not True:
@@ -549,11 +547,11 @@ class Column():
         retBool = True
         msg = ''
         exec_config = self.get_call_after_valid_info()
-        parameter = option.get('parameter')
         external_validate_path = 'common_libs.validate.valid_{}'.format(self.get_menu_id())
+
         if exec_config is not None:
             if exec_config is not None:
-                exec_func = importlib.import_module(external_validate_path)
+                exec_func = importlib.import_module(external_validate_path)  # noqa: F841
                 eval_str = 'exec_func.{}(self.objdbca, self.objtable, option)'.format(exec_config)
                 tmp_exec = eval(eval_str)
                 if tmp_exec[0] is not True:
@@ -625,7 +623,7 @@ class Column():
                     bind_value_list.append(option.get('uuid'))
 
             result = self.objdbca.table_select(self.table_name, where_str, bind_value_list)
-            tmp_uuids =[]
+            tmp_uuids = []
             if len(result) != 0:
                 for tmp_rows in result:
                     tmp_uuids.append(tmp_rows.get(primary_key_list[0]))
@@ -752,9 +750,9 @@ class Column():
                     if len(str_where) != 0:
                         conjunction = 'or'
                     str_where = str_where + ' ' + conjunction + ' JSON_CONTAINS(`{}`, \'"{}"\', "$.{}")'.format(
-                            self.get_col_name(),
-                            bindvalue,
-                            self.get_rest_key_name()
+                        self.get_col_name(),
+                        bindvalue,
+                        self.get_rest_key_name()
                     )
                 if len(str_where) != 0:
                     str_where = '(' + str_where + ')'
@@ -830,7 +828,7 @@ class Column():
                 bindkey_s = "__{}_S__".format(self.get_col_name())
                 bindkey_e = "__{}_E__".format(self.get_col_name())
                 if start_val is not None and end_val is not None:
-                    if len(start_val) > 0 and len(end_val) > 0:
+                    if len(str(start_val)) > 0 and len(str(end_val)) > 0:
                         str_where = " `{col_name}` >= {bindkey_s} and `{col_name}` <= {bindkey_e} ".format(
                             col_name=self.get_col_name(),
                             bindkey_s=bindkey_s,
@@ -841,7 +839,7 @@ class Column():
                         bindvalues.setdefault(bindkey_s, start_val)
                         bindvalues.setdefault(bindkey_e, end_val)
 
-                    elif len(start_val) > 0 and len(end_val) == 0:
+                    elif len(str(start_val)) > 0 and len(str(end_val)) == 0:
                         str_where = " `{col_name}` >= {bindkey_s} ".format(
                             col_name=self.get_col_name(),
                             bindkey_s=bindkey_s,
@@ -849,7 +847,7 @@ class Column():
                         bindkeys.append(bindkey_s)
                         bindvalues.setdefault(bindkey_s, start_val)
 
-                    elif len(end_val) > 0 and len(start_val) == 0:
+                    elif len(str(end_val)) > 0 and len(str(start_val)) == 0:
                         str_where = " `{col_name}` <= {bindkey_e} ".format(
                             col_name=self.get_col_name(),
                             bindkey_e=bindkey_e,
