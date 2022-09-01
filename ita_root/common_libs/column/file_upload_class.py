@@ -159,7 +159,7 @@ class FileUploadColumn(Column):
             return retBool
         
         if val is not None:
-            if len(val) != 0:
+            if len(str(val)) != 0:
                 decode_option = option.get("file_data")
 
                 uuid = option["uuid"]
@@ -261,7 +261,7 @@ class FileUploadColumn(Column):
             return retBool, msg
 
         if val is not None:
-            if len(val) != 0:
+            if len(str(val)) != 0:
                 uuid = option["uuid"]
                 uuid_jnl = option["uuid_jnl"]
                 workspace_id = g.get("WORKSPACE_ID")
