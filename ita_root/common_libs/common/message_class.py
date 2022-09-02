@@ -23,10 +23,11 @@ class MessageTemplate:
     Arguments:
         lang: 言語コード
     """
-    def __init__(self):
+    def __init__(self, lang=None):
         # set lang
-        default_lang = os.getenv('DEFAULT_LANGUAGE')
-        self.set_lang(default_lang)
+        if lang is None:
+            lang = os.getenv('DEFAULT_LANGUAGE')
+        self.set_lang(lang)
         
         # set messages dir
         self.path = '/exastro/messages'
@@ -51,7 +52,7 @@ class MessageTemplate:
             # set messages in dict
             file_name = os.path.splitext(os.path.basename(file))[0]
             file_type = file_name[:3].lower()
-            if(file_type == 'log'):
+            if file_type == 'log':
                 file_type = file_name[:3].lower()
                 self.messages['log'] = file_json
             else:
