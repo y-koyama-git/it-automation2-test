@@ -107,6 +107,25 @@ class AnscConst:
     DF_VARS_ATTR_STD = '1'       # 一般変数
     DF_VARS_ATTR_LIST = '2'      # 複数具体値
     DF_VARS_ATTR_STRUCT = '3'    # 多段変数
+    
+    # カラムタイプ
+    DF_COL_TYPE_VAL = '1'    # Value型
+    DF_COL_TYPE_KEY = '2'    # Key型
+    
+    # 具体値 SENSITIVE設定値
+    DF_SENSITIVE_OFF = '1'    # OFF
+    DF_SENSITIVE_ON = '2'     # ON
+    
+    # VARS_ATTRIBUTE_01 の 具体値定義
+    GC_VARS_ATTR_STD = '1'       # 一般変数
+    GC_VARS_ATTR_LIST = '2'      # 複数具体値
+    GC_VARS_ATTR_M_ARRAY = '3'   # 多段変数
+    
+    # 代入値紐付メニューSELECT時のITA独自カラム名
+    DF_ITA_LOCAL_OPERATION_CNT = '__ITA_LOCAL_COLUMN_1__'
+    DF_ITA_LOCAL_HOST_CNT = '__ITA_LOCAL_COLUMN_2__'
+    DF_ITA_LOCAL_DUP_CHECK_ITEM = '__ITA_LOCAL_COLUMN_3__'
+    DF_ITA_LOCAL_PKEY = '__ITA_LOCAL_COLUMN_4__'
 
     ############################################################
     # 変数定義の変数名定義判定配列

@@ -16,11 +16,19 @@ Ansible共通module
 """
 
 import json
+import os
+import subprocess
+import inspect
+import hashlib
+import re
 
 from flask import g
 from pathlib import Path
+from pprint import pprint
 
-from common_libs.common.dbconnect import *
+from common_libs.common import *
+from common_libs.loadtable import *
+from common_libs.common.exception import *
 from .AnsibleMakeMessage import AnsibleMakeMessage
 from .AnscConstClass import AnscConst
 from .WrappedStringReplaceAdmin import WrappedStringReplaceAdmin
@@ -43,6 +51,45 @@ class AnsibleCommonLibs():
     
     # 定数定義
     LV_RUN_MODE = ""
+    
+    # ローカル変数(全体)宣言
+    lv_val_assign_tbl = 'T_ANSR_VALUE_AUTOREG'
+    lv_pattern_link_tbl = 'T_ANSR_MVMT_MATL_LINK'
+    lv_ptn_vars_link_tbl = 'T_ANSR_MVMT_VAR_LINK'
+    lv_member_col_comb_tbl = 'T_ANSR_NESTVAR_MEMBER_COL_COMB'
+    lv_array_member_tbl = 'T_ANSR_NESTVAR_MEMBER'
+    strCurTableVarsAss = 'T_ANSR_VALUE'
+    strJnlTableVarsAss = strCurTableVarsAss + "_JNL"
+    strSeqOfCurTableVarsAss = strCurTableVarsAss + "_RIC"
+    strSeqOfJnlTableVarsAss = strCurTableVarsAss + "_JSQ"
+    vg_FileUPloadColumnBackupFilePath = ""
+    db_update_flg = False
+    g_null_data_handling_def = ""
+    warning_flag = 0
+    error_flag = 0
+    col_filepath = ""
+    
+    arrayValueTmplOfVarAss = {
+        "JOURNAL_SEQ_NO": "",
+        "JOURNAL_ACTION_CLASS": "",
+        "JOURNAL_REG_DATETIME": "",
+        "ASSIGN_ID": "",
+        "OPERATION_ID": "",
+        "MOVEMENT_ID": "",
+        "SYSTEM_ID": "",
+        "MVMT_VAR_LINK_ID": "",
+        "COL_SEQ_COMBINATION_ID": "",
+        "VARS_ENTRY": "",
+        "VAL_COL_SEQ_COMBINATION_ID": "",
+        "SENSITIVE_FLAG": "",
+        "VARS_ENTRY_FILE": "",
+        "VARS_ENTRY_USE_TPFVARS": "",
+        "ASSIGN_SEQ": "",
+        "DISP_SEQ": "",
+        "DISUSE_FLAG": "",
+        "NOTE": "",
+        "LAST_UPDATE_TIMESTAMP": "",
+        "LAST_UPDATE_USER": ""}
 
     def __init__(self, run_mode=AnscConst.LC_RUN_MODE_STD):
         global LV_RUN_MODE
@@ -51,6 +98,7 @@ class AnsibleCommonLibs():
     def set_run_mode(self, run_mode):
         """
         処理モードを変数定義ファイルチェックに設定
+
         Arguments:
             run_mode: 処理モード　LC_RUN_MODE_STD/LC_RUN_MODE_VARFILE
         """
@@ -60,6 +108,7 @@ class AnsibleCommonLibs():
     def get_run_mode(self):
         """
         処理モード取得
+
         returns:
             処理モード　LC_RUN_MODE_STD/LC_RUN_MODE_VARFILE
         """
@@ -72,6 +121,7 @@ class AnsibleCommonLibs():
         Arguments:
             in_cpf_var_name: CPF変数名
             WS_DB: WorkspaceDBインスタンス
+
         Returns:
             is success:(bool)
             in_cpf_key: PKey格納変数
@@ -101,6 +151,7 @@ class AnsibleCommonLibs():
         Arguments:
             ina_cpf_vars_list: CPF変数リスト
             WS_DB: WorkspaceDBインスタンス
+
         Returns:
             is success:(bool)
             tmp_ina_cpf_vars_list: CPF変数リスト
@@ -170,6 +221,7 @@ class AnsibleCommonLibs():
         Arguments:
             in_cpf_var_name: TPF変数名
             WS_DB: WorkspaceDBインスタンス
+
         Returns:
             is success:(bool)
             ina_row: 登録情報
@@ -196,6 +248,7 @@ class AnsibleCommonLibs():
         Arguments:
             ina_tpf_vars_list: TPF変数リスト
             WS_DB: WorkspaceDBインスタンス
+
         Returns:
             is success:(bool)
             ina_tpf_vars_list: TPF変数リスト
@@ -367,6 +420,7 @@ class AnsibleCommonLibs():
         
         Arguments:
             in_filename: アップロードされたデータが格納されているファイル名
+
         Returns:
             ret_array: is success, エラーメッセージ
         """
@@ -457,6 +511,7 @@ class AnsibleCommonLibs():
             in_sql: SQL
             in_key: 登録レコードの配列のキー項目
             WS_DB: WorkspaceDBインスタンス
+
         Returns:
             ina_row: 取得レコードの配列
         """
@@ -468,3 +523,12 @@ class AnsibleCommonLibs():
             ina_row[data[in_key]] = data
         
         return ina_row
+    
+    def GetDataFromParameterSheet(self, WS_DB, exec_type, operation_id="", movement_id="", execution_no=""):
+        """
+        代入値自動登録とパラメータシートを抜く
+        
+        定義のみ
+        """
+        
+        return True
