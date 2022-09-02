@@ -27,9 +27,11 @@ from common_libs.api import set_api_timestamp, get_api_timestamp, app_exception_
 def before_request_handler():
     try:
         set_api_timestamp()
+
+        g.LANGUAGE = os.environ.get("DEFAULT_LANGUAGE")
         # create app log instance and message class instance
         g.applogger = AppLog()
-        g.appmsg = MessageTemplate()
+        g.appmsg = MessageTemplate(g.LANGUAGE)
 
         check_request_body()
 
@@ -53,11 +55,9 @@ def before_request_handler():
         # set language
         language = request.headers.get("Language")
         if language:
+            g.LANGUAGE = language
             g.appmsg.set_lang(language)
             g.applogger.info("LANGUAGE({}) is set".format(language))
-        else:
-            language = os.environ.get("DEFAULT_LANGUAGE")
-        g.LANGUAGE = language
     except AppException as e:
         # catch - raise AppException("xxx-xxxxx", log_format, msg_format)
         return app_exception_response(e)

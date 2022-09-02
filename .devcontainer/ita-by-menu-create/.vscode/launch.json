@@ -10,8 +10,7 @@
         "request": "launch",
         "program": "/exastro/backyard/backyard_init.py",
         "env": {
-            "FLASK_APP": "/exastro/backyard/backyard_init.py",
-            "FLASK_ENV": "development"
+            "FLASK_APP": "/exastro/backyard/backyard_init.py"
         },
         "cwd": "/exastro",
         "pathMappings": [
@@ -34,8 +33,7 @@
         "request": "launch",
         "program": "/exastro/backyard/backyard_init.py",
         "env": {
-            "FLASK_APP": "/exastro/backyard/backyard_init.py",
-            "FLASK_ENV": "development"
+            "FLASK_APP": "/exastro/backyard/backyard_init.py"
         },
         "cwd": "/exastro",
         "pathMappings": [

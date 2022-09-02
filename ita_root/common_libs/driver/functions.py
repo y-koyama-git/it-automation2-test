@@ -12,7 +12,7 @@
 # limitations under the License.
 #
 from common_libs.common.util import get_timestamp
-import os
+from flask import g
 
 
 def operation_LAST_EXECUTE_TIMESTAMP_update(wsDb, operation_id):
@@ -20,6 +20,6 @@ def operation_LAST_EXECUTE_TIMESTAMP_update(wsDb, operation_id):
     data = {
         "OPERATION_ID": operation_id,
         "LAST_EXECUTE_TIMESTAMP": get_timestamp(),
-        "LAST_UPDATE_USER": os.environ.get("LAST_UPDATE_USER_ID")
+        "LAST_UPDATE_USER": g.USER_ID
     }
     wsDb.table_update('T_COMN_OPERATION', [data], 'OPERATION_ID')

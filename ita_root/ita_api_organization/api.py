@@ -34,7 +34,7 @@ flask_app.app.before_request(before_request_handler)
 
 if __name__ == '__main__':
     flask_app.run(
-        debug=(True if os.environ.get('FLASK_ENV', 'produciton') == 'development' else False),
+        debug=True,
         host='0.0.0.0',
         port=int(os.environ.get('LISTEN_PORT', '8000')),
         threaded=True
