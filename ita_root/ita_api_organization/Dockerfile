@@ -68,6 +68,7 @@ RUN dnf install -y \
     debugpy \
     flake8 \
     autopep8 \
+    ansible \
 &&  usermod -G wheel $USERNAME \
 &&  echo '%wheel ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
 
