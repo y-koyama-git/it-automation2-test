@@ -68,7 +68,7 @@ class SensitiveSingleTextColumn(SingleTextColumn):
         msg = ''
 
         if val is not None:
-            if len(val) > 0:
+            if len(str(val)) > 0:
                 val = ky_encrypt(val)  # noqa: F405
             else:
                 retBool = False

@@ -1453,6 +1453,7 @@ class loadTable():
                     
             # テーブル単位の個別処理後を実行
             # メニュー、カラム個別処理:レコード操作後
+            target_menu_option['uuid'] = result_uuid
             target_menu_option['uuid_jnl'] = result_uuid_jnl
             target_menu_option['entry_parameter']['parameter'] = entry_parameter
             target_menu_option['entry_parameter']['file'] = entry_file

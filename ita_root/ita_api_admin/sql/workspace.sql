@@ -402,7 +402,6 @@ CREATE TABLE T_COMN_MOVEMENT
     ANS_ENGINE_VIRTUALENV_NAME      VARCHAR(255),                               -- Virtualenv　
     ANS_EXECUTION_ENVIRONMENT_NAME  VARCHAR(255),                               -- 実行環境
     ANS_ANSIBLE_CONFIG_FILE         VARCHAR(255),                               -- Ansible.cfg
-    TERRAFORM_WORKSPACE_ID          VARCHAR(40),                                -- Organization:Workspace
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1),                                 -- 廃止フラグ
     LAST_UPDATE_TIMESTAMP           DATETIME(6),                                -- 最終更新日時
@@ -427,7 +426,6 @@ CREATE TABLE T_COMN_MOVEMENT_JNL
     ANS_ENGINE_VIRTUALENV_NAME      VARCHAR(255),                               -- Virtualenv　
     ANS_EXECUTION_ENVIRONMENT_NAME  VARCHAR(255),                               -- 実行環境
     ANS_ANSIBLE_CONFIG_FILE         VARCHAR(255),                               -- Ansible.cfg
-    TERRAFORM_WORKSPACE_ID          VARCHAR(40),                                -- Organization:Workspace
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1),                                 -- 廃止フラグ
     LAST_UPDATE_TIMESTAMP           DATETIME(6),                                -- 最終更新日時

@@ -82,7 +82,7 @@ class DateColumn(Column):
         # 閾値(最大値)
         max_datetime = datetime.strptime(self.max_value, self.format_datetime)
 
-        if len(val) == 0:
+        if len(str(val)) == 0:
             return retBool,
 
         # 日付形式のチェック
@@ -123,7 +123,7 @@ class DateColumn(Column):
         retBool = True
         msg = ''
 
-        if val is not None and len(val) > 0:
+        if val is not None and len(str(val)) > 0:
             val = val[0:9]
 
         return retBool, msg, val
