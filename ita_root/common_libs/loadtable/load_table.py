@@ -559,10 +559,10 @@ class loadTable():
             RETRUN:
                 string
         """
-        try:
-            result = "{}_JNL".format(self.get_objtable().get(MENUINFO).get(COLNAME_VIEW_NAME))
-        except Exception:
+        if self.get_objtable().get(MENUINFO).get(COLNAME_VIEW_NAME) is None:
             result = None
+        else:
+            result = "{}_JNL".format(self.get_objtable().get(MENUINFO).get(COLNAME_VIEW_NAME))
         return result
 
     def get_sort_key(self):

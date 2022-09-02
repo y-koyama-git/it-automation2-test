@@ -90,15 +90,22 @@ def collect_user_auth(objdbca):
             objdbca:DB接クラス  DBConnectWs()
         RETRUN:
             user_auth_data
-    """    
+    """
+
     # ユーザIDを取得
     user_id = g.get('USER_ID')
     
     # ユーザ名を取得
     user_name = util.get_user_name(user_id)
     
-    # ロールを取得
-    roles = g.ROLES
+    # workspaceに所属するロールを取得
+    workspace_roles = util.get_workspace_roles()
+
+    # ユーザが所属するロールのうち、workspaceに所属するロールを抽出
+    roles = []
+    for user_role in g.ROLES:
+        if user_role in workspace_roles:
+            roles.append(user_role)
     
     # Workspaceを取得
     workspaces = util.get_exastro_platform_workspaces()[0]
