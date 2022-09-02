@@ -33,7 +33,7 @@ constructor( target, mode ) {
     cd.version = '2.0.0';
     
     // Conductor class ID
-    cd.id = fn.getParams().id;
+    cd.id = fn.getParams().conductor_class_id;
     
     // 編集モードでIDの指定があれば閲覧モードにする
     if ( mode === 'edit' && cd.id !== undefined ) {

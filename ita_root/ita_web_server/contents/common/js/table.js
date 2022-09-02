@@ -98,6 +98,8 @@ setHeaderHierarchy() {
     tb.data.columnKeys = [];
     tb.data.restNames = {};
     
+    const restOrder = [];
+    
     const hierarchy = function( columns, row, col ){
         if ( !tb.data.hierarchy[ row ] ) tb.data.hierarchy[ row ] = [];
         for ( const columnKey of columns ) {            
@@ -107,13 +109,14 @@ setHeaderHierarchy() {
                 hierarchy( tb.info.column_group_info[ columnKey ].columns, row + 1, col );
             } else if ( type === 'c') {
                 const culumnRest =  tb.info.column_info[ columnKey ].column_name_rest;
-                tb.data.restNames[ culumnRest ] = tb.info.column_info[ columnKey ].column_name;
+                tb.data.restNames[ culumnRest ] = tb.info.column_info[ columnKey ].column_name;                
                 if ( culumnRest === tb.idNameRest ) tb.idName = tb.info.column_info[ columnKey ].column_name;
                 if ( specialHeadColumn.indexOf( culumnRest ) !== -1 ) {
                     specialHeadColumnKeys[ specialHeadColumn.indexOf( culumnRest ) ] = columnKey;
                 } else if ( specialFootColumn.indexOf( culumnRest ) !== -1 ) {
                     specialFootColumnKeys[ specialFootColumn.indexOf( culumnRest ) ] = columnKey;
                 } else {
+                    restOrder.push( culumnRest );
                     tb.data.hierarchy[ row ].push( columnKey );
                     tb.data.columnKeys.push( columnKey );
                 }
@@ -121,6 +124,13 @@ setHeaderHierarchy() {
         }
     };
     hierarchy( tb.info.menu_info.columns, 0, 0 );
+    
+    // 固定列用情報
+    tb.data.sticky = {};
+    tb.data.sticky.leftLast = specialHeadColumn[0];
+    tb.data.sticky.rightFirst = specialFootColumn[0];
+    tb.data.sticky.commonFirst = restOrder[0];
+    tb.data.sticky.commonLast = restOrder[ restOrder.length - 1 ];
 
     // 特殊列を先頭に追加
     for ( const columnKey of specialHeadColumnKeys ) {
@@ -543,9 +553,7 @@ tableHtml() {
             if ( tb.flag.edit ) {
                 html[0] += fn.html.cell('選択', ['tHeadTh', 'tHeadLeftSticky', 'tHeadRowSelect'], 'th', headRowspan );   
             }
-            if ( tb.flag.history ) {
-                html[0] += fn.html.cell( fn.html.icon('ellipsis_v'), ['tHeadTh', 'tHeadLeftSticky', 'tHeadRowMenu'], 'th', headRowspan );
-            }
+            html[0] += fn.html.cell( fn.html.icon('ellipsis_v'), ['tHeadTh', 'tHeadLeftSticky', 'tHeadRowMenu'], 'th', headRowspan );
         break;
         case 'edit':
             html[0] += fn.html.cell('選択', ['tHeadTh', 'tHeadLeftSticky', 'tHeadRowSelect'], 'th', headRowspan );
@@ -554,7 +562,7 @@ tableHtml() {
             html[0] += fn.html.cell('区分', ['tHeadTh', 'tHeadLeftSticky'], 'th', headRowspan );
         break;
         case 'history':
-            html[0] += fn.html.cell('内容', ['tHeadTh', 'tHeadLeftSticky'], 'th', headRowspan );
+            html[0] += fn.html.cell('内容', ['tHeadTh', 'tHeadLeftSticky', 'tHeadLeftStickyLast'], 'th', headRowspan );
             html[0] += fn.html.cell('履歴通番', ['tHeadTh'], 'th', headRowspan );
             html[0] += fn.html.cell('変更日時', ['tHeadTh'], 'th', headRowspan );
         break;
@@ -614,6 +622,13 @@ tableHtml() {
                     if ( [ tb.idNameRest, 'discard'].indexOf( column.column_name_rest ) !== -1 ) {
                         className.push('tHeadLeftSticky');
                     }
+                    // Border調整用class
+                    if ( column.column_name_rest === tb.data.sticky.leftLast ) className.push('tHeadLeftStickyLast');
+                    /*
+                    if ( column.column_name_rest === tb.data.sticky.rightFirst ) className.push('tHeadRightStickyFirst');
+                    if ( column.column_name_rest === tb.data.sticky.commonFirst ) className.push('tHeadCommonFirst');
+                    if ( column.column_name_rest === tb.data.sticky.commonLast ) className.push('tHeadCommonEnd');
+                    */
                 }
                 if ( column.column_name_rest ) attr.rest = column.column_name_rest;
                 if ( column.description ) attr.title = fn.cv( column.description, '', true );
@@ -654,7 +669,7 @@ filterHtml() {
         const initSetFilter = ( tb.option )? tb.option.initSetFilter: undefined;
         if ( initSetFilter !== undefined ) {
             try {
-                // イニシャルフィルタフラグを強制的にオンにする
+                // 初期フィルタがある場合はイニシャルフィルタフラグをオンにする
                 tb.flag.initFilter = true;
                 return JSON.parse( initSetFilter );
             } catch(e) {
@@ -673,11 +688,8 @@ filterHtml() {
     if ( colspan === 1 ) className.push('tHeadFilterHeaderNarrow');
     
     const cells = [];
-    if ( tb.flag.edit || tb.flag.history ) {
-        cells.push( fn.html.cell( filterIcon, className, 'th', 2, colspan ) );
-    } else {
-        rowClassName.push('filterNoHeaderTr');
-    }
+    cells.push( fn.html.cell( filterIcon, className, 'th', 2, colspan ) );
+    // rowClassName.push('filterNoHeaderTr');
     
     const pulldownOpen = function( name, rest ) {
         return ``
@@ -751,7 +763,8 @@ filterHtml() {
         };
         const initValue = getInitValue();
 
-        const cellHtml = [];
+        const className = ['tHeadFilter','tHeadFilterInput'],
+              cellHtml = [];
         
         if ( rest === 'discard') {
             const list = {
@@ -808,10 +821,11 @@ filterHtml() {
                 break;
                 // 表示しない
                 default:
+                    className.push('tHeadFilterNone');
                     cellHtml.push('<div class="filterNone"></div>');
             }
         }
-        const className = ['tHeadFilter','tHeadFilterInput'];
+        
         if (  [ tb.idNameRest, 'discard'].indexOf( rest) !== -1 ) {
             className.push('tHeadLeftSticky');
         }
@@ -843,7 +857,6 @@ filterHtml() {
                 ['filterMenuButton', 'itaButton'], { type: item.name, action: item.action })}</li>`);
         }
     }
-    console.log(JSON.stringify(rowClassName))
     rows.push( fn.html.row( fn.html.cell(`<ul class="filterMenuList">${menuListHtml.join('')}</ul>`,
         ['tHeadFilter', 'tHeadFilterMenu'], 'th', 1, keys.length ), rowClassName ));
     
@@ -905,7 +918,6 @@ setTableEvents() {
             }
         });
         
-
         // フィルタボタン
         tb.$.thead.on('click', '.filterMenuButton', function(){
             if ( !tb.checkWork ) {
@@ -1033,6 +1045,19 @@ setTableEvents() {
                     case 'rowDup':
                         tb.changeEdtiMode.call( tb, 'changeEditDup');
                     break;
+                }
+            }
+        });
+        
+        // アクションボタン
+        tb.$.tbody.on('click', '.actionButton', function(){
+            if ( !tb.checkWork ) {
+                const $button = $( this ),
+                      redirect = $button.attr('data-redirect')
+                
+                // リダイレクト
+                if ( redirect ) {
+                    window.location.href = redirect;
                 }
             }
         });
@@ -1197,8 +1222,6 @@ checkNewInputDataDelete( id ) {
     if ( tb.edit.input[id] && Object.keys( tb.edit.input[id]['after'].parameter ).length <= 1 ) {
         delete tb.edit.input[id];
     }
-    
-    console.log(tb.edit.input)
     
     // 編集確認ボタンを活性化
     tb.editModeMenuCheck();
@@ -1642,7 +1665,7 @@ setWorkerEvent() {
 ##################################################
 */
 setTbody() {
-    const tb = this;console.log(tb.flag.initFilter)
+    const tb = this;
     
     if ( !tb.flag.initFilter ) {
         tb.$.container.removeClass('initFilterStandBy');
@@ -1718,7 +1741,12 @@ stickyWidth() {
     let leftStickyWidth = 0,
         leftStickyFilterMenuWidth = 0;
         
-    let filterHeaderColspan = Number( tb.$.thead.find('.tHeadFilterHeader').attr('colspan') );
+    let filterHeaderFlag = true,
+        filterHeaderColspan = Number( tb.$.thead.find('.tHeadFilterHeader').attr('colspan') );
+    if ( isNaN( filterHeaderColspan ) ) {
+        filterHeaderColspan = 1;
+        filterHeaderFlag = false;
+    }
     
     tb.$.thead.find('.tHeadTr').eq(0).find('.tHeadLeftSticky').each(function( index ){
         const $th = $( this ),
@@ -1738,6 +1766,8 @@ stickyWidth() {
             }
         }
     });
+
+    if ( !filterHeaderFlag ) leftStickyFilterMenuWidth += 1;
     
     style.push(`.filterMenuList{left:${leftStickyFilterMenuWidth}px;}`);    
     style.push(`.tHeadGroup>.ci{left:${leftStickyWidth}px;}`);    
@@ -1816,9 +1846,8 @@ tbodyHtml() {
                 if ( tb.flag.edit ) {
                     rowHtml.push( rowCheckInput() );
                 }
-                if ( viewMenu.length ) {
-                    rowHtml.push( fn.html.cell( tb.rowMenuHtml( viewMenu ), ['tBodyLeftSticky', 'tBodyRowMenu', 'tBodyTh'], 'th'));
-                }
+                const viewMenuHtml = ( viewMenu.length )? tb.rowMenuHtml( viewMenu ): '<span class="tBodyAutoInput"></span>';
+                rowHtml.push( fn.html.cell( viewMenuHtml, ['tBodyLeftSticky', 'tBodyRowMenu', 'tBodyTh'], 'th'));
             } break;
             case 'edit':
                 rowHtml.push( rowCheckInput() );
@@ -1875,6 +1904,9 @@ cellHtml( parameter, columnKey, journal ) {
     
     switch ( tb.mode ) {
         case 'view':
+            if ( columnInfo.column_type === 'ButtonColumn') {
+                className.push('tBodyTdButton');
+            }
             return fn.html.cell( tb.viewCellHtml( parameter, columnKey ), className, cellType );
         case 'history':
             return fn.html.cell( tb.viewCellHtml( parameter, columnKey, journal ), className, cellType );
@@ -1975,13 +2007,47 @@ viewCellHtml( parameter, columnKey, journal ) {
         
         // ボタン
         case 'ButtonColumn':
-            
+            return tb.buttonAction( columnInfo, parameter );
         break;
         
         // 不明
         default:
             return '?';
     }
+}
+/*
+##################################################
+   View mode Button action
+##################################################
+*/
+buttonAction( columnInfo, parameter ) {
+    const text = fn.cv( columnInfo.column_name, '', true ),
+          rest = columnInfo.column_name_rest;
+    
+    let action;
+    try {
+        action = JSON.parse( columnInfo.button_action );
+    } catch( e ) {
+        action = [];
+    }
+    
+    const buttonAttrs = {
+        rest: rest
+    };
+    for ( const item of action ) {
+        switch ( item[0] ) {
+            case 'redirect':
+                if ( !buttonAttrs.redirect ) {
+                    buttonAttrs.redirect = '?';
+                } else {
+                    buttonAttrs.redirect += '&';
+                }
+                buttonAttrs.action = 'positive';
+                buttonAttrs.redirect += item[1] + parameter[ item[2] ];
+            break;
+        }
+    }
+    return fn.html.button( text, ['actionButton', 'itaButton'], buttonAttrs );
 }
 /*
 ##################################################
@@ -2548,7 +2614,9 @@ editOk() {
     return new Promise(function( resolve, reject ){        
         fn.fetch(`/menu/${tb.params.menuNameRest}/maintenance/all/`, null, 'POST', editData )
             .then(function( result ){ resolve( result ); })
-            .catch(function( result ){ reject( result );
+            .catch(function( result ){
+                result.data = editData; 
+                reject( result );
                 //バリデーションエラー
                 alert(WD.TABLE.invalid);
             });
@@ -2563,6 +2631,8 @@ editOk() {
 editError( error ) {
     const tb = this;
 
+    const id_name = tb.data.restNames[ tb.idNameRest ];
+    const target = tb.idNameRest;
     let errorMessage;
     try {
         errorMessage = JSON.parse(error.message);
@@ -2571,14 +2641,31 @@ editError( error ) {
         errorMessage = {"0":{"共通":[error.message]}};
     }
 
+    //一意のキーの値を取り出す
+    const param = error.data.map(function(result) {
+        const params = result.parameter;
+            return params[target];
+    });
+
     const errorHtml = [];
     
+    let newRowNum;
+    let editRowNum;
+    const auto_input = '<span class="tBodyAutoInput"></span>';
+
     for ( const item in errorMessage ) {
+        newRowNum = parseInt(item);
         for ( const error in errorMessage[item] ) {
             const name = fn.cv( tb.data.restNames[ error ], error, true ),
                   body = fn.cv( errorMessage[item][error].join(''), '?', true );
-
-            errorHtml.push(`<tr class="tBodyTr tr">${fn.html.cell( item, ['tBodyTh', 'tBodyLeftSticky'], 'th')}${fn.html.cell( name, 'tBodyTd')}${fn.html.cell( body, 'tBodyTd' )}</tr>`);
+                              //編集項目か否か
+            if(param[item] != null) {
+                editRowNum = param[item];
+                errorHtml.push(`<tr class="tBodyTr tr">${fn.html.cell(auto_input, ['tBodyTh', 'tBodyLeftSticky'], 'th')}${fn.html.cell( editRowNum , 'tBodyTd')}${fn.html.cell( name, 'tBodyTd')}${fn.html.cell( body, 'tBodyTd' )}</tr>`);
+            }else{
+                editRowNum = '<span class="tBodyAutoInput"></span>';
+                errorHtml.push(`<tr class="tBodyTr tr">${fn.html.cell(newRowNum + 1, ['tBodyTh', 'tBodyLeftSticky'], 'th')}${fn.html.cell( editRowNum , 'tBodyTd')}${fn.html.cell( name, 'tBodyTd')}${fn.html.cell( body, 'tBodyTd' )}</tr>`);
+            }
         }
     }
     
@@ -2588,9 +2675,10 @@ editError( error ) {
         <table class="table errorTable">
             <thead class="thead">
                 <tr class="tHeadTr tr">
-                    <th class="tHeadTh tHeadLeftSticky th"><div class="ci">エラーNo.</div></th>
-                    <th class="tHeadTh th"><div class="ci">エラー列</div></th>
-                    <th class="tHeadTh th"><div class="ci">エラー内容</div></th>
+                <th class="tHeadTh tHeadLeftSticky th"><div class="ci">${WD.TABLE.insert}</div></th>
+                <th class="tHeadTh th"><div class="ci">${id_name}</div></th>
+                <th class="tHeadTh th"><div class="ci">${WD.TABLE.err_row}</div></th>
+                <th class="tHeadTh th"><div class="ci">${WD.TABLE.err_details}</div></th>
                 </tr>
             </thead>
             <tbody class="tbody">

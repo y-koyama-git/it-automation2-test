@@ -218,7 +218,7 @@ headerMenu() {
         } else {
             $userInfo.addClass('open');
             ui.$.window.on('pointerdown.userInfo', function( e ){
-                if ( !$( e.target ).closest('.userInfomation').length ) {
+                if ( !$( e.target ).closest('.userInfomation, .modalOverlay').length ) {
                     $userInfo.removeClass('open');
                     ui.$.window.off('pointerdown.userInfo');
                 }
@@ -239,12 +239,16 @@ headerMenu() {
         switch ( type ) {
             case 'version':
                 $button.prop('disabled', true );
-                ui.checkVersion().then(function(){
-                    $button.prop('disabled', false );
+                fn.fetch('/version/').then(function( result ){
+                    ui.checkVersion( result ).then(function(){
+                        
+                        $button.prop('disabled', false );
+                    });
                 });
             break;
             case 'logout':
-                alert('ログアウト');
+                const url = document.location.href;
+                CommonAuth.logout(url);
             break;
         }
     });
@@ -290,7 +294,7 @@ userInfo() {
             </div>
         </div>
         <div class="userInfoBlock userInfoWorkspace">
-            <div class="userInfoTitle">${fn.html.icon('workspace')} ワークスペース切替</div>
+            <div class="userInfoTitle">${WD.UI.WsChange}</div>
             <div class="userInfoBody">
                 <ul class="userInfoWorkspaceList">
                     ${workspaceList.join('')}
@@ -298,7 +302,7 @@ userInfo() {
             </div>
         </div>
         <div class="userInfoBlock userInfoRole">
-            <div class="userInfoTitle">${fn.html.icon('role')} ロール一覧</div>
+            <div class="userInfoTitle">${WD.UI.RoleList}</div>
             <div class="userInfoBody">
                 <ul class="userInfoRoleList">
                     ${roleList.join('')}
@@ -324,8 +328,27 @@ userInfo() {
    バージョン確認
 ##################################################
 */
-checkVersion() {
+checkVersion( version ) {
+    const driverList = [];
+    for ( const item of version.installed_driver ) {
+        driverList.push(`<li class="driverItem">${fn.html.icon('plus')} ${item}</li>`);
+    }
+    
+    const versionHtml = `<div class="varsionContainer">
+        <div class="versionLogo"><img class="versionLogoImg" src="/_/ita/imgs/logo.svg" alt="Exastro IT Automation"></div>
+        <div class="versionNumber"><span class="versionNumberWrap">Version: ${version.version}</span></div>
+        <div class="installedDriver">
+            <div class="driverTitle">インストール済みドライバ</div>
+            <ul class="driverList">
+                ${driverList.join('')}
+            </ul>
+        </div>
+    </div>`;
+    
     return new Promise( function( resolve ){
+        fn.alert('Exastro IT Automation', versionHtml ).then(function(){
+            resolve();
+        });
     });
 }
 
@@ -687,7 +710,7 @@ commonContainer( title, info, body ) {
         <h1 class="contentTitle"><span class="contentTitleInner">${title}</span></h1>
         <p class="contentMenuInfo">
             <span class="contentMenuInfoInner">${info}</span>
-            <button class="contentMenuInfoButton button popup" title="メニュー説明表示">
+            <button class="contentMenuInfoButton button popup" title="メニュー情報表示">
                 <span class="inner">${fn.html.icon('ellipsis_v')}<span></button>
         </p>
     </div>
@@ -887,7 +910,7 @@ defaultMenu() {
         }
     });
     
-    
+    ui.setCommonEvents();
 }
 /*
 ##################################################
@@ -944,19 +967,19 @@ fileRegister( $button, type ) {
         
         // 登録するか確認する
         const buttons = {
-            ok: { text: '一括登録開始', action: 'positive'},
-            cancel: { text: 'キャンセル', action: 'normal'}
+            ok: { text: WD.UI.AllUploadStart, action: 'positive'},
+            cancel: { text: WD.UI.AllUploadCancel, action: 'normal'}
         };
         
         const table = { tbody: []};
-        table.tbody.push(['ファイルネーム', selectFile.name ]);
-        table.tbody.push(['ファイルサイズ', selectFile.size.toLocaleString() + ' byte']);
+        table.tbody.push([WD.UI.AllUploadFileName, selectFile.name ]);
+        table.tbody.push([WD.UI.AllUploadFileSize, selectFile.size.toLocaleString() + ' byte']);
         
         if ( fileType === 'json') {
             try {
-                table.tbody.push(['件数', selectFile.json.length.toLocaleString() ]);
+                table.tbody.push([WD.UI.AllUploadCount, selectFile.json.length.toLocaleString() ]);
             } catch( e ) {
-                throw new Error('JSONの形式が正しくありません。');
+                throw new Error(WD.UI.JsonUploadErr);
             }
         }
         
@@ -1004,6 +1027,7 @@ createMenu( mode ) {
     
     const assets = [
         { type: 'js', url: '/_/ita/js/create_menu.js'},
+        { type: 'css', url: '/_/ita/css/editor_common.css'},
         { type: 'css', url: '/_/ita/css/create_menu.css'}
     ];
     
@@ -1031,6 +1055,37 @@ condcutor( mode ) {
     fn.loadAssets( assets ).then(function(){
         const conductor = new Conductor('#content', mode );
         conductor.setup();
+    });
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//   UI common events
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+setCommonEvents() {
+    const ui = this;
+    
+    const menuInfo = ui.rest.info.menu_info;
+    
+    const buttons = {
+        cancel: { text: '閉じる', action: 'normal'},
+        ok: { text: 'メニュー情報詳細確認', action: 'positive'}
+    }
+    
+    ui.$.content.find('.contentHeader').find('.contentMenuInfoButton').on('click', function(){
+        const menuInfoHTml = ``
+        + `<div class="menuInfoContainer">`
+            + `<div class="menuInfoTitle">${menuInfo.menu_name}</div>`
+            + `<div class="menuInfoDescription">${fn.escape( menuInfo.menu_info, true )}</div>`;
+        + `</div>`;
+        fn.alert('メニュー情報', menuInfoHTml, 'confirm', buttons ).then(function( result ){
+            if ( result ) {
+                const filter = encodeURIComponent( JSON.stringify( {'menu_id':{NORMAL:menuInfo.menu_id}} ) );
+                window.location.href = `?menu=menu_list&filter=${filter}`;
+            }
+        });
     });
 }
 

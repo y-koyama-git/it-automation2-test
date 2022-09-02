@@ -172,7 +172,7 @@ fetch: function( url, token, method = 'GET', json ) {
                   'Content-Type': 'application/json'
                 }
             };
-            if ( method === 'POST' && json !== undefined ) {
+            if ( ( method === 'POST' || method === 'PATCH' ) && json !== undefined ) {
                 try {
                     init.body = JSON.stringify( json );
                 } catch ( e ) {
@@ -209,7 +209,6 @@ fetch: function( url, token, method = 'GET', json ) {
                         } else {
                             //その他のエラー
                             cmn.systemErrorAlert();
-                            resolve({});
                         }
                     }
                 }

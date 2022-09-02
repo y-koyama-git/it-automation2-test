@@ -177,6 +177,8 @@ padding: 4px 8px;
 border: 1px solid var(--black40);
 letter-spacing: .75px;
 word-break: break-word;
+white-space: pre;
+font-family: "Osaka-mono", "MS Gothic", "monospace";
 font-size: 14px;
 visibility: hidden;
 }
@@ -1514,15 +1516,18 @@ color:  var(--rowDiscardTextColor);
 .editTable .tBodyTrDiscard:hover .td{
 background-color: var(--rowDiscardHoverColor);
 }
-
-
+/* thead */
 .thead {
 position: sticky;
 top: 0;
 z-index: 10;
 }
-.tHeadTr:first-child .tHeadTh:first-child {
+.tHeadTr:first-child .tHeadLeftSticky {
+border-right: none;
 border-left: 1px solid var(--mainColor100);
+}
+.tHeadTr:first-child .tHeadLeftStickyLast {
+border-right: 1px solid var(--mainColor100);
 }
 .tHeadTr:first-child .tHeadTh {
 border-top: 1px solid var(--mainColor100);
@@ -1607,9 +1612,6 @@ text-align: right;
 text-align: center;
 }
 
-
-
-
 .ci {
 padding: 4px 8px 2px;
 line-height: 1.5;
@@ -1633,6 +1635,7 @@ max-width: 640px;
 white-space: nowrap;
 text-overflow: ellipsis;
 }
+.tHeadFilterNone .filterNone,
 .tBodyAutoInput {
 display: block;
 width: calc( 100% - 16px ); height: 2px;
@@ -1690,7 +1693,10 @@ width: 40px; min-width: auto;
 .tBodyTdInput > .ci {
 padding: 4px;
 }
-
+.tBodyTdButton > .ci {
+padding: 2px 4px;
+text-align: center;
+}
 
 
 .tableShowChangeValue .tBodyAfterValue,
@@ -1783,14 +1789,17 @@ font-size: 16px;
 .tHeadFilterHeaderNarrow .tHeadFilterTitle {
 display: none;
 }
+.filterNoHeaderTr .tHeadFilter:first-child {
+border-left: 1px solid var(--black50);
+}
 .tHeadFilterInput {
 vertical-align: top;
 }
 .tHeadFilterInput > .ci {
 padding: 8px;
 }
-.filterNoHeaderTr .tHeadFilter:first-child {
-border-left: 1px solid var(--black50);
+.tHeadFilterNone {
+vertical-align: middle;
 }
 .filterSelectArea {
 margin-top: 4px;
@@ -1912,7 +1921,6 @@ flex: 0 0 168px;
 .inputDateCalendar {
 flex: 0 0 32px;
 }
-
 /* Footer */
 .tableFooter {
 flex: 0 0 auto;
@@ -2091,11 +2099,13 @@ padding: 0 8px;
 display: flex;
 align-items: center;
 }
-.tableRowMenuItem .button {
+.tableRowMenuButton,
+.actionButton {
 height: 24px;
 line-height: 24px;
 }
-.tableRowMenuItem .button > .inner {
+.tableRowMenuButton > .inner,
+.actionButton  > .inner {
 padding: 0 8px;
 }
 .tBodyInputTd > .ci {
@@ -2688,6 +2698,107 @@ border-radius: 17px;
 background-color: transparent!important;
 }
 
+/*
+##################################################
+  メニュー情報表示
+##################################################
+*/
+.menuInfoContainer {
+padding: 16px;
+}
+.menuInfoTitle {
+position: relative;
+margin-bottom: 16px; padding: 4px 16px;
+line-height: 1.5;
+letter-spacing: .75px;
+font-size: 20px;
+font-weight: bold;
+color: var(--mainColor100);
+}
+.menuInfoTitle::before {
+content: '';
+position: absolute;
+left: 0; top: calc( 50% - 1px );
+transform: translateY(-50%);
+width: 4px; height: 100%;
+margin-right: 16px;
+background-color: var(--accentColor100);
+}
+.menuInfoDescription {
+line-height: 1.75;
+letter-spacing: .5px;
+font-size: 16px;
+}
+/*
+##################################################
+  バージョン確認
+##################################################
+*/
+.varsionContainer {
+padding: 16px;
+}
+.versionLogo {
+margin-bottom: 16px;
+text-align: center;
+}
+.versionLogoImg {
+max-width: 400px;
+}
+.versionNumber {
+margin-bottom: 32px;
+text-align: center;
+font-size: 24px;
+font-weight: bold;
+color: var(--mainColor100);
+}
+.versionNumberWrap {
+display: inline-block;
+padding: 8px 32px 6px;
+background-color: var(--mainColor100);
+border-radius: 80px;
+line-height: 1;
+font-size: 20px;
+color: var(--white100);
+}
+.installedDriver {
+padding-top: 16px;
+border-top: 1px dashed var(--black20);
+}
+.driverTitle {
+position: relative;
+margin-bottom: 16px; padding: 0 16px;
+line-height: 24px;
+letter-spacing: .75px;
+font-size: 14px;
+font-weight: bold;
+color: var(--mainColor100);
+}
+.driverTitle::before {
+content: '';
+position: absolute;
+left: 0; top: calc( 50% - 1px );
+transform: translateY(-50%);
+width: 4px; height: 100%;
+margin-right: 16px;
+background-color: var(--accentColor100);
+}
+.driverList {
+display: flex;
+flex-wrap: wrap;
+gap: 16px;
+}
+.driverItem {
+width: calc( 50% - 8px );
+padding: 8px 16px;
+background-color: var(--black5);
+border: 1px solid var(--black20);
+border-radius: 4px;
+letter-spacing: .5px;
+font-size: 12px;
+}
+.driverItem > .icon {
+opacity: .2;
+}
 /*
 ##################################################
   Debug menu
