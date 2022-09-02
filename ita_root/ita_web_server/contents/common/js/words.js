@@ -33,6 +33,8 @@ const ja = {
         MenuGroup: 'メニューグループ',
         Favorite: 'お気に入り',
         History: '履歴',
+        WsChange: 'ワークスペース切替',
+        RoleList: 'ロール一覧',
         MenuSearch: 'メニュー検索',
         List: '一覧',
         ChangeHistory: '変更履歴',
@@ -47,13 +49,22 @@ const ja = {
         ExcelUploadText: '全件ダウンロード・新規登録用ダウンロードでダウンロードしたエクセルシートを編集し、ここからアップロードすることで一括して追加・編集ができます。',
         JsonUpload: 'ファイル一括登録（JSON）',
         JsonUploadText: 'JSONファイルをここからアップロードすることで一括して追加・編集ができます。',
+        JsonUploadErr: 'JSONの形式が正しくありません。',
         AllDownloadHistoryExcel: '変更履歴全件ダウンロード（Excel）',
         AllDownloadHistoryExcelText: '登録している項目一覧の変更履歴全件をエクセルシートでダウンロードします。',
+        AllUploadStart: '一括登録開始',
+        AllUploadCancel: 'キャンセル',
+        AllUploadFileName: 'ファイルネーム',
+        AllUploadFileSize: 'ファイルサイズ',
+        AllUploadCount: '件数',
     },
     TABLE: {
         confirm: '表示推奨件数を超えていますが、表示してもよろしいですか?',
         limit: '表示可能件数の上限を超えました。',
         invalid: 'バリデーションエラーです。',
+        insert: '登録',
+        err_row: 'エラー列',
+        err_details: 'エラー内容',
     }
 };
 
