@@ -404,21 +404,20 @@ class Column():
     # [maintenance] レコード操作前処理実施
     def before_iud_action(self, val='', option={}):
         """
-            レコード操作前処理 (共通バリデーション + 共通処理 )
+            レコード操作前処理 (共通バリデーション + 個別処理 )
             ARGS:
                 val:値
             RETRUN:
-                (  retBool, msg, val, parameter, option )
+                ( True / False , メッセージ, val , option )
         """
         retBool = True
         msg = ''
-
         # 標準バリデーションレコード操作前
         result_1 = self.before_iud_validate_check(val, option)
         if result_1[0] is not True:
             return result_1
 
-        # 個別バリデーションレコード操作前
+        # 個別処理レコード操作前
         result_2 = self.before_iud_col_action(option)
         if result_2[0] is not True:
             return result_2
@@ -432,31 +431,28 @@ class Column():
     # [maintenance] レコード操作後処理実施
     def after_iud_action(self, val='', option={}):
         """
-            共通バリデーション + 共通処理 レコード操作前
+            共通処理 + 個別処理 レコード操作後
             ARGS:
                 val:値
             RETRUN:
-                ( True / False , メッセージ )
+                ( True / False , メッセージ, val , option )
         """
         retBool = True
         msg = ''
-        parameter = {}
-        # 標準バリデーションレコード操作前
+        # 標準処理レコード操作後
         result_1 = self.after_iud_common_action(val, option)
-        if result_1 is not True:
+        if result_1[0] is not True:
             return result_1
 
-        # 個別バリデーションレコード操作前
+        # 個別処理レコード操作後
         result_2 = self.after_iud_col_action(val, option)
-        if result_2 is not True:
+        if result_2[0] is not True:
             return result_2
         else:
             retBool = result_2[0]
             msg = result_2[1]
-            parameter = result_2[2]
-            option = result_2[3]
-
-        return retBool, msg, parameter, option
+            option = result_2[2]
+        return retBool, msg, val, option
 
     # [maintenance] 共通バリデーション レコード操作前
     def before_iud_validate_check(self, val='', option={}):
@@ -508,7 +504,7 @@ class Column():
         external_validate_path = 'common_libs.validate.valid_{}'.format(self.get_menu())
         if exec_config is not None:
             if exec_config is not None:
-                exec_func = importlib.import_module(external_validate_path)   # noqa: F841
+                exec_func = importlib.import_module(external_validate_path)
                 eval_str = 'exec_func.{}(self.objdbca, self.objtable, option)'.format(exec_config)
                 tmp_exec = eval(eval_str)
                 if tmp_exec[0] is not True:
@@ -547,7 +543,7 @@ class Column():
         retBool = True
         msg = ''
         exec_config = self.get_call_after_valid_info()
-        external_validate_path = 'common_libs.validate.valid_{}'.format(self.get_menu_id())
+        external_validate_path = 'common_libs.validate.valid_{}'.format(self.get_menu())
 
         if exec_config is not None:
             if exec_config is not None:

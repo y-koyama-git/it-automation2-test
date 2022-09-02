@@ -18,6 +18,7 @@ import textwrap
 import json
 import importlib
 import traceback
+import copy
 
 from flask import g
 from common_libs.column import *  # noqa: F403
@@ -1295,7 +1296,7 @@ class loadTable():
                     objcolumn = self.get_columnclass(rest_key, cmd_type)
 
                     # カラムクラス毎の処理:レコード操作前 + カラム毎の個別処理:レコード操作前
-                    tmp_exec = objcolumn.before_iud_action(rest_val, target_col_option)
+                    tmp_exec = objcolumn.before_iud_action(rest_val, copy.deepcopy(target_col_option))
                     if tmp_exec[0] is not True:
                         dict_msg = {
                             'status_code': '',
@@ -1304,9 +1305,9 @@ class loadTable():
                         }
                         self.set_message(dict_msg, rest_key, MSG_LEVEL_ERROR)
                     else:
-                        target_col_option = tmp_exec[3]
-                        entry_parameter = target_col_option.get('entry_parameter').get('parameter')
-                        entry_file = target_col_option.get('entry_parameter').get('file')
+                        tmp_target_col_option = tmp_exec[3]
+                        entry_parameter = tmp_target_col_option.get('entry_parameter').get('parameter')
+                        entry_file = tmp_target_col_option.get('entry_parameter').get('file')
                         rest_val = entry_parameter.get(rest_key)
                         # entry_file[rest_key] = target_col_option.get('file_data')
 
@@ -1344,7 +1345,7 @@ class loadTable():
                 },
                 'user': self.user
             }
-            tmp_exec = self.exec_menu_before_validate(target_menu_option)
+            tmp_exec = self.exec_menu_before_validate(copy.deepcopy(target_menu_option))
 
             if tmp_exec[0] is not True:
                 dict_msg = {
@@ -1354,9 +1355,9 @@ class loadTable():
                 }
                 self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR)
             else:
-                target_menu_option = tmp_exec[2]
-                entry_parameter = target_menu_option.get('entry_parameter').get('parameter')
-                entry_file = target_menu_option.get('entry_parameter').get('file')
+                tmp_target_menu_option = tmp_exec[2]
+                entry_parameter = tmp_target_menu_option.get('entry_parameter').get('parameter')
+                entry_file = tmp_target_menu_option.get('entry_parameter').get('file')
 
             # 不要パラメータの除外(個別処理で追加されたキーも対象か確認)
             entry_parameter = self.exclusion_parameter(cmd_type, entry_parameter)
@@ -1431,18 +1432,32 @@ class loadTable():
                 # カラムクラス呼び出し
                 objcolumn = self.get_columnclass(rest_key, cmd_type)
                 
-                target_col_option = {}
-                target_col_option.setdefault("uuid", result_uuid)
-                target_col_option.setdefault("uuid_jnl", result_uuid_jnl)
-                target_col_option.setdefault("cmd_type", cmd_type)
-                target_col_option.setdefault("rest_key_name", rest_key)
-                target_col_option.setdefault("col_name", self.get_col_name(rest_key))
+                target_col_option = {
+                    'uuid': result_uuid,
+                    'uuid_jnl': result_uuid_jnl,
+                    'cmd_type': cmd_type,
+                    'rest_key_name': rest_key,
+                    'col_name': self.get_col_name(rest_key),
+                    'file_name': '',
+                    'file_data': '',
+                    'entry_parameter': {
+                        'parameter': entry_parameter,
+                        'file': entry_file,
+                    },
+                    'current_parameter': {
+                        'parameter': current_parametr,
+                        'file': current_file,
+                    },
+                    'user': self.user
+                }
                 # ファイル有無
                 if entry_file is not None:
                     if rest_key in entry_file:
-                        target_col_option.setdefault("file_data", entry_file.get(rest_key))
+                        target_col_option['file_name'] = rest_val
+                        target_col_option['file_data'] = entry_file.get(rest_key)
+
                 # カラムクラス毎の処理:レコード操作後 ,カラム毎の個別処理:レコード操作後
-                tmp_exec = objcolumn.after_iud_action(rest_val, target_col_option)
+                tmp_exec = objcolumn.after_iud_action(rest_val, copy.deepcopy(target_col_option))
                 if tmp_exec[0] is not True:
                     dict_msg = {
                         'status_code': '',
@@ -1450,7 +1465,11 @@ class loadTable():
                         'msg': tmp_exec[1],
                     }
                     self.set_message(dict_msg, rest_key, MSG_LEVEL_ERROR)
-                    
+                else:
+                    tmp_target_col_option = tmp_exec[3]
+                    entry_parameter = tmp_target_col_option.get('entry_parameter').get('parameter')
+                    entry_file = tmp_target_col_option.get('entry_parameter').get('file')
+
             # テーブル単位の個別処理後を実行
             # メニュー、カラム個別処理:レコード操作後
             target_menu_option['uuid'] = result_uuid
@@ -1458,7 +1477,7 @@ class loadTable():
             target_menu_option['entry_parameter']['parameter'] = entry_parameter
             target_menu_option['entry_parameter']['file'] = entry_file
 
-            tmp_exec = self.exec_menu_after_validate(target_menu_option)
+            tmp_exec = self.exec_menu_after_validate(copy.deepcopy(target_menu_option))
             if tmp_exec[0] is not True:
                 dict_msg = {
                     'status_code': '',
@@ -1467,9 +1486,9 @@ class loadTable():
                 }
                 self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR)
             else:
-                target_menu_option = tmp_exec[2]
-                entry_parameter = target_menu_option.get('entry_parameter').get('parameter')
-                entry_file = target_menu_option.get('entry_parameter').get('file')
+                tmp_target_menu_option = tmp_exec[2]
+                entry_parameter = tmp_target_menu_option.get('entry_parameter').get('parameter')
+                entry_file = tmp_target_menu_option.get('entry_parameter').get('file')
 
             # 実行結果を保存
             target_result_info = {}
