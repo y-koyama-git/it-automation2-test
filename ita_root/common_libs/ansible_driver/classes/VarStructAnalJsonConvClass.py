@@ -8,7 +8,7 @@ class VarStructAnalJsonConv:
     """
       変数解析結果をJSON文字列にエンコード・デコードするクラス
     """
-    def VarStructAnalJsonDumps(self, vars_list, array_vars_list, tpf_vars_list, ITA2User_var_list, GBL_vars_list):
+    def VarStructAnalJsonDumps(self, vars_list, array_vars_list, tpf_vars_list, ITA2User_var_list, GBL_vars_list, Role_name_list):
         """
           変数解析結果をJSON文字列でエンコードする
           Arguments:
@@ -17,6 +17,7 @@ class VarStructAnalJsonConv:
             tpf_vars_list: テンプレート変数情報
             ITA2User_var_list: 読替変数情報 (未使用)
             GBL_vars_list: グローバル変数情報
+            Role_name_list: ロール名情報
           Returns:
             変数解析結果をJSON文字列でエンコードした文字列
         """
@@ -26,6 +27,7 @@ class VarStructAnalJsonConv:
         json_dict['TPF_vars_list'] = tpf_vars_list
         json_dict['ITA2User_vars_list'] = ITA2User_var_list
         json_dict['GBL_vars_list'] = GBL_vars_list
+        json_dict['Role_name_list'] = Role_name_list
 
         return json.dumps(json_dict)
 
@@ -40,6 +42,7 @@ class VarStructAnalJsonConv:
             tpf_vars_list: テンプレート変数情報
             ITA2User_var_list: 読替変数情報 (未使用)
             GBL_vars_list: グローバル変数情報
+            Role_name_list: ロール名情報
         """
         json_dict = json.loads(json_string)
         vars_list = json_dict['Vars_list']
@@ -47,7 +50,8 @@ class VarStructAnalJsonConv:
         tpf_vars_list = json_dict['TPF_vars_list']
         ITA2User_var_list = json_dict['ITA2User_vars_list']
         GBL_vars_list = json_dict['GBL_vars_list']
-        return vars_list, array_vars_list, tpf_vars_list, ITA2User_var_list, GBL_vars_list
+        Role_name_list = json_dict['Role_name_list']
+        return vars_list, array_vars_list, tpf_vars_list, ITA2User_var_list, GBL_vars_list, Role_name_list
 
     def TemplateVarStructAnalJsonDumps(self, Vars_list, Array_vars_list, LCA_vars_use, Array_vars_use, ITA2User_var_list, GBL_vars_info, VarVal_list):
         """
