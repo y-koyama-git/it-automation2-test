@@ -515,7 +515,6 @@ z-index: 9999;
 right: 8px; top: 60px;
 width: 304px;
 max-height: calc( 100vh - 76px );
-min-height: calc( 640px - 76px );
 background-color: var(--white100);
 box-shadow: 0 0 16px rgba( 0,0,0,.3 );
 border-radius: 0 0 8px 8px;
@@ -557,9 +556,10 @@ z-index: 1;
 padding: 8px 16px;
 background-color: var(--mainColor60);
 background-image: linear-gradient(rgba(255,255,255,.075), rgba(255,255,255,0));
+box-shadow: 0 1px 1px rgb(255 255 255 / 20%) inset;
+text-shadow: 1px 1px 1px rgb(0 0 0 / 20%);
 line-height: 1;
 letter-spacing: .25px;
-text-shadow: 1px 1px 1px rgb( 0,0,0,.2 );
 font-size: 14px;
 font-weight: bold;
 color: var(--white100);
@@ -604,7 +604,7 @@ border-top: 1px solid var(--black10);
 .userinfoRoleItem {
 padding: 12px 16px;
 border-top: 1px solid var(--black10);
-font-size: 14px;
+font-size: 12px;
 }
 .userinfoWorkspaceItem:first-child,
 .userinfoRoleItem:first-child {
@@ -613,13 +613,28 @@ border-top: none;
 .userInfoMenu {
 background-color: var(--black10);
 }
-.userInfoMenuItem {
+.userInfoMenuList {
+display: flex;
+flex-direction: column;
+gap: 8px;
 padding: 8px;
+}
+.userInfoMenuItem {
 }
 .userInfoMenuButton {
 width: 100%;
-height: 32px;
-line-height: 32px;
+height: 48px;
+line-height: 48px;
+text-align: left;
+}
+.userInfoMenuButton > .inner {
+padding: 0 20px;
+}
+.userInfoMenuButton .icon {
+margin-right: 16px;
+vertical-align: -5px;
+font-size: 24px;
+opacity: .7;
 }
 
 /*
@@ -1119,7 +1134,8 @@ width: 4px; height: 24px;
 margin-right: 8px;
 background-color: var(--accentColor100);
 }
-.contentTitleInner {
+.contentTitleInner,
+.contentMenuInfoInner {
 overflow: hidden;
 display: block;
 white-space: nowrap;
@@ -1132,10 +1148,31 @@ min-width: 0;
 padding-right: 16px;
 align-items: center;
 letter-spacing: .75px;
-word-break: break-all;
 line-height: 1.75;
 font-size: 12px;
 color: var(--black80);
+}
+.contentMenuInfoButton {
+flex: 0 0 24px;
+height: auto;
+margin-left: auto;
+background-color: var(--white100);
+border: 2px solid transparent;
+border-radius: 50%;
+line-height: 1;
+font-size: 20px;
+color: var(--accentColor100);
+transition-duration: .2s;
+}
+.contentMenuInfoButton .icon {
+margin: 0;
+opacity: 1;
+}
+.contentMenuInfoButton:hover {
+border-color: var(--accentColor80);
+}
+.contentMenuInfoButton:active {
+transform: scale(.8);
 }
 .contentBody {
 height: calc( 100% - 48px );
@@ -1266,7 +1303,7 @@ display: none;
 .tableStandBy .tableErrorMessage,
 .filterStandBy .tableErrorMessage,
 .noData .tableFooter,
-.autoFilterStandBy .tableFooter {
+.initFilterStandBy .tableFooter {
 display: none!important;
 }
 .filterStandBy .tableBody {
@@ -1297,11 +1334,11 @@ animation: loading 1s infinite;
 @keyframes loading{
 to { transform: rotate(360deg); }
 }
-.autoFilterStandBy .tableBody,
+.initFilterStandBy .tableBody,
 .noData .tableBody {
 flex: 0 0 auto;
 }
-.autoFilterStandBy .tableMessage,
+.initFilterStandBy .tableMessage,
 .historyStandBy .tableMessage,
 .noData .tableMessage {
 flex: 1 1 auto;
@@ -1320,6 +1357,18 @@ font-size: 20px;
 font-weight: bold;
 color: var(--black60);
 }
+.tableMessage > div {
+position: relative;
+padding-left: 96px;
+}
+.tableMessage > div .icon {
+position: absolute;
+left: 0; top: 50%;
+transform: translateY(-50%);
+width: 80px; height: 80px;
+font-size: 80px;
+opacity: .5;
+}
 
 .tableError .tableBody {
 display: block;
@@ -1327,9 +1376,9 @@ flex: 3 1 0;
 }
 .tableError .tableErrorMessage {
 display: block;
-flex: 1 1 0;
+flex: 0 0 auto;
+max-height: 40%;
 }
-
 .tableHeader {
 flex: 0 0 auto;
 display: flex;
@@ -1403,6 +1452,8 @@ color: var(--black80);
 .tableBody {
 overflow: auto;
 flex: 1 1 auto;
+background-color: rgba(0,0,0,.05);
+border: 1px solid rgba( 0,0,0,.1);
 }
 
 /* Table general */
@@ -1738,6 +1789,9 @@ vertical-align: top;
 .tHeadFilterInput > .ci {
 padding: 8px;
 }
+.filterNoHeaderTr .tHeadFilter:first-child {
+border-left: 1px solid var(--black50);
+}
 .filterSelectArea {
 margin-top: 4px;
 padding-top: 4px;
@@ -1967,6 +2021,10 @@ background-color: rgba( 255,255,255,.05 )!important;
 box-shadow: none!important;
 color: rgba( 0,0,0,.2 )!important;
 cursor: default!important;
+}
+.pagingAllNumNumber {
+letter-spacing: .5px;
+font-size: 16px;
 }
 
 .tBodyRowMenu  {
@@ -2377,12 +2435,27 @@ border-bottom: 1px solid #CCC;
 transform: translateX(-4px) rotate(-45deg);
 pointer-events: none;
 }
+.datePickerContainer {
+padding: 16px;
+}
 .datePickerFromToContainer {
 position: relative;
 z-index: 0;
 display: flex;
 gap: 32px;
-padding: 32px;
+}
+.datePickerFromToContainer::after {
+content: '';
+display: block;
+position: absolute;
+z-index: 1;
+left: 50%; top: 32px;
+transition-duration: .2s;
+transform: translateX(-50%) rotate(45deg);
+width: 8px;
+height: 8px;
+border-right: 2px solid #CCC;
+border-top: 2px solid #CCC;
 }
 .datePickerFromToContainer > div {
 flex: 1 1 auto;
@@ -2402,6 +2475,10 @@ font-size: 16px;
 font-weight: bold;
 color: var(--black80);
 outline: none;
+}
+.datePickerDateInput::placeholder {
+color: var(--black20);
+font-size: 14px;
 }
 .datePickerSelectDate {
 display: flex;
@@ -2454,6 +2531,7 @@ transform: translateX(-2px);
 transform: translateX(2px);
 }
 .datePickerCalendar {
+height: 320px;
 margin: 8px 0 16px;
 }
 .datePickerTime {
@@ -2491,13 +2569,19 @@ width: 50%;
 border-collapse: collapse;
 }
 .calTh {
-padding: 4px;
-border: 1px solid #DDD;
-border-bottom-width: 4px;
+padding: 8px;
+background-color: var(--mainColor70);
+background-image: linear-gradient(rgba(255,255,255,.075), rgba(255,255,255,0));
+border: 1px solid var(--mainColor100);
+box-shadow: 0 1px 1px rgb(255 255 255 / 20%) inset;
+text-shadow: 1px 1px 1px rgb(0 0 0 / 20%);
+color: var(--white100);
 font-size: 12px;
 }
 .calTd {
+width: 41px; height: 41px;
 padding: 2px 0;
+background-color: #F8F8F8;
 border: 1px solid #DDD;
 }
 .calTdInner {
@@ -2529,21 +2613,29 @@ border-color: rgba( 0,0,0,.2 );
 background-color: var(--mainColor80)!important;
 color: var(--white100)!important;
 }
-.calTh.sat {
-color: #000080;
-}
 .calTd.sat .calButton {
 color: #000080;
-}
-.calTh.sun {
-color: #DD0000;
 }
 .calTd.sun .calButton {
 color: #DD0000;
 }
+.calTd.sat {
+background-color: #EBEFFF;
+}
+.calTd.sun {
+background-color: #FBEBEB;
+}
 .lastMonth,
 .nextMonth {
 background-color: #EEE;
+}
+.calTd.sat.lastMonth,
+.calTd.sat.nextMonth {
+background-color: #E0E7FF;
+}
+.calTd.sun.lastMonth,
+.calTd.sun.nextMonth {
+background-color: #F8E0E0;
 }
 .lastMonth .calButton,
 .nextMonth .calButton {
@@ -2551,16 +2643,21 @@ font-size: 14px;
 color: #AAA!important;
 }
 .calTd.disabled {
-padding: 2px;
-background-color: #EEE;
+background-color: #FFF;
 }
-.calDisabled {
-display: flex;
-justify-content: center;
-align-items: center;
-width: 36px; height: 36px;
+.calTd.disabled.lastMonth,
+.calTd.disabled.nextMonth,
+.calTd.disabled.lastMonth,
+.calTd.disabled.nextMonth {
+background-color: #FFF;
+}
+.calButtonDisabled {
 font-size: 14px;
-color: #DDD;
+color: #DDD!important;
+cursor: no-drop;
+}
+.calButtonDisabled:hover {
+background-color: transparent!important;
 }
 .startCell {
 padding-left: 2px;
@@ -2585,13 +2682,10 @@ background-color: var(--mainColor10);
 padding: 2px;
 border-radius: 17px;
 }
-.lastMonth.periodCell,
-.nextMonth.periodCell,
-.lastMonth.startCell,
-.nextMonth.startCell,
-.lastMonth.endCell,
-.nextMonth.endCell {
-background-color: transparent;
+.calTd.periodCell,
+.calTd.startCell,
+.calTd.endCell {
+background-color: transparent!important;
 }
 
 /*
@@ -2642,127 +2736,4 @@ height: 100%;
   /* Better Font Rendering =========== */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-.icon-arrow01_left:before {
-  content: "\e927";
-}
-.icon-arrow01_right:before {
-  content: "\e928";
-}
-.icon-ellipsis:before {
-  content: "\e920";
-}
-.icon-ellipsis_v:before {
-  content: "\e921";
-}
-.icon-history:before {
-  content: "\e922";
-}
-.icon-menuGroup:before {
-  content: "\e923";
-}
-.icon-menuList:before {
-  content: "\e924";
-}
-.icon-star:before {
-  content: "\e925";
-}
-.icon-MoveOut:before {
-  content: "\e91f";
-}
-.icon-moveIn:before {
-  content: "\e926";
-}
-.icon-rollback:before {
-  content: "\e91e";
-}
-.icon-first:before {
-  content: "\e91a";
-}
-.icon-prev:before {
-  content: "\e91b";
-}
-.icon-next:before {
-  content: "\e91c";
-}
-.icon-last:before {
-  content: "\e91d";
-}
-.icon-update:before {
-  content: "\e919";
-}
-.icon-branch:before {
-  content: "\e918";
-}
-.icon-detail:before {
-  content: "\e908";
-}
-.icon-cal:before {
-  content: "\e909";
-}
-.icon-cal_off:before {
-  content: "\e90a";
-}
-.icon-edit:before {
-  content: "\e90b";
-}
-.icon-filter:before {
-  content: "\e90c";
-}
-.icon-filter_off:before {
-  content: "\e90d";
-}
-.icon-login:before {
-  content: "\e90e";
-}
-.icon-logout:before {
-  content: "\e90f";
-}
-.icon-download:before {
-  content: "\e910";
-}
-.icon-eye_close:before {
-  content: "\e911";
-}
-.icon-eye_open:before {
-  content: "\e912";
-}
-.icon-gear:before {
-  content: "\e913";
-}
-.icon-link:before {
-  content: "\e914";
-}
-.icon-trash:before {
-  content: "\e915";
-}
-.icon-upload:before {
-  content: "\e916";
-}
-.icon-user:before {
-  content: "\e917";
-}
-.icon-degraded:before {
-  content: "\e900";
-}
-.icon-healthy:before {
-  content: "\e901";
-}
-.icon-missing:before {
-  content: "\e902";
-}
-.icon-outOfSync:before {
-  content: "\e903";
-}
-.icon-progressing:before {
-  content: "\e904";
-}
-.icon-suspended:before {
-  content: "\e905";
-}
-.icon-synced:before {
-  content: "\e906";
-}
-.icon-unknown:before {
-  content: "\e907";
-}
+}.icon-exastro:before{content:"\e90e"}.icon-ita:before{content:"\e90f"}.icon-oase:before{content:"\e92a"}.icon-epoch:before{content:"\e92b"}.icon-plus:before{content:"\e92c"}.icon-minus:before{content:"\e92d"}.icon-circle:before{content:"\e92e"}.icon-cross:before{content:"\e92f"}.icon-check:before{content:"\e930"}.icon-copy:before{content:"\e958"}.icon-pause:before{content:"\e931"}.icon-clear:before{content:"\e932"}.icon-lock:before{content:"\e933"}.icon-manual:before{content:"\e934"}.icon-update01:before{content:"\e935"}.icon-update02:before{content:"\e919"}.icon-return:before{content:"\e936"}.icon-search:before{content:"\e937"}.icon-exportImport:before{content:"\e938"}.icon-arrow01_left:before{content:"\e927"}.icon-arrow01_right:before{content:"\e928"}.icon-ellipsis:before{content:"\e920"}.icon-ellipsis_v:before{content:"\e921"}.icon-history:before{content:"\e922"}.icon-clock:before{content:"\e939"}.icon-menuGroup:before{content:"\e923"}.icon-menuList:before{content:"\e924"}.icon-star:before{content:"\e925"}.icon-logout:before{content:"\e91f"}.icon-login:before{content:"\e926"}.icon-rollback:before{content:"\e91e"}.icon-first:before{content:"\e91a"}.icon-prev:before{content:"\e91b"}.icon-next:before{content:"\e91c"}.icon-last:before{content:"\e91d"}.icon-branch:before{content:"\e918"}.icon-detail:before{content:"\e908"}.icon-cal:before{content:"\e909"}.icon-cal_off:before{content:"\e90a"}.icon-edit:before{content:"\e90b"}.icon-filter:before{content:"\e90c"}.icon-filter_off:before{content:"\e90d"}.icon-eye_close:before{content:"\e911"}.icon-eye_open:before{content:"\e912"}.icon-gear:before{content:"\e913"}.icon-link:before{content:"\e914"}.icon-trash:before{content:"\e915"}.icon-upload:before{content:"\e916"}.icon-download:before{content:"\e910"}.icon-user:before{content:"\e917"}.icon-heartBreak:before{content:"\e900"}.icon-heart:before{content:"\e901"}.icon-missing:before{content:"\e902"}.icon-progressing:before{content:"\e904"}.icon-circle_pause:before{content:"\e905"}.icon-circle_check:before{content:"\e906"}.icon-circle_question:before{content:"\e907"}.icon-circle_doubleExclamation:before{content:"\e93a"}.icon-circle_exclamation:before{content:"\e93b"}.icon-circle_info:before{content:"\e93c"}.icon-circle_top:before{content:"\e903"}.icon-square_prev:before{content:"\e93d"}.icon-square_next:before{content:"\e93e"}.icon-square_pause:before{content:"\e93f"}.icon-stop:before{content:"\e940"}.icon-align_left:before{content:"\e941"}.icon-align_center:before{content:"\e942"}.icon-align_right:before{content:"\e943"}.icon-align_top:before{content:"\e944"}.icon-align_horizonal:before{content:"\e945"}.icon-align_bottom:before{content:"\e946"}.icon-algin_equally_horizonal:before{content:"\e947"}.icon-algin_equally_vertical:before{content:"\e948"}.icon-pipeline:before{content:"\e951"}.icon-organization:before{content:"\e956"}.icon-role:before{content:"\e957"}.icon-dashboard:before{content:"\e929"}.icon-note:before{content:"\e949"}.icon-workspace:before{content:"\e94a"}

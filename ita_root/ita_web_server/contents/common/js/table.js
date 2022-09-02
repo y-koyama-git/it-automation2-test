@@ -26,7 +26,7 @@ class DataTable {
    Constructor
 ##################################################
 */
-constructor( tableId, mode, info, params, customData ) {
+constructor( tableId, mode, info, params, option ) {
     const tb = this;
     tb.id = tableId;
     tb.mode = mode;
@@ -34,7 +34,7 @@ constructor( tableId, mode, info, params, customData ) {
     tb.params = params;
     
     // 特殊表示用データ
-    tb.custom = customData;
+    tb.option = option;
 }
 /*
 ##################################################
@@ -273,7 +273,7 @@ setTable( mode ) {
                 ]
             };
             // 権限チェック
-            if ( tb.flag.insert ) tableHeaderMenuList.Main.push({ name: 'tableNew', icon: 'edit', title: '登録', action: 'positive', width: '200px'});
+            if ( tb.flag.insert ) tableHeaderMenuList.Main.push({ name: 'tableNew', icon: 'plus', title: '登録', action: 'positive', width: '200px'});
             if ( tb.flag.update ) tableHeaderMenuList.Main.push({ name: 'tableEdit', icon: 'edit', title: '編集', action: 'positive', width: '200px', 'disabled': true });
             
             if ( tableHeaderMenuList.Main.length === 0 ) {
@@ -291,6 +291,7 @@ setTable( mode ) {
                         // フィルタ開閉
                         case 'filterToggle':
                             tb.$.table.toggleClass('filterShow');
+                            tb.stickyWidth();
                         break;
                         // 編集モードに移行
                         case 'tableEdit':
@@ -304,26 +305,26 @@ setTable( mode ) {
                 }
             });
             // tbody表示
-            if ( tb.flag.filter ) {
+            if ( tb.flag.initFilter ) {
                 if ( tb.data.body ) {
                     tb.setTbody();
                 } else {
                     tb.requestTbody();
                 }
             } else {
-                tb.setFilterStandBy();
+                tb.setInitFilterStandBy();
             }
         } break;
         case 'edit': {            
             const tableHeaderMenuList = {
                 Main: [
-                    { name: 'tableOk', icon: 'edit', title: '編集確認', action: 'positive', width: '240px' },
-                    { name: 'tableAdd',icon: '', title: '追加', action: 'default', separate: true },
-                    { name: 'tableDup', icon: '', title: '複製', action: 'duplicat', disabled: true },
-                    { name: 'tableDel', icon: '', title: '削除', action: 'danger', disabled: true },
-                    { name: 'tableDiscard', icon: '', title: '廃止', action: 'warning', disabled: true },
-                    { name: 'tableRestore', icon: '', title: '復活', action: 'restore', disabled: true },
-                    { name: 'tableCancel', icon: 'download', title: '編集キャンセル', action: 'normal', separate: true }
+                    { name: 'tableOk', icon: 'detail', title: '編集確認', action: 'positive', width: '240px' },
+                    { name: 'tableAdd',icon: 'plus', title: '追加', action: 'default', separate: true },
+                    { name: 'tableDup', icon: 'copy', title: '複製', action: 'duplicat', disabled: true },
+                    { name: 'tableDel', icon: 'minus', title: '削除', action: 'danger', disabled: true },
+                    { name: 'tableDiscard', icon: 'cross', title: '廃止', action: 'warning', disabled: true },
+                    { name: 'tableRestore', icon: 'circle', title: '復活', action: 'restore', disabled: true },
+                    { name: 'tableCancel', icon: 'cross', title: '編集キャンセル', action: 'normal', separate: true }
                 ],
                 Sub: [
                 ]
@@ -405,28 +406,31 @@ setTable( mode ) {
         case 'diff': {
             const tableHeaderMenuList = {
                 Main: [
-                    { name: 'tableOk', icon: 'edit', title: '編集反映', action: 'positive', width: '240px'},
-                    { name: 'tableCancel', icon: '',title: '登録・編集に戻る', action: 'normal', separate: true }
+                    { name: 'tableOk', icon: 'check', title: '編集反映', action: 'positive', width: '240px'},
+                    { name: 'tableCancel', icon: 'arrow01_left',title: '登録・編集に戻る', action: 'normal', separate: true }
                 ],
                 Sub: [
-                    { name: 'tableChangeValue', icon: '',title: '変更前', action: 'default', toggle: { init: 'off', on:'非表示', off:'表示'}}
+                    { name: 'tableChangeValue', icon: 'circle_info',title: '変更前', action: 'default', toggle: { init: 'off', on:'非表示', off:'表示'}}
                 ]
             };
             tb.$.header.html( tb.tableHeaderMenuHtml( tableHeaderMenuList ) );
-            tb.workerPost('normal', tb.custom.after );
+            tb.workerPost('normal', tb.option.after );
         } break;
         case 'history': {
             const tableHeaderMenuList = {
                 Main: [
                     { name: 'tableInputHistoryId', icon: null, title: tb.idName, action: 'input'},
-                    { name: 'tableShowHistory',icon: 'download', title: '履歴表示', action: 'default', disabled: true, width: '200px' },
-                    { name: 'tableResetHistory', icon: 'download',title: '履歴リセット', action: 'normal', disabled: true, width: '200px' }
+                    { name: 'tableShowHistory', icon: 'clock', title: '履歴表示', action: 'default', disabled: true, width: '200px' },
+                    { name: 'tableResetHistory', icon: 'clear',title: '履歴リセット', action: 'normal', disabled: true, width: '200px' }
                 ],
                 Sub: []
             };
             tb.$.header.html( tb.tableHeaderMenuHtml( tableHeaderMenuList ) );
             
-            const historyMessage = `<div class="historyStandByMessage">対象の${tb.idName}を入力し、<br>履歴表示を押下してください。</div>`;
+            const historyMessage = `<div class="historyStandByMessage">`
+            + fn.html.icon('clock')
+            + `対象の${tb.idName}を入力し、<br>`
+            + `履歴表示を押下してください。</div>`;
             tb.$.container.addClass('historyStandBy');
             tb.$.message.html( historyMessage );
             
@@ -536,8 +540,12 @@ tableHtml() {
     const headRowspan = rowLength + 1;
     switch ( tb.mode ) {
         case 'view':
-            if ( tb.flag.edit ) html[0] += fn.html.cell('選択', ['tHeadTh', 'tHeadLeftSticky', 'tHeadRowSelect'], 'th', headRowspan );
-            html[0] += fn.html.cell( fn.html.icon('ellipsis_v'), ['tHeadTh', 'tHeadLeftSticky', 'tHeadRowMenu'], 'th', headRowspan );
+            if ( tb.flag.edit ) {
+                html[0] += fn.html.cell('選択', ['tHeadTh', 'tHeadLeftSticky', 'tHeadRowSelect'], 'th', headRowspan );   
+            }
+            if ( tb.flag.history ) {
+                html[0] += fn.html.cell( fn.html.icon('ellipsis_v'), ['tHeadTh', 'tHeadLeftSticky', 'tHeadRowMenu'], 'th', headRowspan );
+            }
         break;
         case 'edit':
             html[0] += fn.html.cell('選択', ['tHeadTh', 'tHeadLeftSticky', 'tHeadRowSelect'], 'th', headRowspan );
@@ -551,7 +559,7 @@ tableHtml() {
             html[0] += fn.html.cell('変更日時', ['tHeadTh'], 'th', headRowspan );
         break;
     }
-    
+
     for ( let i = rowLength; i >= 0 ; i-- ) {
         if ( !html[i] ) html[i] = '';
         
@@ -601,6 +609,12 @@ tableHtml() {
                         name += '<span class="tHeadRequired">必須</span>';
                     }
                 }
+                // 廃止、ID列を固定
+                if ( i === 0 && tb.mode !== 'history') {
+                    if ( [ tb.idNameRest, 'discard'].indexOf( column.column_name_rest ) !== -1 ) {
+                        className.push('tHeadLeftSticky');
+                    }
+                }
                 if ( column.column_name_rest ) attr.rest = column.column_name_rest;
                 if ( column.description ) attr.title = fn.cv( column.description, '', true );
                 if ( column.column_name_rest === 'discard') {
@@ -611,7 +625,7 @@ tableHtml() {
             }
 
         }        
-        html[i] = fn.html.row( html[i], 'tHeadTr');
+        html[i] = fn.html.row( html[i], ['tHeadTr', 'headerTr']);
     }
     
     // フィルター入力欄
@@ -635,14 +649,35 @@ filterHtml() {
     const info = tb.info.column_info,
           keys = tb.data.columnKeys;
     
+    // 初期フィルタデータ
+    const getInitSetFilter = function() {
+        const initSetFilter = ( tb.option )? tb.option.initSetFilter: undefined;
+        if ( initSetFilter !== undefined ) {
+            try {
+                // イニシャルフィルタフラグを強制的にオンにする
+                tb.flag.initFilter = true;
+                return JSON.parse( initSetFilter );
+            } catch(e) {
+                return undefined;
+            }
+        }
+    };
+    const initSetFilter = getInitSetFilter();
+    
     const filterIcon = `${fn.html.icon('filter')}<span class="tHeadFilterTitle">フィルタ</span>`,
           rows = [],
           colspan = ( tb.flag.edit )? 2: 1,
+          rowClassName = ['tHeadTr', 'filterTr'],
           className = ['tHeadFilter', 'tHeadLeftSticky', 'tHeadFilterHeader'];
     
     if ( colspan === 1 ) className.push('tHeadFilterHeaderNarrow');
     
-    const cells = [ fn.html.cell( filterIcon, className, 'th', 2, colspan ) ];
+    const cells = [];
+    if ( tb.flag.edit || tb.flag.history ) {
+        cells.push( fn.html.cell( filterIcon, className, 'th', 2, colspan ) );
+    } else {
+        rowClassName.push('filterNoHeaderTr');
+    }
     
     const pulldownOpen = function( name, rest ) {
         return ``
@@ -657,6 +692,65 @@ filterHtml() {
               rest = column.column_name_rest,
               type = column.column_type;
         
+        // フィルタータイプ
+        const getFilterType = function() {
+            if ( rest === 'discard') {
+                return 'discard';
+            } else {
+                switch ( type ) {
+                    // 文字列検索
+                    case 'SingleTextColumn': case 'MultiTextColumn': case 'IDColumn':
+                    case 'HostInsideLinkTextColumn': case 'LinkIDColumn': case 'NoteColumn':
+                    case 'LastUpdateUserColumn': case 'AppIDColumn': case 'JsonColumn':
+                    case 'FileUploadColumn': case 'FileUploadEncryptColumn':
+                    case 'EnvironmentIDColumn': case 'TextColumn': 
+                        return 'text';
+                    break;
+                    // 数値のFROM,TO
+                    case 'NumColumn': case 'FloatColumn':
+                        return 'number';
+                    break;
+                    // 日時のFROM,TO
+                    case 'DateTimeColumn': case 'LastUpdateDateColumn':
+                        return 'dateTime';
+                    break;
+                    // 日付のFROM,TO
+                    case 'DateColumn':
+                        return 'date';
+                    break;
+                    // 表示しない
+                    default:
+                        return 'none';                    
+                }
+            }
+        };
+        const filterType = getFilterType();
+        
+        // フィルター初期値
+        const getInitValue = function() {
+              if ( initSetFilter && initSetFilter[ rest ] ) {
+                  switch ( filterType ) {
+                      case 'discard': case 'text':
+                          return initSetFilter[ rest ].NORMAL;
+                      break;
+                      default:
+                          return { start: initSetFilter[ rest ].START, end: initSetFilter[ rest ].END };
+                  }
+              } else {
+                  switch ( filterType ) {
+                      case 'discard':
+                          return '1';
+                      break;
+                      case 'text':
+                          return '';
+                      break;
+                      default:
+                          return { start: '', end: ''};
+                  }
+              }
+        };
+        const initValue = getInitValue();
+
         const cellHtml = [];
         
         if ( rest === 'discard') {
@@ -665,37 +759,33 @@ filterHtml() {
                 '1': '廃止含まず',
                 '2': '廃止のみ'
             };
-            cellHtml.push( fn.html.select( list, ['filterInput', 'filterInputDiscard'], '廃止含まず', name, { rest: rest } ) );
+            cellHtml.push( fn.html.select( list, ['filterInput', 'filterInputDiscard'], list[initValue], name, { type: 'discard', rest: rest } ) );
         } else {
-            switch ( type ) {
+            switch ( filterType ) {
                 // 文字列検索
-                case 'SingleTextColumn': case 'MultiTextColumn': case 'IDColumn':
-                case 'HostInsideLinkTextColumn': case 'LinkIDColumn': case 'NoteColumn':
-                case 'LastUpdateUserColumn': case 'AppIDColumn': case 'JsonColumn':
-                case 'FileUploadColumn': case 'FileUploadEncryptColumn':
-                case 'EnvironmentIDColumn':
-                    cellHtml.push( fn.html.inputText(['filterInput', 'filterInputText'], '', name, { rest: rest } ) );
+                case 'text':
+                    cellHtml.push( fn.html.inputText(['filterInput', 'filterInputText'], initValue, name, { type: 'text', rest: rest }) );
                     cellHtml.push( pulldownOpen( name, rest ) );
                 break;
                 // 数値のFROM,TO
-                case 'NumColumn': case 'FloatColumn':
+                case 'number':
                     cellHtml.push(`<div class="filterInputFromToNumber">`
                         + `<div class="filterInputFromNumberWrap">`
-                            + fn.html.inputNumber(['filterInput', 'filterFromNumber'], '', name, { rest: rest, placeholder: 'From' } )
+                            + fn.html.inputNumber(['filterInput', 'filterFromNumber'], initValue.start, name, { type: 'fromNumber', rest: rest, placeholder: 'From' })
                         + `</div>`
                         + `<div class="filterInputToNumberWrap">`
-                            + fn.html.inputNumber(['filterInput', 'filterToNumber'], '', name, { rest: rest, placeholder: 'To' } )
+                            + fn.html.inputNumber(['filterInput', 'filterToNumber'], initValue.end, name, { type: 'toNumber', rest: rest, placeholder: 'To' })
                         + `</div>`
                     + `</div>`);
                 break;
                 // 日時のFROM,TO
-                case 'DateTimeColumn': case 'LastUpdateDateColumn':
+                case 'dateTime':
                     cellHtml.push(`<div class="filterInputFromToDate">`
                         + `<div class="filterInputFromDateWrap">`
-                            + fn.html.inputText(['filterInput', 'filterFromDate'], '', name, { rest: rest, placeholder: 'From' } )
+                            + fn.html.inputText(['filterInput', 'filterFromDate'], initValue.start, name, { type: 'fromDate', rest: rest, placeholder: 'From' })
                         + `</div>`
                         + `<div class="filterInputToDateWrap">`
-                            + fn.html.inputText(['filterInput', 'filterToDate'], '', name, { rest: rest, placeholder: 'To' } )
+                            + fn.html.inputText(['filterInput', 'filterToDate'], initValue.end, name, { type: 'toDate', rest: rest, placeholder: 'To' })
                         + `</div>`
                         + `<div class="filterInputDateCalendar">`
                             + fn.html.button('<span class="icon icon-cal"></span>', ['itaButton', 'filterInputDatePicker'], { rest: rest, action: 'normal'})
@@ -703,13 +793,13 @@ filterHtml() {
                     + `</div>`);
                 break;
                 // 日付のFROM,TO
-                case 'DateColumn':
+                case 'date':
                     cellHtml.push(`<div class="filterInputFromToDate">`
                         + `<div class="filterInputFromDateWrap">`
-                            + fn.html.inputText(['filterInput', 'filterFromDate'], '', name, { rest: rest, placeholder: 'From' } )
+                            + fn.html.inputText(['filterInput', 'filterFromDate'], initValue.start, name, { type: 'fromDate', rest: rest, placeholder: 'From' })
                         + `</div>`
                         + `<div class="filterInputToDateWrap">`
-                            + fn.html.inputText(['filterInput', 'filterToDate'], '', name, { rest: rest, placeholder: 'To' } )
+                            + fn.html.inputText(['filterInput', 'filterToDate'], initValue.end, name, { type: 'toDate', rest: rest, placeholder: 'To' })
                         + `</div>`
                         + `<div class="filterInputDateCalendar">`
                             + fn.html.button('<span class="icon icon-cal"></span>', ['itaButton', 'filterInputDatePicker'], { rest: rest, action: 'normal'})
@@ -721,10 +811,14 @@ filterHtml() {
                     cellHtml.push('<div class="filterNone"></div>');
             }
         }
+        const className = ['tHeadFilter','tHeadFilterInput'];
+        if (  [ tb.idNameRest, 'discard'].indexOf( rest) !== -1 ) {
+            className.push('tHeadLeftSticky');
+        }
         
-        cells.push( fn.html.cell( cellHtml.join(''), ['tHeadFilter','tHeadFilterInput'], 'th', 1, 1 ) );
+        cells.push( fn.html.cell( cellHtml.join(''), className, 'th', 1, 1 ) );
     }
-    rows.push( fn.html.row( cells.join(''), ['tHeadTr', 'filterTr']) );
+    rows.push( fn.html.row( cells.join(''), rowClassName ) );
     
     // フィルタメニュー
     const menuList = [
@@ -749,8 +843,9 @@ filterHtml() {
                 ['filterMenuButton', 'itaButton'], { type: item.name, action: item.action })}</li>`);
         }
     }
+    console.log(JSON.stringify(rowClassName))
     rows.push( fn.html.row( fn.html.cell(`<ul class="filterMenuList">${menuListHtml.join('')}</ul>`,
-        ['tHeadFilter', 'tHeadFilterMenu'], 'th',1, keys.length ), ['tHeadTr', 'filterTr']));
+        ['tHeadFilter', 'tHeadFilterMenu'], 'th', 1, keys.length ), rowClassName ));
     
     return rows.join('');
 }
@@ -777,7 +872,7 @@ setTableEvents() {
         
         // フィルター欄、ファイルダウンロード
         const downloadFile = function( $button, type, url ){
-            tb.filterParams = tb.getFilerParameter();
+            tb.filterParams = tb.getFilterParameter();
             const fileName = fn.cv( tb.info.menu_info.menu_name, 'file') + '_filter';
             
             $button.prop('disabled', true );
@@ -872,7 +967,7 @@ setTableEvents() {
                 fn.datePickerDialog('fromTo', true, tb.data.restNames[ rest ], { from: from, to: to } ).then(function( result ){
                     if ( result !== 'cancel') {
                         $from.val( result.from );
-                        $to.val( result.to );
+                        $to.val( result.to ).trigger('change');
                     }
                 });
             }
@@ -993,7 +1088,6 @@ setTableEvents() {
             } else {
                 $input.removeClass('tableEditChange');
             }
-            
         });
         
         // 入力チェック
@@ -1008,7 +1102,6 @@ setTableEvents() {
                     $input.addClass('tableEditRequiredError ');
                 }
             }            
-            
         });
         
         // データピッカー
@@ -1020,7 +1113,7 @@ setTableEvents() {
                   
             fn.datePickerDialog('date', true, tb.data.restNames[ rest ], value ).then(function( result ){
                 if ( result !== 'cancel') {
-                    $input.val('');
+                    $input.val( result.date ).change().focus().trigger('input');
                 }
             });
         });
@@ -1244,7 +1337,7 @@ editModeMenuCheck() {
                 if ( tb.edit.input[ columnKey ].after.parameter.discard === '1') {
                     discardCount++;
                 }
-            } else if ( tb.data.discard.indexOf( columnKey ) !== -1 ) {
+            } else if ( tb.data.discard && tb.data.discard.indexOf( columnKey ) !== -1 ) {
                 discardCount++;
             }
             // 追加項目の数を調べる（IDがマイナス値の場合）
@@ -1328,7 +1421,7 @@ filterSelectOpen( $button ) {
 requestTbody() {
     const tb = this;
     
-    tb.filterParams = tb.getFilerParameter();    
+    tb.filterParams = tb.getFilterParameter();    
     
     // 件数を確認する
     fn.fetch(`/menu/${tb.params.menuNameRest}/filter/count/`, null, 'POST', tb.filterParams ).then(function( countResult ){
@@ -1359,7 +1452,7 @@ requestTbody() {
    Filterの内容を取得
 ##################################################
 */
-getFilerParameter() {
+getFilterParameter() {
     const tb = this;
     
     // フィルターの内容を取得
@@ -1367,36 +1460,47 @@ getFilerParameter() {
     tb.$.thead.find('.filterInput').each(function(){            
         const $input = $( this ),
               value = $input.val(),
-              rest = $input.attr('data-rest');
+              rest = $input.attr('data-rest'),
+              type = $input.attr('data-type');
         if ( ( fn.typeof( value ) === 'string' && value ) || ( fn.typeof( value ) === 'array' && value.length ) ) {
             if ( !filterParams[ rest ] ) filterParams[ rest ] = {};
-            if ( $input.is('.filterInputText') ) {
-                // 文字列
-                filterParams[ rest ].NORMAL = value;
-            } else if ( $input.is('.filterSelect') ) {
-                // セレクト
-                filterParams[ rest ].LIST = value;
-            } else if ( $input.is('.filterFromNumber') || $input.is('.filterFromDate') ) {
-                // From
-                if ( !filterParams[ rest ].RANGE ) filterParams[ rest ].RANGE = {};
-                filterParams[ rest ].RANGE.START = fn.date( value, 'yyyy/MM/dd HH:mm:ss');
-            } else if ( $input.is('.filterToNumber') || $input.is('.filterToDate') ) {
-                // To
-                if ( !filterParams[ rest ].RANGE ) filterParams[ rest ].RANGE = {};
-                filterParams[ rest ].RANGE.END = fn.date( value, 'yyyy/MM/dd HH:mm:ss');
-            } else if ( $input.is('.filterInputDiscard') ) {
-                // 廃止
-                if ( value === '全レコード') {
-                    filterParams[ rest ].NORMAL = '';
-                } else if ( value === '廃止含まず') {
-                    filterParams[ rest ].NORMAL = '0';
-                } else {
-                    filterParams[ rest ].NORMAL = '1';
-                }
+            
+            switch( type ) {
+                case 'text':
+                    filterParams[ rest ].NORMAL = value;
+                break;
+                case 'select':
+                    filterParams[ rest ].LIST = value;
+                break;
+                case 'fromNumber':
+                    if ( !filterParams[ rest ].RANGE ) filterParams[ rest ].RANGE = {};
+                    filterParams[ rest ].RANGE.START = String( value );
+                break;
+                case 'toNumber':
+                    if ( !filterParams[ rest ].RANGE ) filterParams[ rest ].RANGE = {};
+                    filterParams[ rest ].RANGE.END = String( value );
+                break;
+                case 'fromDate':
+                    if ( !filterParams[ rest ].RANGE ) filterParams[ rest ].RANGE = {};
+                    filterParams[ rest ].RANGE.START = fn.date( value, 'yyyy/MM/dd HH:mm:ss');
+                break;
+                case 'toDate':
+                    if ( !filterParams[ rest ].RANGE ) filterParams[ rest ].RANGE = {};
+                    filterParams[ rest ].RANGE.END = fn.date( value, 'yyyy/MM/dd HH:mm:ss');
+                break;
+                case 'discard':
+                    if ( value === '全レコード') {
+                        filterParams[ rest ].NORMAL = '';
+                    } else if ( value === '廃止含まず') {
+                        filterParams[ rest ].NORMAL = '0';
+                    } else {
+                        filterParams[ rest ].NORMAL = '1';
+                    }
+                break;
             }
         }
     });
-    
+    console.log( encodeURIComponent( JSON.stringify( filterParams ) ) ); 
     return filterParams;
 }
 /*
@@ -1406,6 +1510,7 @@ getFilerParameter() {
 */
 clearFilter() {
     const tb = this;
+    tb.$.message.empty();
     tb.data.body = null;
     tb.setInitSort();
     tb.setTable( tb.mode );
@@ -1421,7 +1526,7 @@ filterSelectBoxHtml( list, name, rest ) {
         const value = fn.cv( item, '', true );
         select.push(`<option val="${value}">${value}</option>`)
     }
-    return `<select class="filterSelect filterInput" name="${name}" data-rest="${rest}" multiple="multiple">${select.join('')}</select>`;
+    return `<select class="filterSelect filterInput" name="${name}" data-type="select" data-rest="${rest}" multiple="multiple">${select.join('')}</select>`;
 }
 /*
 ##################################################
@@ -1537,12 +1642,11 @@ setWorkerEvent() {
 ##################################################
 */
 setTbody() {
-    const tb = this;
+    const tb = this;console.log(tb.flag.initFilter)
     
-    if ( tb.flag.autoFilter ) {
-        tb.$.container.removeClass('autoFilterStandBy');
-    }
-    
+    if ( !tb.flag.initFilter ) {
+        tb.$.container.removeClass('initFilterStandBy');
+    }    
     
     if ( tb.mode === 'history') {
         tb.$.container.removeClass('historyStandBy');
@@ -1550,7 +1654,10 @@ setTbody() {
     
     if ( tb.mode !== 'edit' && tb.data.body.length === 0 ) {
         tb.$.container.addClass('noData');
-        tb.$.message.html('<div class="noDataMessage">表示できる内容がありません。</div>');
+        tb.$.message.html(`<div class="noDataMessage">`
+        + fn.html.icon('stop')
+        + `表示できる内容がありません。`
+        + `</div>`);
     } else {
         tb.$.container.removeClass('noData');
         if ( tb.mode === 'view' && tb.flag.update ) {
@@ -1578,17 +1685,22 @@ setTbody() {
    > 初期フィルターオフ用
 ##################################################
 */
-setFilterStandBy() {
+setInitFilterStandBy() {
     const tb = this;
-    
-    tb.$.header.find('.itaButton[data-type="filterToggle"]').attr('data-toggle', 'on');
-    tb.$.container.addClass('autoFilterStandBy');
-    tb.$.message.html('<div class="autoFilterStandByMessage">初期フィルタがオフです。<br>表示するにはフィルタしてください。</div>');
     
     tb.$.table.addClass('filterShow');
     
     tb.$.table.ready(function(){
         tb.workEnd();
+        
+        tb.$.header.find('.itaButton[data-type="filterToggle"]').attr('data-toggle', 'on');
+        
+        tb.$.container.addClass('initFilterStandBy');
+        tb.$.message.html(`<div class="initFilterStandByMessage">`
+        + fn.html.icon('circle_info')
+        + `初期フィルタがオフです。<br>`
+        + `表示するにはフィルタしてください。</div>`);
+        
         tb.stickyWidth();
     });
 }
@@ -1603,16 +1715,31 @@ stickyWidth() {
     const style = [];
     
     // left sticky    
-    let leftStickyWidth = 0;
+    let leftStickyWidth = 0,
+        leftStickyFilterMenuWidth = 0;
+        
+    let filterHeaderColspan = Number( tb.$.thead.find('.tHeadFilterHeader').attr('colspan') );
+    
     tb.$.thead.find('.tHeadTr').eq(0).find('.tHeadLeftSticky').each(function( index ){
-        if ( index !== 0 ) {
-            style.push(`.tHeadLeftSticky:nth-child(${ index + 1 }){left:${leftStickyWidth}px}`);
-            style.push(`.tBodyLeftSticky:nth-child(${ index + 1 }){left:${leftStickyWidth}px}`);
+        const $th = $( this ),
+              rest = $th.attr('data-rest'),
+              width = $th.outerWidth();
+        if ( $( this ).is(':visible') ) {
+            if ( index !== 0 ) {
+                style.push(`.headerTr .tHeadLeftSticky:nth-child(${ index + 1 }){left:${leftStickyWidth}px}`);
+                if ( index >= filterHeaderColspan ) {
+                    style.push(`.filterTr .tHeadLeftSticky.tHeadFilter:nth-child(${ index + 1 - filterHeaderColspan + 1 }){left:${leftStickyWidth}px}`);
+                }
+                style.push(`.tBodyLeftSticky:nth-child(${ index + 1 }){left:${leftStickyWidth}px}`);
+            }
+            leftStickyWidth += width;
+            if ( [ tb.idNameRest, 'discard'].indexOf( rest ) === -1 ) {
+                leftStickyFilterMenuWidth += width;
+            }
         }
-        leftStickyWidth += $( this ).outerWidth();
     });
     
-    style.push(`.filterMenuList{left:${leftStickyWidth}px;}`);    
+    style.push(`.filterMenuList{left:${leftStickyFilterMenuWidth}px;}`);    
     style.push(`.tHeadGroup>.ci{left:${leftStickyWidth}px;}`);    
     
     tb.$.style.html( style.join('') );
@@ -1680,12 +1807,18 @@ tbodyHtml() {
                 if ( tb.flag.update ) {
                     viewMenu.push({ type: 'rowEdit', text: '編集', action: 'default', id: rowId, className: 'tBodyRowMenuTb'});
                 }
-                if ( tb.flag.insert ) viewMenu.push({ type: 'rowDup', text: '複製', action: 'duplicat', id: rowId, className: 'tBodyRowMenuTb'});
-                viewMenu.push({ type: 'rowHistory', text: '履歴', action: 'history', id: rowId, className: 'tBodyRowMenuUi'});
+                if ( tb.flag.insert ) {
+                    viewMenu.push({ type: 'rowDup', text: '複製', action: 'duplicat', id: rowId, className: 'tBodyRowMenuTb'});
+                }
+                if ( tb.flag.history ) {
+                    viewMenu.push({ type: 'rowHistory', text: '履歴', action: 'history', id: rowId, className: 'tBodyRowMenuUi'});
+                }
                 if ( tb.flag.edit ) {
                     rowHtml.push( rowCheckInput() );
                 }
-                rowHtml.push( fn.html.cell( tb.rowMenuHtml( viewMenu ), ['tBodyLeftSticky', 'tBodyRowMenu', 'tBodyTh'], 'th'));
+                if ( viewMenu.length ) {
+                    rowHtml.push( fn.html.cell( tb.rowMenuHtml( viewMenu ), ['tBodyLeftSticky', 'tBodyRowMenu', 'tBodyTh'], 'th'));
+                }
             } break;
             case 'edit':
                 rowHtml.push( rowCheckInput() );
@@ -1724,24 +1857,36 @@ cellHtml( parameter, columnKey, journal ) {
           columnName = columnInfo.column_name_rest,
           columnType = columnInfo.column_type;
     
-    const className = ['tBodyTd'];
+    const className = [];
     if ( columnType === 'NumColumn') className.push('tBodyTdNumber');
     if ( columnName === 'discard') className.push('tBodyTdMark discardCell');
-
+    
+    // 廃止、ID列を固定
+    let cellClass = 'tBodyTd',
+        cellType = 'td';
+    if ( tb.mode !== 'history') {
+        if ( [ tb.idNameRest, 'discard'].indexOf( columnName ) !== -1 ) {
+            className.push('tBodyLeftSticky');
+            cellType = 'th';
+            cellClass = 'tBodyTh';
+        }
+    }
+    className.push( cellClass );
+    
     switch ( tb.mode ) {
         case 'view':
-            return fn.html.cell( tb.viewCellHtml( parameter, columnKey ), className );
+            return fn.html.cell( tb.viewCellHtml( parameter, columnKey ), className, cellType );
         case 'history':
-            return fn.html.cell( tb.viewCellHtml( parameter, columnKey, journal ), className );
+            return fn.html.cell( tb.viewCellHtml( parameter, columnKey, journal ), className, cellType );
         case 'edit':
             if ( ( columnName !== 'discard' && parameter.discard === '1' ) && columnName !== 'remarks' ) {
-                return fn.html.cell( tb.viewCellHtml( parameter, columnKey ), className );
+                return fn.html.cell( tb.viewCellHtml( parameter, columnKey ), className, cellType );
             } else {
                 className.push('tBodyTdInput');
-                return fn.html.cell( tb.editCellHtml( parameter, columnKey ), className );
+                return fn.html.cell( tb.editCellHtml( parameter, columnKey ), className, cellType );
             }
         case 'diff':
-            return fn.html.cell( tb.editConfirmCellHtml( parameter, columnKey ), className );
+            return fn.html.cell( tb.editConfirmCellHtml( parameter, columnKey ), className, cellType );
     }
 }
 /*
@@ -1791,7 +1936,7 @@ viewCellHtml( parameter, columnKey, journal ) {
         case 'SingleTextColumn': case 'NumColumn': case 'FloatColumn':
         case 'IDColumn': case 'HostInsideLinkTextColumn': case 'LinkIDColumn':
         case 'LastUpdateUserColumn': case 'RoleIDColumn': case 'JsonColumn': 
-        case 'EnvironmentIDColumn':
+        case 'EnvironmentIDColumn': case 'TextColumn':
             return checkJournal( value );
         
         // 日付
@@ -1827,6 +1972,11 @@ viewCellHtml( parameter, columnKey, journal ) {
         // ファイル名のみ表示（リンク無し）
         case 'FileUploadEncryptColumn':
             return checkJournal( value );
+        
+        // ボタン
+        case 'ButtonColumn':
+            
+        break;
         
         // 不明
         default:
@@ -1929,7 +2079,7 @@ editCellHtml( parameter, columnKey ) {
     switch ( columnType ) {
         // 文字列入力（単一行）
         case 'SingleTextColumn': case 'HostInsideLinkTextColumn': case 'JsonColumn':
-        case 'SensitiveSingleTextColumn':
+        case 'SensitiveSingleTextColumn': case 'TextColumn':
             inputClassName.push('tableEditInputText');
             return fn.html.inputText( inputClassName, value, name, attr, { widthAdjustment: true });
 
@@ -1992,7 +2142,7 @@ editConfirmCellHtml( parameter, columnKey ) {
           value = fn.cv( parameter[ columnName ], '', true ),
           rowId = parameter[ tb.idNameRest ],
           type = ( !isNaN( rowId ) && Number( rowId ) < 0 )? 'registration': 'update',
-          beforeData = tb.custom.before[ rowId ],
+          beforeData = tb.option.before[ rowId ],
           autoInput = '<span class="tBodyAutoInput"></span>';
     
     // ID列処理
@@ -2101,7 +2251,7 @@ footerHtml() {
 }
 /*
 ##################################################
-   Update fotter status
+   Update footer status
    > Table情報を更新する
 ##################################################
 */
@@ -2114,7 +2264,7 @@ updateFooterStatus() {
     } else {
         tb.$.footer.find('.pagingAllTitle').text('フィルタ結果件数');
     }
-    tb.$.footer.find('.pagingAllNumNumber').text( tb.paging.num.toLocaleString() );
+    tb.$.footer.find('.pagingAllNumNumber').text( tb.paging.num.toLocaleString() + ' 件');
     tb.$.footer.find('.pagingOnePageNumSelect').val( tb.paging.onePageNum );
     
     const $paging = tb.$.footer.find('.pagingMove');
@@ -2465,7 +2615,6 @@ gotoMainMenu() {
 */
 gotoErrPage() {
     window.location.href = this.params.path + 'system_error/';
-
 }
 
 }

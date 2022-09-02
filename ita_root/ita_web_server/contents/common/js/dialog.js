@@ -221,7 +221,7 @@ footer() {
     if ( f.button ) {
         const buttonHtml = [];
         for ( const kind in f.button ) {
-            const button = fn.html.button( f.button[kind].text, ['itaButton', 'dialogButton', 'dialogFooterMenuButton'], { kind: kind, action: f.button[kind].action });
+            const button = fn.html.button( f.button[kind].text, ['itaButton', 'dialogButton', 'dialogFooterMenuButton'], { kind: kind, action: f.button[kind].action, style: f.button[kind].style });
             buttonHtml.push(`<li class="dialogFooterMenuItem">${button}</li>`);
         }
         html.push(`<ul class="dialogFooterMenuList">${buttonHtml.join('')}</ul>`);

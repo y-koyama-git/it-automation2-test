@@ -234,7 +234,19 @@ headerMenu() {
     
     // ログアウト
     ui.$.header.find('.userInfoMenuButton').on('click', function(){
-        CommonAuth.logout({ redirectUri: ui.params.path });
+        const $button = $( this ),
+              type = $button.attr('data-type');
+        switch ( type ) {
+            case 'version':
+                $button.prop('disabled', true );
+                ui.checkVersion().then(function(){
+                    $button.prop('disabled', false );
+                });
+            break;
+            case 'logout':
+                alert('ログアウト');
+            break;
+        }
     });
 }
 /*
@@ -251,9 +263,10 @@ userInfo() {
           workspaces = fn.cv( ui.rest.user.workspaces, []);
     
     const workspaceList = [];
-    for ( const work of workspaces ) {
+    
+    for ( const work in workspaces ) {
         workspaceList.push(`<li class="userinfoWorkspaceItem">`
-            + `<button class="userInfoWorkspaceButton" data-workspace="${work}">${work}</button>`
+            + `<button class="userInfoWorkspaceButton" data-workspace="${work}">${workspaces[work]}</button>`
         + `</li>`);
     }
     
@@ -277,7 +290,7 @@ userInfo() {
             </div>
         </div>
         <div class="userInfoBlock userInfoWorkspace">
-            <div class="userInfoTitle">ワークスペース切替</div>
+            <div class="userInfoTitle">${fn.html.icon('workspace')} ワークスペース切替</div>
             <div class="userInfoBody">
                 <ul class="userInfoWorkspaceList">
                     ${workspaceList.join('')}
@@ -285,7 +298,7 @@ userInfo() {
             </div>
         </div>
         <div class="userInfoBlock userInfoRole">
-            <div class="userInfoTitle">ロール一覧</div>
+            <div class="userInfoTitle">${fn.html.icon('role')} ロール一覧</div>
             <div class="userInfoBody">
                 <ul class="userInfoRoleList">
                     ${roleList.join('')}
@@ -296,13 +309,25 @@ userInfo() {
             <div class="userInfoBody">
                 <ul class="userInfoMenuList">
                     <li class="userInfoMenuItem">
-                        ${fn.html.button('ログアウト', ['userInfoMenuButton', 'itaButton'], { type: 'logout', action: 'positive'})}
+                        ${fn.html.button( fn.html.icon('note') + 'バージョン確認', ['userInfoMenuButton', 'itaButton'], { type: 'version', action: 'default'})}
+                    </li>
+                    <li class="userInfoMenuItem">
+                        ${fn.html.button( fn.html.icon('logout') + 'ログアウト', ['userInfoMenuButton', 'itaButton'], { type: 'logout', action: 'positive'})}
                     </li>
                 </div>
             </div>
         </div>
     </div>`;
-} 
+}
+/*
+##################################################
+   バージョン確認
+##################################################
+*/
+checkVersion() {
+    return new Promise( function( resolve ){
+    });
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -660,7 +685,11 @@ commonContainer( title, info, body ) {
     return `
     <div class="contentHeader">
         <h1 class="contentTitle"><span class="contentTitleInner">${title}</span></h1>
-        <p class="contentMenuInfo">${info}</p>
+        <p class="contentMenuInfo">
+            <span class="contentMenuInfoInner">${info}</span>
+            <button class="contentMenuInfoButton button popup" title="メニュー説明表示">
+                <span class="inner">${fn.html.icon('ellipsis_v')}<span></button>
+        </p>
     </div>
     <div class="contentBody">
         ${body}
@@ -777,12 +806,13 @@ debugMenu() {
 defaultMenu() {
     const ui = this;
     
-    const contentTab = [
-        { name: 'dataList', title: WD.UI.List, type: 'blank' },
-        { name: 'changeHistory', title: WD.UI.ChangeHistory, type: 'blank' },
-        { name: 'dataDownload', title: WD.UI.AllDownload }
-    ];
-    
+    const contentTab = [{ name: 'dataList', title: WD.UI.List, type: 'blank' }];
+    // 履歴タブ
+    if ( ui.flag.history ) {
+        contentTab.push({ name: 'changeHistory', title: WD.UI.ChangeHistory, type: 'blank' });
+    }
+    contentTab.push({ name: 'dataDownload', title: WD.UI.AllDownload });
+
     const title = ui.currentPage.title,
           menuInfo = fn.cv( ui.rest.info.menu_info.menu_info, '');
     
@@ -790,14 +820,32 @@ defaultMenu() {
     ui.contentTabEvent('#dataList');
     
     // 一覧
-    const $dataList = ui.$.content.find('#dataList');
-    ui.mainTable = new DataTable('MT', 'view', ui.rest.info, ui.params );
+    const $dataList = ui.$.content.find('#dataList'),
+          initSetFilter = fn.getParams().filter,
+          option = {};
+    if ( initSetFilter !== undefined ) option.initSetFilter = initSetFilter;
+    ui.mainTable = new DataTable('MT', 'view', ui.rest.info, ui.params, option );
     $dataList.find('.sectionBody').html( ui.mainTable.setup() );
     
-    // 履歴
-    const $history = ui.$.content.find('#changeHistory');
-    ui.historyTable = new DataTable('HT', 'history', ui.rest.info, ui.params );
-    $history.find('.sectionBody').html( ui.historyTable.setup() );
+    // 履歴ボディ
+    if ( ui.flag.history ) {
+        const $history = ui.$.content.find('#changeHistory');
+        ui.historyTable = new DataTable('HT', 'history', ui.rest.info, ui.params );
+        $history.find('.sectionBody').html( ui.historyTable.setup() );
+        
+        // 一覧 個別履歴ボタン
+        ui.mainTable.$.container.on('click', '.tBodyRowMenuUi', function(){
+            const $button = $( this ),
+                  uuid = $button.attr('data-id');
+
+            ui.contentTabOpen('#changeHistory');
+            $history.find('.tableHeaderMainMenuInput').val( uuid ).trigger('input');
+
+            ui.historyTable.$.header.find('.itaButton').prop('disabled', false );
+            ui.historyTable.workStart('filter');
+            ui.historyTable.workerPost('history', uuid );
+        });
+    }
     
     // 全件ダウンロード・ファイル一括登録
     const $download = ui.$.content.find('#dataDownload');
@@ -839,19 +887,7 @@ defaultMenu() {
         }
     });
     
-    // 一覧 個別履歴ボタン
-    ui.mainTable.$.container.on('click', '.tBodyRowMenuUi', function(){
-        const $button = $( this ),
-              uuid = $button.attr('data-id');
-        
-        ui.contentTabOpen('#changeHistory');
-        $history.find('.tableHeaderMainMenuInput').val( uuid ).trigger('input');
-        
-        ui.historyTable.$.header.find('.itaButton').prop('disabled', false );
-        ui.historyTable.workStart('filter');
-        ui.historyTable.workerPost('history', uuid );
-        
-    });
+    
 }
 /*
 ##################################################
