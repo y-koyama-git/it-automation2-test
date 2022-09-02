@@ -13,12 +13,12 @@ services:
       - LISTEN_PORT=8000
       - PYTHONPATH=/exastro/
       - DEFAULT_LANGUAGE=ja
-      - DB_HOST=ita-mariadb
-      - DB_PORT=3306
-      - DB_DATADBASE=ITA_DB
-      - DB_USER=ITA_USER
-      - DB_PASSWORD=password
-      - DB_ROOT_PASSWORD=password
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_DATADBASE=${DB_DATADBASE}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
       - STORAGEPATH=/storage/
       - PLATFORM_API_HOST=platform-api
       - PLATFORM_API_PORT=8000
@@ -35,16 +35,16 @@ services:
       - LISTEN_PORT=8079
       - PYTHONPATH=/exastro/
       - DEFAULT_LANGUAGE=ja
-      - DB_HOST=ita-mariadb
-      - DB_PORT=3306
-      - DB_DATADBASE=ITA_DB
-      - DB_USER=ITA_USER
-      - DB_PASSWORD=password
-      - DB_ROOT_PASSWORD=password
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_DATADBASE=${DB_DATADBASE}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
       - STORAGEPATH=/storage/
-      - GITLAB_HOST=10.197.18.183
-      - GITLAB_PORT=40080
-      - GITLAB_ROOT_TOKEN=mzsQj8VU_zcSoSZsSX__
+      - GITLAB_HOST=${GITLAB_HOST}
+      - GITLAB_PORT=${GITLAB_PORT}
+      - GITLAB_ROOT_TOKEN=${GITLAB_ROOT_TOKEN}
   ita-web-server:
     build:
       dockerfile: ./ita_root/ita_web_server/Dockerfile
@@ -65,10 +65,10 @@ services:
     volumes:
       - ../.volumes/ita-mariadb/data:/var/lib/mysql
     environment:
-      - MARIADB_ROOT_PASSWORD=password
-      - MARIADB_DATABASE=ITA_DB
-      - MARIADB_USER=ITA_USER
-      - MARIADB_PASSWORD=password
+      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+      - MARIADB_DATABASE=${MARIADB_DATABASE}
+      - MARIADB_USER=${MARIADB_USER}
+      - MARIADB_PASSWORD=${MARIADB_PASSWORD}
 
   ita-by-ansible-execute:
     build:
@@ -84,18 +84,18 @@ services:
       - PYTHONPATH=/exastro/
       - LANGUAGE=en
       - USER_ID=20101
-      - DB_HOST=ita-mariadb
-      - DB_PORT=3306
-      - DB_DATADBASE=ITA_DB
-      - DB_USER=ITA_USER
-      - DB_PASSWORD=password
-      - DB_ROOT_PASSWORD=password
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_DATADBASE=${DB_DATADBASE}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
       - STORAGEPATH=/storage/
-      - HOST_STORAGEPATH=/home/almalinux/uekawa-tomonari/it-automation2-test/.volumes/storage/
-      - CONTAINER_BASE=docker
-      - GITLAB_HOST=10.197.18.183
-      - GITLAB_PORT=40080
-      - GITLAB_ROOT_TOKEN=mzsQj8VU_zcSoSZsSX__
+      - HOST_STORAGEPATH=${HOST_STORAGEPATH}
+      - CONTAINER_BASE=${CONTAINER_BASE}
+      - GITLAB_HOST=${GITLAB_HOST}
+      - GITLAB_PORT=${GITLAB_PORT}
+      - GITLAB_ROOT_TOKEN=${GITLAB_ROOT_TOKEN}
   ita-by-ansible-legacy-role-vars-listup:
     build:
       dockerfile: ./ita_root/ita_by_ansible_legacy_role_vars_listup/Dockerfile
@@ -110,12 +110,12 @@ services:
       - PYTHONPATH=/exastro/
       - LANGUAGE=en
       - USER_ID=20401
-      - DB_HOST=ita-mariadb
-      - DB_PORT=3306
-      - DB_DATADBASE=ITA_DB
-      - DB_USER=ITA_USER
-      - DB_PASSWORD=password
-      - DB_ROOT_PASSWORD=password
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_DATADBASE=${DB_DATADBASE}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
       - STORAGEPATH=/storage/
   ita-by-ansible-towermaster-sync:
     build:
@@ -131,12 +131,12 @@ services:
       - PYTHONPATH=/exastro/
       - LANGUAGE=en
       - USER_ID=20102
-      - DB_HOST=ita-mariadb
-      - DB_PORT=3306
-      - DB_DATADBASE=ITA_DB
-      - DB_USER=ITA_USER
-      - DB_PASSWORD=password
-      - DB_ROOT_PASSWORD=password
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_DATADBASE=${DB_DATADBASE}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
       - STORAGEPATH=/storage/
   ita-by-conductor-synchronize:
     build:
@@ -152,12 +152,12 @@ services:
       - PYTHONPATH=/exastro/
       - LANGUAGE=en
       - USER_ID=30101
-      - DB_HOST=ita-mariadb
-      - DB_PORT=3306
-      - DB_DATADBASE=ITA_DB
-      - DB_USER=ITA_USER
-      - DB_PASSWORD=password
-      - DB_ROOT_PASSWORD=password
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_DATADBASE=${DB_DATADBASE}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
       - STORAGEPATH=/storage/
   ita-by-menu-create:
     build:
@@ -173,10 +173,10 @@ services:
       - PYTHONPATH=/exastro/
       - LANGUAGE=en
       - USER_ID=50101
-      - DB_HOST=ita-mariadb
-      - DB_PORT=3306
-      - DB_DATADBASE=ITA_DB
-      - DB_USER=ITA_USER
-      - DB_PASSWORD=password
-      - DB_ROOT_PASSWORD=password
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_DATADBASE=${DB_DATADBASE}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
       - STORAGEPATH=/storage/

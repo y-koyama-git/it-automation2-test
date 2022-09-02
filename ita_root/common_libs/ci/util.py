@@ -37,8 +37,8 @@ def app_context_start(main_logic, organization_id=None, workspace_id=None):
             g.USER_ID = os.environ.get("USER_ID")
             g.LANGUAGE = os.environ.get("LANGUAGE")
             # create app log instance and message class instance
-            g.applogger = AppLog(g.LANGUAGE)
-            g.appmsg = MessageTemplate()
+            g.applogger = AppLog()
+            g.appmsg = MessageTemplate(g.LANGUAGE)
 
             wrapper_job(main_logic, organization_id, workspace_id)
         except AppException as e:
