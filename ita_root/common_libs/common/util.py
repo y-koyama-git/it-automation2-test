@@ -382,9 +382,7 @@ def get_exastro_platform_workspaces():
 
         # workspaceの一覧を取得
         for record in response_data['data']:
-            # workspaces[record['id']] = record['name']
-            workspaces = []
-            workspaces.append(record['name'])
+            workspaces[record['id']] = record['name']
             if workspace_id == record['id']:
                 if 'informations' in record and 'environments' in record['informations']:
                     environments_list = record['informations']['environments']

@@ -49,7 +49,7 @@ const fn = ( function() {
     
     const classNameCheck = function( className, type ) {
         if ( fn.typeof( className ) === 'array') {
-            className.push( type );
+            className = className.concat([ type ]);
         } else {
             className = [ className, type ];
         }
@@ -60,11 +60,13 @@ const fn = ( function() {
         const attr = [];
         
         for ( const key in attrs ) {
-            const attrName = ['checked', 'disabled', 'title', 'placeholder', 'style']; // dataをつけない
-            if ( attrName.indexOf( key ) !== -1) {
-                attr.push(`${key}="${attrs[key]}"`);
-            } else {
-                attr.push(`data-${key}="${attrs[key]}"`);
+            if ( attrs[key] !== undefined ) {
+                const attrName = ['checked', 'disabled', 'title', 'placeholder', 'style']; // dataをつけない
+                if ( attrName.indexOf( key ) !== -1) {
+                    attr.push(`${key}="${attrs[key]}"`);
+                } else {
+                    attr.push(`data-${key}="${attrs[key]}"`);
+                }
             }
         }
         return attr;
@@ -207,6 +209,7 @@ fetch: function( url, token, method = 'GET', json ) {
                         } else {
                             //その他のエラー
                             cmn.systemErrorAlert();
+                            resolve({});
                         }
                     }
                 }
@@ -241,7 +244,7 @@ systemErrorAlert: function() {
 */
 editFlag: function( menuInfo ) {
     const flag  = {};
-    flag.filter = ( menuInfo.initial_filter_flg === '1')? true: false;
+    flag.initFilter = ( menuInfo.initial_filter_flg === '1')? true: false;
     flag.autoFilter = ( menuInfo.auto_filter_flg === '1')? true: false;
     flag.history = ( menuInfo.history_table_flag === '1')? true: false;
     
@@ -699,7 +702,7 @@ calendar: function( setDate, currentDate, startDate, endDate ){
     if ( endDate ) endDate = fn.date( endDate, 'yyyy/MM/dd');
     
     // 今月
-    const date = ( setDate !== undefined )? new Date( setDate ): new Date(),
+    const date = ( setDate )? new Date( setDate ): new Date(),
           year = date.getFullYear(),
           month = date.getMonth() + 1,
           end = new Date( year, month, 0 ).getDate();
@@ -717,7 +720,6 @@ calendar: function( setDate, currentDate, startDate, endDate ){
           nextMonthYear = nextMonthDate.getFullYear(),
           nextMonth = nextMonthDate.getMonth() + 1;
     
-    if ( !currentDate ) currentDate = date;
     if ( currentDate ) currentDate = fn.date( currentDate, 'yyyy/MM/dd');    
     
     // HTML
@@ -730,10 +732,10 @@ calendar: function( setDate, currentDate, startDate, endDate ){
         return `<tr class="calRow">${th.join('')}</tr>`;
     };
     const cell = function( num, className, dataDate ) {
-        return `<td class="${className}"><span class="calTdInner"><button type="button" class="calButton" data-date="${dataDate}">${num}</butto></span></td>`;
+        return `<td class="${className}"><span class="calTdInner"><button class="calButton" data-date="${dataDate}">${num}</butto></span></td>`;
     };
     const disabledCell = function( num, className ) {
-        return `<td class="${className} disabled"><span class="calDisabled">${num}</span></td>`;
+        return `<td class="${className} disabled"><span class="calTdInner"><button class="calButton calButtonDisabled" disabled>${num}</button></span></td>`;
     };
 
     const rowHtml = [];
@@ -758,13 +760,14 @@ calendar: function( setDate, currentDate, startDate, endDate ){
                 dataDate = `${year}/${cmn.zeroPadding( month, 2 )}/`;
             }
             const cellDate = dataDate + cmn.zeroPadding( num, 2 );
-            
-            if ( currentDate === cellDate ) className += ' currentCell';
-            
-            if ( ( startDate === cellDate ) || ( endDate && currentDate === cellDate ) ) className += ' startCell';
-            if ( ( endDate === cellDate ) || ( startDate && currentDate === cellDate ) ) className += ' endCell';
-            if ( ( startDate && startDate < cellDate && currentDate > cellDate )
-                || ( endDate && endDate > cellDate && currentDate < cellDate )  ) className += ' periodCell';
+                        
+            if ( currentDate ) {
+                if ( currentDate === cellDate ) className += ' currentCell';
+                if ( ( startDate === cellDate ) || ( endDate && currentDate === cellDate ) ) className += ' startCell';
+                if ( ( endDate === cellDate ) || ( startDate && currentDate === cellDate ) ) className += ' endCell';
+                if ( ( startDate && startDate < cellDate && currentDate > cellDate )
+                    || ( endDate && endDate > cellDate && currentDate < cellDate )  ) className += ' periodCell';
+            }
             
             if ( ( startDate && startDate > cellDate ) || ( endDate && endDate < cellDate ) ) {
                 cellHtml.push( disabledCell( num, className ) );
@@ -790,29 +793,53 @@ calendar: function( setDate, currentDate, startDate, endDate ){
 ##################################################
 */
 datePicker: function( timeFlag, className, date, start, end ) {
+    const monthText = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
     
-    date = ( date && !isNaN( new Date( date ) ) )? new Date( date ): new Date();
-    
-    if ( className === 'datePickerFromDateText' && !end ) end = date;
-    if ( className === 'datePickerToDateText' && !start ) start = date;
+    let initDate;
+    if ( date && !isNaN( new Date( date ) ) ) {
+        initDate = new Date( date )
+    } else {
+        initDate = new Date();
+    }
     
     let monthCount = 0;
     
     let inputDate;
     
-    let year = date.getFullYear(),
-        month = date.getMonth() + 1,
-        day = date.getDate();
+    let year = initDate.getFullYear(),
+        month = initDate.getMonth(),
+        day = initDate.getDate();
     
-    let hour = date.getHours(),
-        min = date.getMinutes(),
-        sec = date.getSeconds();
+    let hour, min , sec;
+    
+    if ( date ) {
+        hour = initDate.getHours(),
+        min = initDate.getMinutes(),
+        sec = initDate.getSeconds();
+    } else if ( className === 'datePickerToDateText') {
+        hour = 23;
+        min = sec = 59;
+    } else {
+        hour = min = sec = 0;
+    }
+    
+    let placeholder = 'yyyy-MM-dd';
+    if ( timeFlag ) placeholder += ' HH:mm:ss';
+    
+    if ( className === 'datePickerFromDateText' && !end ) {
+        end = date;
+        placeholder = 'From : ' + placeholder;
+    }
+    if ( className === 'datePickerToDateText' && !start ) {
+        start = date;
+        placeholder = 'To : ' + placeholder;
+    }
     
     const $datePicker = $('<div/>', {
-        'class': 'datePickerContainer'
+        'class': 'datePickerBlock'
     }).html(`
     <div class="datePickerDate">
-        <input type="text" class="datePickerDateInput ${className}" tabindex="-1" readonly>
+        <input type="text" class="datePickerDateInput ${className}" tabindex="-1" placeholder="${placeholder}" readonly>
         <input type="hidden" class="datePickerDateHidden datePickerDateStart">
         <input type="hidden" class="datePickerDateHidden datePickerDateEnd">
     </div>
@@ -824,16 +851,16 @@ datePicker: function( timeFlag, className, date, start, end ) {
         </div>
         <div class="datePickerMonth">
             <div class="datePickerMonthPrev"><button class="datePickerButton" data-type="prevMonth"><span class="icon icon-prev"></span></button></div>
-            <div class="datePickerMonthText">${month}</div>
+            <div class="datePickerMonthText">${monthText[month]}</div>
             <div class="datePickerMonthNext"><button class="datePickerButton" data-type="nextMonth"><span class="icon icon-next"></span></button></div>
         </div>
     </div>
     <div class="datePickerCalendar">
-        ${cmn.calendar( date, date, start, end )}
+        ${cmn.calendar( initDate, date, start, end )}
     </div>`);
     
     const setInputDate = function( changeFlag = true ) {
-        inputDate = `${year}/${fn.zeroPadding( month, 2 )}/${fn.zeroPadding( day, 2 )}`;
+        inputDate = `${year}/${fn.zeroPadding( month + 1, 2 )}/${fn.zeroPadding( day, 2 )}`;
         if ( timeFlag ) {
             $date.val(`${inputDate} ${fn.zeroPadding( hour, 2 )}:${fn.zeroPadding( min, 2 )}:${fn.zeroPadding( sec, 2 )}`);
         } else {
@@ -847,7 +874,7 @@ datePicker: function( timeFlag, className, date, start, end ) {
           $month = $datePicker.find('.datePickerMonthText'),
           $cal = $datePicker.find('.datePickerCalendar');
     
-    setInputDate( false );
+    if ( date ) setInputDate( false );
     
     $datePicker.find('.datePickerButton').on('click', function(){
         const $button = $( this ),
@@ -859,13 +886,13 @@ datePicker: function( timeFlag, className, date, start, end ) {
             case 'prevMonth': monthCount -= 1; break;
             case 'nextMonth': monthCount += 1; break;
         }
-        const newData = new Date( date.getFullYear(), date.getMonth() + monthCount, day );
+        const newData = new Date( initDate.getFullYear(), initDate.getMonth() + monthCount, 1 );
         
         year = newData.getFullYear();
-        month = newData.getMonth() + 1;
+        month = newData.getMonth();
         
         $year.text( year );
-        $month.text( month );
+        $month.text( monthText[month] );
                 
         $cal.html( cmn.calendar( newData, inputDate, start, end ) );
     });
@@ -875,30 +902,34 @@ datePicker: function( timeFlag, className, date, start, end ) {
               ckickDate = $button.attr('data-date').split('/');
               
         year = ckickDate[0];
-        month = ckickDate[1];
+        month = Number( ckickDate[1] ) - 1;
         day = ckickDate[2];
+        
+        $year.text( year );
+        $month.text( monthText[month] );
         
         setInputDate();
         $cal.html( cmn.calendar( inputDate, inputDate, start, end ) );
     });
     
+    // FromTo用:片方のカレンダーの設定が変わった場合
     $datePicker.find('.datePickerDateHidden').on('change', function(){
         const $hidden = $( this ),
-              value = $hidden.val(),
-              inputValue = $date.val();
+              value = $hidden.val();
+              
         if ( $hidden.is('.datePickerDateStart') ) {
             start = value;
         } else {
             end = value;
         }
-        $cal.html( cmn.calendar( inputValue, inputValue, start, end ) );
+        
+        const setDate = `${year}/${month+1}/1`;
+        
+        $cal.html( cmn.calendar( setDate, inputDate, start, end ) );
     });
     
     // 時間
     if ( timeFlag ) {
-            
-        const $time = $datePicker.find('.datePickerTime');
-
         $datePicker.append(`
         <div class="datePickerTime">
             <div class="datePickerHour">${cmn.html.inputFader('datePickerHourInput', hour, null, { min: 0, max: 23 }, { after: '時'} )}</div>
@@ -920,10 +951,8 @@ datePicker: function( timeFlag, className, date, start, end ) {
             } else {
                 sec = value;
             }
-            
             setInputDate( false );
         });
-    
     }
     
     $datePicker.append(`<div class="datePickerMenu">
@@ -933,15 +962,60 @@ datePicker: function( timeFlag, className, date, start, end ) {
         </ul>
     </div>`);
     
+    const nowCalender = function( clearFlag ) {
+        const now = new Date();
+        
+        const $h = $datePicker.find('.datePickerHourInput'),
+              $m = $datePicker.find('.datePickerMinInput'),
+              $s = $datePicker.find('.datePickerSecInput');
+        
+        year = now.getFullYear();
+        month = now.getMonth();
+        day =  now.getDate();
+        
+        $year.text( year );
+        $month.text( monthText[month] );
+        
+        if ( clearFlag ) {
+            inputDate = null;
+            $date.val('').change();
+            $cal.html( cmn.calendar( now ) );
+            
+            if ( timeFlag ) {
+                if ( className === 'datePickerToDateText') {
+                    hour = 23;
+                    min = 59;
+                    sec = 59;
+                } else {
+                    hour = min = sec = 0;
+                }
+            }
+        } else {
+            if ( timeFlag ) {
+                hour = now.getHours();
+                min = now.getMinutes();
+                sec = now.getSeconds();
+            }
+            setInputDate();
+            $cal.html( cmn.calendar( inputDate, inputDate, start, end ) );
+        }
+        
+        if ( timeFlag ) {
+            $h.val( hour ).trigger('input');
+            $m.val( min ).trigger('input');
+            $s.val( sec ).trigger('input');
+        }
+    };
+    
     $datePicker.find('.datePickerMenuButton').on('click', function(){
         const $button = $( this ),
               type = $button.attr('data-type');
         switch ( type ) {
             case 'current':
-                
+                nowCalender( false );
             break;
             case 'clear':
-            
+                nowCalender( true );
             break;
         }
     });
@@ -976,14 +1050,14 @@ datePickerDialog: function( type, timeFlag, title, date ){
         };
         
         const buttons = {
-            ok: { text: '反映', action: 'default'},
+            ok: { text: '反映', action: 'default', style: 'width:160px;'},
             cancel: { text: 'キャンセル', action: 'normal'}
         };
         
         const config = {
             mode: 'modeless',
             position: 'center',
-            width: '720px',
+            width: 'auto',
             header: {
                 title: title,
                 close: false,
@@ -1008,7 +1082,7 @@ datePickerDialog: function( type, timeFlag, title, date ){
             $dataPicker.find('.datePickerFrom').html( cmn.datePicker( timeFlag, 'datePickerFromDateText', date.from, null, date.to ) );
             $dataPicker.find('.datePickerTo').html( cmn.datePicker( timeFlag, 'datePickerToDateText', date.to, date.from, null ) );
             
-            // 日付の入力をチェックする
+            // FromTo相互で日付の入力をチェックする
             $dataPicker.find('.datePickerFromDateText').on('change', function(){
                 const val = $( this ).val();
                 $dataPicker.find('.datePickerTo').find('.datePickerDateStart').val( val ).change();
@@ -1019,7 +1093,7 @@ datePickerDialog: function( type, timeFlag, title, date ){
             });
             
         } else {
-            $dataPicker.html( cmn.datePicker( timeFlag, null, date ) );
+            $dataPicker.html( cmn.datePicker( timeFlag, 'datePickerDateText', date ) );
         }
         
         dialog.open( $dataPicker );
