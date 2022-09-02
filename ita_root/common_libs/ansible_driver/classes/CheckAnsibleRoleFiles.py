@@ -4626,6 +4626,7 @@ class VarStructAnalysisFileAccess():
             tpf_vars_list = retAry[2]
             ITA2User_var_list = retAry[3]
             gbl_vars_list = retAry[4]
+            Role_name_list = retAry[5]
 
             all_def_vars_list = {}
             all_def_array_vars_list = {}
@@ -4725,6 +4726,7 @@ class VarStructAnalysisFileAccess():
         tgt_tpf_vars_list = retAry[2]
         tgt_ITA2User_var_list = retAry[3]
         tgt_gbl_vars_list = retAry[4]
+        Role_name_list = retAry[5]
 
         if not self.lv_ws_db and ws_db:
             ws_db.db_disconnect()
