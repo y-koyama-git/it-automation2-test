@@ -62,6 +62,7 @@ LIST = 'LIST'
 # 紐付関連カラム名
 COLNAME_MENU_ID = 'MENU_ID'
 COLNAME_TABLE_NAME = 'TABLE_NAME'
+COLNAME_VIEW_NAME = 'VIEW_NAME'
 COLNAME_ROW_INSERT_FLAG = 'ROW_INSERT_FLAG'
 COLNAME_ROW_UPDATE_FLAG = 'ROW_UPDATE_FLAG'
 COLNAME_ROW_DISUSE_FLAG = 'ROW_DISUSE_FLAG'
@@ -529,12 +530,36 @@ class loadTable():
     
     def get_table_name_jnl(self):
         """
-            テーブル名を取得
+            テーブル名(履歴)を取得
             RETRUN:
                 string
         """
         try:
             result = "{}_JNL".format(self.get_objtable().get(MENUINFO).get(COLNAME_TABLE_NAME))
+        except Exception:
+            result = None
+        return result
+
+    def get_view_name(self):
+        """
+            ビュー名を取得
+            RETRUN:
+                string
+        """
+        try:
+            result = self.get_objtable().get(MENUINFO).get(COLNAME_VIEW_NAME)
+        except Exception:
+            result = None
+        return result
+
+    def get_view_name_jnl(self):
+        """
+            ビュー名(履歴)を取得
+            RETRUN:
+                string
+        """
+        try:
+            result = "{}_JNL".format(self.get_objtable().get(MENUINFO).get(COLNAME_VIEW_NAME))
         except Exception:
             result = None
         return result
@@ -874,7 +899,13 @@ class loadTable():
             primary_key = self.get_primary_key()
             # テーブル本体
             if mode in ['nomal', 'excel', 'count']:
-                table_name = self.get_table_name()
+                # VIEWが設定されている場合はVIEWを対象とする
+                view_name = self.get_view_name()
+                if view_name:
+                    table_name = view_name
+                else:
+                    table_name = self.get_table_name()
+
                 # parameter check
                 if isinstance(parameter, dict):
                     for search_key, search_confs in parameter.items():
@@ -922,8 +953,12 @@ class loadTable():
                 # 履歴テーブル
                 where_str = ''
                 bind_value_list = []
-                table_name = self.get_table_name()
-                table_name = self.get_table_name_jnl()
+                # VIEWが設定されている場合はVIEWを対象とする
+                view_name = self.get_view_name_jnl()
+                if view_name:
+                    table_name = view_name
+                else:
+                    table_name = self.get_table_name_jnl()
                 
                 if mode not in ['jnl_all', 'excel_jnl_all', 'jnl_count_all']:
                     tmp_jnl_conf = parameter.get('JNL')
@@ -1561,6 +1596,11 @@ class loadTable():
                 except Exception:
                     json_rows = col_val
                 for jsonkey, jsonval in json_rows.items():
+                    objcolumn = self.get_columnclass(jsonkey)
+                    tmp_exec = objcolumn.convert_value_output(jsonval)
+                    if tmp_exec[0] is True:
+                        jsonval = tmp_exec[2]
+
                     rest_parameter.setdefault(jsonkey, jsonval)
                     if mode not in ['excel', 'excel_jnl']:
                         if self.get_col_class_name(jsonkey) == 'FileUploadColumn':
