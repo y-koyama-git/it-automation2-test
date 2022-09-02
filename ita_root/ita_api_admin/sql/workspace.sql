@@ -542,7 +542,7 @@ CREATE TABLE T_COMN_OPERATION_PRIVILEGES
 -- バックヤードユーザーマスタ
 CREATE TABLE T_COMN_BACKYARD_USER
 (
-    USER_ID                         VARCHAR(2),                                 -- 主キー
+    USER_ID                         VARCHAR(8),                                 -- 主キー
     USER_NAME_JA                    VARCHAR(255),                               -- バックヤードユーザ名(JA)
     USER_NAME_EN                    VARCHAR(255),                               -- バックヤードユーザ名(EN)
     NOTE                            TEXT,                                       -- 備考
