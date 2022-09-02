@@ -10,8 +10,7 @@
         "request": "launch",
         "program": "/exastro/api.py",
         "env": {
-            "FLASK_APP": "/exastro/api.py",
-            "FLASK_ENV": "development"
+            "FLASK_APP": "/exastro/api.py"
         },
         "cwd": "/exastro",
         "pathMappings": [
@@ -34,8 +33,7 @@
         "request": "launch",
         "program": "/exastro/api.py",
         "env": {
-            "FLASK_APP": "/exastro/api.py",
-            "FLASK_ENV": "development"
+            "FLASK_APP": "/exastro/api.py"
         },
         "cwd": "/exastro",
         "pathMappings": [
