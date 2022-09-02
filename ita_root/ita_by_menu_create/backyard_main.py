@@ -58,7 +58,7 @@ def backyard_main(organization_id, workspace_id):
         data_list = {
             "HISTORY_ID": history_id,
             "STATUS_ID": "2",  # 2: 実行中
-            "LAST_UPDATE_USER": "9999"  # ####メモ：メニュー作成機能バックヤード用ユーザを用意してそのIDを採用する。
+            "LAST_UPDATE_USER": g.get('USER_ID')
         }
         ret = objdbca.table_update(t_menu_create_history, data_list, 'HISTORY_ID')
         if ret:
@@ -79,7 +79,7 @@ def backyard_main(organization_id, workspace_id):
                 data_list = {
                     "MENU_CREATE_ID": menu_create_id,
                     "MENU_CREATE_DONE_STATUS": "2",  # 2: 作成済み
-                    "LAST_UPDATE_USER": "9999"  # ####メモ：メニュー作成機能バックヤード用ユーザを用意してそのIDを採用する。
+                    "LAST_UPDATE_USER": g.get('USER_ID')
                 }
                 ret = objdbca.table_update(t_menu_define, data_list, 'MENU_CREATE_ID')
                 if ret:
@@ -104,7 +104,7 @@ def backyard_main(organization_id, workspace_id):
         data_list = {
             "HISTORY_ID": history_id,
             "STATUS_ID": status_id,
-            "LAST_UPDATE_USER": "9999"  # ####メモ：メニュー作成機能バックヤード用ユーザを用意してそのIDを採用する。
+            "LAST_UPDATE_USER": g.get('USER_ID')
         }
         ret = objdbca.table_update(t_menu_create_history, data_list, 'HISTORY_ID')
         if ret:
@@ -391,7 +391,7 @@ def _insert_t_comn_menu(objdbca, recode_t_menu_define, menu_group_col_name):
             "AUTOFILTER_FLG": "0",
             "INITIAL_FILTER_FLG": "0",
             "DISUSE_FLAG": "0",
-            "LAST_UPDATE_USER": "9999"  # ####メモ：メニュー作成機能バックヤード用ユーザを用意してそのIDを採用する。
+            "LAST_UPDATE_USER": g.get('USER_ID')
         }
         primary_key_name = 'MENU_ID'
         result = objdbca.table_insert(t_comn_menu, data_list, primary_key_name)
@@ -442,7 +442,7 @@ def _update_t_comn_menu(objdbca, recode_t_menu_define, menu_group_col_name):
                 "AUTOFILTER_FLG": "0",
                 "INITIAL_FILTER_FLG": "0",
                 "DISUSE_FLAG": "0",
-                "LAST_UPDATE_USER": "9999"  # ####メモ：メニュー作成機能バックヤード用ユーザを用意してそのIDを採用する。
+                "LAST_UPDATE_USER": g.get('USER_ID')
             }
             result = objdbca.table_update(t_comn_menu, data_list, 'MENU_ID')
         else:
@@ -480,7 +480,7 @@ def _insert_t_comn_role_menu_link(objdbca, menu_uuid, recode_t_menu_role):
                     "ROLE_ID": role_id,
                     "PRIVILEGE": 1,
                     "DISUSE_FLAG": "0",
-                    "LAST_UPDATE_USER": "9999"  # ####メモ：メニュー作成機能バックヤード用ユーザを用意してそのIDを採用する。
+                    "LAST_UPDATE_USER": g.get('USER_ID')
                 }
                 primary_key_name = 'LINK_ID'
                 result = objdbca.table_insert(t_comn_role_menu_link, data_list, primary_key_name)
@@ -586,7 +586,7 @@ def _insert_t_comn_menu_table_link(objdbca, sheet_type, vertical_flag, file_uplo
             "SUBSTITUTION_VALUE_LINK_FLAG": substitution_value_link_flag,
             "UNIQUE_CONSTRAINT": unique_constraint,
             "DISUSE_FLAG": "0",
-            "LAST_UPDATE_USER": "9999"  # ####メモ：メニュー作成機能バックヤード用ユーザを用意してそのIDを採用する。
+            "LAST_UPDATE_USER": g.get('USER_ID')
         }
         primary_key_name = 'TABLE_DEFINITION_ID'
         result = objdbca.table_insert(t_comn_menu_table_link, data_list, primary_key_name)
@@ -656,7 +656,7 @@ def _insert_t_comn_column_group(objdbca, target_column_group_list, dict_t_menu_c
                 "FULL_COL_GROUP_NAME_JA": full_col_group_name_ja,
                 "FULL_COL_GROUP_NAME_EN": full_col_group_name_en,
                 "DISUSE_FLAG": "0",
-                "LAST_UPDATE_USER": "9999"  # ####メモ：メニュー作成機能バックヤード用ユーザを用意してそのIDを採用する。
+                "LAST_UPDATE_USER": g.get('USER_ID')
             }
             primary_key_name = 'COL_GROUP_ID'
             objdbca.table_insert(t_comn_column_group, data_list, primary_key_name)
@@ -729,7 +729,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             "DESCRIPTION_JA": "自動採番のため編集不可。実行処理種別が【登録】の場合、空白のみ可。",  # ####メモ：メッセージ一覧から取得する
             "DESCRIPTION_EN": "Cannot edit because of auto-numbering. Must be blank when execution process type is [Register].",  # ####メモ：メッセージ一覧から取得する  # noqa: E501
             "DISUSE_FLAG": "0",
-            "LAST_UPDATE_USER": "9999"  # ####メモ：メニュー作成機能バックヤード用ユーザを用意してそのIDを採用する。
+            "LAST_UPDATE_USER": g.get('USER_ID')
         }
         primary_key_name = 'COLUMN_DEFINITION_ID'
         objdbca.table_insert(t_comn_menu_column_link, data_list, primary_key_name)
@@ -777,7 +777,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "DESCRIPTION_JA": "ホストを選択",  # ####メモ：メッセージ一覧から取得する
                 "DESCRIPTION_EN": "Select host",  # ####メモ：メッセージ一覧から取得する
                 "DISUSE_FLAG": "0",
-                "LAST_UPDATE_USER": "9999"  # ####メモ：メニュー作成機能バックヤード用ユーザを用意してそのIDを採用する。
+                "LAST_UPDATE_USER": g.get('USER_ID')
             }
             primary_key_name = 'COLUMN_DEFINITION_ID'
             objdbca.table_insert(t_comn_menu_column_link, data_list, primary_key_name)
@@ -831,7 +831,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "DESCRIPTION_JA": "オペレーションを選択",  # ####メモ：メッセージ一覧から取得する
                 "DESCRIPTION_EN": "Select operation",  # ####メモ：メッセージ一覧から取得する
                 "DISUSE_FLAG": "0",
-                "LAST_UPDATE_USER": "9999"  # ####メモ：メニュー作成機能バックヤード用ユーザを用意してそのIDを採用する。
+                "LAST_UPDATE_USER": g.get('USER_ID')
             }
             primary_key_name = 'COLUMN_DEFINITION_ID'
             objdbca.table_insert(t_comn_menu_column_link, data_list, primary_key_name)
@@ -878,7 +878,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                     "DESCRIPTION_JA": "メニューの縦メニューから横メニューに変換する際に、左から昇順で入力されます。",  # ####メモ：メッセージ一覧から取得する
                     "DESCRIPTION_EN": "When converting from the vertical menu to the horizontal menu, items will be arranged in ascending order from left to right.",  # ####メモ：メッセージ一覧から取得する  # noqa: E501
                     "DISUSE_FLAG": "0",
-                    "LAST_UPDATE_USER": "9999"  # ####メモ：メニュー作成機能バックヤード用ユーザを用意してそのIDを採用する。
+                    "LAST_UPDATE_USER": g.get('USER_ID')
                 }
                 primary_key_name = 'COLUMN_DEFINITION_ID'
                 objdbca.table_insert(t_comn_menu_column_link, data_list, primary_key_name)
@@ -978,7 +978,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "DESCRIPTION_JA": recode.get('DESCRIPTION_JA'),
                 "DESCRIPTION_EN": recode.get('DESCRIPTION_EN'),
                 "DISUSE_FLAG": "0",
-                "LAST_UPDATE_USER": "9999"  # ####メモ：メニュー作成機能バックヤード用ユーザを用意してそのIDを採用する。
+                "LAST_UPDATE_USER": g.get('USER_ID')
             }
             primary_key_name = 'COLUMN_DEFINITION_ID'
             objdbca.table_insert(t_comn_menu_column_link, data_list, primary_key_name)
@@ -1022,7 +1022,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "DESCRIPTION_JA": "代入値自動登録設定用のダミー項目",  # ####メモ：メッセージ一覧から取得する
                 "DESCRIPTION_EN": "Dummy item for substitution value auto-registration setting",  # ####メモ：メッセージ一覧から取得する
                 "DISUSE_FLAG": "0",
-                "LAST_UPDATE_USER": "9999"  # ####メモ：メニュー作成機能バックヤード用ユーザを用意してそのIDを採用する。
+                "LAST_UPDATE_USER": g.get('USER_ID')
             }
             primary_key_name = 'COLUMN_DEFINITION_ID'
             objdbca.table_insert(t_comn_menu_column_link, data_list, primary_key_name)
@@ -1069,7 +1069,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             "DESCRIPTION_JA": "自由記述欄。レコードの廃止・復活時にも記載可能。",  # ####メモ：メッセージ一覧から取得する
             "DESCRIPTION_EN": "Comments section. Can comment when removing or res...",  # ####メモ：メッセージ一覧から取得する
             "DISUSE_FLAG": "0",
-            "LAST_UPDATE_USER": "9999"  # ####メモ：メニュー作成機能バックヤード用ユーザを用意してそのIDを採用する。
+            "LAST_UPDATE_USER": g.get('USER_ID')
         }
         primary_key_name = 'COLUMN_DEFINITION_ID'
         objdbca.table_insert(t_comn_menu_column_link, data_list, primary_key_name)
@@ -1115,7 +1115,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             "DESCRIPTION_JA": "廃止フラグ。復活以外のオペレーションは不可",  # ####メモ：メッセージ一覧から取得する
             "DESCRIPTION_EN": "Discard flag. Cannot do operation other than resto...",  # ####メモ：メッセージ一覧から取得する
             "DISUSE_FLAG": "0",
-            "LAST_UPDATE_USER": "9999"  # ####メモ：メニュー作成機能バックヤード用ユーザを用意してそのIDを採用する。
+            "LAST_UPDATE_USER": g.get('USER_ID')
         }
         primary_key_name = 'COLUMN_DEFINITION_ID'
         objdbca.table_insert(t_comn_menu_column_link, data_list, primary_key_name)
@@ -1161,7 +1161,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             "DESCRIPTION_JA": "レコードの最終更新日。自動登録のため編集不可。",  # ####メモ：メッセージ一覧から取得する
             "DESCRIPTION_EN": "Last update date of record. Cannot edit because of...",  # ####メモ：メッセージ一覧から取得する
             "DISUSE_FLAG": "0",
-            "LAST_UPDATE_USER": "9999"  # ####メモ：メニュー作成機能バックヤード用ユーザを用意してそのIDを採用する。
+            "LAST_UPDATE_USER": g.get('USER_ID')
         }
         primary_key_name = 'COLUMN_DEFINITION_ID'
         objdbca.table_insert(t_comn_menu_column_link, data_list, primary_key_name)
@@ -1207,7 +1207,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             "DESCRIPTION_JA": "更新者。ログインユーザのIDが自動的に登録される。編集不可。",  # ####メモ：メッセージ一覧から取得する
             "DESCRIPTION_EN": "Updated by. Login user ID is automatically registe...",  # ####メモ：メッセージ一覧から取得する
             "DISUSE_FLAG": "0",
-            "LAST_UPDATE_USER": "9999"  # ####メモ：メニュー作成機能バックヤード用ユーザを用意してそのIDを採用する。
+            "LAST_UPDATE_USER": g.get('USER_ID')
         }
         primary_key_name = 'COLUMN_DEFINITION_ID'
         objdbca.table_insert(t_comn_menu_column_link, data_list, primary_key_name)
@@ -1241,7 +1241,7 @@ def _insert_t_menu_table_link(objdbca, menu_uuid, create_table_name, create_tabl
             "KEY_COL_NAME": "ROW_ID",
             "TABLE_NAME_JNL": create_table_name_jnl,
             "DISUSE_FLAG": "0",
-            "LAST_UPDATE_USER": "9999"  # ####メモ：メニュー作成機能バックヤード用ユーザを用意してそのIDを採用する。
+            "LAST_UPDATE_USER": g.get('USER_ID')
         }
         primary_key_name = 'MENU_TABLE_LINK_ID'
         result = objdbca.table_insert(t_menu_table_link, data_list, primary_key_name)
