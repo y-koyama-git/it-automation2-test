@@ -34,16 +34,27 @@ def menu_define_valid(objdbca, objtable, option):
     else:
         retBool = False
         msg = "値無し"
-    # 更新時のみ。メニュー作成状態が2（作成済み）の場合、メニュー名が変更されていないことをチェック。
+    
+    # 更新時のみ。メニュー作成状態が2（作成済み）の場合、メニュー名(rest)が変更されていないことをチェック。
+    menu_name_rest = entry_parameter.get('menu_name_rest')
     cmd_type = option.get("cmd_type")
     if cmd_type == "Update":
-        # 谷本メモ：更新前の値取得はこれでOK?　→current_parameterから更新前の情報取得
         menu_create_done_status = entry_parameter.get("menu_create_done_status")
-        before_menu_name = current_parameter.get("menu_name_{}".format(user_env))
+        before_menu_name = current_parameter.get("menu_name_rest")
         if menu_create_done_status == "2":
-            if before_menu_name != menu_name:
+            if before_menu_name != menu_name_rest:
                 retBool = False
-                msg = "メニューを作成済みの場合、「メニュー名」を変更できません。"
+                msg = "メニューを作成済みの場合、「メニュー名(rest)」を変更できません。"
+    
+    # 「メニュー管理」テーブルで使用されているmenu_name_restは使用不可
+    menu_name_rest = entry_parameter.get('menu_name_rest')
+    ret = objdbca.table_select('T_COMN_MENU', 'WHERE DISUSE_FLAG = %s', [0])
+    menu_name_rest_list = []
+    for recode in ret:
+        menu_name_rest_list.append(recode.get('MENU_NAME_REST'))
+    if menu_name_rest in (menu_name_rest_list):
+        retBool = False
+        msg = "「メニュー管理」に存在するメニュー名(rest)は使用できません"
 
     if not retBool:
         return retBool, msg, option
