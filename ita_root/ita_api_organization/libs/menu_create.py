@@ -378,50 +378,30 @@ def menu_create_define(objdbca, create_param):
         RETRUN:
             result_data
     """
-    # typeから「新規作成」「初期化」「編集」のいずれかを判断
+    # typeを取得 (「新規作成(create_new)」「初期化(initialize)」「編集(edit)」)
     type = create_param.get('type')
-    if type == 'create_new':  # 「新規作成」
-        print('タイプは：' + str(type))
-        result = _create_new_execute(objdbca, create_param)
-        
-        menu_name_rest = result.get('menu_name_rest')
-        history_id = result.get('history_id')
-        message = result.get('message')
-        # if not status:
-        #     # ####メモ：関数で失敗した際にメッセージを受け取ってそれを入れる。
-        #     # ####まだここの動き全然考えてないので、あとでやる。
-        #     raise AppException('999-00001')  # noqa: F405
-        
-    elif type == 'initialize':  # 「初期化」
-        print('タイプは：' + str(type))
-        result = _initialize_execute(objdbca, create_param)
-        
-        menu_name_rest = result.get('menu_name_rest')
-        history_id = result.get('history_id')
-        message = result.get('message')
-        # if not status:
-        #     # ####メモ：関数で失敗した際にメッセージを受け取ってそれを入れる。
-        #     # ####まだここの動き全然考えてないので、あとでやる。
-        #     raise AppException('999-00001')  # noqa: F405
-        
-    elif type == 'edit':  # 「編集」
-        print('タイプは：' + str(type))
-        result = _edit_execute(objdbca, create_param)
-        
-        menu_name_rest = result.get('menu_name_rest')
-        history_id = result.get('history_id')
-        message = result.get('message')
-        # if not status:
-        #     # ####メモ：関数で失敗した際にメッセージを受け取ってそれを入れる。
-        #     # ####まだここの動き全然考えてないので、あとでやる。
-        #     raise AppException('999-00001')  # noqa: F405
-        
-    else:
+    if type not in ['create_new', 'initialize', 'edit']:
         # ####メモ：typeが指定された値ではない場合のエラー。あとでちゃんと作る。
         msg = 'type:' + str(type)
         log_msg_args = [msg]
         api_msg_args = [msg]
         raise AppException('499-00212', log_msg_args, api_msg_args)  # noqa: F405
+    
+    # menu_create_idの有無を確認
+    menu_data = check_request_body_key(create_param, 'menu')
+    menu_create_id = menu_data.get('menu_create_id')
+    
+    if type == 'create_new' and not menu_create_id:
+        # 「新規作成」かつmenu_create_idが無い場合、レコードの登録処理のみ実行し、「メニュー作成履歴」にレコードを登録
+        result = _create_new_execute(objdbca, create_param)
+    else:
+        # menu_create_idがある場合、レコードの登録/更新/廃止処理を実行し、「メニュー作成履歴」にレコードを登録
+        result = _create_exist_execute(objdbca, create_param, type)
+    
+    # 返却用の値を取得
+    menu_name_rest = result.get('menu_name_rest')
+    history_id = result.get('history_id')
+    message = result.get('message')
     
     result_data = {'menu_name_rest': menu_name_rest, 'history_id': history_id, 'message': message}
     return result_data
@@ -429,7 +409,7 @@ def menu_create_define(objdbca, create_param):
 
 def _create_new_execute(objdbca, create_param):  # noqa: C901
     """
-        【内部呼び出し用】「新規作成」時のメニュー作成用メニューに対するレコードをの登録
+        【内部呼び出し用】「新規作成」時のメニュー作成用メニューに対するレコードをの登録（メニュー定義一覧に対象が存在しない）
         ARGS:
             objdbca:DB接クラス  DBConnectWs()
             create_param: メニュー定義用パラメータ
@@ -522,9 +502,9 @@ def _create_new_execute(objdbca, create_param):  # noqa: C901
     return result_data
 
 
-def _initialize_execute(objdbca, create_param):  # noqa: C901
+def _create_exist_execute(objdbca, create_param, type):  # noqa: C901
     """
-        【内部呼び出し用】「初期化」時のメニュー作成用メニューに対するレコードの登録/更新/廃止
+        【内部呼び出し用】「新規作成」「初期化」「編集」時のメニュー作成用メニューに対するレコードの登録/更新/廃止
         ARGS:
             objdbca:DB接クラス  DBConnectWs()
             create_param: メニュー定義用パラメータ
@@ -566,7 +546,7 @@ def _initialize_execute(objdbca, create_param):  # noqa: C901
         current_t_menu_define = current_t_menu_define[0]
         
         # 「メニュー定義一覧」のレコードを更新
-        retbool, msg = _update_t_menu_define(objdbca, current_t_menu_define, menu_data, 'initialize')
+        retbool, msg = _update_t_menu_define(objdbca, current_t_menu_define, menu_data, type)
         if not retbool:
             raise Exception(msg)
         
@@ -585,7 +565,7 @@ def _initialize_execute(objdbca, create_param):  # noqa: C901
             raise Exception(msg)
         
         # 「メニュー項目作成情報」から更新対象のレコードを更新
-        retbool, msg = _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list, 'initialize')
+        retbool, msg = _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list, type)
         if not retbool:
             raise Exception(msg)
         
@@ -646,169 +626,12 @@ def _initialize_execute(objdbca, create_param):  # noqa: C901
         
         # 「メニュー作成履歴」にレコードを登録
         status_id = "1"  # (1:未実行)
-        create_type = "2"  # (2:初期化)
-        retbool, history_id, msg = _insert_t_menu_create_history(objdbca, menu_create_id, status_id, create_type, user_id)
-        if not retbool:
-            raise Exception(msg)
-        
-        # コミット/トランザクション終了
-        objdbca.db_transaction_end(True)
-        
-        message = ''
-
-    except Exception as msg:
-        # ####メモ：失敗時のメッセージはちゃんと取り出したいので、作りこみ予定。
-        # ロールバック トランザクション終了
-        print("エラー発生のためロールバック")
-        objdbca.db_transaction_end(False)
-        # print(e)
-        # if len(e.args) == 2:
-        #     status_code = '{}'.format(e.args[0])
-        #     msg_args = '{}'.format(e.args[1])
-        #     msg = g.appmsg.get_api_message(status_code, [msg_args])
-        # else:
-        #     status_code = '999-99999'
-        #     msg_args = '{}'.format(*e.args)
-        #     msg = g.appmsg.get_api_message(status_code, [msg_args])
-        
-        log_msg_args = [msg]
-        api_msg_args = [msg]
-        raise AppException('499-00201', log_msg_args, api_msg_args)  # noqa: F405
-
-    result_data = {
-        'menu_name_rest': menu_name_rest,
-        'history_id': history_id,
-        'message': message
-    }
-    
-    return result_data
-
-
-def _edit_execute(objdbca, create_param):  # noqa: C901
-    """
-        【内部呼び出し用】「編集」時のメニュー作成用メニューに対するレコードの登録/更新/廃止
-        ARGS:
-            objdbca:DB接クラス  DBConnectWs()
-            create_param: メニュー定義用パラメータ
-        RETRUN:
-            result_data
-    """
-    # テーブル名
-    t_menu_define = 'T_MENU_DEFINE'
-    t_menu_column = 'T_MENU_COLUMN'
-    t_menu_unique_constraint = 'T_MENU_UNIQUE_CONSTRAINT'
-    t_menu_role = 'T_MENU_ROLE'
-    
-    # 変数定義
-    user_id = g.get('USER_ID')
-    
-    # データを抽出
-    menu_data = check_request_body_key(create_param, 'menu')  # "menu" keyが無かったら400-00002エラー
-    column_data_list = check_request_body_key(create_param, 'column')  # "column" keyが無かったら400-00002エラー
-    group_data_list = create_param.get('group')
-    menu_name_rest = menu_data.get('menu_name_rest')
-    
-    try:
-        # トランザクション開始
-        objdbca.db_transaction_start()
-        
-        # 登録前バリデーションチェック
-        retbool, msg = _check_before_registar_validate(objdbca, menu_data, column_data_list)
-        if not retbool:
-            raise Exception(msg)
-        
-        # 対象の「メニュー定義一覧」のuuidおよびメニュー名を取得
-        menu_create_id = menu_data.get('menu_create_id')
-        menu_name = menu_data.get('menu_name')
-        
-        # 現在の「メニュー定義一覧」のレコードを取得
-        current_t_menu_define = objdbca.table_select(t_menu_define, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
-        if not current_t_menu_define:
-            raise Exception("「メニュー定義一覧」に対象のメニューが存在しません。")
-        current_t_menu_define = current_t_menu_define[0]
-        
-        # 「メニュー定義一覧」のレコードを更新
-        retbool, msg = _update_t_menu_define(objdbca, current_t_menu_define, menu_data, 'edit')
-        if not retbool:
-            raise Exception(msg)
-        
-        # カラムグループ用データがある場合、「カラムグループ作成情報」にレコードを登録
-        if group_data_list:
-            retbool, msg = _insert_t_menu_column_group(objdbca, group_data_list)
-            if not retbool:
-                raise Exception(msg)
-        
-        # 現在の「メニュー項目作成情報」のレコードを取得
-        current_t_menu_column_list = objdbca.table_select(t_menu_column, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
-        
-        # 「メニュー項目作成情報」から未使用となる項目のレコードを廃止
-        retbool, msg = _disuse_t_menu_column(objdbca, current_t_menu_column_list, column_data_list)
-        if not retbool:
-            raise Exception(msg)
-        
-        # 「メニュー項目作成情報」から更新対象のレコードを更新
-        retbool, msg = _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list, 'edit')
-        if not retbool:
-            raise Exception(msg)
-        
-        # 「メニュー項目作成情報」に新規追加項目用レコードを登録
-        retbool, msg = _insert_t_menu_column(objdbca, menu_data, column_data_list)
-        if not retbool:
-            raise Exception(msg)
-        
-        # 現在の「一意制約(複数項目)作成情報」のレコードを取得
-        current_t_menu_unique_constraint = objdbca.table_select(t_menu_unique_constraint, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])  # noqa: E501
-        
-        # 「一意制約(複数項目)」の値があり、かつ「一意制約(複数項目)作成情報」にレコードが存在する場合、レコードを更新
-        unique_constraint = menu_data.get('unique_constraint')
-        if current_t_menu_unique_constraint and unique_constraint:
-            target_recode = current_t_menu_unique_constraint[0]
-            retbool, msg = _update_t_menu_unique_constraint(objdbca, menu_data, target_recode)
-        
-        # 「一意制約(複数項目)」の値がない、かつ「一意制約(複数項目)作成情報」にレコードが存在する場合、レコードを廃止
-        elif current_t_menu_unique_constraint and not unique_constraint:
-            target_recode = current_t_menu_unique_constraint[0]
-            retbool, msg = _disuse_t_menu_unique_constraint(objdbca, target_recode)
-        
-        # 「一意制約(複数項目)」の値があり、かつ「一意制約(複数項目)作成情報」にレコードが存在しない場合、レコードを登録
-        elif not current_t_menu_unique_constraint and unique_constraint:
-            retbool, msg = _insert_t_menu_unique_constraint(objdbca, menu_data)
-            if not retbool:
-                raise Exception(msg)
-        
-        # 「ロール選択」の値を取得
-        role_list = menu_data.get('role_list')
-        
-        # 現在の「メニュー-ロール作成情報」のレコードを取得
-        current_t_menu_role = objdbca.table_select(t_menu_role, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
-        current_role_list = []
-        current_role_dict = {}
-        if current_t_menu_role:
-            for recode in current_t_menu_role:
-                menu_role_id = recode.get('MENU_ROLE_ID')
-                role = recode.get('ROLE_ID')
-                last_update_timestamp = recode.get('LAST_UPDATE_TIMESTAMP')
-                last_update_date_time = last_update_timestamp.strftime('%Y/%m/%d %H:%M:%S.%f')
-                current_role_list.append(role)
-                current_role_dict[role] = {"menu_role_id": menu_role_id, 'last_update_date_time': last_update_date_time}
-        
-        # 新規に登録するロールの対象一覧を取得し、レコードを追加
-        add_role_list = set(role_list) - set(current_role_list)
-        if list(add_role_list):
-            retbool, msg = _insert_t_menu_role(objdbca, menu_name, list(add_role_list))
-            if not retbool:
-                raise Exception(msg)
-        
-        # 廃止するロールの対象一覧を取得し、レコードを廃止
-        disuse_role_list = set(current_role_list) - set(role_list)
-        if list(disuse_role_list):
-            retbool, msg = _disuse_t_menu_role(objdbca, list(disuse_role_list), current_role_dict)
-            if not retbool:
-                raise Exception(msg)
-        
-        # 「メニュー作成履歴」にレコードを登録
-        status_id = "1"  # (1:未実行)
-        create_type = "3"  # (3:編集)
+        if type == "create_new":
+            create_type = "1"  # (1:新規作成)
+        elif type == "initialize":
+            create_type = "2"  # (2:初期化)
+        elif type == "edit":
+            create_type = "3"  # (3:編集)
         retbool, history_id, msg = _insert_t_menu_create_history(objdbca, menu_create_id, status_id, create_type, user_id)
         if not retbool:
             raise Exception(msg)
@@ -900,7 +723,7 @@ def _update_t_menu_define(objdbca, current_t_menu_define, menu_data, create_type
             objdbca:DB接クラス  DBConnectWs()
             current_t_menu_define: 「メニュー定義一覧」の更新対象のレコード
             menu_data: 登録対象のメニュー情報
-            create_type: 初期化(initialize), 編集(edit)のいずれか
+            create_type: 新規作成(create_new), 初期化(initialize), 編集(edit)のいずれか
         RETRUN:
             boolean, msg
     """
@@ -913,28 +736,31 @@ def _update_t_menu_define(objdbca, current_t_menu_define, menu_data, create_type
     try:
         # 更新対象レコードの「メニュー作成状態」が「2:作成済み」ではない場合「初期化」「編集」はできないのでエラー判定
         menu_create_done_status = str(current_t_menu_define.get('MENU_CREATE_DONE_STATUS'))
-        if not menu_create_done_status == "2":
+        if (create_type == 'initialize' or create_type == 'edit') and not menu_create_done_status == "2":
             msg = "「メニュー定義一覧」の更新対象のレコードの「メニュー作成状態」が「作成済み」では無い場合、「初期化」および「編集」は実行できません。"
             raise Exception(msg)
         
-        # 「メニュー名(ja)」「メニュー名(en)」「メニュー名(rest)」に変更がある場合はエラー判定
-        currrent_menu_name_ja = current_t_menu_define.get('MENU_NAME_JA')
-        current_menu_name_en = current_t_menu_define.get('MENU_NAME_EN')
-        current_menu_name_rest = current_t_menu_define.get('MENU_NAME_REST')
+        # 各種メニュー名称を取得
         menu_name_ja = menu_data.get('menu_name')
         menu_name_en = menu_data.get('menu_name')
         menu_name_rest = menu_data.get('menu_name_rest')
-        if not currrent_menu_name_ja == menu_name_ja or not current_menu_name_en == menu_name_en:
-            msg = "「初期化」および「編集」の際はメニュー名は変更できません。"
-            raise Exception(msg)
-        
-        if not current_menu_name_rest == menu_name_rest:
-            msg = "「初期化」および「編集」の際はメニュー名(rest)は変更できません。"
-            raise Exception(msg)
         
         # 「シートタイプ」「縦メニュー利用」を取得
         sheet_type = str(menu_data.get('sheet_type'))
         vertical = str(menu_data.get('vertical'))
+        
+        # 「初期化」「編集」の場合のみチェックするバリデーション
+        if create_type == 'initialize' or create_type == 'edit':
+            currrent_menu_name_ja = current_t_menu_define.get('MENU_NAME_JA')
+            current_menu_name_en = current_t_menu_define.get('MENU_NAME_EN')
+            current_menu_name_rest = current_t_menu_define.get('MENU_NAME_REST')
+            if not currrent_menu_name_ja == menu_name_ja or not current_menu_name_en == menu_name_en:
+                msg = "「初期化」および「編集」の際はメニュー名は変更できません。"
+                raise Exception(msg)
+            
+            if not current_menu_name_rest == menu_name_rest:
+                msg = "「初期化」および「編集」の際はメニュー名(rest)は変更できません。"
+                raise Exception(msg)
         
         # 「編集」の場合のみチェックするバリデーション
         if create_type == 'edit':
