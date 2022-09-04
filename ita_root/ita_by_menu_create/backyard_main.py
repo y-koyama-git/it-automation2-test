@@ -231,7 +231,6 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
             menu_uuid = result[0].get('MENU_ID')
             
             # 「ロール-メニュー紐付管理」にレコードを登録
-            # ####メモ：未実装。一時的な対処として、仮のレコードを登録する。
             result, msg = _insert_t_comn_role_menu_link(objdbca, menu_uuid, recode_t_menu_role)
             if not result:
                 raise Exception(msg)
@@ -268,14 +267,12 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
             
             # 「メニュー定義-テーブル紐付管理」にレコードを登録
             result, msg = _insert_t_menu_table_link(objdbca, menu_uuid, create_table_name, create_table_name_jnl)
-            if not result:
-                raise Exception(msg)
-        
-        # ####「他メニュー連携」に対するレコード登録処理スタート
-        # ####メモ：作成する項目の中で「必須」「一意制約」が両方Trueのものがあれば、レコードを登録する。
-        # ####メモ：未実装。
-        # 対象メニューグループ「入力用」の場合のみ実施
-        # if menu_group_col_name == "MENU_GROUP_ID_INPUT":
+            
+            # 「他メニュー連携」にレコードを登録(対象メニューグループ「入力用」の場合のみ実施)
+            if menu_group_col_name == "MENU_GROUP_ID_INPUT":
+                result, msg = _insert_t_menu_other_link(objdbca, menu_uuid, create_table_name, recode_t_menu_column)
+                if not result:
+                    raise Exception(msg)
         
         # コミット/トランザクション終了
         objdbca.db_transaction_end(True)
@@ -1253,6 +1250,76 @@ def _insert_t_menu_table_link(objdbca, menu_uuid, create_table_name, create_tabl
     return result, None
 
 
+def _insert_t_menu_other_link(objdbca, menu_uuid, create_table_name, recode_t_menu_column):
+    """
+        「他メニュー連携」メニューのテーブルにレコードを追加する。また、同一内容の廃止済みレコードがある場合は復活処理をする。
+        ARGS:
+            objdbca: DB接クラス DBConnectWs()
+            menu_uuid: 対象のメニュー（「メニュー管理」のレコード）のUUID
+            create_table_name: 作成した対象のテーブル名
+            recode_t_menu_column: 「メニュー項目作成情報」の対象のレコード一覧
+        RETRUN:
+            result, msg
+    """
+    # テーブル名
+    t_menu_other_link = 'T_MENU_OTHER_LINK'
+    
+    try:
+        # 他メニュー連携の対象とするカラムクラス一覧(1:SingleTextColumn, 2:MultiTextColumn, 3:NumColumn, 4:FloatColumn, 5:DateTimeColumn, 6:DateColumn, 9:FileUploadColumn, 10:HostInsideLinkTextColumn)  # noqa: E501
+        target_column_class_list = ["1", "2", "3", "4", "5", "6", "9", "10"]
+        for recode in recode_t_menu_column:
+            column_class = str(recode.get('COLUMN_CLASS'))
+            required = str(recode.get('REQUIRED'))
+            uniqued = str(recode.get('UNIQUED'))
+            
+            # カラムクラスが他メニュー連携の対象かつ、必須かつ、一意制約の場合登録を実施
+            if column_class in target_column_class_list and required == "1" and uniqued == "1":
+                column_name_rest = recode.get('COLUMN_NAME_REST')
+                column_disp_name_ja = recode.get('COLUMN_NAME_JA')
+                column_disp_name_en = recode.get('COLUMN_NAME_EN')
+                
+                # 廃止済みレコードの中から「MENU_ID」「REF_TABLE_NAME」「REF_COL_NAME_REST」「COLUMN_CLASS」が一致しているレコードを検索
+                sql_where = 'WHERE MENU_ID = %s AND REF_TABLE_NAME = %s AND REF_COL_NAME_REST = %s AND COLUMN_CLASS = %s AND DISUSE_FLAG = %s'
+                sql_bind = [menu_uuid, create_table_name, column_name_rest, column_class, 1]
+                ret = objdbca.table_select(t_menu_other_link, sql_where, sql_bind)
+                if ret:
+                    # 条件が一致するレコードがある場合は復活処理(カラム表示名のみ更新対象)
+                    link_id = ret[0].get('LINK_ID')
+                    data = {
+                        'LINK_ID': link_id,
+                        "COLUMN_DISP_NAME_JA": column_disp_name_ja,
+                        "COLUMN_DISP_NAME_EN": column_disp_name_en,
+                        'DISUSE_FLAG': "0"
+                    }
+                    result = objdbca.table_update(t_menu_other_link, data, "LINK_ID")
+                    
+                else:
+                    # 条件が一致するレコードが無い場合は新規登録
+                    data_list = {
+                        "MENU_ID": menu_uuid,
+                        "COLUMN_DISP_NAME_JA": column_disp_name_ja,
+                        "COLUMN_DISP_NAME_EN": column_disp_name_en,
+                        "REF_TABLE_NAME": create_table_name,
+                        "REF_PKEY_NAME": "ROW_ID",
+                        "REF_COL_NAME": "DATA_JSON",
+                        "REF_COL_NAME_REST": column_name_rest,
+                        "REF_SORT_CONDITIONS": None,
+                        "REF_MULTI_LANG": "0",
+                        "COLUMN_CLASS": column_class,
+                        "MENU_CREATE_FLAG": "1",
+                        "DISUSE_FLAG": "0",
+                        "LAST_UPDATE_USER": g.get('USER_ID')
+                    }
+                    primary_key_name = 'LINK_ID'
+                    result = objdbca.table_insert(t_menu_other_link, data_list, primary_key_name)
+        
+    except Exception as msg:
+        print(msg)
+        return False, msg
+    
+    return result, None
+
+
 def _create_validate_option(recode):
     """
         「メニュー-カラム紐付管理」メニューのテーブルにレコードを追加する際のvalidate_optionの値を生成する。
@@ -1524,9 +1591,13 @@ def _disuse_menu_create_recode(objdbca, recode_t_menu_define):
                 'DISUSE_FLAG': "1"
             }
             objdbca.table_update(t_menu_table_link, data, "MENU_ID")
-        
-        # 「他メニュー連携」にて対象のレコードを廃止
-        # ####メモ：未実装。「メニューグループ」「メニュー」「項目名」「テーブル名」「主キー」「カラム名」が完全一致のレコードを廃止する想定。
+            
+            # 「他メニュー連携」にて対象のレコードを廃止
+            data = {
+                'MENU_ID': menu_id,
+                'DISUSE_FLAG': "1"
+            }
+            objdbca.table_update(t_menu_other_link, data, "MENU_ID")
         
     except Exception as msg:
         print(msg)
