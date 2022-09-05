@@ -1265,6 +1265,8 @@ def _insert_t_menu_other_link(objdbca, menu_uuid, create_table_name, recode_t_me
     t_menu_other_link = 'T_MENU_OTHER_LINK'
     
     try:
+        result = True
+        
         # 他メニュー連携の対象とするカラムクラス一覧(1:SingleTextColumn, 2:MultiTextColumn, 3:NumColumn, 4:FloatColumn, 5:DateTimeColumn, 6:DateColumn, 9:FileUploadColumn, 10:HostInsideLinkTextColumn)  # noqa: E501
         target_column_class_list = ["1", "2", "3", "4", "5", "6", "9", "10"]
         for recode in recode_t_menu_column:
@@ -1329,7 +1331,6 @@ def _create_validate_option(recode):
             validate_option, validate_regular_expression
     """
     validate_option = None
-    # ####メモ：正規表現をデータベースに登録する際に、エスケープ処理をする必要があるかも。
     validate_regular_expression = None
     tmp_validate_option = {}
     column_class = str(recode.get('COLUMN_CLASS'))
