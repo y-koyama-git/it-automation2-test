@@ -3,7 +3,6 @@ from flask import g
 import os
 
 def CommnVarsUsedListUpdate(objdbca, option, ContensID, FileID, VarsAry):
-    
     MasterTableName = "T_ANSC_COMVRAS_USLIST"
     MemberAry = {}
     PkeyMember = ""
@@ -13,18 +12,14 @@ def CommnVarsUsedListUpdate(objdbca, option, ContensID, FileID, VarsAry):
     ret = objdbca.table_columns_get(MasterTableName)
     for i in ret[0]:
         MemberAry[i] = ""
-    print("takigawa9")
     
     PkeyMember = ret[1][0]
-    print(VarsAry)
     for VarID, VarNameList in VarsAry.items():
         for VarName, dummy in VarNameList.items():
-            sql = "WHERE FILE_ID= %s AND VRA_ID= %s AND CONTENTS_ID= %s AND VAR_NAME= %s "
-            print(sql)
+            sql = "WHERE FILE_ID= %s AND VRA_ID= %s AND CONTENTS_ID= %s AND VAR_NAME= %s"
             ret = objdbca.table_select(MasterTableName, sql, [FileID, VarID, ContensID, VarName])
             arrayValue = MemberAry
             arrayConfig = MemberAry
-            print(len(ret))
             if len(ret) == 0:
                 action = 'INSERT'
                 arrayValue['FILE_ID'] = FileID
@@ -46,6 +41,7 @@ def CommnVarsUsedListUpdate(objdbca, option, ContensID, FileID, VarsAry):
                     arrayValue['DISUSE_FLAG']            = '0'
                     arrayValue['LAST_UPDATE_USER']       = option["user"]  # 最終更新者
                     # 最終更新日時は振ってくれるので問題なし
+            else:
                 msg = "Duplicate error. (Table:{} {}".format(MasterTableName, sql)
                 return False, msg
             if action == 'NONE':
@@ -62,7 +58,6 @@ def CommnVarsUsedListUpdate(objdbca, option, ContensID, FileID, VarsAry):
                     'DISUSE_FLAG': arrayValue['DISUSE_FLAG'],
                     'LAST_UPDATE_USER': arrayValue['LAST_UPDATE_USER']
                 }
-                print("takigawa10")
                 ret = objdbca.table_insert(MasterTableName, data_list, PkeyMember, False)
                 if ret is False:
                     msg = g.appmsg.get_api_message("MSG-10178", os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno)
@@ -81,8 +76,8 @@ def CommnVarsUsedListUpdate(objdbca, option, ContensID, FileID, VarsAry):
 
     if len(UsedPkeyList) != 0:
         # 不要レコードを抽出
-        sql = "WHERE FILE_ID = %s AND CONTENTS_ID= %s AND %s NOT IN (%s) "
-        ret = objdbca.table_select(MasterTableName, sql, [FileID, ContensID, PkeyMember, ",".join(UsedPkeyList)])
+        sql = "WHERE FILE_ID = %s AND CONTENTS_ID= %s AND " + PkeyMember + " NOT IN (%s)"
+        ret = objdbca.table_select(MasterTableName, sql, [FileID, ContensID, ",".join(UsedPkeyList)])
     else:
         sql = "WHERE FILE_ID = %s AND CONTENTS_ID= %s "
         ret = objdbca.table_select(MasterTableName, sql, [FileID, ContensID])
@@ -111,6 +106,7 @@ def CommnVarsUsedListUpdate(objdbca, option, ContensID, FileID, VarsAry):
 
 
 def CommnVarsUsedListDisuseSet(objdbca, option, ContensID, FileID):
+    
     MasterTableName = "T_ANSC_COMVRAS_USLIST"
     MemberAry = {}
     PkeyMember = ""
@@ -124,20 +120,21 @@ def CommnVarsUsedListDisuseSet(objdbca, option, ContensID, FileID):
     ret = objdbca.table_select(MasterTableName, sql, [FileID, ContensID])
     if len(ret) == 0:
         return False, msg
+    
     for row in ret:
         arrayValue = MemberAry
         arrayConfig = MemberAry
-        for col, dummy in row.items(): 
+        for col, dummy in row.items():
             arrayValue[col] = row[col]
 
-        if option["cmd_type"] == 'Delete':
+        if option["cmd_type"] == 'Discard':
             # 廃止の場合、復活時の有効レコードフラグを設定
             if arrayValue['DISUSE_FLAG'] == '0':
                 arrayValue['DISUSE_FLAG'] = '1'
                 arrayValue['REVIVAL_FLAG'] = '1'
             else:
                 continue
-            data_list = {PkeyMember: row[PkeyMember], 'REVIVAL_FLAG': arrayValue['REVIVAL_FLAG'], 'DISUSE_FLAG': arrayValue['DISUSE_FLAG'], 'LAST_UPDATE_USER': option["user"]}
+            data_list = {PkeyMember: arrayValue[PkeyMember], 'REVIVAL_FLAG': arrayValue['REVIVAL_FLAG'], 'DISUSE_FLAG': arrayValue['DISUSE_FLAG'], 'LAST_UPDATE_USER': option["user"]}
             result = objdbca.table_update(MasterTableName, data_list, PkeyMember, False)
             if result is False:
                 msg = g.appmsg.get_api_message("MSG-10178", os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno)
