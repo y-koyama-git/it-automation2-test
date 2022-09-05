@@ -1,4 +1,3 @@
-import pprint
 from flask import g
 
 from common_libs.ansible_driver.classes.AnscConstClass import AnscConst
@@ -36,8 +35,8 @@ class AuthTypeParameterRequiredCheck:
         self.err_msg_code_ary[AuthTypeParameterRequiredCheck.chkType_Loadtable_DeviceList]['ERROR_TYPE7'] = "MSG-10238"
         self.err_msg_code_ary[AuthTypeParameterRequiredCheck.chkType_Loadtable_DeviceList]['ERROR_TYPE8'] = "MSG-10239"
         self.err_msg_code_ary[AuthTypeParameterRequiredCheck.chkType_Loadtable_DeviceList]['ERROR_TYPE9'] = "MSG-10240"
-        self.err_msg_code_ary[AuthTypeParameterRequiredCheck.chkType_Loadtable_DeviceList]['ERROR_TYPE10']= "MSG-10241"
-        self.err_msg_code_ary[AuthTypeParameterRequiredCheck.chkType_Loadtable_DeviceList]['ERROR_TYPE11']= "MSG-10242"
+        self.err_msg_code_ary[AuthTypeParameterRequiredCheck.chkType_Loadtable_DeviceList]['ERROR_TYPE10'] = "MSG-10241"
+        self.err_msg_code_ary[AuthTypeParameterRequiredCheck.chkType_Loadtable_DeviceList]['ERROR_TYPE11'] = "MSG-10242"
 
         # AuthType 2:Towerホスト一覧ロードテーブル
         self.err_msg_code_ary[AuthTypeParameterRequiredCheck.chkType_Loadtable_TowerHostList] = {}
@@ -124,12 +123,14 @@ class AuthTypeParameterRequiredCheck:
         retBool = ""
         result = ""
         msg = ""
-        # ログインユーザーIDの入力チェック
-        if str_login_user == "" or str_login_user is None:
-            error_cde = self.err_msg_code_ary[chk_type]['ERROR_TYPE8']
-            if len(result) != 0:
-                result += "\n"
-            result = g.appmsg.get_api_message(error_cde, err_msg_parameter_ary)
+        # 認証方式:鍵認証(パスフレーズなし), 認証方式:パスワード認証, 認証方式:鍵認証(鍵交換済み), 認証方式:鍵認証(パスフレーズあり), 認証方式:パスワード認証(winrm)
+        if AnscConst.DF_LOGIN_AUTH_TYPE_KEY or AnscConst.DF_LOGIN_AUTH_TYPE_PW or AnscConst.DF_LOGIN_AUTH_TYPE_KEY_EXCH or AnscConst.DF_LOGIN_AUTH_TYPE_KEY_PP_USE or AnscConst.DF_LOGIN_AUTH_TYPE_PW_WINRM:
+            # ログインユーザーIDの入力チェック
+            if str_login_user is None:
+                error_cde = self.err_msg_code_ary[chk_type]['ERROR_TYPE8']
+                if len(result) != 0:
+                    result += "\n"
+                result = g.appmsg.get_api_message(error_cde, err_msg_parameter_ary)
 
         # 認証方式毎の必須入力チェック
         if str_auth_mode == AnscConst.DF_LOGIN_AUTH_TYPE_KEY:  # 認証方式:鍵認証(パスフレーズなし)
@@ -157,7 +158,7 @@ class AuthTypeParameterRequiredCheck:
                 if len(result) != 0:
                     result += "\n"
                 result += g.appmsg.get_api_message(error_cde, err_msg_parameter_ary)
-        elif str_auth_mode == "":  # 認証方式: 未選択
+        elif str_auth_mode is None:  # 認証方式: 未選択
             pass
         else:  # 認証方式が不正
             error_cde = self.err_msg_code_ary[chk_type]['ERROR_TYPE7']
