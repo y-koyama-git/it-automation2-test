@@ -13,6 +13,8 @@
 #
 from flask import g
 import os
+from common_libs.ansible_driver.classes.AnscConstClass import AnscConst
+from common_libs.ansible_driver.classes.AnsrConstClass import AnsrConst
 """
   Ansible共通モジュール
 """
@@ -40,6 +42,7 @@ def getRolePackageContentUploadDirPath():
     """
     return getDataRelayStorageDir() + "/uploadfiles/20403/zip_format_role_package_file"
 
+
 def getFileContentUploadDirPath():
     """
       ファイル管理FileUploadColumnディレクトリバスを取得する。
@@ -49,6 +52,7 @@ def getFileContentUploadDirPath():
         ファイル管理FileUploadColumnディレクトリバスを取得
     """
     return getDataRelayStorageDir() + "/uploadfiles/20105/files"
+
 
 def getTemplateContentUploadDirPath():
     """
@@ -60,6 +64,7 @@ def getTemplateContentUploadDirPath():
     """
     return getDataRelayStorageDir() + "/uploadfiles/20106/template_files"
 
+
 def getDeviceListSSHPrivateKeyUploadDirPath():
     """
       機器一覧ssh秘密鍵ファイルディレクトリバスを取得する。
@@ -70,6 +75,7 @@ def getDeviceListSSHPrivateKeyUploadDirPath():
     """
     return getDataRelayStorageDir() + "/uploadfiles/20101/ssh_private_key_file"
 
+
 def getDeviceListServerCertificateUploadDirPath():
     """
       機器一覧サーバー証明書ディレクトリバスを取得する。
@@ -78,8 +84,9 @@ def getDeviceListServerCertificateUploadDirPath():
       Returns:
         機器一覧サーバー証明書ディレクトリバスを取得
     """
-    return  getDataRelayStorageDir() + "/uploadfiles/20101/server_certificate"
-  
+    return getDataRelayStorageDir() + "/uploadfiles/20101/server_certificate"
+
+
 def getAnsibleIFSSHPrivateKeyUploadDirPath():
     """
       Ansibleインターフェースssh秘密鍵ファイルディレクトリバスを取得する。
@@ -88,7 +95,8 @@ def getAnsibleIFSSHPrivateKeyUploadDirPath():
       Returns:
         Ansibleインターフェースssh秘密鍵ファイルディレクトリバス
     """
-    return  getDataRelayStorageDir() + "/uploadfiles/20102/ssh_private_key_file"
+    return getDataRelayStorageDir() + "/uploadfiles/20102/ssh_private_key_file"
+
 
 def getAACListSSHPrivateKeyUploadDirPath():
     """
@@ -98,7 +106,8 @@ def getAACListSSHPrivateKeyUploadDirPath():
       Returns:
         AACホスト一覧ssh秘密鍵ファイルディレクトリバス
     """
-    return  getDataRelayStorageDir() + "/uploadfiles/20103/ssh_private_key_file"
+    return getDataRelayStorageDir() + "/uploadfiles/20103/ssh_private_key_file"
+
 
 def getLegayRoleExecutPopulatedDataUploadDirPath():
     """
@@ -108,8 +117,9 @@ def getLegayRoleExecutPopulatedDataUploadDirPath():
       Returns:
         作業管理投入データディレクトリバス
     """
-    return  getDataRelayStorageDir() + "/uploadfiles/20412/populated_data"
-  
+    return getDataRelayStorageDir() + "/uploadfiles/20412/populated_data"
+
+
 def getLegayRoleExecutResultDataUploadDirPath():
     """
       作業管理結果データディレクトリバスを取得する。
@@ -118,7 +128,8 @@ def getLegayRoleExecutResultDataUploadDirPath():
       Returns:
         作業管理結果データディレクトリバス
     """
-    return  getDataRelayStorageDir() + "/uploadfiles/20412/result_data"
+    return getDataRelayStorageDir() + "/uploadfiles/20412/result_data"
+
 
 def to_str(bstr):
     """
@@ -133,8 +144,8 @@ def to_str(bstr):
     else:
         toStr = bstr
     return toStr
-  
-  
+
+
 def get_AnsibleDriverTmpPath():
     """
       Ansible用tmpバスを取得する。
@@ -144,8 +155,8 @@ def get_AnsibleDriverTmpPath():
         Ansible用tmpバス
     """
     return getDataRelayStorageDir() + "/tmp/driver/ansible"
-  
-  
+
+
 def getFileupLoadColumnPath(menuid, Column):
     """
       FileUploadColumnのパスを取得する。
@@ -167,7 +178,25 @@ def get_AnsibleDriverShellPath():
         Ansible用shell格納バス
     """
     return "{}common_libs/ansible_driver/shells".format(os.environ["PYTHONPATH"])
- 
+
+
+def getAnsibleExecutDirPath(driver_id, execute_no):
+    """
+      ansibe作業実行ディレクトリパス取得
+      Arguments:
+        driver_id: ドライバID
+        execute_no: 作業番号
+      Returns:
+        ansibe作業実行ディレクトリパスを取得
+    """
+    AnscObj = AnscConst()
+    if driver_id == AnscObj.DF_LEGACY_ROLE_DRIVER_ID:
+        del AnscObj
+        AnscObj = AnsrConst()
+        driver_dir_name = AnscObj.vg_OrchestratorSubId_dir
+        
+    return getDataRelayStorageDir() + "/driver/ansible/{}/{}".format(driver_dir_name, execute_no)
+
 
 def getDataRelayStorageDir():
     return "/{}/{}/{}".format("storage", g.get('ORGANIZATION_ID'), g.get('WORKSPACE_ID'))

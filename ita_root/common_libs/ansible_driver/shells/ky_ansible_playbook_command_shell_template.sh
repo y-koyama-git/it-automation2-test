@@ -78,4 +78,11 @@ RET_CODE=$?
 if [ "${SSHAGENT_EXEC}" = "RUN" ]; then
   eval `ssh-agent -k` 1>/dev/null
 fi
+RET_CODE=$?
+if [ ${RET_CODE} -eq 0 ]; then
+    STATUS_STR='COMPLETED;';
+    echo ${STATUS_STR}${RET_CODE} > <<result_file_path>>
+else
+    STATUS_STR='PREVENTED';
+    echo ${STATUS_STR} > <<result_file_path>>
 exit ${RET_CODE}
