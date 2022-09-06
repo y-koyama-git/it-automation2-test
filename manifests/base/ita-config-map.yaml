@@ -19,6 +19,7 @@ metadata:
 data:
   DEFAULT_LANGUAGE: "ja"
   STORAGEPATH: "/storage/"
+  GITLAB_PROTOCOL: "http"
   GITLAB_HOST: "" changeMe
   GITLAB_PORT: "40080"
   GITLAB_ROOT_TOKEN: "mzsQj8VU_zcSoSZsSX__"
