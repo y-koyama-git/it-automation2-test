@@ -50,3 +50,23 @@ class ValidationException(Exception):
     """
     exception class for application
     """
+
+    def __init__(self, *args):
+        """
+        constructor
+            make class ValidationException args (msg_code, parameter)
+
+        Arguments:
+            msg_code: メッセージコード
+            parameter: パラメーター
+        """
+        msg_code = ""
+        parameter = []
+
+        if len(args) == 2:
+            msg_code, parameter = args
+        else:
+            msg_code = args[0]
+
+        # set args
+        self.args = msg_code, parameter
