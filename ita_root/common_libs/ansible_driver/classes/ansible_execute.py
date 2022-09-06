@@ -24,7 +24,7 @@ Ansible coreコンテナの実行を制御するモジュール
 """
 
 
-class ansible_execute():
+class AnsibleExecute():
     """
     Ansible coreコンテナの実行を制御するクラス
     """
