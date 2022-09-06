@@ -16,10 +16,9 @@ import connexion
 import six  # noqa: F401
 
 from common_libs.common import *  # noqa: F403
-from libs import execute_info
 from common_libs.api import api_filter
-
-from libs import conductor_controll
+from libs.organization_common import check_menu_info, check_auth_menu, check_sheet_type
+from libs import conductor_controll, menu_info, menu_filter
 
 
 # Conductorクラス関連
@@ -42,8 +41,15 @@ def get_conductor_class_info(organization_id, workspace_id, menu):  # noqa: E501
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
 
-    # メニューに対するロール権限をチェック（Falseなら権限エラー）
-    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['14']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
 
     # メニューのカラム情報を取得
     result_data = conductor_controll.get_conductor_class_info(objdbca, menu)
@@ -70,8 +76,15 @@ def get_conductor_class_data(organization_id, workspace_id, menu, conductor_clas
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
 
-    # メニューに対するロール権限をチェック（Falseなら権限エラー）
-    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['14']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
 
     # メニューのカラム情報を取得
     result_data = conductor_controll.get_conductor_data(objdbca, menu, conductor_class_id)
@@ -103,8 +116,15 @@ def post_conductor_data(organization_id, workspace_id, menu, body=None):  # noqa
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
 
-    # メニューに対するロール権限をチェック（Falseなら権限エラー）
-    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['14']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
 
     result_data = conductor_controll.conductor_maintenance(objdbca, menu, conductor_data)
     return result_data,
@@ -137,9 +157,16 @@ def patch_conductor_data(organization_id, workspace_id, menu, conductor_class_id
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
 
-    # メニューに対するロール権限をチェック（Falseなら権限エラー）
-    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
-    
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['14']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
+
     result_data = conductor_controll.conductor_maintenance(objdbca, menu, conductor_data, conductor_class_id)
     return result_data,
 
@@ -163,12 +190,22 @@ def get_conductor_execute_info(organization_id, workspace_id, menu):  # noqa: E5
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
     
-    # メニューに対するロール権限をチェック（Falseなら権限エラー）
-    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['15']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
     
     # 作業実行関連のメニューの基本情報および項目情報の取得
-    target_menu = ["operation_list", "conductor_list"]
-    data = execute_info.call_collect_menu_info(objdbca, target_menu)
+    target_menus = ['operation_list', 'conductor_class_list']
+    data = {}
+    for target in target_menus:
+        data[target] = menu_info.collect_menu_info(objdbca, target)
+
     return data,
 
 
@@ -194,11 +231,25 @@ def get_execute_search_candidates(organization_id, workspace_id, menu, target, c
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
     
-    # メニューに対するロール権限をチェック（Falseなら権限エラー）
-    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['15']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
+    
+    # targetのチェック
+    target_menus = ['operation_list', 'conductor_class_list']
+    if target not in target_menus:
+        log_msg_args = []
+        api_msg_args = []
+        raise AppException("499-00008", log_msg_args, api_msg_args)  # noqa: F405
     
     # 対象項目のプルダウン検索候補一覧を取得
-    data = execute_info.collect_search_candidates(objdbca, target, column)
+    data = menu_info.collect_search_candidates(objdbca, target, column)
     return data,
 
 
@@ -224,8 +275,22 @@ def post_execute_filter(organization_id, workspace_id, menu, target, body=None):
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
 
-    # メニューに対するロール権限をチェック（Falseなら権限エラー）
-    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['15']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
+    
+    # targetのチェック
+    target_menus = ['operation_list', 'conductor_class_list']
+    if target not in target_menus:
+        log_msg_args = []
+        api_msg_args = []
+        raise AppException("499-00008", log_msg_args, api_msg_args)  # noqa: F405
     
     filter_parameter = {}
     if connexion.request.is_json:
@@ -233,7 +298,7 @@ def post_execute_filter(organization_id, workspace_id, menu, target, body=None):
         filter_parameter = body
         
     # メニューのカラム情報を取得
-    result_data = execute_info.rest_filter(objdbca, target, filter_parameter)
+    result_data = menu_filter.rest_filter(objdbca, target, filter_parameter)
     return result_data,
 
 
@@ -256,8 +321,15 @@ def get_conductor_execute_class_info(organization_id, workspace_id, menu):  # no
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
 
-    # メニューに対するロール権限をチェック（Falseなら権限エラー）
-    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['15']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
 
     # メニューのカラム情報を取得
     result_data = conductor_controll.get_conductor_execute_class_info(objdbca, menu)
@@ -284,8 +356,15 @@ def get_conductor_execute_class_data(organization_id, workspace_id, menu, conduc
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
 
-    # メニューに対するロール権限をチェック（Falseなら権限エラー）
-    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['15']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
 
     # メニューのカラム情報を取得
     result_data = conductor_controll.get_conductor_data_execute(objdbca, menu, conductor_class_id)
@@ -314,8 +393,15 @@ def post_conductor_excecute(organization_id, workspace_id, menu, body=None):  # 
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
 
-    # メニューに対するロール権限をチェック（Falseなら権限エラー）
-    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['15']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
     
     parameter = {}
     if connexion.request.is_json:
@@ -348,8 +434,15 @@ def get_conductor_info(organization_id, workspace_id, menu, conductor_instance_i
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
 
-    # メニューに対するロール権限をチェック（Falseなら権限エラー）
-    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['16']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
 
     # メニューのカラム情報を取得
     result_data = conductor_controll.get_conductor_info(objdbca, menu, conductor_instance_id)
@@ -376,8 +469,15 @@ def get_conductor_instance_data(organization_id, workspace_id, menu, conductor_i
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
 
-    # メニューに対するロール権限をチェック（Falseなら権限エラー）
-    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['16']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
 
     # メニューのカラム情報を取得
     result_data = conductor_controll.get_conductor_instance_data(objdbca, menu, conductor_instance_id)
@@ -404,8 +504,15 @@ def patch_conductor_cancel(organization_id, workspace_id, menu, conductor_instan
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
 
-    # メニューに対するロール権限をチェック（Falseなら権限エラー）
-    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['16']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
     
     # 予約取消の実行
     action_type = "cancel"
@@ -435,8 +542,15 @@ def patch_conductor_relese(organization_id, workspace_id, menu, conductor_instan
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
 
-    # メニューに対するロール権限をチェック（Falseなら権限エラー）
-    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['16']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
     
     # 一時停止解除の実行
     action_type = "relese"
@@ -464,8 +578,15 @@ def patch_conductor_scram(organization_id, workspace_id, menu, conductor_instanc
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
 
-    # メニューに対するロール権限をチェック（Falseなら権限エラー）
-    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['16']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
     
     # 緊急停止の実行
     action_type = "scram"
@@ -494,8 +615,21 @@ def get_conductor_input_data(organization_id, workspace_id, menu, conductor_inst
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
 
-    # メニューに対するロール権限をチェック（Falseなら権限エラー）
-    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['0']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
+    
+    # このRestAPIは「Conductor作業一覧」専用
+    if menu != 'conductor_list':
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException("401-00003", log_msg_args, api_msg_args)  # noqa: F405
     
     # 入力データ収集
     data_type = 'input'
@@ -522,9 +656,22 @@ def get_conductor_result_data(organization_id, workspace_id, menu, conductor_ins
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
 
-    # メニューに対するロール権限をチェック（Falseなら権限エラー）
-    chk_auth_manu = execute_info.call_check_auth_menu(objdbca, menu)  # noqa: F841
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['0']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
     
+    # このRestAPIは「Conductor作業一覧」専用
+    if menu != 'conductor_list':
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException("401-00003", log_msg_args, api_msg_args)  # noqa: F405
+        
     # 結果データ収集
     data_type = 'result'
     result_data = conductor_controll.create_movement_zip(objdbca, menu, data_type, conductor_instance_id)

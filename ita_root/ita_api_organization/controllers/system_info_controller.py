@@ -33,7 +33,7 @@ def get_ita_version(organization_id, workspace_id):  # noqa: E501
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
     
-    # ユーザの権限情報を取得
+    # バージョン情報を取得
     data = system_info.collect_ita_version(objdbca)
     
     return data,
