@@ -89,7 +89,7 @@ class SubValueAutoReg():
         "LAST_UPDATE_USER": ""
     }
     
-    def GetDataFromParameterSheet(self, WS_DB, exec_type, operation_id="", movement_id="", execution_no=""):
+    def GetDataFromParameterSheet(self, exec_type, operation_id="", movement_id="", execution_no="", WS_DB=None):
         """
         代入値自動登録とパラメータシートを抜く
         """
