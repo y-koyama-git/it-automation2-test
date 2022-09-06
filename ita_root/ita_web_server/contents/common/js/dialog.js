@@ -43,11 +43,19 @@ open( body ) {
 
         // Dialog
         d.$.dialog = $( d.dialog() );
+        d.$.header = d.$.dialog .find('.dialogHeader');
         d.$.body = d.$.dialog.find('.dialogBody');
-        if ( body ) d.setBody( body );
+        d.$.footer = d.$.dialog .find('.dialogFooter');
+        
+        if ( body ) {
+            d.setBody( body );
+        } else {
+            d.$.dialog.addClass('dialogProcessing');
+            d.$.body.html(`<div class="processingContainer"></div>`);
+        }
 
         // z-index
-        const length = d.$.modalContainer.find('.modalOverlay').length;
+        const length = d.$.modalContainer.find('.showDialog').length;
         d.$.dialog.css('z-index', length ).addClass('active');
 
         // Button
@@ -84,10 +92,9 @@ close() {
     const d = this;
     return new Promise(function( resolve ){
         d.$.dialog.remove();
-        d.$.dialog = undefined;
 
         if ( d.$.modalContainer.find('.modalOverlay').length ) {
-            d.$.modalContainer.find('.modalOverlay:last-child').addClass('active');
+            d.$.modalContainer.find('.modalOverlay.showDialog:last').addClass('active');
         } else {
             d.$.modalContainer.remove();
             d.$.modalFocus.remove();
@@ -95,8 +102,50 @@ close() {
             d.offFocusEvent();
         }
         d.$.originTarget.focus();
-        setTimeout( function(){ resolve(); }, 100 );
+        setTimeout( function(){ 
+            resolve();
+        }, 100 );
     });
+}
+/*
+--------------------------------------------------
+   Hide
+--------------------------------------------------
+*/
+hide() {
+    const d = this;
+    
+    d.$.dialog.removeClass('showDialog').css('z-index', -1 );
+    d.$.dialog.hide();
+    
+    if ( d.$.modalContainer.find('.showDialog').length ) {
+        d.$.modalContainer.find('.showDialog:last').addClass('active');
+    } else {
+        d.$.modalContainer.hide();
+        d.$.modalFocus.remove();
+        d.$.body.removeClass('modalOpen');
+        d.offFocusEvent();
+    }
+}
+/*
+--------------------------------------------------
+   Show
+--------------------------------------------------
+*/
+show() {
+    const d = this;
+    
+    const zIndex = d.$.modalContainer.find('.showDialog').length + 1;
+    d.$.dialog.addClass('showDialog').css('z-index', zIndex );
+    d.$.dialog.show();
+
+    if ( zIndex === 1 ) {
+        d.$.modalContainer.show();
+        d.onFocusEvent();
+        d.$.body.addClass('modalOpen')
+            .prepend('<div class="modalContainerFocusFirst modalContainerFocus" tabindex="0"></div>')
+            .append('<div class="modalContainerFocusLast modalContainerFocus" tabindex="0"></div>');
+    }
 }
 /*
 --------------------------------------------------
@@ -111,6 +160,8 @@ init() {
         d.$.body.addClass('modalOpen')
             .prepend('<div class="modalContainerFocusFirst modalContainerFocus" tabindex="0"></div>')
             .append('<div id="modalContainer"></div><div class="modalContainerFocusLast modalContainerFocus" tabindex="0"></div>');
+    } else {
+        $('#modalContainer').show();
     }
 }
 /*
@@ -141,8 +192,9 @@ onFocusEvent() {
 --------------------------------------------------
 */
 offFocusEvent() {
-    this.$.body.off('focusin.modal focusout.modal');
-    $('.modalFocus').remove();
+    const d = this;
+    d.$.body.off('focusin.modal focusout.modal');
+    d.$.body.find('.modalFocus').remove();
 }
 /*
 --------------------------------------------------
@@ -175,7 +227,7 @@ dialog() {
     attrs.push(`class="${className.join(' ')}"`);
     mainAttrs.push(`class="${mainClassName.join(' ')}"`);
     
-    return `<div class="modalOverlay">`
+    return `<div class="modalOverlay showDialog">`
     + `<div class="modalFocusFirst modalFocus" tabindex="0"></div>`
     + `<div ${attrs.join(' ')}><div ${mainAttrs.join(' ')}>${html.join('')}</div></div>`
     + `<div class="modalFocusLast modalFocus" tabindex="0"></div>`
@@ -204,8 +256,15 @@ header() {
 body() {
     return `<div class="dialogBody"></div>`;
 }
+/*
+--------------------------------------------------
+   Set body
+--------------------------------------------------
+*/
 setBody( elements ) {
     const d = this;
+    d.$.dialog.removeClass('dialogProcessing');
+    d.buttonEnabled();
     d.$.body.html( elements );
 }
 /*
@@ -221,13 +280,38 @@ footer() {
     if ( f.button ) {
         const buttonHtml = [];
         for ( const kind in f.button ) {
-            const button = fn.html.button( f.button[kind].text, ['itaButton', 'dialogButton', 'dialogFooterMenuButton'], { kind: kind, action: f.button[kind].action, style: f.button[kind].style });
+            const button = fn.html.button( f.button[kind].text, ['itaButton', 'dialogButton', 'dialogFooterMenuButton'],
+                { kind: kind, action: f.button[kind].action, style: f.button[kind].style, disabled: 'disabled'});
             buttonHtml.push(`<li class="dialogFooterMenuItem">${button}</li>`);
         }
         html.push(`<ul class="dialogFooterMenuList">${buttonHtml.join('')}</ul>`);
     }
     if ( f.resize ) html.push('<div class="dialogFooterResize"></div>');
     return `<div class="${className.join(' ')}">${html.join('')}</div>`;
+}
+/*
+--------------------------------------------------
+   Header and Footer button disabled
+--------------------------------------------------
+*/
+buttonDisabled() {
+    const d = this;
+    
+    d.$.header.add( d.$.footer ).find('.dialogButton').each(function(){
+        $( this ).prop('disabled', true );
+    });
+}
+/*
+--------------------------------------------------
+   Header and Footer button enabled
+--------------------------------------------------
+*/
+buttonEnabled() {
+    const d = this;
+    
+    d.$.header.add( d.$.footer ).find('.dialogButton').each(function(){
+        $( this ).prop('disabled', false );
+    });
 }
 /*
 --------------------------------------------------

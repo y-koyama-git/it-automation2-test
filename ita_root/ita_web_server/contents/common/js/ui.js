@@ -33,9 +33,7 @@ constructor() {
     ui.debugModeName = '__debug__';
     
     // Common parameter
-    ui.params = {};
-    ui.params.dir = '/_/ita';    
-    ui.params.path = fn.getPathname();
+    ui.params = fn.getCommonParams();
     ui.params.menuNameRest = fn.getParams().menu;
     
     // Start ui
@@ -112,7 +110,7 @@ setUi() {
                     break;
                     // 15 : Conductor作業実行
                     case '15':
-                        ui.condcutor('');
+                        ui.condcutor('execute');
                     break;
                     // 16 : Conductor作業確認
                     case '16':
@@ -139,7 +137,7 @@ setUi() {
         console.log('Error!')
         alert(e.message);
         window.console.error( e.message );
-        location.replace(ui.params.path + 'system_error/');
+        //location.replace(ui.params.path + 'system_error/');
     });
 }
 
@@ -294,7 +292,7 @@ userInfo() {
             </div>
         </div>
         <div class="userInfoBlock userInfoWorkspace">
-            <div class="userInfoTitle">${WD.UI.WsChange}</div>
+            <div class="userInfoTitle">${fn.html.icon('workspace')} ${WD.UI.WsChange}</div>
             <div class="userInfoBody">
                 <ul class="userInfoWorkspaceList">
                     ${workspaceList.join('')}
@@ -302,7 +300,7 @@ userInfo() {
             </div>
         </div>
         <div class="userInfoBlock userInfoRole">
-            <div class="userInfoTitle">${WD.UI.RoleList}</div>
+            <div class="userInfoTitle">${fn.html.icon('role')} ${WD.UI.RoleList}</div>
             <div class="userInfoBody">
                 <ul class="userInfoRoleList">
                     ${roleList.join('')}
