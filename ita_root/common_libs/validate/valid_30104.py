@@ -13,33 +13,32 @@ def conductor_class_validate(objdbca, objtable, option):
     try:
         """
         # 動確試験用（1系項目削除、変換処理 暫定対応）
-        option = convert_conductor_ver_1(option)
+        # option = convert_conductor_ver_1(option)
 
         target_rest_name = 'setting'
         entry_parameter = option.get('entry_parameter')
         tmp_parameter = entry_parameter.get('parameter')
         conductor_data = json.loads(tmp_parameter.get(target_rest_name))
         
-        cclibs = ConductorCommonLibs()
+        cclibs = ConductorCommonLibs(cmd_type=option.get('cmd_type'))
         result = cclibs.chk_format_all(copy.deepcopy(conductor_data))
         if result[0] is False:
             status_code = '499-00201'
-            msg_args = ["{}".format(result)]
+            msg_args = ["{}".format(result[2])]
             msg = g.appmsg.get_api_message(status_code, msg_args)
             retBool = result[0]
         else:
-            copy.deepcopy(conductor_data)
             result = cclibs.override_node_idlink(copy.deepcopy(conductor_data))
             if result[0] is False:
                 status_code = '499-00201'
-                msg_args = ["{}".format(result)]
+                msg_args = ["{}".format(result[2])]
                 msg = g.appmsg.get_api_message(status_code, msg_args)
                 retBool = result[0]
-            conductor_data = result[1]
-            conductor_data['conductor']['id'] = entry_parameter.get('parameter').get('conductor_class_id')
-            option['entry_parameter']['parameter'][target_rest_name] = json.dumps(conductor_data)
+            else:
+                conductor_data = result[1]
+                conductor_data['conductor']['id'] = entry_parameter.get('parameter').get('conductor_class_id')
+                option['entry_parameter']['parameter'][target_rest_name] = json.dumps(conductor_data)
         """
-        # del option['current_parameter']
         pass
     except Exception:
         retBool = False

@@ -168,12 +168,18 @@ def menu_column_valid(objdbca, objtable, option):
                 msg = "「初期値」の値が指定した「最大バイト数」を超えています。"
             # 正規表現と初期値の条件一致をチェック
             if retBool and single_string_regular_expression:
-                patarn = single_string_regular_expression
-                patarn = re.compile(r'{}'.format(patarn), re.DOTALL)
-                tmp_result = patarn.fullmatch(single_string_default_value)
-                if tmp_result is None:
+                pattern = single_string_regular_expression
+                try:
+                    pattern = re.compile(r'{}'.format(pattern), re.DOTALL)
+                except Exception:
                     retBool = False
-                    msg = "「初期値」の値が指定した「正規表現」とマッチしません。"
+                    msg = "正規表現の値が不正です"
+                    return retBool, msg, option
+                if single_string_default_value:
+                    tmp_result = pattern.fullmatch(single_string_default_value)
+                    if tmp_result is None:
+                        retBool = False
+                        msg = "「初期値」の値が指定した「正規表現」とマッチしません。"
 
     # 入力方式が文字列(複数行)の場合
     elif column_class == "2":
@@ -264,7 +270,7 @@ def menu_column_valid(objdbca, objtable, option):
         # 最大バイト数と初期値の条件一致をチェック
         if retBool and multi_string_default_value:
             # 改行コードを\r\nに置換(改行は2バイトとして計算する)
-            multi_value = re.sub("\n|\r", "\r\n", multi_string_default_value)            
+            multi_value = re.sub("\n|\r", "\r\n", multi_string_default_value)
             hex_value = str(multi_value)
             hex_value = binascii.b2a_hex(hex_value.encode('utf-8'))
             if int(multi_string_maximum_bytes) < int(len(hex_value)) / 2:
@@ -272,12 +278,18 @@ def menu_column_valid(objdbca, objtable, option):
                 msg = "「初期値」の値が指定した「最大バイト数」を超えています。"
             # 正規表現と初期値の条件一致をチェック
             if retBool and multi_string_regular_expression:
-                patarn = multi_string_regular_expression
-                patarn = re.compile(r'{}'.format(patarn), re.MULTILINE | re.DOTALL)
-                tmp_result = patarn.fullmatch(multi_string_default_value)
-                if tmp_result is None:
+                pattern = multi_string_regular_expression
+                try:
+                    pattern = re.compile(r'{}'.format(pattern), re.DOTALL)
+                except Exception:
                     retBool = False
-                    msg = "「初期値」の値が指定した「正規表現」とマッチしません。"
+                    msg = "正規表現の値が不正です"
+                    return retBool, msg, option
+                if multi_string_default_value:
+                    tmp_result = pattern.fullmatch(multi_string_default_value)
+                    if tmp_result is None:
+                        retBool = False
+                        msg = "「初期値」の値が指定した「正規表現」とマッチしません。"
 
     # 入力方式が整数の場合
     elif column_class == "3":

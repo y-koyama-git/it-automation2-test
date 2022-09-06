@@ -13,8 +13,9 @@
 #   limitations under the License.
 
 from common_libs.common import *  # noqa: F403
-from libs import menu_info
 from common_libs.api import api_filter
+from libs.organization_common import check_menu_info, check_auth_menu, check_sheet_type
+from libs import menu_info
 
 
 @api_filter
@@ -35,8 +36,18 @@ def get_column_list(organization_id, workspace_id, menu):  # noqa: E501
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
     
+    # メニューの存在確認
+    menu_record = check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['0', '1', '2', '3', '4']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
+    
     # メニューのカラム情報を取得
-    data = menu_info.collect_menu_column_list(objdbca, menu)
+    data = menu_info.collect_menu_column_list(objdbca, menu, menu_record)
     
     return data,
 
@@ -59,8 +70,18 @@ def get_menu_info(organization_id, workspace_id, menu):  # noqa: E501
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
     
-    # # メニューの基本情報および項目情報の取得
-    data = menu_info.collect_menu_info(objdbca, menu)
+    # メニューの存在確認
+    menu_record = check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = False     # シートタイプはすべて許容
+    menu_table_link_record = check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    privilege = check_auth_menu(menu, objdbca)
+
+    # メニューの基本情報および項目情報の取得
+    data = menu_info.collect_menu_info(objdbca, menu, menu_record, menu_table_link_record, privilege)
     
     return data,
 
@@ -82,9 +103,19 @@ def get_pulldown_list(organization_id, workspace_id, menu):  # noqa: E501
     """
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
-    
+
+    # メニューの存在確認
+    menu_record = check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['0', '1', '2', '3', '4']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
+
     # IDColumn項目のプルダウン一覧の取得
-    data = menu_info.collect_pulldown_list(objdbca, menu)
+    data = menu_info.collect_pulldown_list(objdbca, menu, menu_record)
     
     return data,
 
@@ -107,9 +138,19 @@ def get_search_candidates(organization_id, workspace_id, menu, column):  # noqa:
     :rtype: InlineResponse2003
     """
     # DB接続
-    objdbca = DBConnectWs(workspace_id)  # noqa: F405   
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+
+    # メニューの存在確認
+    menu_record = check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['0', '1', '2', '3', '4']
+    menu_table_link_record = check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
     
     # 対象項目のプルダウン検索候補一覧を取得
-    data = menu_info.collect_search_candidates(objdbca, menu, column)
+    data = menu_info.collect_search_candidates(objdbca, menu, column, menu_record, menu_table_link_record)
     
     return data,

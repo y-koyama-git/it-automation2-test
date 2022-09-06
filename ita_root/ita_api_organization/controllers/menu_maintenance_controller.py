@@ -13,16 +13,15 @@
 #   limitations under the License.
 
 import connexion
-import six
-
-from common_libs.common import *  # noqa: F403
-from libs import menu_maintenance
 from flask import jsonify
-
 import sys
+
 sys.path.append('../../')
+from common_libs.common import *  # noqa: F403
 from common_libs.loadtable.load_table import loadTable
 from common_libs.api import api_filter
+from libs.organization_common import check_menu_info, check_auth_menu, check_sheet_type
+from libs import menu_maintenance
 
 
 @api_filter
@@ -46,6 +45,21 @@ def maintenance_register(organization_id, workspace_id, menu, body=None):  # noq
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
     
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['0', '1', '2', '3', '4']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    privilege = check_auth_menu(menu, objdbca)
+    if privilege == '2':
+        status_code = "401-00001"
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
+
     cmd_type = 'Register'
     target_uuid = ''
     parameter = {}
@@ -80,6 +94,21 @@ def maintenance_update(organization_id, workspace_id, menu, uuid, body=None):  #
 
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
+
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['0', '1', '2', '3', '4']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    privilege = check_auth_menu(menu, objdbca)
+    if privilege == '2':
+        status_code = "401-00001"
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
 
     cmd_type = 'Update'
     target_uuid = uuid

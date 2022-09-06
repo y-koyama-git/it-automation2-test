@@ -18,10 +18,6 @@ from flask import g
 from common_libs.common import *  # noqa: F403
 from common_libs.loadtable import *
 
-from libs.organization_common import check_menu_info
-from libs.organization_common import check_auth_menu
-from libs.organization_common import check_sheet_type
-
 
 def rest_count(objdbca, menu, filter_parameter):
     """
@@ -35,13 +31,6 @@ def rest_count(objdbca, menu, filter_parameter):
         RETRUN:
             statusCode, {}, msg
     """
-
-    # メニューに対するロール権限をチェック
-    privilege = check_auth_menu(menu, objdbca)
-    
-    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['0', '1', '2', '3', '4']
-    menu_table_link_record = check_sheet_type(menu, sheet_type_list, objdbca)
 
     mode = 'count'
     objmenu = load_table.loadTable(objdbca, menu)
@@ -72,13 +61,6 @@ def rest_filter(objdbca, menu, filter_parameter):
             statusCode, {}, msg
     """
 
-    # メニューに対するロール権限をチェック
-    privilege = check_auth_menu(menu, objdbca)
-    
-    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['0', '1', '2', '3', '4', '14']
-    menu_table_link_record = check_sheet_type(menu, sheet_type_list, objdbca)
-
     mode = 'nomal'
     objmenu = load_table.loadTable(objdbca, menu)
     if objmenu.get_objtable() is False:
@@ -108,15 +90,6 @@ def rest_filter_journal(objdbca, menu, uuid):
             statusCode, {}, msg
     """
     
-    result_data = {}
-
-    # メニューに対するロール権限をチェック
-    privilege = check_auth_menu(menu, objdbca)
-    
-    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['0', '1', '2', '3', '4']
-    menu_table_link_record = check_sheet_type(menu, sheet_type_list, objdbca)
-
     objmenu = load_table.loadTable(objdbca, menu)
     if objmenu.get_objtable() is False:
         log_msg_args = ["not menu or table"]

@@ -72,9 +72,20 @@ def backyard_main(organization_id, workspace_id):
         if create_type == "1":  # 1: 新規作成
             print("新規作成を実行")
             res = menu_create_exec(objdbca, menu_create_id, 'create_new')
-            
-            # 「メニュー定義一覧」の対象レコードの「メニュー作成状態」を「2: 作成済み」に変更
-            if res:
+        
+        elif create_type == "2":  # 2: 初期化
+            print("初期化を実行")
+            res = menu_create_exec(objdbca, menu_create_id, 'initialize')
+        
+        elif create_type == "3":  # 3: 編集
+            print("編集を実行")
+            res = menu_create_exec(objdbca, menu_create_id, 'edit')
+        
+        # 「メニュー定義一覧」の対象レコードの「メニュー作成状態」を「2: 作成済み」に変更
+        if res:
+            t_menu_define_recode = objdbca.table_select(t_menu_define, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
+            target_menu_create_done_status = str(t_menu_define_recode[0].get('MENU_CREATE_DONE_STATUS'))
+            if target_menu_create_done_status == '1':
                 objdbca.db_transaction_start()
                 data_list = {
                     "MENU_CREATE_ID": menu_create_id,
@@ -89,14 +100,6 @@ def backyard_main(organization_id, workspace_id):
                     # ####メモ：ログに「メニュー作成状態」の更新に失敗した旨を出したい。
                     # ####メモ：最終更新ステータスで「4: 完了(異常)」にするためresにFalseを指定
                     res = False
-        
-        elif create_type == "2":  # 2: 初期化
-            print("初期化を実行")
-            res = menu_create_exec(objdbca, menu_create_id, 'initialize')
-        
-        elif create_type == "3":  # 3: 編集
-            print("編集を実行")
-            res = menu_create_exec(objdbca, menu_create_id, 'edit')
         
         # 最終更新ステータスを指定(3: 完了, 4: 完了(異常))
         objdbca.db_transaction_start()
@@ -1265,6 +1268,8 @@ def _insert_t_menu_other_link(objdbca, menu_uuid, create_table_name, recode_t_me
     t_menu_other_link = 'T_MENU_OTHER_LINK'
     
     try:
+        result = True
+        
         # 他メニュー連携の対象とするカラムクラス一覧(1:SingleTextColumn, 2:MultiTextColumn, 3:NumColumn, 4:FloatColumn, 5:DateTimeColumn, 6:DateColumn, 9:FileUploadColumn, 10:HostInsideLinkTextColumn)  # noqa: E501
         target_column_class_list = ["1", "2", "3", "4", "5", "6", "9", "10"]
         for recode in recode_t_menu_column:
@@ -1329,7 +1334,6 @@ def _create_validate_option(recode):
             validate_option, validate_regular_expression
     """
     validate_option = None
-    # ####メモ：正規表現をデータベースに登録する際に、エスケープ処理をする必要があるかも。
     validate_regular_expression = None
     tmp_validate_option = {}
     column_class = str(recode.get('COLUMN_CLASS'))

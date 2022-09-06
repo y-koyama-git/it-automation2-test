@@ -26,6 +26,7 @@ class GitLabAgent:
     """
     GitLab connection agnet class for Ansible Automation Controller
     """
+    __protocol = ""
     __host = ""
     __port = ""
     __api_base_url = ""
@@ -36,9 +37,10 @@ class GitLabAgent:
         """
         constructor
         """
+        self.__protocol = os.environ.get('GITLAB_PROTOCOL')
         self.__host = os.environ.get('GITLAB_HOST')
         self.__port = os.environ.get('GITLAB_PORT')
-        self.__api_base_url = "http://{}:{}/api/v4".format(self.__host, self.__port)
+        self.__api_base_url = "{}://{}:{}/api/v4".format(self.__protocol, self.__host, self.__port)
 
         organization_id = g.get('ORGANIZATION_ID')
         if not organization_id:
@@ -106,7 +108,7 @@ class GitLabAgent:
         Returns:
             (str) url
         """
-        return "http://{user}:{token}@{host}:{port}/{user}/{project_name}.git".format(host=self.__host, port=self.__port, user=self.__user, token=urllib.parse.quote(self.__token), project_name=project_name)  # noqa E501
+        return "{protocol}://{user}:{token}@{host}:{port}/{user}/{project_name}.git".format(protocol=self.__protocol, host=self.__host, port=self.__port, user=self.__user, token=urllib.parse.quote(self.__token), project_name=project_name)  # noqa E501
 
     def get_user_self(self):
         # https://docs.gitlab.com/ee/api/users.html#for-normal-users-1

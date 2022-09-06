@@ -165,7 +165,7 @@ def app_exception(e):
     # catch - raise AppException("xxx-xxxxx", log_format), and get message
     result_code, log_msg_args, api_msg_args = args
     log_msg = g.appmsg.get_log_message(result_code, log_msg_args)
-    g.applogger.error("[error]{}".format(log_msg))
+    log_err(log_msg)
 
 
 def exception(e):
@@ -187,5 +187,8 @@ def exception(e):
 
     # catch - other all error
     t = traceback.format_exc()
-    # g.applogger.exception("[error]")
-    g.applogger.error("[error] {}".format(arrange_stacktrace_format(t)))
+    log_err(arrange_stacktrace_format(t))
+
+
+def log_err(msg=""):
+    g.applogger.error("[error]{}".format(msg))
