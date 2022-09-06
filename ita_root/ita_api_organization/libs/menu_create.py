@@ -1034,7 +1034,11 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
             boolean, result_code, msg_args
     """
     # テーブル/ビュー名
+    v_menu_other_link = 'V_MENU_OTHER_LINK'
     v_menu_column_class = 'V_MENU_COLUMN_CLASS'
+    
+    # 変数定義
+    lang = g.get('LANGUAGE')
     
     try:
         # current_t_menu_column_listのレコードについて、create_column_idをkeyにしたdict型に変換
@@ -1042,6 +1046,16 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
         for recode in current_t_menu_column_list:
             create_column_id = recode.get('CREATE_COLUMN_ID')
             current_t_menu_column_dict[create_column_id] = recode
+        
+        # 現在登録されている「他メニュー連携」のレコードを取得
+        other_menu_link_list = objdbca.table_select(v_menu_other_link, 'WHERE DISUSE_FLAG = %s', [0])
+        
+        # 「他メニュー連携」のレコードをLINK_IDをkeyとしたdict型に変換
+        format_other_menu_link_list = {}
+        for recode in other_menu_link_list:
+            link_pulldown_ja = recode.get('LINK_PULLDOWN_JA')
+            link_pulldown_en = recode.get('LINK_PULLDOWN_EN')
+            format_other_menu_link_list[recode.get('LINK_ID')] = {'link_pulldown_ja': link_pulldown_ja, 'link_pulldown_en': link_pulldown_en}
         
         # loadTableの呼び出し
         objmenu = load_table.loadTable(objdbca, 'menu_item_creation_info')  # noqa: F405
@@ -1140,9 +1154,19 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
                             raise Exception("499-00707", [item_name, "decimal_digit"])  # 「編集」の際は既存項目の対象の値が下回る変更はできません。(項目: {}, 対象: {})
                     
                     # カラムクラス「プルダウン選択」の場合のバリデーションチェック
-                    # ####メモ：未実装
-                    # if column_class == "IDColumn":
-                        # ####メモ：選択項目および参照項目に差異がある場合はエラー判定。
+                    if column_class == "IDColumn":
+                        update_pulldown_selection = column_data.get('pulldown_selection')
+                        
+                        # 現在設定されているIDのlink_pulldownを取得
+                        current_other_menu_link_id = target_recode.get('OTHER_MENU_LINK_ID')
+                        current_other_menu_link_data = format_other_menu_link_list.get(current_other_menu_link_id)
+                        current_pulldown_selection = current_other_menu_link_data.get('link_pulldown_' + lang.lower())
+                        
+                        # pulldown_selectionが変更されている場合エラー判定
+                        if not update_pulldown_selection == current_pulldown_selection:
+                            raise Exception("499-00706", [item_name, "pulldown_selection"])  # 「編集」の際は既存項目の対象の設定を変更できません。(項目: {}, 対象: {})
+                        
+                        # ####メモ：参照項目に変更がある場合のエラー判定も必要
                     
                     # カラムクラス「パスワード」の場合のバリデーションチェック
                     if column_class == "PasswordColumn":
