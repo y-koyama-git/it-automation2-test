@@ -794,52 +794,6 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 raise Exception("カラムグループ「オペレーション」のレコードが存在しません")
             operation_col_group_id = ret[0].get('COL_GROUP_ID')
             
-            # 「オペレーションID」用のレコードを作成
-            res_valid = _check_column_validation(objdbca, menu_uuid, "operation_id")  # ####メモ：メッセージ一覧から取得する
-            if not res_valid:
-                raise Exception("「メニュー-カラム紐付管理」に同じメニューとカラム名(rest)の組み合わせが既に存在している。")
-            
-            data_list = {
-                "MENU_ID": menu_uuid,
-                "COLUMN_NAME_JA": "オペレーションID",  # ####メモ：メッセージ一覧から取得する
-                "COLUMN_NAME_EN": "Operation ID",  # ####メモ：メッセージ一覧から取得する
-                "COLUMN_NAME_REST": "operation_id",  # ####メモ：メッセージ一覧から取得する
-                "COL_GROUP_ID": operation_col_group_id,  # カラムグループ「オペレーション」
-                "COLUMN_CLASS": 1,  # SingleTextColumn
-                "COLUMN_DISP_SEQ": disp_seq_num,
-                "REF_TABLE_NAME": None,
-                "REF_PKEY_NAME": None,
-                "REF_COL_NAME": None,
-                "REF_SORT_CONDITIONS": None,
-                "REF_MULTI_LANG": 0,  # False
-                "SENSITIVE_COL_NAME": None,
-                "FILE_UPLOAD_PLACE": None,
-                "BUTTON_ACTION": None,
-                "COL_NAME": "OPERATION_ID_DISP",
-                "SAVE_TYPE": None,
-                "AUTO_INPUT": 1,  # True
-                "INPUT_ITEM": 0,  # False
-                "VIEW_ITEM": 1,  # True
-                "UNIQUE_ITEM": 0,  # False
-                "REQUIRED_ITEM": 0,  # False
-                "AUTOREG_HIDE_ITEM": 1,  # True
-                "AUTOREG_ONLY_ITEM": 0,  # False
-                "INITIAL_VALUE": None,
-                "VALIDATE_OPTION": None,
-                "VALIDATE_REG_EXP": None,
-                "BEFORE_VALIDATE_REGISTER": None,
-                "AFTER_VALIDATE_REGISTER": None,
-                "DESCRIPTION_JA": "[元データ]基本コンソール/オペレーション一覧",  # ####メモ：メッセージ一覧から取得する
-                "DESCRIPTION_EN": "[Original data] Basic console/Operation list",  # ####メモ：メッセージ一覧から取得する
-                "DISUSE_FLAG": "0",
-                "LAST_UPDATE_USER": g.get('USER_ID')
-            }
-            primary_key_name = 'COLUMN_DEFINITION_ID'
-            objdbca.table_insert(t_comn_menu_column_link, data_list, primary_key_name)
-            
-            # 表示順序を加算
-            disp_seq_num = int(disp_seq_num) + 10
-            
             # 「オペレーション(日付:オペレーション名)」用のレコードを作成
             res_valid = _check_column_validation(objdbca, menu_uuid, "operation_name")  # ####メモ：メッセージ一覧から取得する
             if not res_valid:
@@ -905,7 +859,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "COL_NAME": "OPERATION_NAME",
                 "SAVE_TYPE": None,
                 "AUTO_INPUT": 0,  # False
-                "INPUT_ITEM": 0,  # False
+                "INPUT_ITEM": 0,  # False ####メモ：INPUT_ITEMの仕様変更で最終的に「2」なる想定
                 "VIEW_ITEM": 1,  # True
                 "UNIQUE_ITEM": 0,  # False
                 "REQUIRED_ITEM": 0,  # False
