@@ -61,7 +61,7 @@ class DockerMode(AnsibleAgent):
         container_mount_path_driver = os.environ.get('STORAGEPATH') + driver_path
         host_mount_path_conductor = os.environ.get('HOST_STORAGEPATH') + conductor_path
         container_mount_path_conductor = os.environ.get('STORAGEPATH') + conductor_path
-        project_name = self.get_unique_name()
+        project_name = self.get_unique_name(execution_no)
 
         # generate execute manifest
         fileSystemLoader = FileSystemLoader(searchpath="templates")
@@ -86,14 +86,14 @@ class DockerMode(AnsibleAgent):
         docker_compose_command = ["/usr/local/bin/docker-compose", "-f", exec_manifest, "-p", project_name, "up", "-d"]
         command = ["sudo"] + docker_compose_command
 
-        # docker-compose -f file -p project up
-        complete_process = subprocess.run(command, capture_output=True)
+        # # docker-compose -f file -p project up
+        # complete_process = subprocess.run(command, capture_output=True)
 
-        # check result
-        print("return_code: %s" % complete_process.returncode)
-        print("stdout:\n%s" % complete_process.stdout.decode('utf-8'))
-        print("stderr:\n%s" % complete_process.stderr.decode('utf-8'))
-        complete_process.check_returncode()
+        # # check result
+        # print("return_code: %s" % complete_process.returncode)
+        # print("stdout:\n%s" % complete_process.stdout.decode('utf-8'))
+        # print("stderr:\n%s" % complete_process.stderr.decode('utf-8'))
+        # complete_process.check_returncode()
 
     def is_container_running(self, execution_no):
         '''
@@ -141,12 +141,12 @@ class DockerMode(AnsibleAgent):
         docker_compose_command = ["/usr/local/bin/docker-compose", "-p", project_name, "rm", "-f"]
         command = ["sudo"] + docker_compose_command
 
-        complete_process = subprocess.run(command, capture_output=True)
+        # complete_process = subprocess.run(command, capture_output=True)
 
-        print("return_code: %s" % complete_process.returncode)
-        print("stdout:\n%s" % complete_process.stdout.decode('utf-8'))
-        print("stderr:\n%s" % complete_process.stderr.decode('utf-8'))
-        complete_process.check_returncode()
+        # print("return_code: %s" % complete_process.returncode)
+        # print("stdout:\n%s" % complete_process.stdout.decode('utf-8'))
+        # print("stderr:\n%s" % complete_process.stderr.decode('utf-8'))
+        # complete_process.check_returncode()
 
 
 class KubernetesMode(AnsibleAgent):
@@ -172,7 +172,7 @@ class KubernetesMode(AnsibleAgent):
         container_mount_path_driver = os.environ.get('STORAGEPATH') + driver_path
         host_mount_path_conductor = os.environ.get('HOST_STORAGEPATH') + conductor_path
         container_mount_path_conductor = os.environ.get('STORAGEPATH') + conductor_path
-        unique_name = self.get_unique_name()
+        unique_name = self.get_unique_name(execution_no)
         unique_name = re.sub(r'_', '-', unique_name).lower()
 
         # generate execute manifest
@@ -196,13 +196,13 @@ class KubernetesMode(AnsibleAgent):
         command = ["/usr/local/bin/kubectl", "apply", "-f", exec_manifest, "-n", namespace]
 
         # kubectl apply -f file -n ita-ansible-agent
-        complete_process = subprocess.run(' '.join(command), capture_output=True, shell=True)
+        # complete_process = subprocess.run(' '.join(command), capture_output=True, shell=True)
 
-        # check result
-        print("return_code: %s" % complete_process.returncode)
-        print("stdout:\n%s" % complete_process.stdout.decode('utf-8'))
-        print("stderr:\n%s" % complete_process.stderr.decode('utf-8'))
-        complete_process.check_returncode()
+        # # check result
+        # print("return_code: %s" % complete_process.returncode)
+        # print("stdout:\n%s" % complete_process.stdout.decode('utf-8'))
+        # print("stderr:\n%s" % complete_process.stderr.decode('utf-8'))
+        # complete_process.check_returncode()
 
     def is_container_running(self, execution_no):
         '''
@@ -246,6 +246,6 @@ class KubernetesMode(AnsibleAgent):
 
         command = ["/usr/local/bin/kubectl", "delete", "-f", exec_manifest, "-n", namespace, "--force=true", "--grace-period=0"]
 
-        complete_process = subprocess.run(' '.join(command), capture_output=True, shell=True)
+        # complete_process = subprocess.run(' '.join(command), capture_output=True, shell=True)
 
         print("method: container_kill")
