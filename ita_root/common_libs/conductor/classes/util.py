@@ -16,7 +16,7 @@ from flask import g
 from common_libs.common.dbconnect import DBConnectWs
 import re
 import json
-
+import copy
 
 class ConductorCommonLibs():
     config_data = {}
@@ -81,10 +81,12 @@ class ConductorCommonLibs():
 
     __db = None
 
-    def __init__(self, wsdb_istc=None):
+    def __init__(self, wsdb_istc=None, cmd_type='Register'):
         if not wsdb_istc:
             wsdb_istc = DBConnectWs(g.get('WORKSPACE_ID'))  # noqa: F405
         self.__db = wsdb_istc
+
+        self.cmd_type = cmd_type
 
         # set master list
         data_list = wsdb_istc.table_select('T_COMN_CONDUCTOR_NODE', 'WHERE `DISUSE_FLAG`=0')
@@ -123,7 +125,9 @@ class ConductorCommonLibs():
             - err msg args (list)
         """
         err_code = 'xxx-xxxxxx'
-
+        err_code = '499-00201'
+        tmp_c_all_data = copy.deepcopy(c_all_data)
+        
         # check first block
         res_chk = self.chk_format(c_all_data)
         if res_chk[0] is False:
@@ -162,6 +166,16 @@ class ConductorCommonLibs():
         # check node parallel
         if self.chk_type_parallel() is False:
             return False, err_code, 'condition from parallel-branch to merge is invalid'
+
+        # chk parallel -> marge use case
+        res_chk = self.chk_parallel_marge(tmp_c_all_data)
+        if res_chk[0] is False:
+            return False, err_code, res_chk[1]
+
+        # check node call loop
+        res_chk = self.chk_call_loop_base_1(tmp_c_all_data.get('conductor').get('id'), tmp_c_all_data)
+        if res_chk[0] is False:
+            return False, err_code, res_chk[1]
 
         return True,
 
@@ -218,7 +232,9 @@ class ConductorCommonLibs():
             err_msg_args.append('extra block is existed')
 
         if len(err_msg_args) != 0:
-            return False, [','.join(err_msg_args)]
+            msg = g.appmsg.get_api_message('MSG-40004')
+            return False, msg,
+            # return False, [','.join(err_msg_args)]
         else:
             return True,
 
@@ -254,7 +270,9 @@ class ConductorCommonLibs():
                 err_msg_args.append('config.edgeNumber')
 
         if len(err_msg_args) != 0:
-            return False, [','.join(err_msg_args)]
+            msg = g.appmsg.get_api_message('MSG-40005', [','.join(err_msg_args)])
+            return False, msg,
+            # return False, [','.join(err_msg_args)]
         else:
             return True,
 
@@ -274,9 +292,10 @@ class ConductorCommonLibs():
         if 'id' not in c_data:
             err_msg_args.append('conductor.id')
         elif c_data['id']:
-            data_list = self.__db.table_select('T_COMN_CONDUCTOR_CLASS', 'WHERE `DISUSE_FLAG`=0 AND `CONDUCTOR_CLASS_ID`=%s', [c_data['id']])  # noqa E501
-            if len(data_list) == 0:
-                err_msg_args.append('conductor.id not exists')
+            if self.cmd_type != 'Register':
+                data_list = self.__db.table_select('T_COMN_CONDUCTOR_CLASS', 'WHERE `DISUSE_FLAG`=0 AND `CONDUCTOR_CLASS_ID`=%s', [c_data['id']])  # noqa E501
+                if len(data_list) == 0:
+                    err_msg_args.append('conductor.id not exists')
 
         if 'conductor_name' not in c_data:
             err_msg_args.append('conductor.conductor_name')
@@ -288,7 +307,9 @@ class ConductorCommonLibs():
             err_msg_args.append('conductor.last_update_date_time')
 
         if len(err_msg_args) != 0:
-            return False, [','.join(err_msg_args)]
+            msg = g.appmsg.get_api_message('MSG-40006', [','.join(err_msg_args)])
+            return False, msg,
+            # return False, [','.join(err_msg_args)]
         else:
             return True,
 
@@ -350,10 +371,14 @@ class ConductorCommonLibs():
                     self._node_call_datas[key] = block_1
 
         if len(err_msg_args) != 0:
-            return False, ['\n'.join(err_msg_args)]
+            msg = g.appmsg.get_api_message('MSG-40008', [','.join(err_msg_args)])
+            return False, msg,
+            # return False, ['\n'.join(err_msg_args)]
         else:
             if len(self._node_start_data) != 1:
-                return False, ['node[type=start] is duplicate']
+                msg = g.appmsg.get_api_message('MSG-40009')
+                return False, msg,
+                # return False, ['node[type=start] is duplicate']
 
             return True,
 
@@ -437,7 +462,9 @@ class ConductorCommonLibs():
                 continue
 
         if len(err_msg_args) != 0:
-            return False, ['\n'.join(err_msg_args)]
+            msg = g.appmsg.get_api_message('MSG-40010', [','.join(err_msg_args)])
+            return False, msg,
+            # return False, ['\n'.join(err_msg_args)]
         else:
             return True,
 
@@ -461,8 +488,8 @@ class ConductorCommonLibs():
             if len(data_list) == 0:
                 err_msg_args.append('movement_id is not available')
 
-        if 'movement_name' not in node_blcok:
-            err_msg_args.append('movement_name')
+            if 'movement_name' not in node_blcok:
+                err_msg_args.append('movement_name')
 
         if 'skip_flag' not in node_blcok:
             err_msg_args.append('skip_flag')
@@ -474,8 +501,8 @@ class ConductorCommonLibs():
             if len(data_list) == 0:
                 err_msg_args.append('operation_id is not available')
 
-        if 'operation_name' not in node_blcok:
-            err_msg_args.append('operation_name')
+            if 'operation_name' not in node_blcok:
+                err_msg_args.append('operation_name')
 
         if 'orchestra_id' not in node_blcok or node_blcok['orchestra_id'] not in self._orchestra_id_list:
             err_msg_args.append('orchestra_id')
@@ -505,8 +532,8 @@ class ConductorCommonLibs():
             if len(data_list) == 0:
                 err_msg_args.append('call_conductor_id is not available')
 
-        if 'call_conductor_name' not in node_blcok:
-            err_msg_args.append('call_conductor_name')
+            if 'call_conductor_name' not in node_blcok:
+                err_msg_args.append('call_conductor_name')
 
         if 'skip_flag' not in node_blcok:
             err_msg_args.append('skip_flag')
@@ -518,8 +545,8 @@ class ConductorCommonLibs():
             if len(data_list) == 0:
                 err_msg_args.append('operation_id is not available')
 
-        if 'operation_name' not in node_blcok:
-            err_msg_args.append('operation_name')
+            if 'operation_name' not in node_blcok:
+                err_msg_args.append('operation_name')
 
         if len(err_msg_args) != 0:
             return False, ','.join(err_msg_args)
@@ -742,7 +769,9 @@ class ConductorCommonLibs():
                 err_msg_args.append('{}({})'.format(key, ','.join(block_err_msg_args)))
 
         if len(err_msg_args) != 0:
-            return False, ['\n'.join(err_msg_args)]
+            msg = g.appmsg.get_api_message('MSG-40007', [','.join(err_msg_args)])
+            return False, msg,
+            # return False, ['\n'.join(err_msg_args)]
         else:
             return True,
 
@@ -859,8 +888,9 @@ class ConductorCommonLibs():
         try:
             # conductor name
             if self.conductor_data['id']:
-                data_list = self.__db.table_select('T_COMN_CONDUCTOR_CLASS', 'WHERE `DISUSE_FLAG`=0 AND `CONDUCTOR_CLASS_ID`=%s', [self.conductor_data['id']])  # noqa E501
-                self.conductor_data['conductor_name'] = data_list[0]['CONDUCTOR_NAME']
+                if self.cmd_type != 'Register':
+                    data_list = self.__db.table_select('T_COMN_CONDUCTOR_CLASS', 'WHERE `DISUSE_FLAG`=0 AND `CONDUCTOR_CLASS_ID`=%s', [self.conductor_data['id']])  # noqa E501
+                    self.conductor_data['conductor_name'] = data_list[0]['CONDUCTOR_NAME']
 
             for key, block_1 in self.node_datas.items():
                 node_type = block_1['type']
@@ -884,7 +914,10 @@ class ConductorCommonLibs():
 
         except Exception as e:
             g.applogger.error(e)
-            return False, retCode
+            print(e)
+            msg = g.appmsg.get_api_message('MSG-40013')
+            return False, msg
+            # return False, retCode
 
         res = {
             'config': self.config_data,
@@ -894,3 +927,233 @@ class ConductorCommonLibs():
         res.update(self.edge_datas)
 
         return True, res,
+
+    # parallel->marge  check処理呼び出し
+    def chk_parallel_marge(self, c_data):
+        """
+        check conductor data
+            use case parallel marge
+
+        Arguments:
+            c_data: conductor infomation(dict)
+        Returns:
+            (tuple)
+            - retBool (bool)
+
+        """
+        retBool = True
+        msg = ''
+        try:
+            parallel_node = ''
+            for k, v in c_data.items():
+                if 'node-' in k:
+                    node_id = v.get('id')
+                    node_type = v.get('type')
+                    # Startからparallelを追跡
+                    if node_type == 'start':
+                        tmp_result = self.search_target_node('out', node_id, 'parallel-branch', c_data)
+                        if tmp_result is not False:
+                            if len(tmp_result) != 0:
+                                # parallel<->mergeを検索
+                                parallel_node = tmp_result[0]
+                                tmp_result = self.search_parallel_marge(parallel_node, 'merge', c_data)
+                                if tmp_result is False:
+                                    raise Exception()
+        except Exception:
+            retBool = False
+            msg = g.appmsg.get_api_message('MSG-40011')
+        return retBool, msg,
+
+    # parallel->margeNode検索
+    def search_parallel_marge(self, parallel_node, target_node_type, c_data):
+        """
+        search conductor data node parallel<->marge
+        Arguments:
+            base_node_id: node_id
+            target_node_type: node_type
+            reverse_target_node_name: node_id
+            c_data: conductor infomation(dict)
+        Returns:
+
+        """
+        result = []
+        try:
+            # parallelからmergeを追跡
+            t_terminal = c_data.get(parallel_node).get('terminal')
+            for tname, tinfo in t_terminal.items():
+                t_t_type = tinfo.get('type')
+                if t_t_type == 'out':
+                    tmp_result = self.search_target_node('out', parallel_node, 'merge', c_data)
+                    if tmp_result is not False:
+                        if len(tmp_result) != 0:
+                            # mergeからparallelまで逆追跡
+                            merge_node = tmp_result[0]
+                            tmp_result = self.search_target_node_reverse(merge_node, 'parallel-branch', parallel_node, c_data)
+                            if tmp_result is False:
+                                raise Exception()
+                            # mergeから先も追跡
+                            tmp_result = self.search_target_node('out', merge_node, 'parallel-branch', c_data)
+                            if tmp_result is not False:
+                                if len(tmp_result) != 0:
+                                    tmp_result = self.search_parallel_marge(tmp_result[0], 'merge', c_data)
+        except Exception:
+            result = False
+        return result
+
+    # Node検索in方向
+    def search_target_node_reverse(self, base_node_id, target_node_type, reverse_target_node_name, c_data):
+        """
+        search conductor data node reverse
+        Arguments:
+            base_node_id: node_id
+            target_node_type: node_type
+            reverse_target_node_name: node_id
+            c_data: conductor infomation(dict)
+        Returns:
+
+        """
+        result = []
+        try:
+            # base_node_id->target_node_typeの検索
+            terminal_type = 'in'
+            tmp_result = self.search_target_node(terminal_type, base_node_id, target_node_type, c_data)
+            if tmp_result is False:
+                raise Exception()
+            else:
+                reverse_target_node = tmp_result[0]
+                if reverse_target_node == reverse_target_node_name:
+                    return True
+                else:
+                    tmp_result = self.search_target_node_reverse(reverse_target_node, target_node_type, reverse_target_node_name, c_data)
+                    if tmp_result is False:
+                        raise Exception()
+        except Exception:
+            result = False
+        return result
+    
+    # Node検索処理呼び出し
+    def search_target_node(self, terminal_type, base_node_id, target_node_type, c_data):
+        """
+        search conductor data node 
+        Arguments:
+            terminal_type: terminal type (in or out)
+            base_node_id: node_id
+            target_node_type: node_type
+            c_data: conductor infomation(dict)
+        Returns:
+
+        """
+        result = []
+        try:
+            # 検索開始
+            tmp_result = self.search_node(terminal_type, base_node_id, c_data)
+            if tmp_result is False:
+                raise Exception()
+            else:
+                for t_node_id in tmp_result:
+                    t_node_type = c_data.get(t_node_id).get('type')
+                    if t_node_type == target_node_type:
+                        # 対象のnode_typeの場合
+                        return tmp_result
+                    else:
+                        # merge->parallel-branch検索中(in)に
+                        # conditional-branch,status-file-branchがあればエラー
+                        if (target_node_type == 'parallel-branch' and
+                                terminal_type == 'in' and
+                                t_node_type in ['conditional-branch', 'status-file-branch']):
+                            raise Exception()
+                        # 対象のnode_typeでない場合、次のnodeを検索
+                        tmp_result = self.search_target_node(terminal_type, t_node_id, target_node_type, c_data)
+                        return tmp_result
+        except Exception:
+            result = False
+        return result
+
+    # Node検索処理
+    def search_node(self, terminal_type, base_node_id, c_data):
+        """
+        search conductor node 
+        Arguments:
+            terminal_type: terminal type (in or out)
+            base_node_id: node_id
+            c_data: conductor infomation(dict)
+        Returns:
+
+        """
+        result = []
+        try:
+            base_node_info = c_data.get(base_node_id)
+            base_terminlal = base_node_info.get('terminal')
+            for tname, tinfo in base_terminlal.items():
+                next_node = tinfo.get('targetNode')
+                t_type = tinfo.get('type')
+                if t_type == terminal_type:
+                    result.append(next_node)
+        except Exception:
+            result = False
+        return result
+
+    # Callループチェック処理呼び出し用
+    def chk_call_loop_base_1(self, chk_conductor_id, c_data, call_conductor_id_List={}):
+        retBool = True
+        msg = ''
+        try:
+            # print(chk_call_conductor_id, c_data, call_conductor_id_List)
+            tmp_result = self.chk_loop_base_1(chk_conductor_id, c_data, call_conductor_id_List)
+            if tmp_result is False:
+                retBool = False
+        except Exception:
+            retBool = False
+            msg = g.appmsg.get_api_message('MSG-40012')
+        return retBool, msg,
+
+    # Callループチェック処理
+    def chk_loop_base_1(self, chk_conductor_id, c_data={}, call_conductor_id_List={}):
+        try:
+            table_name = 'T_COMN_CONDUCTOR_CLASS'
+            where_str = 'WHERE `CONDUCTOR_CLASS_ID` = %s AND `DISUSE_FLAG`= 0 '
+            # 最上位以外DBから取得 + 構造整理
+            if c_data == {}:
+                retArray = self.__db.table_select(table_name, where_str, [chk_conductor_id])
+                tmpNodeLists = retArray[0]
+            else:
+                tmpNodeLists = {"SETTING": json.dumps(c_data)}
+            arrCallLists = {}
+            
+            # 重複排除
+            conductor_data = tmpNodeLists.get('SETTING')
+            if isinstance(conductor_data, str):
+                conductor_data = json.loads(conductor_data)
+            for key2, val2 in conductor_data.items():
+                if 'node-' in key2:
+                    node_type = val2.get('type')
+                    if node_type == 'call':
+                        call_canductor_id = val2.get('call_conductor_id')
+                        arrCallLists.setdefault(call_canductor_id, call_canductor_id)
+            # loop chk
+            for key, val in arrCallLists.items():
+                if chk_conductor_id is not None:
+                    call_conductor_id_List.setdefault(chk_conductor_id, {val: val})
+                retArray2 = self.__db.table_select(table_name, where_str, [val])
+                tmpNodeLists2 = retArray2[0]
+                arrCallLists2 = {}
+                # 重複排除
+                c_conductor_data = json.loads(tmpNodeLists2.get('SETTING'))
+                for c_key, c_val in c_conductor_data.items():
+                    if 'node-' in c_key:
+                        c_node_type = c_val.get('type')
+                        if c_node_type == 'call':
+                            c_call_canductor_id = c_val.get('call_conductor_id')
+                            arrCallLists2.setdefault(c_call_canductor_id, c_call_canductor_id)
+                for c_key, c_val in arrCallLists2.items():
+                    if chk_conductor_id not in list(call_conductor_id_List.keys()):
+                        call_conductor_id_List[chk_conductor_id].setdefault(c_val, c_val)
+                        call_conductor_id_List = self.chk_loop_base_1(c_val, {}, call_conductor_id_List)
+                    elif c_val not in list(call_conductor_id_List[chk_conductor_id].keys()):
+                        call_conductor_id_List[chk_conductor_id].setdefault(c_val, c_val)
+                        call_conductor_id_List = self.chk_loop_base_1(c_val, {}, call_conductor_id_List)
+                    else:
+                        return False
+        except Exception:
+            return False
+        return call_conductor_id_List
