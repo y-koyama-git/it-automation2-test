@@ -356,12 +356,13 @@ CREATE TABLE T_MENU_OTHER_LINK_JNL
 
 -- 他メニュー連携ビュー
 CREATE OR REPLACE VIEW V_MENU_OTHER_LINK AS 
-SELECT TAB_A.LINK_ID                       ,
+SELECT DISTINCT TAB_A.LINK_ID              ,
        TAB_C.MENU_GROUP_ID                 ,
        TAB_A.MENU_ID                       ,
        TAB_A.MENU_ID MENU_ID_CLONE         ,
        TAB_B.MENU_NAME_JA                  ,
        TAB_B.MENU_NAME_EN                  ,
+       TAB_B.MENU_NAME_REST                ,
        TAB_A.COLUMN_DISP_NAME_JA           ,
        TAB_A.COLUMN_DISP_NAME_EN           ,
        CONCAT(TAB_C.MENU_GROUP_NAME_JA,':',TAB_B.MENU_NAME_JA,':',TAB_A.COLUMN_DISP_NAME_JA) LINK_PULLDOWN_JA,
@@ -384,7 +385,7 @@ LEFT JOIN T_COMN_MENU_GROUP TAB_C ON (TAB_B.MENU_GROUP_ID = TAB_C.MENU_GROUP_ID)
 WHERE TAB_B.DISUSE_FLAG='0' AND TAB_C.DISUSE_FLAG='0'
 ;
 CREATE OR REPLACE VIEW V_MENU_OTHER_LINK_JNL AS 
-SELECT TAB_A.JOURNAL_SEQ_NO                ,
+SELECT DISTINCT TAB_A.JOURNAL_SEQ_NO       ,
        TAB_A.JOURNAL_REG_DATETIME          ,
        TAB_A.JOURNAL_ACTION_CLASS          ,
        TAB_A.LINK_ID                       ,
@@ -393,6 +394,7 @@ SELECT TAB_A.JOURNAL_SEQ_NO                ,
        TAB_A.MENU_ID MENU_ID_CLONE         ,
        TAB_B.MENU_NAME_JA                  ,
        TAB_B.MENU_NAME_EN                  ,
+       TAB_B.MENU_NAME_REST                ,
        TAB_A.COLUMN_DISP_NAME_JA           ,
        TAB_A.COLUMN_DISP_NAME_EN           ,
        CONCAT(TAB_C.MENU_GROUP_NAME_JA,':',TAB_B.MENU_NAME_JA,':',TAB_A.COLUMN_DISP_NAME_JA) LINK_PULLDOWN_JA,

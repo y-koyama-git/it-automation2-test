@@ -33,10 +33,11 @@ constructor( target, mode ) {
     cd.version = '2.0.0';
     
     // Conductor class ID
-    cd.id = fn.getParams().id;
+    cd.id = fn.getParams().conductor_class_id;
+    console.log(cd.id)
     
     // 編集モードでIDの指定があれば閲覧モードにする
-    if ( mode === 'edit' && cd.id !== undefined ) {
+    if ( mode === 'edit' && ( cd.id !== undefined && cd.id !== '')) {
         cd.mode = 'view';
     } else {
         cd.mode = mode;
@@ -102,6 +103,11 @@ setup() {
     
     fn.fetch( restApiUrls ).then(function( result ){
         cd.init( result[0], result[1] );
+    }).catch(function( error ){
+        if ( error.message ) {
+            alert( error.message + '\nリロードします。' );
+            location.href = '?menu=conductor_class_edit';
+        }
     });
     
 }
@@ -114,23 +120,29 @@ operationMenuHtml() {
     const menu = {
         edit: [
             { type: 'registration', title: '登録', action: 'positive', width: '200px'},
-            { type: 'reset', title: 'リセット', action: 'negative', separate: true, width: '120px'}
+            { type: 'selectConductor', title: 'Conductor選択', action: 'default', width: '160px', separate: true },
+            { type: 'reset', title: 'リセット', action: 'negative', width: '120px'}
         ],
         view: [
             { type: 'edit', title: '編集', action: 'positive', width: '200px'},
-            { type: 'diversion', title: '流用新規', action: 'default', separate: true, width: '200px'}
+            { type: 'selectConductor', title: 'Conductor選択', action: 'default', width: '160px', separate: true },
+            { type: 'diversion', title: '流用新規', action: 'normal', width: '160px'},
+            { type: 'new', title: '新規', action: 'normal', width: '160px'}
         ],
         update: [
             { type: 'update', title: '更新', action: 'positive', width: '200px'},
             { type: 'refresh', title: '再読み込み', action: 'negative', separate: true, width: '120px'},
             { type: 'cancel', title: 'キャンセル', action: 'negative', width: '120px'},
         ],
+        execute: [
+            { type: 'execute', title: '作業実行', action: 'positive', width: '200px'},
+            { type: 'executeSelectConductor', title: 'Conductor選択', action: 'default', width: '160px', separate: true },
+            { type: 'executeSelectOperation', title: 'Operation選択', action: 'default', width: '160px'},
+        ],
         checking: [
             { type: 'stop', title: '緊急停止', action: 'danger', width: '200px'},
         ]
     };
-    
-    
     
     const list = [];
     for ( const item of menu[ this.mode ] ) {
@@ -279,6 +291,7 @@ init( info, conductorData ) {
     // Conductor構造データ
     if ( conductorData ) {
         cd.data = conductorData;
+        cd.original = $.extend( true, {}, conductorData );
     } else {
         cd.setInitialConductorData();
     }
@@ -316,7 +329,6 @@ init( info, conductorData ) {
             }
             cd.loadConductor();
         } else if ( fn.storage.check('conductor-edit-temp') ) {
-            console.log('!')
             cd.loadConductor( fn.storage.get('conductor-edit-temp'));
         } else {
             cd.InitialSetNode();
@@ -343,7 +355,7 @@ InitialSetNode() {
 ##################################################
 */
 menuButtonDisabled( disabledFlag ) {
-    this.$.menu.find('.editor-menu-button').prop('disabled', disabledFlag );
+    this.$.menu.find('.operation-menu-button').prop('disabled', disabledFlag );
 }
 /*
 ##################################################
@@ -453,18 +465,6 @@ initEvents() {
     });
     
     // --------------------------------------------------
-    // データ再取得 > 再表示
-    // --------------------------------------------------
-    cd.$.window.on('conductorReset', function(){  
-        cd.selectConductor( cd.conductorSaveData );
-        if ( cd.mode === 'edit' || cd.mode === 'update') {
-            cd.conductorMode('view');
-        } else if ( cd.mode === 'execute') {
-            cd.executeButtonCheck();
-        }
-    });
-    
-    // --------------------------------------------------
     // メニューボタン
     // --------------------------------------------------
     cd.$.menu.on('click', '.operation-menu-button ', function(){
@@ -474,103 +474,131 @@ initEvents() {
       cd.nodeDeselect();
       cd.panelChange();
 
-      if ( cd.mode === 'execute') {
-          if ( type === 'execute') {
+      switch( type ) {
+          case 'execute':
               // 実行しますか？
               if ( window.confirm(`実行しますか？`) ) {
-                const selectConductorID = $('#conductor-class-id').text(),
-                      selectOperationID = $('#select-operation-id').text(),
-                      selectData = $('#bookdatetime').val();
-
-                cd.menuButtonDisabled( true );
-
-                /*
-                    実行処理
-                */
+                  cd.menuButtonDisabled( true );
+                  /*
+                      実行処理
+                  */
               }
-          }
-      } else {
-          switch( type ) {
-              case 'registration':
-                  // 登録しますか？
-                  if ( window.confirm('登録しますか？') ) {
-                      cd.menuButtonDisabled( true );
-
-                      fn.fetch('/menu/conductor_class_edit/conductor/class/maintenance/', null, 'POST', cd.data ).then(function(result){
-                          console.log(result);
-                          cd.menuButtonDisabled( false );
-                      }).catch(function( error ){
-                          cd.menuButtonDisabled( false );
-                      });
-                  }
-              break;
-              case 'edit':
-                  cd.conductorMode('update');
-              break;
-              case 'reset':
-                  if ( window.confirm('リセットしますか？') ) {
-                        cd.clearConductor();
-                        cd.InitialSetNode();
-                  }
-              break;
-              case 'diversion':
-                // 流用しますか？
-                if ( window.confirm('流用しますか？') ) {
-                  // 流用する場合は下記の項目はnullに
-                  cd.data.conductor.id = null;
-                  cd.data.conductor.last_update_date_time = null;
-                  cd.data.conductor.conductor_name = null;
-                  cd.data.conductor.note = null;
-                  
-                  cd.conductorMode('edit');
-                  cd.panelConductorReset();
-                                    
-                  // パラメータの無い履歴を追加する
-                  history.pushState( null, null, '?menu=conductor_class_edit');
-                }
-                break;
-              case 'update':
-                  // 更新しますか？
-                  if ( window.confirm('更新しますか？') ) {
-                      cd.menuButtonDisabled( true );
-
-                      fn.fetch(`/menu/conductor_class_edit/conductor/class/maintenance/${cd.id}/`, null, 'PATCH', cd.data ).then(function(result){
-                          console.log(result);
-                          cd.menuButtonDisabled( false );
-                      }).catch(function( error ){
-                          console.log( error );
-                          cd.menuButtonDisabled( false );
-                      });
-                  
-                  }
-              break;
-              case 'refresh':
-                // 再読込しますか？
-                if ( window.confirm('再読込しますか？') ) {
-                    //
-                }
-                break;
-              case 'cancel':
-                // キャンセル確認無し
-                cd.selectConductor( cd.conductorSaveData );
-                cd.conductorMode('view');
-              break;
-              case 'cansel-instance':
-                // 予約取消
-                if ( window.confirm('予約取消') ) {
+          break;
+          case 'registration':
+              // 登録しますか？
+              if ( window.confirm('登録しますか？') ) {
                   cd.menuButtonDisabled( true );
-                  //
-                }
-                break;
-              case 'scram-instance':
-                // 強制停止
-                if ( window.confirm('強制停止') ) {
-                  clearTimeout( cd.pollingTimerID );
-                  cd.menuButtonDisabled( true );
-                  //
-                }
-                break;
+
+                  fn.fetch('/menu/conductor_class_edit/conductor/class/maintenance/', null, 'POST', cd.data ).then(function( result ){
+                      window.location.href = `?menu=conductor_class_edit&conductor_class_id=${result.conductor_class_id}`;
+                  }).catch(function( error ){
+                      cd.menuButtonDisabled( false );
+                  });
+              }
+          break;
+          case 'selectConductor': {
+              cd.menuButtonDisabled( true );
+              
+              cd.selectConductorModalOpen().then(function( selectId ){
+                  if ( selectId ) {
+                      window.location.href = `?menu=conductor_class_edit&conductor_class_id=${selectId}`;
+                  } else {
+                      cd.menuButtonDisabled( false );
+                  }
+              });
+          } break;
+          case 'executeSelectConductor': {
+              cd.menuButtonDisabled( true );
+              
+              cd.selectConductorModalOpen().then(function( selectId ){
+                  if ( selectId ) {
+                      console.log(selectId)
+                  }
+                  cd.menuButtonDisabled( false );
+              });
+          } break;
+          case 'executeSelectOperation': {
+              cd.menuButtonDisabled( true );
+              
+              cd.selectOperationModalOpen().then(function( selectId ){
+                  if ( selectId ) {
+                      console.log(selectId)
+                  }
+                  cd.menuButtonDisabled( false );
+              });
+          } break;
+          case 'edit':
+              cd.conductorMode('update');
+          break;
+          case 'reset':
+              if ( window.confirm('リセットしますか？') ) {
+                    cd.clearConductor();
+                    cd.InitialSetNode();
+              }
+          break;
+          case 'diversion':
+            // 流用しますか？
+            if ( window.confirm('流用しますか？') ) {
+              // 流用する場合は下記の項目はnullに
+              cd.data.conductor.id = null;
+              cd.data.conductor.last_update_date_time = null;
+              cd.data.conductor.conductor_name = null;
+              cd.data.conductor.note = null;
+
+              cd.conductorMode('edit');
+              cd.panelConductorReset();
+
+              history.replaceState( null, null, '?menu=conductor_class_edit');
             }
+            break;
+          case 'new':
+              cd.clearConductor();
+              cd.InitialSetNode();
+              
+              cd.conductorMode('edit');
+              cd.panelConductorReset();
+
+              history.replaceState( null, null, '?menu=conductor_class_edit');
+          break;
+          case 'update':
+              // 更新しますか？
+              if ( window.confirm('更新しますか？') ) {
+                  cd.menuButtonDisabled( true );
+
+                  fn.fetch(`/menu/conductor_class_edit/conductor/class/maintenance/${cd.id}/`, null, 'PATCH', cd.data ).then(function(result){
+                      window.location.href = `?menu=conductor_class_edit&conductor_class_id=${result.conductor_class_id}`;
+                  }).catch(function( error ){
+                      cd.menuButtonDisabled( false );
+                  });
+
+              }
+          break;
+          case 'refresh':
+            // 再読込しますか？
+            if ( window.confirm('再読込しますか？') ) {
+                //
+            }
+            break;
+          case 'cancel':
+            // キャンセル確認無し
+            cd.selectConductor( cd.original );
+            cd.conductorMode('view');
+          break;
+          case 'cansel-instance':
+            // 予約取消
+            if ( window.confirm('予約取消') ) {
+              cd.menuButtonDisabled( true );
+              //
+            }
+            break;
+          case 'scram-instance':
+            // 強制停止
+            if ( window.confirm('強制停止') ) {
+              clearTimeout( cd.pollingTimerID );
+              cd.menuButtonDisabled( true );
+              //
+            }
+            break;
         }
     });
     
@@ -3758,7 +3786,7 @@ panelConductorHtml() {
           name = fn.cv( condcutor.conductor_name, '', true ),
           note = fn.cv( condcutor.note, '', true ),
           update = fn.cv( condcutor.last_update_date_time, '', true );
-    console.log(condcutor)
+
     const html = `
     <table class="panel-table">
         <tbody>
@@ -4759,20 +4787,6 @@ nodeCheckStatus( nodeID ) {
 }
 /*
 ##################################################
-  Modal用tr
-##################################################
-*/
-modalTr( trList, idKey, nameKey ) {
-    const trListLength = trList.length;
-    let trHTML = '';
-    for ( let i = 0; i < trListLength; i++ ) {
-      trHTML += '<tr data-id="' + trList[i][idKey] + '" data-name="' + trList[i][nameKey] + '">'
-      + '<th>' + trList[i][idKey] + '</th><td>' + trList[i][nameKey] + '</td></tr>';
-    }
-    return trHTML;
-}
-/*
-##################################################
   個別オペレーションセレクト
 ##################################################
 */
@@ -5381,6 +5395,92 @@ conductorHistory() {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+//   選択用モーダル
+// 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/*
+##################################################
+  コンダクター選択
+##################################################
+*/
+selectConductorModalOpen() {
+    const cd = this;
+    return new Promise(function( resolve, reject ){
+        const setClickEvent = function() {
+            const button = '.tableHeaderMainMenuButton[data-type="tableSelect"],.tableHeaderMainMenuButton[data-type="tableCancel"]';
+            cd.selectConductorModal.table.$.header.one('click', button, function(){
+                cd.selectConductorModal.modal.hide();
+                
+                const $button = $( this ),
+                      type = $button.attr('data-type');
+                switch ( type ) {
+                    case 'tableSelect': {
+                        const selectId = cd.selectConductorModal.table.select.select;
+                        resolve( selectId );
+                    } break;
+                    case 'tableCancel':
+                        cd.selectConductorModal.modal.hide();
+                        resolve( null );
+                    break;
+                }
+            });
+        };
+        
+        if ( !cd.selectConductorModal ) {
+            fn.initSelectModal('Conductor選択', 'conductor_class_list').then(function( modal ){
+                cd.selectConductorModal = modal;
+                setClickEvent();
+            });
+        } else {
+            cd.selectConductorModal.modal.show();
+            setClickEvent();
+        }
+    });
+}
+
+/*
+##################################################
+  オペレーション選択
+##################################################
+*/
+selectOperationModalOpen() {
+    const cd = this;
+    return new Promise(function( resolve, reject ){
+        const setClickEvent = function() {
+            const button = '.tableHeaderMainMenuButton[data-type="tableSelect"],.tableHeaderMainMenuButton[data-type="tableCancel"]';
+            cd.selectOperationModal.table.$.header.one('click', button, function(){
+                cd.selectOperationModal.modal.hide();
+                
+                const $button = $( this ),
+                      type = $button.attr('data-type');
+                switch ( type ) {
+                    case 'tableSelect': {
+                        const selectId = cd.selectOperationModal.table.select.select;
+                        resolve( selectId );
+                    } break;
+                    case 'tableCancel':
+                        cd.selectOperationModal.modal.hide();
+                        resolve( null );
+                    break;
+                }
+            });
+        };
+        
+        if ( !cd.selectOperationModal ) {
+            fn.initSelectModal('オペレーション選択', 'operation_list').then(function( modal ){
+                cd.selectOperationModal = modal;
+                setClickEvent();
+            });
+        } else {
+            cd.selectOperationModal.modal.show();
+            setClickEvent();
+        }
+    });
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
 //   conductorデータ更新・確認
 // 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -5476,14 +5576,9 @@ saveConductor( saveConductorData ) {
 */
 selectConductor( result ) {
     const cd = this;
-
+    
     cd.clearConductor();
-    try {
-        cd.loadConductor( JSON.parse( result ) );
-    } catch( e ) {
-        window.console.error( e );
-        //editor.log.set('error','JSON parse error.');
-    }
+    cd.loadConductor( result );
 }
 /*
 ##################################################
@@ -5501,7 +5596,6 @@ readConductor( result ) {
         //editor.log.set('error','JSON parse error.');
     }
 }
-//editor.readText.setInput( '.icd' ,readConductor );
 /*
 ##################################################
   ノードリセット
@@ -5599,7 +5693,7 @@ loadConductor( loadConductorData ) {
     const cd = this;
     
     if ( loadConductorData ) {
-        cd.data = loadConductorData;
+        cd.data = $.extend( true, {}, loadConductorData );
     }
 
     if ( cd.setting.debug === true ) {

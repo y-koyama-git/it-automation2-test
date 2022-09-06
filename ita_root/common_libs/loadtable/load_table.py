@@ -127,7 +127,10 @@ class loadTable():
         }
         # レコード操作結果
         self.exec_result = []
-        
+
+        # エラー集約用
+        self.err_message = {}
+
         # DB接続
         self.objdbca = objdbca
 
@@ -219,6 +222,58 @@ class loadTable():
         else:
             message = self.message
         return message
+
+    # err_message保存
+    def set_error_message(self):
+        """
+            エラーメッセージを保存
+            ARGS:
+                self.message
+        """
+        # エラーメッセージ保管＋リセット
+        self.err_message.setdefault(
+            str(len(self.err_message)),
+            self.message[MSG_LEVEL_ERROR]
+        )
+        self.reset_message()
+
+    # err_message数
+    def get_error_message_count(self):
+        """
+            エラーメッセージ数を取得
+            ARGS:
+                level:メッセージレベル
+            RETRUN:
+                self.message
+        """
+        result = 0
+        for k, v in self.err_message.items():
+            if len(v) != 0:
+                result = result + 1
+        return result
+    
+    # err_messageJSON化
+    def get_error_message_str(self):
+        """
+            エラーメッセージをJSON化
+                {lineno:{target_key:[err_msg,]}
+            ARGS:
+                status_code, msg
+        """
+        msg = ''
+        status_code = '499-00201'
+        err_all = {}
+        for eno, errs_info in self.err_message.items():
+            tmp_errs = {}
+            for err_key, err_info in errs_info.items():
+                if len(err_info) != 0:
+                    for err_megs in err_info:
+                        tmp_errs.setdefault(err_key, [])
+                        tmp_errs[err_key].append(err_megs.get('msg'))
+                    err_all[eno] = tmp_errs.copy()
+        msg = json.dumps(err_all, ensure_ascii=False)
+
+        return status_code, msg
 
     # レコード操作実行データ保存
     def set_exec_result(self, result_data):
@@ -559,10 +614,10 @@ class loadTable():
             RETRUN:
                 string
         """
-        try:
-            result = "{}_JNL".format(self.get_objtable().get(MENUINFO).get(COLNAME_VIEW_NAME))
-        except Exception:
+        if self.get_objtable().get(MENUINFO).get(COLNAME_VIEW_NAME) is None:
             result = None
+        else:
+            result = "{}_JNL".format(self.get_objtable().get(MENUINFO).get(COLNAME_VIEW_NAME))
         return result
 
     def get_sort_key(self):
@@ -832,17 +887,19 @@ class loadTable():
                 []
         """
         result = []
-        table_name = self.get_table_name_jnl()
-        column_list, primary_key_list = self.objdbca.table_columns_get(self.get_table_name())
-        primary_key = primary_key_list[0]
-        query_str = textwrap.dedent("""
-            SELECT * FROM `{table_name}`
-            WHERE {primary_key} = %s
-            ORDER BY LAST_UPDATE_TIMESTAMP DESC
-        """).format(table_name=table_name, primary_key=primary_key).strip()
-        tmp_result = self.objdbca.sql_execute(query_str, [uuid])
-        for row in tmp_result:
-            result.append(row)
+
+        if self.get_history_flg() is True:
+            table_name = self.get_table_name_jnl()
+            column_list, primary_key_list = self.objdbca.table_columns_get(self.get_table_name())
+            primary_key = primary_key_list[0]
+            query_str = textwrap.dedent("""
+                SELECT * FROM `{table_name}`
+                WHERE {primary_key} = %s
+                ORDER BY LAST_UPDATE_TIMESTAMP DESC
+            """).format(table_name=table_name, primary_key=primary_key).strip()
+            tmp_result = self.objdbca.sql_execute(query_str, [uuid])
+            for row in tmp_result:
+                result.append(row)
         return result
 
     def get_target_rows(self, uuid):
@@ -1059,9 +1116,9 @@ class loadTable():
 
             # 実行結果、一時保存
             result_data.append(tmp_result[1])
-            if self.get_message_count(MSG_LEVEL_ERROR) != 0:
-                err_result.setdefault(0, self.get_message(MSG_LEVEL_ERROR))
-            
+            # エラーメッセージ保存
+            self.set_error_message()
+
             if tmp_result[0] is True:
                 # コミット  トランザクション終了
                 self.objdbca.db_transaction_end(True)
@@ -1076,28 +1133,9 @@ class loadTable():
                     entry_parameter = tmp_exec_result.get('parameter')
                     self.exec_restore_action(entry_parameter, tmp_exec_result)
 
-                status_code = '499-00201'
-                err_msg_count_flg = 0
-                for eno, errs_info in err_result.items():
-                    tmp_errs = {}
-                    for err_key, err_info in errs_info.items():
-                        for err_megs in err_info:
-                            if len(err_info) == 1 and len(errs_info) == 1:
-                                status_code = err_megs.get('status_code')
-                                msg = err_megs.get('msg_args')
-                                err_msg_count_flg = 1
-                                if msg == '' or status_code == '':
-                                    status_code = '499-00201'
-                                    err_msg_count_flg = 0
-                            else:
-                                status_code = '499-00201'
-                                err_msg_count_flg = 0
-                            tmp_errs.setdefault(err_key, [])
-                            tmp_errs[err_key].append(err_megs.get('msg'))
-                    err_all[eno] = tmp_errs.copy()
+                # 集約エラーメッセージ(JSON化)
+                status_code, msg = self.get_error_message_str()
 
-                if err_msg_count_flg == 0:
-                    msg = json.dumps(err_all, ensure_ascii=False)
         except Exception as e:
             result = {}
             # ロールバック トランザクション終了
@@ -1159,18 +1197,15 @@ class loadTable():
                 # maintenance呼び出し
                 tmp_result = self.exec_maintenance(parameters, target_uuid, cmd_type)
 
-                # 実行結果、一時保存
-                result_data.append(tmp_result[1])
-                if self.get_message_count(MSG_LEVEL_ERROR) != 0:
-                    err_result.setdefault(eno, self.get_message(MSG_LEVEL_ERROR))
-                # メッセージ初期化
-                self.reset_message()
+                # エラーメッセージ保存
+                self.set_error_message()
+
             # エラーなし
-            if len(err_result) == 0:
+            if self.get_error_message_count() == 0:
                 # コミット
                 self.objdbca.db_transaction_end(True)
                 tmp_data = self.get_exec_count()
-            elif len(err_result) > 0:
+            elif self.get_error_message_count() > 0:
                 # ロールバック トランザクション終了
                 self.objdbca.db_transaction_end(False)
                 # 想定内エラーの切り戻し処理
@@ -1179,18 +1214,8 @@ class loadTable():
                     entry_parameter = tmp_exec_result.get('parameter')
                     self.exec_restore_action(entry_parameter, tmp_exec_result)
 
-                status_code = '499-00201'
-                err_msg_count_flg = 0
-                for eno, errs_info in err_result.items():
-                    tmp_errs = {}
-                    for err_key, err_info in errs_info.items():
-                        for err_megs in err_info:
-                            tmp_errs.setdefault(err_key, [])
-                            tmp_errs[err_key].append(err_megs.get('msg'))
-                    err_all[eno] = tmp_errs.copy()
-
-                if err_msg_count_flg == 0:
-                    msg = json.dumps(err_all, ensure_ascii=False)
+                # 集約エラーメッセージ(JSON化)
+                status_code, msg = self.get_error_message_str()
 
         except Exception as e:
             # ロールバック トランザクション終了
@@ -1451,6 +1476,9 @@ class loadTable():
                 result_uuid = result[0].get(primary_key_list[0])
                 if history_flg is True:
                     result_uuid_jnl = self.get_maintenance_uuid(result_uuid)[0].get(COLNAME_JNL_SEQ_NO)
+                else:
+                    result_uuid_jnl = '00000000-0000-0000-0000-000000000000'
+
                 temp_rows = {primary_key_list[0]: result[0].get(primary_key_list[0])}
                 tmp_result = self.convert_colname_restkey(temp_rows)
                 result = tmp_result[0]
@@ -2018,7 +2046,7 @@ class loadTable():
                             if tmp_keys in parameter:
                                 del parameter[tmp_keys]
 
-                    if cmd_type == CMD_DISCARD:
+                    if cmd_type == CMD_DISCARD or cmd_type == CMD_RESTORE:
                         if tmp_col_name not in primary_key_list:
                             # 廃止時に備考の更新は例外で可
                             if tmp_col_name != 'NOTE':

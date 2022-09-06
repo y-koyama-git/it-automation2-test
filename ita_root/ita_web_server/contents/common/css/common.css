@@ -177,6 +177,8 @@ padding: 4px 8px;
 border: 1px solid var(--black40);
 letter-spacing: .75px;
 word-break: break-word;
+white-space: pre;
+font-family: "Osaka-mono", "MS Gothic", "monospace";
 font-size: 14px;
 visibility: hidden;
 }
@@ -1499,6 +1501,10 @@ border-bottom-width: 16px;
 .viewTable .tBodyTrDiscard .td,
 .viewTable .tBodyTrDiscard:nth-child(even) .th,
 .viewTable .tBodyTrDiscard:nth-child(even) .td,
+.selectTable .tBodyTrDiscard .th,
+.selectTable .tBodyTrDiscard .td,
+.selectTable .tBodyTrDiscard:nth-child(even) .th,
+.selectTable .tBodyTrDiscard:nth-child(even) .td,
 .editTable .tBodyTrDiscard .th,
 .editTable .tBodyTrDiscard .td,
 .editTable .tBodyTrDiscard:nth-child(even) .th,
@@ -1510,19 +1516,24 @@ color:  var(--rowDiscardTextColor);
 }
 .viewTable .tBodyTrDiscard:hover .th,
 .viewTable .tBodyTrDiscard:hover .td,
+.selectTable .tBodyTrDiscard:hover .th,
+.selectTable .tBodyTrDiscard:hover .td,
 .editTable .tBodyTrDiscard:hover .th,
 .editTable .tBodyTrDiscard:hover .td{
 background-color: var(--rowDiscardHoverColor);
 }
-
-
+/* thead */
 .thead {
 position: sticky;
 top: 0;
 z-index: 10;
 }
-.tHeadTr:first-child .tHeadTh:first-child {
+.tHeadTr:first-child .tHeadLeftSticky {
+border-right: none;
 border-left: 1px solid var(--mainColor100);
+}
+.tHeadTr:first-child .tHeadLeftStickyLast {
+border-right: 1px solid var(--mainColor100);
 }
 .tHeadTr:first-child .tHeadTh {
 border-top: 1px solid var(--mainColor100);
@@ -1607,9 +1618,6 @@ text-align: right;
 text-align: center;
 }
 
-
-
-
 .ci {
 padding: 4px 8px 2px;
 line-height: 1.5;
@@ -1633,6 +1641,7 @@ max-width: 640px;
 white-space: nowrap;
 text-overflow: ellipsis;
 }
+.tHeadFilterNone .filterNone,
 .tBodyAutoInput {
 display: block;
 width: calc( 100% - 16px ); height: 2px;
@@ -1659,17 +1668,14 @@ background-color: var(--mainColor60);
 .tBodyLeftSticky {
 z-index: 5;
 }
-.tHeadRowSelect,
 .tBodyRowSelect {
 cursor: pointer;
 }
-.tHeadRowSelect:hover .checkboxLabel,
 .tBodyRowSelect:hover .checkboxLabel {
 background-image: none;
 border-color: var(--accentColor100);
 border-width: 2px;
 }
-.tHeadRowSelect:hover .checkbox:checked ~ .checkboxLabel,
 .tBodyRowSelect:hover .checkbox:checked ~ .checkboxLabel {
 background-color: var(--accentColor100);
 }
@@ -1690,8 +1696,72 @@ width: 40px; min-width: auto;
 .tBodyTdInput > .ci {
 padding: 4px;
 }
+.tBodyTdButton > .ci {
+padding: 2px 4px;
+text-align: center;
+}
+.tHeadRowSelect,
+.rowSelectButton {
+cursor: pointer;
+}
+.noData .tHeadRowSelect,
+.initFilterStandBy .tHeadRowSelect {
+cursor: default;
+}
+.rowSelectButton {
+display: block;
+position: relative;
+z-index: 0;
+width: 18px; height: 18px;
+background-color: var(--white100);
+background-image: linear-gradient(rgba(255,255,255,0), rgba(0,0,0,.075), rgba(255,255,255,0) );
+border: 1px solid var(--black50);
+border-radius: 4px;
+}
+.noData .rowSelectButton,
+.initFilterStandBy .rowSelectButton {
+opacity: .5;
+cursor: default;
+pointer-events: none;
+}
 
-
+.rowSelectButton[data-select="oneOrMore"],
+.rowSelectButton[data-select="all"] {
+background-color: var(--mainColor80);
+background-image: linear-gradient( rgba(255,255,255,.2), rgba(255,255,255,0) );
+border-color: var(--mainColor100);
+}
+.rowSelectButton[data-select="oneOrMore"]::after,
+.rowSelectButton[data-select="all"]::after {
+content: '';
+display: block;
+position: absolute;
+left: 50%; top: 50%;
+z-index: 2;
+}
+.rowSelectButton[data-select="all"]::after {
+transform: translate( -50%, calc( -50% - 3px ) ) rotate(-45deg);
+width: 14px; height: 9px;
+border: 3px solid transparent;
+border-left-color: #FFF;
+border-bottom-color: #FFF;
+}
+.rowSelectButton[data-select="oneOrMore"]::after {
+transform: translate(-50%,-50%);
+width: 10px; height: 2px;
+background-color: #FFF;
+}
+.tHeadRowSelect:hover .rowSelectButton[data-select="not"] {
+background-image: none;
+border-color: var(--accentColor100);
+border-width: 2px;
+}
+.tHeadRowSelect:hover .rowSelectButton[data-select="oneOrMore"],
+.tHeadRowSelect:hover .rowSelectButton[data-select="all"] {
+background-color: var(--accentColor100);
+border-color: var(--accentColor100);
+border-width: 2px;
+}
 
 .tableShowChangeValue .tBodyAfterValue,
 .tBodyBeforeValue {
@@ -1739,10 +1809,12 @@ display: none;
 .filterShow .filterTr {
 display: table-row;
 }
-.viewTable .discardCell {
+.viewTable .discardCell,
+.selectTable .discardCell {
 display: none;
 }
-.viewTable .filterShow .discardCell {
+.viewTable .filterShow .discardCell,
+.selectTable .filterShow .discardCell {
 display: table-cell;
 }
 .tHeadFilter {
@@ -1783,14 +1855,17 @@ font-size: 16px;
 .tHeadFilterHeaderNarrow .tHeadFilterTitle {
 display: none;
 }
+.filterNoHeaderTr .tHeadFilter:first-child {
+border-left: 1px solid var(--black50);
+}
 .tHeadFilterInput {
 vertical-align: top;
 }
 .tHeadFilterInput > .ci {
 padding: 8px;
 }
-.filterNoHeaderTr .tHeadFilter:first-child {
-border-left: 1px solid var(--black50);
+.tHeadFilterNone {
+vertical-align: middle;
 }
 .filterSelectArea {
 margin-top: 4px;
@@ -1912,7 +1987,6 @@ flex: 0 0 168px;
 .inputDateCalendar {
 flex: 0 0 32px;
 }
-
 /* Footer */
 .tableFooter {
 flex: 0 0 auto;
@@ -2091,11 +2165,13 @@ padding: 0 8px;
 display: flex;
 align-items: center;
 }
-.tableRowMenuItem .button {
+.tableRowMenuButton,
+.actionButton {
 height: 24px;
 line-height: 24px;
 }
-.tableRowMenuItem .button > .inner {
+.tableRowMenuButton > .inner,
+.actionButton  > .inner {
 padding: 0 8px;
 }
 .tBodyInputTd > .ci {
@@ -2218,11 +2294,54 @@ font-size: 14px;
 ##################################################
 */
 
-/*
-.select2-container--default .select2-selection--multiple .select2-selection__rendered {
-padding-right: 0;
-padding-bottom: 5px;
+.select2.select2-container {
+min-width: 100%;
 }
+.select2-container--default .select2-selection--multiple .select2-selection__rendered {
+display: block;
+padding: 0;
+}
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+float: none;
+display: block;
+position: relative;
+margin: 4px 0 0; padding: 4px 4px 4px 20px;
+background-color: #F8F8F8;
+border-color: #CCC;
+border-radius: 0;
+border-left: none;
+border-right: none;
+line-height: 1.4;
+white-space: normal;
+word-break: break-all;
+font-size: 12px;
+}
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+display: block;
+position: absolute;
+left: 4px; top: 50%;
+transform: translateY(-50%);
+}
+.select2-container .select2-search--inline .select2-search__field {
+display: block;
+width: 100%!important;
+min-height: 28px;
+margin: 0; padding: 0 4px;
+}
+.select2-container .select2-search--inline {
+float: none;
+}
+.select2-container .select2-search--inline .select2-search__field::placeholder {
+color: #AAA;
+}
+.select2-results__option {
+line-height: 1.4;
+white-space: normal;
+word-break: break-all;
+font-size: 12px;
+}
+/*
+
 
 .select2-search {
 margin-left: 0!important;
@@ -2237,21 +2356,12 @@ white-space: normal;
 max-width: 640px;
 }
 
-.select2-container {
-min-width: 100%;
-margin-top: 4px;
-}
+
 .select2-search {
 max-width: 100%;
 margin: 5px 5px 0 0;
 }
-.select2-container .select2-search--inline .select2-search__field {
-max-width: 100%;
-margin: 0;
-}
-.select2-container .select2-search--inline .select2-search__field::placeholder {
-color: #AAA;
-}
+
 */
 .select2-container--default.select2-container--focus .select2-selection--multiple {
 border-color: #0070FF;
@@ -2688,6 +2798,107 @@ border-radius: 17px;
 background-color: transparent!important;
 }
 
+/*
+##################################################
+  メニュー情報表示
+##################################################
+*/
+.menuInfoContainer {
+padding: 16px;
+}
+.menuInfoTitle {
+position: relative;
+margin-bottom: 16px; padding: 4px 16px;
+line-height: 1.5;
+letter-spacing: .75px;
+font-size: 20px;
+font-weight: bold;
+color: var(--mainColor100);
+}
+.menuInfoTitle::before {
+content: '';
+position: absolute;
+left: 0; top: calc( 50% - 1px );
+transform: translateY(-50%);
+width: 4px; height: 100%;
+margin-right: 16px;
+background-color: var(--accentColor100);
+}
+.menuInfoDescription {
+line-height: 1.75;
+letter-spacing: .5px;
+font-size: 16px;
+}
+/*
+##################################################
+  バージョン確認
+##################################################
+*/
+.varsionContainer {
+padding: 16px;
+}
+.versionLogo {
+margin-bottom: 16px;
+text-align: center;
+}
+.versionLogoImg {
+max-width: 400px;
+}
+.versionNumber {
+margin-bottom: 32px;
+text-align: center;
+font-size: 24px;
+font-weight: bold;
+color: var(--mainColor100);
+}
+.versionNumberWrap {
+display: inline-block;
+padding: 8px 32px 6px;
+background-color: var(--mainColor100);
+border-radius: 80px;
+line-height: 1;
+font-size: 20px;
+color: var(--white100);
+}
+.installedDriver {
+padding-top: 16px;
+border-top: 1px dashed var(--black20);
+}
+.driverTitle {
+position: relative;
+margin-bottom: 16px; padding: 0 16px;
+line-height: 24px;
+letter-spacing: .75px;
+font-size: 14px;
+font-weight: bold;
+color: var(--mainColor100);
+}
+.driverTitle::before {
+content: '';
+position: absolute;
+left: 0; top: calc( 50% - 1px );
+transform: translateY(-50%);
+width: 4px; height: 100%;
+margin-right: 16px;
+background-color: var(--accentColor100);
+}
+.driverList {
+display: flex;
+flex-wrap: wrap;
+gap: 16px;
+}
+.driverItem {
+width: calc( 50% - 8px );
+padding: 8px 16px;
+background-color: var(--black5);
+border: 1px solid var(--black20);
+border-radius: 4px;
+letter-spacing: .5px;
+font-size: 12px;
+}
+.driverItem > .icon {
+opacity: .2;
+}
 /*
 ##################################################
   Debug menu

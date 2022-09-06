@@ -174,7 +174,8 @@ class AnscConst:
     RESERVE = 9          # 未実行(予約中)
     RESERVE_CANCEL = 10  # 予約取消
 
-    DRY_RUN = 2  # 実行モード(ドライラン=チェック)
+    DRY_RUN = '2'  # 実行モード(ドライラン=チェック)
+    CHK_PARA = '3'  # 実行モード(パラメータ確認)
 
     # WINRM接続ポート デフォルト値
     LC_WINRM_PORT = 5985

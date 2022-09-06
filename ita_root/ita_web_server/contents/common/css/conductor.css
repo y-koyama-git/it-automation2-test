@@ -153,6 +153,7 @@ box-shadow: 4px 4px 8px rgba( 0,0,0,.4 );
 position: relative;
 z-index: 1;
 }
+#editor[data-editor-mode="update"] .node-body,
 #editor[data-editor-mode="edit"] .node-body {
 cursor: grab;
 }
@@ -315,7 +316,8 @@ border-left: 1px solid rgba( 255,255,255,.2 );
 border-bottom: 1px solid rgba( 0,0,0,.3 );
 border-right: 1px solid rgba( 0,0,0,.3 );
 }
-#editor[data-editor-mode="edit"] .node-terminal {
+#editor[data-editor-mode="edit"] .node-terminal,
+#editor[data-editor-mode="update"] .node-terminal {
 cursor: pointer;
 }
 .node-in {
@@ -327,10 +329,12 @@ border-radius: 0 8px 8px 0;
 .node-cap {
 width: 16px;
 }
-#editor[data-editor-mode="edit"] .node-terminal.hover {
+#editor[data-editor-mode="edit"] .node-terminal.hover,
+#editor[data-editor-mode="update"] .node-terminal.hover {
 cursor: copy;
 }
-#editor[data-editor-mode="edit"] .node-terminal.connected.hover {
+#editor[data-editor-mode="edit"] .node-terminal.connected.hover,
+#editor[data-editor-mode="update"] .node-terminal.connected.hover {
 cursor: no-drop!important;
 }
 .node-terminal::after,
@@ -1604,7 +1608,9 @@ fill: none;
 stroke-linecap: round;
 }
 #editor[data-editor-mode="edit"] #svg-area g,
-#editor[data-editor-mode="edit"] #svg-area path {
+#editor[data-editor-mode="edit"] #svg-area path,
+#editor[data-editor-mode="update"] #svg-area g,
+#editor[data-editor-mode="update"] #svg-area path {
 pointer-events: auto;
 }
 .svg-line,
@@ -1757,6 +1763,16 @@ cursor: grab;
 background-color: #2F3337;
 }
 #editor[data-editor-mode="edit"] .node-table tbody tr:hover td {
+background-color: #3B4045;
+}
+#editor[data-editor-mode="update"] .node-table tbody th,
+#editor[data-editor-mode="update"] .node-table tbody td {
+cursor: grab;
+}
+#editor[data-editor-mode="update"] .node-table tbody tr:hover th {
+background-color: #2F3337;
+}
+#editor[data-editor-mode="update"] .node-table tbody tr:hover td {
 background-color: #3B4045;
 }
 .movement-list-orchestrator,

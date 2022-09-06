@@ -24,12 +24,16 @@ class DataTable {
 /*
 ##################################################
    Constructor
+   params {
+      menuNameRest: menu
+   }
 ##################################################
 */
 constructor( tableId, mode, info, params, option ) {
     const tb = this;
     tb.id = tableId;
     tb.mode = mode;
+    tb.initMode = mode;
     tb.info = info;
     tb.params = params;
     
@@ -98,6 +102,8 @@ setHeaderHierarchy() {
     tb.data.columnKeys = [];
     tb.data.restNames = {};
     
+    const restOrder = [];
+    
     const hierarchy = function( columns, row, col ){
         if ( !tb.data.hierarchy[ row ] ) tb.data.hierarchy[ row ] = [];
         for ( const columnKey of columns ) {            
@@ -107,13 +113,14 @@ setHeaderHierarchy() {
                 hierarchy( tb.info.column_group_info[ columnKey ].columns, row + 1, col );
             } else if ( type === 'c') {
                 const culumnRest =  tb.info.column_info[ columnKey ].column_name_rest;
-                tb.data.restNames[ culumnRest ] = tb.info.column_info[ columnKey ].column_name;
+                tb.data.restNames[ culumnRest ] = tb.info.column_info[ columnKey ].column_name;                
                 if ( culumnRest === tb.idNameRest ) tb.idName = tb.info.column_info[ columnKey ].column_name;
                 if ( specialHeadColumn.indexOf( culumnRest ) !== -1 ) {
                     specialHeadColumnKeys[ specialHeadColumn.indexOf( culumnRest ) ] = columnKey;
                 } else if ( specialFootColumn.indexOf( culumnRest ) !== -1 ) {
                     specialFootColumnKeys[ specialFootColumn.indexOf( culumnRest ) ] = columnKey;
                 } else {
+                    restOrder.push( culumnRest );
                     tb.data.hierarchy[ row ].push( columnKey );
                     tb.data.columnKeys.push( columnKey );
                 }
@@ -121,6 +128,13 @@ setHeaderHierarchy() {
         }
     };
     hierarchy( tb.info.menu_info.columns, 0, 0 );
+    
+    // 固定列用情報
+    tb.data.sticky = {};
+    tb.data.sticky.leftLast = specialHeadColumn[0];
+    tb.data.sticky.rightFirst = specialFootColumn[0];
+    tb.data.sticky.commonFirst = restOrder[0];
+    tb.data.sticky.commonLast = restOrder[ restOrder.length - 1 ];
 
     // 特殊列を先頭に追加
     for ( const columnKey of specialHeadColumnKeys ) {
@@ -192,9 +206,11 @@ setup() {
     tb.sort = [];
     
     // 選択データ
-    tb.select = {}
-    tb.select.view = [];
-    tb.select.edit = [];
+    tb.select = {
+        view: [],
+        edit: [],
+        select: []
+    };    
     
     // 編集データ
     tb.edit = {};
@@ -265,19 +281,29 @@ setTable( mode ) {
     
     // Table headerメニュー
     switch ( tb.mode ) {
-        case 'view': {            
+        case 'view': case 'select': {            
             const tableHeaderMenuList = {
                 Main: [],
                 Sub: [
                     { name: 'filterToggle', icon: 'filter', title: 'フィルタ', action: 'normal', toggle: { init: 'off', on:'閉じる', off:'開く'}}
                 ]
             };
-            // 権限チェック
-            if ( tb.flag.insert ) tableHeaderMenuList.Main.push({ name: 'tableNew', icon: 'plus', title: '登録', action: 'positive', width: '200px'});
-            if ( tb.flag.update ) tableHeaderMenuList.Main.push({ name: 'tableEdit', icon: 'edit', title: '編集', action: 'positive', width: '200px', 'disabled': true });
+            if ( tb.mode === 'select') {
+                tableHeaderMenuList.Main.push({ name: 'tableSelect', icon: 'check', title: '選択', action: 'default', width: '200px'});
+                tableHeaderMenuList.Main.push({ name: 'tableCancel', icon: 'cross', title: 'キャンセル', action: 'negative', width: '160px'});
+                
+                if ( tb.flag.insert ) tableHeaderMenuList.Main.push({ name: 'tableNew', icon: 'plus', title: '登録', action: 'positive', width: '120px', separate: true });
+                if ( tb.flag.update ) tableHeaderMenuList.Main.push({ name: 'tableEdit', icon: 'edit', title: '編集', action: 'positive', width: '120px', 'disabled': true });
+            }
             
-            if ( tableHeaderMenuList.Main.length === 0 ) {
-                 tableHeaderMenuList.Main.push({ message: 'このメニューは閲覧のみ可能です。', action: 'message'});
+            if ( tb.mode === 'view') {
+                // 権限チェック
+                if ( tb.flag.insert ) tableHeaderMenuList.Main.push({ name: 'tableNew', icon: 'plus', title: '登録', action: 'positive', width: '200px'});
+                if ( tb.flag.update ) tableHeaderMenuList.Main.push({ name: 'tableEdit', icon: 'edit', title: '編集', action: 'positive', width: '200px', 'disabled': true });
+
+                if ( tableHeaderMenuList.Main.length === 0 ) {
+                     tableHeaderMenuList.Main.push({ message: 'このメニューは閲覧のみ可能です。', action: 'message'});
+                }
             }
             
             tb.$.header.html( tb.tableHeaderMenuHtml( tableHeaderMenuList ) );
@@ -318,21 +344,27 @@ setTable( mode ) {
         case 'edit': {            
             const tableHeaderMenuList = {
                 Main: [
-                    { name: 'tableOk', icon: 'detail', title: '編集確認', action: 'positive', width: '240px' },
-                    { name: 'tableAdd',icon: 'plus', title: '追加', action: 'default', separate: true },
-                    { name: 'tableDup', icon: 'copy', title: '複製', action: 'duplicat', disabled: true },
-                    { name: 'tableDel', icon: 'minus', title: '削除', action: 'danger', disabled: true },
-                    { name: 'tableDiscard', icon: 'cross', title: '廃止', action: 'warning', disabled: true },
-                    { name: 'tableRestore', icon: 'circle', title: '復活', action: 'restore', disabled: true },
-                    { name: 'tableCancel', icon: 'cross', title: '編集キャンセル', action: 'normal', separate: true }
+                    { name: 'tableOk', icon: 'detail', title: '編集確認', action: 'positive', width: '240px' }
                 ],
                 Sub: [
                 ]
             };
+            if ( tb.flag.insert ) {
+                tableHeaderMenuList.Main.push({ name: 'tableAdd',icon: 'plus', title: '追加', action: 'default', separate: true });
+                tableHeaderMenuList.Main.push({ name: 'tableDup', icon: 'copy', title: '複製', action: 'duplicat', disabled: true });
+                tableHeaderMenuList.Main.push({ name: 'tableDel', icon: 'minus', title: '削除', action: 'danger', disabled: true });
+            }
+            if ( tb.flag.disuse ) {
+                tableHeaderMenuList.Main.push({ name: 'tableDiscard', icon: 'cross', title: '廃止', action: 'warning', disabled: true });
+            }
+            if ( tb.flag.reuse ) {
+                tableHeaderMenuList.Main.push({ name: 'tableRestore', icon: 'circle', title: '復活', action: 'restore', disabled: true });
+            }
+            tableHeaderMenuList.Main.push({ name: 'tableCancel', icon: 'cross', title: '編集キャンセル', action: 'normal', separate: true });
             tb.$.header.html( tb.tableHeaderMenuHtml( tableHeaderMenuList ) );
             
             // メニューボタン
-            tb.$.header.find('.itaButton ').on('click', function(){
+            tb.$.header.find('.itaButton').on('click', function(){
                 if ( !tb.checkWork ) {
                     const $button = $( this ),
                           type = $button.attr('data-type');
@@ -532,29 +564,46 @@ tableHtml() {
             if ( id === info.column_group_info[ key ].column_group_id ) return key;
         }
     };
-
+    
     // 配列階層からthead HTML作成
     const rowLength = hierarchy.length - 1;
+    
+    // colspan
+    tb.data.filterHeadColspan = 0;
     
     // モード別列
     const headRowspan = rowLength + 1;
     switch ( tb.mode ) {
         case 'view':
-            if ( tb.flag.edit ) {
-                html[0] += fn.html.cell('選択', ['tHeadTh', 'tHeadLeftSticky', 'tHeadRowSelect'], 'th', headRowspan );   
+            if ( tb.flag.update ) {
+                const selectButton = fn.html.button('', 'rowSelectButton');
+                html[0] += fn.html.cell( selectButton, ['tHeadTh', 'tHeadLeftSticky', 'tHeadRowSelect'], 'th', headRowspan );
+                tb.data.filterHeadColspan++;
             }
-            if ( tb.flag.history ) {
+            html[0] += fn.html.cell( fn.html.icon('ellipsis_v'), ['tHeadTh', 'tHeadLeftSticky', 'tHeadRowMenu'], 'th', headRowspan );
+            tb.data.filterHeadColspan++;
+        break;
+        case 'select':
+            html[0] += fn.html.cell('選択', ['tHeadTh', 'tHeadLeftSticky'], 'th', headRowspan );
+            tb.data.filterHeadColspan++;
+            if ( tb.flag.update ) {
+                const selectButton = fn.html.button('', 'rowSelectButton');
+                html[0] += fn.html.cell( selectButton, ['tHeadTh', 'tHeadLeftSticky', 'tHeadRowSelect'], 'th', headRowspan );
                 html[0] += fn.html.cell( fn.html.icon('ellipsis_v'), ['tHeadTh', 'tHeadLeftSticky', 'tHeadRowMenu'], 'th', headRowspan );
+                tb.data.filterHeadColspan += 2;
             }
         break;
-        case 'edit':
-            html[0] += fn.html.cell('選択', ['tHeadTh', 'tHeadLeftSticky', 'tHeadRowSelect'], 'th', headRowspan );
-        break;
+        case 'edit': {
+            if ( tb.flag.edit || tb.flag.disuse || tb.flag.reuse ) {
+                const selectButton = fn.html.button('', 'rowSelectButton');
+                html[0] += fn.html.cell( selectButton, ['tHeadTh', 'tHeadLeftSticky', 'tHeadRowSelect'], 'th', headRowspan );
+            }
+        } break;
         case 'diff':
             html[0] += fn.html.cell('区分', ['tHeadTh', 'tHeadLeftSticky'], 'th', headRowspan );
         break;
         case 'history':
-            html[0] += fn.html.cell('内容', ['tHeadTh', 'tHeadLeftSticky'], 'th', headRowspan );
+            html[0] += fn.html.cell('内容', ['tHeadTh', 'tHeadLeftSticky', 'tHeadLeftStickyLast'], 'th', headRowspan );
             html[0] += fn.html.cell('履歴通番', ['tHeadTh'], 'th', headRowspan );
             html[0] += fn.html.cell('変更日時', ['tHeadTh'], 'th', headRowspan );
         break;
@@ -599,8 +648,18 @@ tableHtml() {
                 
                 let name = fn.cv( column.column_name, '', true );
                 
+                // view_item
+                if ( column.view_item === '0' && column.column_name_rest !== 'discard') {
+                    continue;
+                }                
+                // selectモードの場合ボタンカラムは非表示
+                if ( tb.mode === 'select' && column.column_type === 'ButtonColumn') {
+                    continue;
+                }
                 // ソート
-                if ( tb.mode === 'view') className.push('tHeadSort');
+                if ( tb.mode === 'view' || tb.mode === 'select') {
+                    className.push('tHeadSort');
+                }
                 // 必須
                 if ( tb.mode === 'edit' && column.required_item === '1') {
                     // 必須を付けない要素
@@ -614,6 +673,13 @@ tableHtml() {
                     if ( [ tb.idNameRest, 'discard'].indexOf( column.column_name_rest ) !== -1 ) {
                         className.push('tHeadLeftSticky');
                     }
+                    // Border調整用class
+                    if ( column.column_name_rest === tb.data.sticky.leftLast ) className.push('tHeadLeftStickyLast');
+                    /*
+                    if ( column.column_name_rest === tb.data.sticky.rightFirst ) className.push('tHeadRightStickyFirst');
+                    if ( column.column_name_rest === tb.data.sticky.commonFirst ) className.push('tHeadCommonFirst');
+                    if ( column.column_name_rest === tb.data.sticky.commonLast ) className.push('tHeadCommonEnd');
+                    */
                 }
                 if ( column.column_name_rest ) attr.rest = column.column_name_rest;
                 if ( column.description ) attr.title = fn.cv( column.description, '', true );
@@ -629,7 +695,7 @@ tableHtml() {
     }
     
     // フィルター入力欄
-    if ( tb.mode === 'view') html.push( tb.filterHtml() );
+    if ( tb.mode === 'view' || tb.mode === 'select') html.push( tb.filterHtml() );
     
     return `
     <thead class="thead">
@@ -654,7 +720,7 @@ filterHtml() {
         const initSetFilter = ( tb.option )? tb.option.initSetFilter: undefined;
         if ( initSetFilter !== undefined ) {
             try {
-                // イニシャルフィルタフラグを強制的にオンにする
+                // 初期フィルタがある場合はイニシャルフィルタフラグをオンにする
                 tb.flag.initFilter = true;
                 return JSON.parse( initSetFilter );
             } catch(e) {
@@ -666,18 +732,15 @@ filterHtml() {
     
     const filterIcon = `${fn.html.icon('filter')}<span class="tHeadFilterTitle">フィルタ</span>`,
           rows = [],
-          colspan = ( tb.flag.edit )? 2: 1,
           rowClassName = ['tHeadTr', 'filterTr'],
           className = ['tHeadFilter', 'tHeadLeftSticky', 'tHeadFilterHeader'];
     
-    if ( colspan === 1 ) className.push('tHeadFilterHeaderNarrow');
+    
+    if ( tb.data.filterHeadColspan === 1 ) className.push('tHeadFilterHeaderNarrow');
     
     const cells = [];
-    if ( tb.flag.edit || tb.flag.history ) {
-        cells.push( fn.html.cell( filterIcon, className, 'th', 2, colspan ) );
-    } else {
-        rowClassName.push('filterNoHeaderTr');
-    }
+    cells.push( fn.html.cell( filterIcon, className, 'th', 2, tb.data.filterHeadColspan ) );
+    // rowClassName.push('filterNoHeaderTr');
     
     const pulldownOpen = function( name, rest ) {
         return ``
@@ -692,6 +755,14 @@ filterHtml() {
               rest = column.column_name_rest,
               type = column.column_type;
         
+        // view_item
+        if ( column.view_item === '0' && column.column_name_rest !== 'discard') {
+            continue;
+        }
+        // 選択モードの場合ボタンカラムは表示しない
+        if ( tb.mode === 'select' && type === 'ButtonColumn') {
+            continue;
+        }
         // フィルタータイプ
         const getFilterType = function() {
             if ( rest === 'discard') {
@@ -703,7 +774,7 @@ filterHtml() {
                     case 'HostInsideLinkTextColumn': case 'LinkIDColumn': case 'NoteColumn':
                     case 'LastUpdateUserColumn': case 'AppIDColumn': case 'JsonColumn':
                     case 'FileUploadColumn': case 'FileUploadEncryptColumn':
-                    case 'EnvironmentIDColumn': case 'TextColumn': 
+                    case 'EnvironmentIDColumn': case 'TextColumn': case 'RoleIDColumn':
                         return 'text';
                     break;
                     // 数値のFROM,TO
@@ -725,7 +796,7 @@ filterHtml() {
             }
         };
         const filterType = getFilterType();
-        
+
         // フィルター初期値
         const getInitValue = function() {
               if ( initSetFilter && initSetFilter[ rest ] ) {
@@ -751,8 +822,9 @@ filterHtml() {
         };
         const initValue = getInitValue();
 
-        const cellHtml = [];
-        
+        const className = ['tHeadFilter','tHeadFilterInput'],
+              cellHtml = [];
+
         if ( rest === 'discard') {
             const list = {
                 '0': '全レコード',
@@ -808,14 +880,15 @@ filterHtml() {
                 break;
                 // 表示しない
                 default:
+                    className.push('tHeadFilterNone');
                     cellHtml.push('<div class="filterNone"></div>');
             }
         }
-        const className = ['tHeadFilter','tHeadFilterInput'];
+
         if (  [ tb.idNameRest, 'discard'].indexOf( rest) !== -1 ) {
             className.push('tHeadLeftSticky');
         }
-        
+
         cells.push( fn.html.cell( cellHtml.join(''), className, 'th', 1, 1 ) );
     }
     rows.push( fn.html.row( cells.join(''), rowClassName ) );
@@ -837,13 +910,12 @@ filterHtml() {
             // オートフィルターチェックボックス
             const attr = { type: item.name }
             if ( tb.flag.autoFilter ) attr.checked = 'checked';
-            menuListHtml.push(`<li class="${listClassName.join(' ')}">${fn.html.checkboxText('filterMenuAutoFilter', item.title, tb.id + '_AutoFilter', attr )}</li>`)
+            menuListHtml.push(`<li class="${listClassName.join(' ')}">${fn.html.checkboxText('filterMenuAutoFilter', item.title, tb.id + '_AutoFilter', tb.id + '_AutoFilter', attr )}</li>`)
         } else {
             menuListHtml.push(`<li class="${listClassName.join(' ')}">${fn.html.button( item.title,
                 ['filterMenuButton', 'itaButton'], { type: item.name, action: item.action })}</li>`);
         }
     }
-    console.log(JSON.stringify(rowClassName))
     rows.push( fn.html.row( fn.html.cell(`<ul class="filterMenuList">${menuListHtml.join('')}</ul>`,
         ['tHeadFilter', 'tHeadFilterMenu'], 'th', 1, keys.length ), rowClassName ));
     
@@ -862,7 +934,7 @@ setTableEvents() {
     VIEW モード
     ------------------------------
     */
-    if ( tb.mode === 'view') {
+    if ( tb.mode === 'view' || tb.mode === 'select') {
         // フィルタプルダウン検索ボタン
         tb.$.thead.on('click', '.filterPulldownOpenButton', function(){
             if ( !tb.checkWork ) {
@@ -905,7 +977,6 @@ setTableEvents() {
             }
         });
         
-
         // フィルタボタン
         tb.$.thead.on('click', '.filterMenuButton', function(){
             if ( !tb.checkWork ) {
@@ -975,7 +1046,7 @@ setTableEvents() {
         
         // ソート
         tb.$.thead.on('click', '.tHeadSort', function(){
-            if ( !tb.checkWork ) {
+            if ( !tb.checkWork && tb.count ) {
                 tb.workStart('sort', 100 );
                 
                 const $sort = $( this ),
@@ -1033,6 +1104,19 @@ setTableEvents() {
                     case 'rowDup':
                         tb.changeEdtiMode.call( tb, 'changeEditDup');
                     break;
+                }
+            }
+        });
+        
+        // アクションボタン
+        tb.$.tbody.on('click', '.actionButton', function(){
+            if ( !tb.checkWork ) {
+                const $button = $( this ),
+                      redirect = $button.attr('data-redirect')
+                
+                // リダイレクト
+                if ( redirect ) {
+                    window.location.href = redirect;
                 }
             }
         });
@@ -1135,36 +1219,119 @@ setTableEvents() {
     VIEW or EDIT モード
     ------------------------------
     */
-    if ( tb.mode === 'view' || tb.mode === 'edit' ) {
+    if ( tb.mode === 'view' || tb.mode === 'edit' || tb.mode === 'select') {
+        
         // 行選択チェックボックスの外がクリックされても変更する
-        tb.$.tbody.on('click', '.tBodyRowSelect', function( e ){
-            const $check = $( this ).find('.tBodyRowCheck'),
-                  checked = $check.prop('checked');
-
-            if ( !$( e.target ).is('.tBodyRowCheck') ) {
-                $check.focus().prop('checked', !checked ).change();
-            }
-        });
-        // 行選択チェックボックス
-        tb.$.tbody.on('change', '.tBodyRowCheck', function(){
-            const $check = $( this ),
-                  checked = $check.prop('checked'),
-                  id = $check.val();
-
-            if ( checked ) {
-                tb.select[tb.mode].push( id );
-            } else {
-                const index = tb.select[tb.mode].indexOf( id );
-                if ( index !== -1 ) {
-                    tb.select[tb.mode].splice( index, 1 );
+        tb.$.thead.find('.tHeadRowSelect').on('click', function( e ){
+            if ( !tb.checkWork ) {
+                const $button = $( this ).find('.rowSelectButton');
+                if ( !$( e.target ).closest('.rowSelectButton').length ) {
+                    $button.focus().click();
                 }
             }
+        });
+        tb.$.tbody.on('click', '.tBodyRowSelect', function( e ){
+            if ( !tb.checkWork ) {
+                const $check = $( this ).find('.tBodyRowCheck'),
+                      checked = $check.prop('checked');
 
-            // メニューボタンを活性化
-            if ( tb.mode === 'edit' ) {
-                tb.editModeMenuCheck();            
+                if ( !$( e.target ).closest('.tBodyRowCheck').length ) {
+                    $check.focus().prop('checked', !checked ).change();
+                }
             }
         });
+        
+        // 一括選択
+        tb.$.thead.find('.rowSelectButton').on('click', function(){
+            if ( !tb.checkWork && tb.count ) {
+                const $button = $( this ),
+                      selectStatus = $button.attr('data-select');
+
+                tb.$.tbody.find('.tBodyRowCheck').each(function(){
+                    const $check = $( this ),
+                          checked = $check.prop('checked'),
+                          id = $check.val();
+                    if ( selectStatus === 'not' && checked === false ) $check.prop('checked', true ).change();                
+                    if ( ( selectStatus === 'all' || selectStatus === 'oneOrMore')
+                        && checked === true ) $check.prop('checked', false ).change();                
+                });
+
+                tb.checkSelectStatus();
+            }
+        });
+        
+        // 行選択チェックボックス
+        tb.$.tbody.on('change', '.tBodyRowCheck', function(){
+            if ( !tb.checkWork ) {
+                const $check = $( this ),
+                      checked = $check.prop('checked'),
+                      id = $check.val(),
+                      checkMode = ( tb.mode === 'edit')? 'edit': 'view';
+
+                if ( checked ) {
+                    tb.select[ checkMode ].push( id );
+                } else {
+                    const index = tb.select[ checkMode ].indexOf( id );
+                    if ( index !== -1 ) {
+                        tb.select[ checkMode ].splice( index, 1 );
+                    }
+                }
+
+                tb.checkSelectStatus();
+
+                // メニューボタンを活性化
+                if ( checkMode === 'edit' ) {
+                    tb.editModeMenuCheck();            
+                }
+            }
+        });
+    }
+    /*
+    ------------------------------
+    SELECT モード
+    ------------------------------
+    */
+    if ( tb.mode === 'select') {
+        // 行選択ラジオ
+        tb.$.tbody.on('change', '.tBodyRowRadio', function(){
+            if ( !tb.checkWork ) {
+                const $radio = $( this ),
+                      checked = $radio.prop('checked'),
+                      id = $radio.val();
+
+                tb.select.select[0] = id;
+            }
+        });
+    }
+}
+/*
+##################################################
+   表示しているページの選択状態をチェック
+##################################################
+*/
+checkSelectStatus() {
+    const tb = this;
+    
+    if ( tb.count ) {
+
+        const $button = tb.$.thead.find('.rowSelectButton');
+
+        const $check = tb.$.tbody.find('.tBodyRowCheck'),
+              length = $check.length;
+
+        let checkCount = 0;
+
+        tb.$.tbody.find('.tBodyRowCheck').each(function(){
+            if ( $( this ).prop('checked') ) checkCount++;
+        });
+
+        if ( length === checkCount ) {
+            $button.attr('data-select', 'all');
+        } else if ( checkCount === 0 ) {
+            $button.attr('data-select', 'not');
+        } else {
+            $button.attr('data-select', 'oneOrMore');
+        }
     }
 }
 /*
@@ -1197,8 +1364,6 @@ checkNewInputDataDelete( id ) {
     if ( tb.edit.input[id] && Object.keys( tb.edit.input[id]['after'].parameter ).length <= 1 ) {
         delete tb.edit.input[id];
     }
-    
-    console.log(tb.edit.input)
     
     // 編集確認ボタンを活性化
     tb.editModeMenuCheck();
@@ -1394,13 +1559,13 @@ filterSelectOpen( $button ) {
     const tb = this;
     
     const $select = $button.parent('.filterSelectArea'),
-          width = ( $select.width() + 32 ) + 'px',
+          width = $select.width() + 'px',
           name = $button.attr('data-type') + '_RF',
           rest = $button.attr('data-rest');
 
     $button.addClass('buttonWaiting').prop('disabled', true );
     
-    fn.fetch(`/menu/${tb.params.menuNameRest}/info/search/candidates/${rest}/`).then(function( result ){
+    fn.fetch(`/menu/${tb.params.menuNameRest}/info/search/candidates/${rest}/`).then(function( result ){console.log('!')
         $select.html( tb.filterSelectBoxHtml( result, name, rest ) );
         $select.find('select').select2({
             placeholder: "Pulldown select",
@@ -1425,17 +1590,17 @@ requestTbody() {
     
     // 件数を確認する
     fn.fetch(`/menu/${tb.params.menuNameRest}/filter/count/`, null, 'POST', tb.filterParams ).then(function( countResult ){
-        const count = Number( fn.cv( countResult, 0 ) ),
-              printLimitNum = Number( fn.cv( tb.info.menu_info.web_print_limit, -1 ) ),
+        tb.count = Number( fn.cv( countResult, 0 ) );
+        
+        const printLimitNum = Number( fn.cv( tb.info.menu_info.web_print_limit, -1 ) ),
               printConfirmNum = Number( fn.cv( tb.info.menu_info.web_print_confirm, -1 ) );
-
         
         // リミットチェック
-        if ( printLimitNum !== -1 && count > printLimitNum ) {
+        if ( printLimitNum !== -1 && tb.count > printLimitNum ) {
             alert(WD.TABLE.limit);
             return false;
         //表示確認
-        } else if ( printConfirmNum !== -1 && count >= printConfirmNum ) {
+        } else if ( printConfirmNum !== -1 && tb.count >= printConfirmNum ) {
             if ( !confirm(WD.TABLE.confirm) ) {
                 return false;
             }
@@ -1551,7 +1716,7 @@ workerPost( type, data ) {
                 `/menu/${tb.params.menuNameRest}/filter/`,
                 tb.params.orgId,
                 tb.params.wsId );
-            
+
             post.rest = {
                 token: CommonAuth.getToken(),
                 url: url,
@@ -1605,7 +1770,7 @@ workerPost( type, data ) {
 */
 setWorkerEvent() {
     const tb = this;
-    tb.worker.addEventListener('message', function( message ){
+    tb.worker.addEventListener('message', function( message ){console.log(tb.id)
         const type = message.data.type;
         
         switch ( type ) {
@@ -1642,7 +1807,7 @@ setWorkerEvent() {
 ##################################################
 */
 setTbody() {
-    const tb = this;console.log(tb.flag.initFilter)
+    const tb = this;
     
     if ( !tb.flag.initFilter ) {
         tb.$.container.removeClass('initFilterStandBy');
@@ -1660,7 +1825,7 @@ setTbody() {
         + `</div>`);
     } else {
         tb.$.container.removeClass('noData');
-        if ( tb.mode === 'view' && tb.flag.update ) {
+        if ( ( tb.mode === 'view' || tb.mode === 'select') && tb.flag.update ) {
             tb.$.header.find('.itaButton[data-type="tableEdit"]').prop('disabled', false );
         }
     }
@@ -1674,6 +1839,10 @@ setTbody() {
         tb.tableMaxWidthCheck('tbody');
     } else {
         tb.$.tbody.find('.textareaAdjustment').each( tb.textareaAdjustment );
+    }
+    
+    if ( tb.mode === 'edit' || tb.mode === 'view') {
+        tb.checkSelectStatus();
     }
     
     tb.stickyWidth();
@@ -1718,7 +1887,12 @@ stickyWidth() {
     let leftStickyWidth = 0,
         leftStickyFilterMenuWidth = 0;
         
-    let filterHeaderColspan = Number( tb.$.thead.find('.tHeadFilterHeader').attr('colspan') );
+    let filterHeaderFlag = true,
+        filterHeaderColspan = Number( tb.$.thead.find('.tHeadFilterHeader').attr('colspan') );
+    if ( isNaN( filterHeaderColspan ) ) {
+        filterHeaderColspan = 1;
+        filterHeaderFlag = false;
+    }
     
     tb.$.thead.find('.tHeadTr').eq(0).find('.tHeadLeftSticky').each(function( index ){
         const $th = $( this ),
@@ -1726,11 +1900,11 @@ stickyWidth() {
               width = $th.outerWidth();
         if ( $( this ).is(':visible') ) {
             if ( index !== 0 ) {
-                style.push(`.headerTr .tHeadLeftSticky:nth-child(${ index + 1 }){left:${leftStickyWidth}px}`);
+                style.push(`#${tb.id} .headerTr .tHeadLeftSticky:nth-child(${ index + 1 }){left:${leftStickyWidth}px}`);
                 if ( index >= filterHeaderColspan ) {
-                    style.push(`.filterTr .tHeadLeftSticky.tHeadFilter:nth-child(${ index + 1 - filterHeaderColspan + 1 }){left:${leftStickyWidth}px}`);
+                    style.push(`#${tb.id} .filterTr .tHeadLeftSticky.tHeadFilter:nth-child(${ index + 1 - filterHeaderColspan + 1 }){left:${leftStickyWidth}px}`);
                 }
-                style.push(`.tBodyLeftSticky:nth-child(${ index + 1 }){left:${leftStickyWidth}px}`);
+                style.push(`#${tb.id} .tBodyLeftSticky:nth-child(${ index + 1 }){left:${leftStickyWidth}px}`);
             }
             leftStickyWidth += width;
             if ( [ tb.idNameRest, 'discard'].indexOf( rest ) === -1 ) {
@@ -1738,9 +1912,11 @@ stickyWidth() {
             }
         }
     });
+
+    if ( !filterHeaderFlag ) leftStickyFilterMenuWidth += 1;
     
-    style.push(`.filterMenuList{left:${leftStickyFilterMenuWidth}px;}`);    
-    style.push(`.tHeadGroup>.ci{left:${leftStickyWidth}px;}`);    
+    style.push(`#${tb.id} .filterMenuList{left:${leftStickyFilterMenuWidth}px;}`);    
+    style.push(`#${tb.id} .tHeadGroup>.ci{left:${leftStickyWidth}px;}`);    
     
     tb.$.style.html( style.join('') );
 }
@@ -1789,16 +1965,20 @@ tbodyHtml() {
         if ( discard === '1') rowClassName.push('tBodyTrDiscard');
         
         // モード別列
-        const rowCheckInput = function() {
+        const rowCheckInput = function( type = 'check') {
             // チェック状態
-            const attrs = {};
+            const attrs = {},
+                  checkMode = ( tb.mode === '');
             if ( tb.select[ tb.mode ].indexOf( rowId ) !== -1 ) {
                 attrs['checked'] = 'checked';
             }
+            const idName = ( type === 'check')? `${tb.id}__ROWCHECK`: `${tb.id}__ROWRADIO`,
+                  className = ( type === 'check')? 'tBodyRowCheck': 'tBodyRowRadio',
+                  rowClassName = ( type === 'check')? 'tBodyRowSelect': 'tBodyRowRadioSelect';
 
-            const checkboxId = `${tb.id}__ROWSELECT__${rowId}`,
-                  checkbox = fn.html.check('tBodyRowCheck', rowId, checkboxId, attrs );
-            return fn.html.cell( checkbox, ['tBodyLeftSticky', 'tBodyRowSelect', 'tBodyTh'], 'th');
+            const checkboxId = `${idName}__${rowId}`,
+                  checkbox = fn.html[ type ]( className, rowId, idName, checkboxId, attrs );
+            return fn.html.cell( checkbox, ['tBodyLeftSticky', rowClassName, 'tBodyTh'], 'th');
         };
         
         switch ( tb.mode ) {
@@ -1813,15 +1993,16 @@ tbodyHtml() {
                 if ( tb.flag.history ) {
                     viewMenu.push({ type: 'rowHistory', text: '履歴', action: 'history', id: rowId, className: 'tBodyRowMenuUi'});
                 }
-                if ( tb.flag.edit ) {
+                if ( tb.flag.update ) {
                     rowHtml.push( rowCheckInput() );
                 }
-                if ( viewMenu.length ) {
-                    rowHtml.push( fn.html.cell( tb.rowMenuHtml( viewMenu ), ['tBodyLeftSticky', 'tBodyRowMenu', 'tBodyTh'], 'th'));
-                }
+                const viewMenuHtml = ( viewMenu.length )? tb.rowMenuHtml( viewMenu ): '<span class="tBodyAutoInput"></span>';
+                rowHtml.push( fn.html.cell( viewMenuHtml, ['tBodyLeftSticky', 'tBodyRowMenu', 'tBodyTh'], 'th'));
             } break;
             case 'edit':
-                rowHtml.push( rowCheckInput() );
+                if ( tb.flag.edit || tb.flag.disuse || tb.flag.reuse ) {
+                    rowHtml.push( rowCheckInput() );
+                }
             break;
             case 'diff': {
                 const type = ( !isNaN( rowId ) && Number( rowId) < 0 )? '登録': '編集';
@@ -1834,6 +2015,22 @@ tbodyHtml() {
                 rowHtml.push( fn.html.cell( action, ['tBodyLeftSticky', 'tBodyTh'], 'th') );
                 rowHtml.push( fn.html.cell( num, ['tBodyTd'], 'td') );
                 rowHtml.push( fn.html.cell( date, ['tBodyTd'], 'td') );
+            break;
+            case 'select':
+                rowHtml.push( rowCheckInput('radio') );
+                if ( tb.flag.update ) {
+                    rowHtml.push( rowCheckInput() );
+                }
+                const viewMenu = [];
+                if ( tb.flag.update ) {
+                    viewMenu.push({ type: 'rowEdit', text: '編集', action: 'default', id: rowId, className: 'tBodyRowMenuTb'});
+                }
+                if ( tb.flag.insert ) {
+                    viewMenu.push({ type: 'rowDup', text: '複製', action: 'duplicat', id: rowId, className: 'tBodyRowMenuTb'});
+                }
+                if ( viewMenu.length ) {
+                    rowHtml.push( fn.html.cell( tb.rowMenuHtml( viewMenu ), ['tBodyLeftSticky', 'tBodyRowMenu', 'tBodyTh'], 'th'));
+                }
             break;
         }
 
@@ -1857,6 +2054,15 @@ cellHtml( parameter, columnKey, journal ) {
           columnName = columnInfo.column_name_rest,
           columnType = columnInfo.column_type;
     
+    // view_item
+    if ( columnInfo.view_item === '0' && columnName !== 'discard') {
+        return '';
+    }
+    // Button column
+    if ( columnInfo.column_type === 'ButtonColumn' && ['select', 'edit'].indexOf( tb.mode ) !== -1 ) {
+        return '';
+    }
+    
     const className = [];
     if ( columnType === 'NumColumn') className.push('tBodyTdNumber');
     if ( columnName === 'discard') className.push('tBodyTdMark discardCell');
@@ -1875,7 +2081,13 @@ cellHtml( parameter, columnKey, journal ) {
     
     switch ( tb.mode ) {
         case 'view':
+            if ( columnInfo.column_type === 'ButtonColumn') {
+                className.push('tBodyTdButton');
+            }
             return fn.html.cell( tb.viewCellHtml( parameter, columnKey ), className, cellType );
+        case 'select':
+            return fn.html.cell( tb.viewCellHtml( parameter, columnKey ), className, cellType );
+        break;
         case 'history':
             return fn.html.cell( tb.viewCellHtml( parameter, columnKey, journal ), className, cellType );
         case 'edit':
@@ -1975,13 +2187,47 @@ viewCellHtml( parameter, columnKey, journal ) {
         
         // ボタン
         case 'ButtonColumn':
-            
+            return tb.buttonAction( columnInfo, parameter );
         break;
         
         // 不明
         default:
             return '?';
     }
+}
+/*
+##################################################
+   View mode Button action
+##################################################
+*/
+buttonAction( columnInfo, parameter ) {
+    const text = fn.cv( columnInfo.column_name, '', true ),
+          rest = columnInfo.column_name_rest;
+    
+    let action;
+    try {
+        action = JSON.parse( columnInfo.button_action );
+    } catch( e ) {
+        action = [];
+    }
+    
+    const buttonAttrs = {
+        rest: rest
+    };
+    for ( const item of action ) {
+        switch ( item[0] ) {
+            case 'redirect':
+                if ( !buttonAttrs.redirect ) {
+                    buttonAttrs.redirect = '?';
+                } else {
+                    buttonAttrs.redirect += '&';
+                }
+                buttonAttrs.action = 'positive';
+                buttonAttrs.redirect += item[1] + parameter[ item[2] ];
+            break;
+        }
+    }
+    return fn.html.button( text, ['actionButton', 'itaButton'], buttonAttrs );
 }
 /*
 ##################################################
@@ -2398,11 +2644,17 @@ changeViewMode() {
     tb.workStart('table', 0 );
     tb.select.edit = [];
     tb.select.view = [];
+    tb.select.select = [];
     tb.data.body = null;
     tb.data.editSelect = null;
     tb.edit.input = {};
     tb.paging.page = 1;
-    tb.setTable('view');
+    
+    if ( tb.initMode === 'select') {
+        tb.setTable('select');
+    } else {
+        tb.setTable('view');
+    }
 }
 /*
 ##################################################
@@ -2548,7 +2800,9 @@ editOk() {
     return new Promise(function( resolve, reject ){        
         fn.fetch(`/menu/${tb.params.menuNameRest}/maintenance/all/`, null, 'POST', editData )
             .then(function( result ){ resolve( result ); })
-            .catch(function( result ){ reject( result );
+            .catch(function( result ){
+                result.data = editData; 
+                reject( result );
                 //バリデーションエラー
                 alert(WD.TABLE.invalid);
             });
@@ -2563,6 +2817,8 @@ editOk() {
 editError( error ) {
     const tb = this;
 
+    const id_name = tb.data.restNames[ tb.idNameRest ];
+    const target = tb.idNameRest;
     let errorMessage;
     try {
         errorMessage = JSON.parse(error.message);
@@ -2571,14 +2827,31 @@ editError( error ) {
         errorMessage = {"0":{"共通":[error.message]}};
     }
 
+    //一意のキーの値を取り出す
+    const param = error.data.map(function(result) {
+        const params = result.parameter;
+            return params[target];
+    });
+
     const errorHtml = [];
     
+    let newRowNum;
+    let editRowNum;
+    const auto_input = '<span class="tBodyAutoInput"></span>';
+
     for ( const item in errorMessage ) {
+        newRowNum = parseInt(item);
         for ( const error in errorMessage[item] ) {
             const name = fn.cv( tb.data.restNames[ error ], error, true ),
                   body = fn.cv( errorMessage[item][error].join(''), '?', true );
-
-            errorHtml.push(`<tr class="tBodyTr tr">${fn.html.cell( item, ['tBodyTh', 'tBodyLeftSticky'], 'th')}${fn.html.cell( name, 'tBodyTd')}${fn.html.cell( body, 'tBodyTd' )}</tr>`);
+                              //編集項目か否か
+            if(param[item] != null) {
+                editRowNum = param[item];
+                errorHtml.push(`<tr class="tBodyTr tr">${fn.html.cell(auto_input, ['tBodyTh', 'tBodyLeftSticky'], 'th')}${fn.html.cell( editRowNum , 'tBodyTd')}${fn.html.cell( name, 'tBodyTd')}${fn.html.cell( body, 'tBodyTd' )}</tr>`);
+            }else{
+                editRowNum = '<span class="tBodyAutoInput"></span>';
+                errorHtml.push(`<tr class="tBodyTr tr">${fn.html.cell(newRowNum + 1, ['tBodyTh', 'tBodyLeftSticky'], 'th')}${fn.html.cell( editRowNum , 'tBodyTd')}${fn.html.cell( name, 'tBodyTd')}${fn.html.cell( body, 'tBodyTd' )}</tr>`);
+            }
         }
     }
     
@@ -2588,9 +2861,10 @@ editError( error ) {
         <table class="table errorTable">
             <thead class="thead">
                 <tr class="tHeadTr tr">
-                    <th class="tHeadTh tHeadLeftSticky th"><div class="ci">エラーNo.</div></th>
-                    <th class="tHeadTh th"><div class="ci">エラー列</div></th>
-                    <th class="tHeadTh th"><div class="ci">エラー内容</div></th>
+                <th class="tHeadTh tHeadLeftSticky th"><div class="ci">${WD.TABLE.insert}</div></th>
+                <th class="tHeadTh th"><div class="ci">${id_name}</div></th>
+                <th class="tHeadTh th"><div class="ci">${WD.TABLE.err_row}</div></th>
+                <th class="tHeadTh th"><div class="ci">${WD.TABLE.err_details}</div></th>
                 </tr>
             </thead>
             <tbody class="tbody">

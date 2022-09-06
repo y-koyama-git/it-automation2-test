@@ -26,7 +26,6 @@
 ##################################################
 */
 const fn = ( function() {
-    
     'use strict';
 
     // windowオブジェクトがあるかどうか
@@ -72,7 +71,7 @@ const fn = ( function() {
         return attr;
     };
     
-    const inputCommon = function( value, name, attrs ) {
+    const inputCommon = function( value, name, attrs, id ) {
         const attr = bindAttrs( attrs );
         
         if ( value !== undefined && value !== null ) {
@@ -80,15 +79,26 @@ const fn = ( function() {
         }
         
         if ( name ) {
-            attr.push(`id="${name}"`);
+            if ( id ) {
+                attr.push(`id="${id}"`);
+            } else {
+                attr.push(`id="${name}"`);
+            }
             attr.push(`name="${name}"`);
         }
         
         return attr;
     };
 
-
 const cmn = {
+/*
+##################################################
+   共通パラメーター
+##################################################
+*/
+getCommonParams: function() {
+    return Object.assign( {}, commonParams );
+},
 /*
 ##################################################
    script, styleの読み込み
@@ -172,7 +182,7 @@ fetch: function( url, token, method = 'GET', json ) {
                   'Content-Type': 'application/json'
                 }
             };
-            if ( method === 'POST' && json !== undefined ) {
+            if ( ( method === 'POST' || method === 'PATCH' ) && json !== undefined ) {
                 try {
                     init.body = JSON.stringify( json );
                 } catch ( e ) {
@@ -209,7 +219,6 @@ fetch: function( url, token, method = 'GET', json ) {
                         } else {
                             //その他のエラー
                             cmn.systemErrorAlert();
-                            resolve({});
                         }
                     }
                 }
@@ -234,8 +243,13 @@ fetch: function( url, token, method = 'GET', json ) {
 ##################################################
 */
 systemErrorAlert: function() {
-    alert(WD.COMMON.sys_err);
-    // location.replace('system_error/');
+    if ( windowFlag ) {
+        alert( WD.COMMON.sys_err );
+        // location.replace('system_error/');
+    } else {
+        window.console.error( WD.COMMON.sys_err );
+        throw new Error( WD.COMMON.sys_err );
+    }
 },
 /*
 ##################################################
@@ -665,11 +679,13 @@ alert: function( title, elements, type = 'alert', buttons = { ok: { text: '閉�
         
         funcs.ok = function(){
             dialog.close();
+            dialog = null;
             resolve( true );
         };
         if ( type === 'confirm') {
             funcs.cancel = function(){
                 dialog.close();
+                dialog = null;
                 resolve( false );
             };
         }
@@ -685,7 +701,7 @@ alert: function( title, elements, type = 'alert', buttons = { ok: { text: '閉�
                 button: buttons
             }
         };
-        const dialog = new Dialog( config, funcs );
+        let dialog = new Dialog( config, funcs );
         dialog.open(`<div class="alertMessage">${elements}</div>`);
     });
 },
@@ -1042,10 +1058,14 @@ datePickerDialog: function( type, timeFlag, title, date ){
 
                 dialog.close().then(function(){
                     resolve( result );
+                    dialog = null;
                 });
             },
             cancel: function() {
-                dialog.close().then(function(){ resolve('cancel') });
+                dialog.close().then(function(){
+                    resolve('cancel');
+                    dialog = null;
+                });
             }
         };
         
@@ -1068,7 +1088,7 @@ datePickerDialog: function( type, timeFlag, title, date ){
             }
         };
         
-        const dialog = new Dialog( config, funcs );
+        let dialog = new Dialog( config, funcs );
         
         // Data picker
         const $dataPicker = $('<div/>', {
@@ -1097,8 +1117,6 @@ datePickerDialog: function( type, timeFlag, title, date ){
         }
         
         dialog.open( $dataPicker );
-        
-     
     });
 },
 /*
@@ -1345,8 +1363,8 @@ html: {
             return `<textarea wrap="off" ${attr.join(' ')}>${value}</textarea>`;
         }
     },
-    check: function( className, value, name, attrs = {}) {
-        const attr = inputCommon( value, name, attrs );
+    check: function( className, value, name, id, attrs = {}) {
+        const attr = inputCommon( value, name, attrs, id );
         attr.push(`class="${classNameCheck( className, 'checkbox').join(' ')}"`);
         
         return ``
@@ -1355,14 +1373,24 @@ html: {
             + `<label for="${name}" class="checkboxLabel"></label>`
         + `</div>`;
     },
-    checkboxText: function( className, value, name, attrs = {}) {
-        const attr = inputCommon( value, name, attrs );
+    checkboxText: function( className, value, name, id, attrs = {}) {
+        const attr = inputCommon( value, name, attrs, id );
         attr.push(`class="${classNameCheck( className, 'checkboxText').join(' ')}"`);
         
         return ``
         + `<div class="checkboxTextWrap">`
             + `<input type="checkbox" ${attr.join(' ')}>`
             + `<label for="${name}" class="checkboxTextLabel"><span class="checkboxTextMark"></span>${value}</label>`
+        + `</div>`;
+    },
+    radio: function( className, value, name, id, attrs = {}) {
+        const attr = inputCommon( value, name, attrs, id );
+        attr.push(`class="${classNameCheck( className, 'radio').join(' ')}"`);
+        
+        return ``
+        + `<div class="radioWrap">`
+            + `<input type="radio" ${attr.join(' ')}>`
+            + `<label for="${name}" class="radioLabel"></label>`
         + `</div>`;
     },
     'select': function( list, className, value, name, attrs = {}) {
@@ -1464,7 +1492,7 @@ processingModal: function( title ) {
     };
     
     const dialog = new Dialog( config );
-    dialog.open(`<div class="processingContainer"></div>`);
+    dialog.open();
     
     return dialog;
 },
@@ -1577,6 +1605,39 @@ errorModal: function( error, pageName ) {
         dialog.open(`<div class="errorContainer">${html}</div>`);
     });
     
+},
+/*
+##################################################
+   選択用モーダルの初期設定
+##################################################
+*/
+initSelectModal: function( title, menu ) {
+    
+    return new Promise(function( resolve, reject ) {
+        const config = {
+            mode: 'modeless',
+            width: '100%',
+            height: '100%',
+            header: {
+                title: title
+            }
+        };
+        const modal = new Dialog( config );
+        modal.open();
+        
+        fn.fetch(`/menu/${menu}/info/`).then(function( info ){
+            const params = cmn.getCommonParams();
+            params.menuNameRest = menu;
+            
+            const table = new DataTable('SE_' + menu.toUpperCase(), 'select', info, params );
+            modal.setBody( table.setup() );
+            
+            resolve({
+                modal: modal,
+                table: table
+            });
+        });
+    });
 },
 /*
 ##################################################
@@ -1710,6 +1771,13 @@ setCommonEvents: function() {
 
 };
 
-return cmn;
+    // 共通パラメーター
+    const commonParams = {};
+    commonParams.dir = '/_/ita';
+    if ( windowFlag ) {
+        commonParams.path = cmn.getPathname();
+    }
+
+    return cmn;
 
 }());

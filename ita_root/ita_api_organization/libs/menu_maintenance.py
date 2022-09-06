@@ -17,10 +17,6 @@ from flask import g  # noqa: F401
 from common_libs.common import *  # noqa: F403
 from common_libs.loadtable import *  # noqa: F403
 
-from libs.organization_common import check_menu_info  # noqa: F401
-from libs.organization_common import check_auth_menu  # noqa: F401
-from libs.organization_common import check_sheet_type  # noqa: F401
-
 
 def rest_maintenance(objdbca, menu, parameter, target_uuid):
     """
@@ -34,18 +30,6 @@ def rest_maintenance(objdbca, menu, parameter, target_uuid):
         RETRUN:
             statusCode, {}, msg
     """
-
-    # メニューに対するロール権限をチェック
-    privilege = check_auth_menu(menu, objdbca)
-    if privilege == '2':
-        status_code = "401-00001"
-        log_msg_args = [menu]
-        api_msg_args = [menu]
-        raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
-    
-    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['0', '1', '2', '3', '4']
-    menu_table_link_record = check_sheet_type(menu, sheet_type_list, objdbca)  # noqa: F841
 
     mode = 'nomal'  # noqa: F841
     objmenu = load_table.loadTable(objdbca, menu)  # noqa: F405

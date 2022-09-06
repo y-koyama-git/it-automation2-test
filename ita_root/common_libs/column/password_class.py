@@ -46,7 +46,7 @@ class PasswordColumn(TextColumn):
         tmp_result = pattern.fullmatch(val)
         if tmp_result is None:
             retBool = False
-            msg = "正規表現エラー (閾値:{},値{})[{}]".format(pattern, val, self.rest_key_name)
+            msg = "正規表現エラー (閾値:{},値{})[{}]".format(preg_match, val, self.rest_key_name)
             return retBool, msg
         return retBool,
 

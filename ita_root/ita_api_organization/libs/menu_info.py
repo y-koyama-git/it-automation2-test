@@ -12,21 +12,22 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import textwrap
 from common_libs.common import *  # noqa: F403
-from common_libs.loadtable import *
+from common_libs.loadtable import *  # noqa: F403
+from common_libs.column import *  # noqa: F403
 from flask import g
-# from libs.organization_common import check_auth_menu
-from libs.organization_common import check_menu_info
-from libs.organization_common import check_auth_menu
-from libs.organization_common import check_sheet_type
 
 
-def collect_menu_info(objdbca, menu):
+def collect_menu_info(objdbca, menu, menu_record={}, menu_table_link_record={}, privilege='1'):
     """
         メニュー情報の取得
         ARGS:
             objdbca:DB接クラス  DBConnectWs()
             menu: メニュー string
+            menu_record: メニュー管理のレコード
+            menu_table_link_record: メニュー-テーブル紐付管理のレコード
+            privilege: メニューに対する権限
         RETRUN:
             info_data
     """
@@ -39,9 +40,30 @@ def collect_menu_info(objdbca, menu):
     # 変数定義
     lang = g.LANGUAGE
     
-    # 『メニュー管理』テーブルから対象のデータを取得
-    menu_record = check_menu_info(menu, objdbca)
+    # メニュー管理のレコードが空の場合、検索する
+    if len(menu_record) == 0:
+        menu_record = objdbca.table_select('T_COMN_MENU', 'WHERE `MENU_NAME_REST` = %s AND `DISUSE_FLAG` = %s', [menu, 0])
+        if not menu_record:
+            log_msg_args = [menu]
+            api_msg_args = [menu]
+            raise AppException("499-00002", log_msg_args, api_msg_args)  # noqa: F405
 
+    # メニュー-テーブル紐付管理のレコードが空の場合、検索する
+    if len(menu_table_link_record) == 0:
+        query_str = textwrap.dedent("""
+            SELECT * FROM `T_COMN_MENU_TABLE_LINK` TAB_A
+                LEFT JOIN `T_COMN_MENU` TAB_B ON ( TAB_A.`MENU_ID` = TAB_B.`MENU_ID`)
+            WHERE TAB_B.`MENU_NAME_REST` = %s AND
+                TAB_A.`DISUSE_FLAG`='0' AND
+                TAB_B.`DISUSE_FLAG`='0'
+        """).strip()
+        menu_table_link_record = objdbca.sql_execute(query_str, [menu])
+        if not menu_table_link_record:
+            log_msg_args = [menu]
+            api_msg_args = [menu]
+            raise AppException("499-00003", log_msg_args, api_msg_args)  # noqa: F405
+
+    # メニュー管理から情報取得
     menu_id = menu_record[0].get('MENU_ID')  # 対象メニューを特定するためのID
     menu_group_id = menu_record[0].get('MENU_GROUP_ID')  # 対象メニューグループを特定するためのID
     menu_name = menu_record[0].get('MENU_NAME_' + lang.upper())
@@ -53,12 +75,7 @@ def collect_menu_info(objdbca, menu):
     xls_print_limit = menu_record[0].get('XLS_PRINT_LIMIT')
     sort_key = menu_record[0].get('SORT_KEY')
     
-    # メニューに対するロール権限をチェック
-    privilege = check_auth_menu(menu, objdbca)
-    
-    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    menu_table_link_record = check_sheet_type(menu, False, objdbca)
-
+    # メニュー-テーブル紐付管理から情報取得
     menu_info = menu_table_link_record[0].get('MENU_INFO_' + lang.upper())
     sheet_type = menu_table_link_record[0].get('SHEET_TYPE')
     history_table_flag = menu_table_link_record[0].get('HISTORY_TABLE_FLAG')
@@ -347,29 +364,22 @@ def collect_parent_sord_order(column_info_data, column_group_parent_of_child, ke
     return columns
 
 
-def collect_menu_column_list(objdbca, menu):
+def collect_menu_column_list(objdbca, menu, menu_record):
     """
         メニューのカラム一覧の取得
         ARGS:
             objdbca:DB接クラス  DBConnectWs()
             menu: メニュー string
+            menu_record: メニュー管理のレコード
         RETRUN:
             column_list
     """
     # 変数定義
     t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
     
-    # 『メニュー管理』テーブルから対象のデータを取得
-    menu_record = check_menu_info(menu, objdbca)
+    # メニュー管理から情報取得
+    menu_id = menu_record[0].get('MENU_ID')
     
-    menu_id = menu_record[0].get('MENU_ID')  # 対象メニューを特定するためのID
-    
-    # メニューに対するロール権限をチェック
-    privilege = check_auth_menu(menu, objdbca)
-    
-    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    menu_table_link_record = check_sheet_type(menu, ["0", "1", "2", "3", "4"], objdbca)
-
     # 『メニュー-カラム紐付管理』テーブルから対象のデータを取得
     ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s ORDER BY COLUMN_DISP_SEQ ASC', [menu_id])
     if not ret:
@@ -384,19 +394,19 @@ def collect_menu_column_list(objdbca, menu):
     return column_list
 
 
-def collect_pulldown_list(objdbca, menu):
+def collect_pulldown_list(objdbca, menu, menu_record):
     """
         IDカラム(IDColumn, LinkIDColumn, AppIDColumn)のプルダウン選択用一覧の取得
         ARGS:
             objdbca:DB接クラス  DBConnectWs()
             menu: メニュー string
+            menu_record: メニュー管理のレコード
         RETRUN:
             pulldown_list
     """
     # 変数定義
     t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
     t_common_column_class = 'T_COMN_COLUMN_CLASS'
-    lang = g.LANGUAGE
     
     # 『カラムクラスマスタ』テーブルからcolumn_typeの一覧を取得
     ret = objdbca.table_select(t_common_column_class, 'WHERE DISUSE_FLAG = %s', [0])
@@ -404,28 +414,19 @@ def collect_pulldown_list(objdbca, menu):
     for recode in ret:
         column_class_master[recode.get('COLUMN_CLASS_ID')] = recode.get('COLUMN_CLASS_NAME')
     
-    # 『メニュー管理』テーブルから対象のデータを取得
-    menu_record = check_menu_info(menu, objdbca)
-    
-    menu_id = menu_record[0].get('MENU_ID')  # 対象メニューを特定するためのID
-    
-    # メニューに対するロール権限をチェック
-    privilege = check_auth_menu(menu, objdbca)
-    
-    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    menu_table_link_record = check_sheet_type(menu, ["0", "1", "2", "3", "4"], objdbca)
+    # メニュー管理から情報取得
+    menu_id = menu_record[0].get('MENU_ID')
     
     # 『メニュー-カラム紐付管理』テーブルから対象のメニューのデータを取得
     ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
     
     pulldown_list = {}
-    # id_column_list = ["7", "11", "18"]  # id 7(IDColumn), id 11(LinkIDColumn), id 18(AppIDColumn)
-    id_column_list = ["7", "11", "18", "22"]  # ####メモ：18(AppIDColumn)の場合は別の挙動になるはずなので、いったん除外。
+    # id 7(IDColumn), id 11(LinkIDColumn), id 18(RoleIDColumn), , id 22(EnvironmentIDColumn)
+    id_column_list = ["7", "11", "18", "22"]
     for recode in ret:
         column_class_id = str(recode.get('COLUMN_CLASS'))
         
-        id_column_check = column_class_id in id_column_list
-        if not id_column_check:
+        if column_class_id not in id_column_list:
             continue
 
         column_name_rest = str(recode.get('COLUMN_NAME_REST'))
@@ -439,30 +440,47 @@ def collect_pulldown_list(objdbca, menu):
     return pulldown_list
 
 
-def collect_search_candidates(objdbca, menu, column):
+def collect_search_candidates(objdbca, menu, column, menu_record={}, menu_table_link_record={}):
     """
         IDカラム(IDColumn, LinkIDColumn, AppIDColumn)のプルダウン選択用一覧の取得
         ARGS:
             objdbca:DB接クラス  DBConnectWs()
             menu: メニュー string
             column: カラム string
+            menu_record: メニュー管理のレコード
+            menu_table_link_record: メニュー-テーブル紐付管理のレコード
         RETRUN:
             search_candidates
     """
     # 変数定義
     t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
-    lang = g.LANGUAGE
-        
-    # 『メニュー管理』テーブルから対象のデータを取得
-    menu_record = check_menu_info(menu, objdbca)
-    
-    menu_id = menu_record[0].get('MENU_ID')  # 対象メニューを特定するためのID
-    
-    # メニューに対するロール権限をチェック（Falseなら権限エラー）
-    privilege = check_auth_menu(menu, objdbca)
 
-    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    menu_table_link_record = check_sheet_type(menu, ["0", "1", "2", "3", "4"], objdbca)
+    # メニュー管理のレコードが空の場合、検索する
+    if len(menu_record) == 0:
+        menu_record = objdbca.table_select('T_COMN_MENU', 'WHERE `MENU_NAME_REST` = %s AND `DISUSE_FLAG` = %s', [menu, 0])
+        if not menu_record:
+            log_msg_args = [menu]
+            api_msg_args = [menu]
+            raise AppException("499-00002", log_msg_args, api_msg_args)  # noqa: F405
+
+    # メニュー-テーブル紐付管理のレコードが空の場合、検索する
+    if len(menu_table_link_record) == 0:
+        query_str = textwrap.dedent("""
+            SELECT * FROM `T_COMN_MENU_TABLE_LINK` TAB_A
+                LEFT JOIN `T_COMN_MENU` TAB_B ON ( TAB_A.`MENU_ID` = TAB_B.`MENU_ID`)
+            WHERE TAB_B.`MENU_NAME_REST` = %s AND
+                TAB_A.`DISUSE_FLAG`='0' AND
+                TAB_B.`DISUSE_FLAG`='0'
+        """).strip()
+        menu_table_link_record = objdbca.sql_execute(query_str, [menu])
+        if not menu_table_link_record:
+            log_msg_args = [menu]
+            api_msg_args = [menu]
+            raise AppException("499-00003", log_msg_args, api_msg_args)  # noqa: F405
+
+    # メニュー管理から情報取得
+    menu_id = menu_record[0].get('MENU_ID')
+    
     # 『メニュー-テーブル紐付管理』テーブルから対象のテーブル名を取得
     table_name = menu_table_link_record[0].get('TABLE_NAME')
     
@@ -476,41 +494,27 @@ def collect_search_candidates(objdbca, menu, column):
     col_name = str(ret[0].get('COL_NAME'))
     column_class_id = str(ret[0].get('COLUMN_CLASS'))
     
-    ref_table_name = ret[0].get('REF_TABLE_NAME')
-    ref_pkey_name = ret[0].get('REF_PKEY_NAME')
-    ref_multi_lang = ret[0].get('REF_MULTI_LANG')
-    ref_col_name = ref_col_name = ret[0].get('REF_COL_NAME')
-    if ref_multi_lang == "1":
-        ref_col_name = ref_col_name + "_" + lang.upper()
-    
-    # 対象のテーブルのカラム一覧を取得し、対象のカラムの有無を確認
-    ret = objdbca.table_columns_get(table_name)
-    if col_name not in ret[0]:
-        log_msg_args = [menu, col_name]
-        api_msg_args = [menu, col_name]
-        raise AppException("499-00007", log_msg_args, api_msg_args)  # noqa: F405
-    
     # 対象のテーブルからレコードを取得し、対象のカラムの値を一覧化
-    ret = objdbca.table_select(table_name, 'WHERE DISUSE_FLAG = %s', [0])
+    ret = objdbca.table_select(table_name, '', [])
     if not ret:
         # レコードが0件の場合は空をreturn
         return []
     
     search_candidates = []
     # id_column_list = ["7", "11", "18"]  # id 7(IDColumn), id 11(LinkIDColumn), id 18(AppIDColumn)
-    id_column_list = ["7", "11"]  # ####メモ：18(AppIDColumn)の場合は別の挙動になるはずなので、いったん除外。
-    id_column_check = column_class_id in id_column_list
+    id_column_list = ["7", "11", "18", "22"]
     
-    if id_column_check:
-        # IDColumn系の場合は、参照元のレコードを取得し値を差し替える
-        ret_2 = objdbca.table_select(ref_table_name, 'WHERE DISUSE_FLAG = %s', [0])
-        ref_list = {}
-        for recode_2 in ret_2:
-            ref_list[recode_2.get(ref_pkey_name)] = recode_2.get(ref_col_name)
-        
+    if column_class_id in id_column_list:
+        # プルダウンの一覧を取得
+        objmenu = load_table.loadTable(objdbca, menu)
+        objcolumn = objmenu.get_columnclass(column)
+        column_pulldown_list = objcolumn.get_values_by_key()
+
+        # レコードのなかからプルダウンの一覧に合致するデータを抽出
         for recode in ret:
-            convert = ref_list[recode.get(col_name)]
-            search_candidates.append(convert)
+            if recode.get(col_name) in column_pulldown_list.keys():
+                convert = column_pulldown_list[recode.get(col_name)]
+                search_candidates.append(convert)
     else:
         for recode in ret:
             target = recode.get(col_name)

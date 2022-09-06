@@ -28,6 +28,10 @@ RUN dnf install -y \
     langpacks-en \
     wget \
     unzip \
+&&  curl -kL https://github.com/docker/compose/releases/download/v2.5.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose \
+&&  chmod +x /usr/local/bin/docker-compose \
+&&  curl -kL https://storage.googleapis.com/kubernetes-release/release/v1.24.3/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl \
+&&  chmod +x /usr/local/bin/kubectl \
 &&  pip3.9 install --upgrade pip setuptools \
 &&  pip3.9 install \
     Flask \
@@ -36,6 +40,9 @@ RUN dnf install -y \
     pytz \
     pymysql \
     python-dotenv \
+    chardet \
+    ansible \
+    kubernetes \
 &&  groupadd $GROUPNAME \
 &&  useradd -m -s /bin/bash -g $GROUPNAME $USERNAME
 
@@ -81,7 +88,6 @@ ARG USERNAME
 ARG GROUPNAME
 ARG APP_PATH
 
-USER $USERNAME
 WORKDIR $APP_PATH
 
 COPY ./ita_root/ita_by_ansible_execute/ $APP_PATH/
