@@ -76,8 +76,13 @@ def CommnVarsUsedListUpdate(objdbca, option, ContensID, FileID, VarsAry):
 
     if len(UsedPkeyList) != 0:
         # 不要レコードを抽出
-        sql = "WHERE FILE_ID = %s AND CONTENTS_ID= %s AND " + PkeyMember + " NOT IN (%s)"
-        ret = objdbca.table_select(MasterTableName, sql, [FileID, ContensID, ",".join(UsedPkeyList)])
+        strUsedPkeyList = ""
+        for PkeyID in UsedPkeyList:
+            if len(strUsedPkeyList) != 0:
+                strUsedPkeyList += ','
+            strUsedPkeyList += "'{}'".format(PkeyID)
+        sql = "WHERE FILE_ID = %s AND CONTENTS_ID= %s AND " + PkeyMember + " NOT IN (" + strUsedPkeyList + ")"
+        ret = objdbca.table_select(MasterTableName, sql, [FileID, ContensID])
     else:
         sql = "WHERE FILE_ID = %s AND CONTENTS_ID= %s "
         ret = objdbca.table_select(MasterTableName, sql, [FileID, ContensID])
@@ -118,9 +123,7 @@ def CommnVarsUsedListDisuseSet(objdbca, option, ContensID, FileID):
     PkeyMember = ret[1][0]
     sql = "WHERE FILE_ID = %s AND CONTENTS_ID = %s "
     ret = objdbca.table_select(MasterTableName, sql, [FileID, ContensID])
-    if len(ret) == 0:
-        return False, msg
-    
+
     for row in ret:
         arrayValue = MemberAry
         arrayConfig = MemberAry

@@ -2482,7 +2482,7 @@ class CreateAnsibleExecFiles():
         
         for row in in_tgt_row:
             # 具体値の暗号化が必要か判定
-            if row['SENSITIVE_FLAG'] == self.DF_SENSITIVE_ON:
+            if row['SENSITIVE_FLAG'] == self.AnscObj.DF_SENSITIVE_ON:
                 indento_sp = ""
                 valut_value = ""
                 make_vaultvalue = self.makeAnsibleVaultValue(row['VARS_ENTRY'], valut_value, indento_sp, row['ASSIGN_ID'])
@@ -3129,7 +3129,9 @@ class CreateAnsibleExecFiles():
         rolepackagelist = retAry[1]
         #  [{ROLE_PACKAGE_ID:? ,ROLE_PACKAGE_NAME: ? ,ROLE_PACKAGE_FILE: ?}]
         if ret is not True:
-            msgstr = g.appmsg.get_api_message("MSG-10023", [os.path.basename(__file__), str(inspect.currentframe().f_lineno), str(inspect.currentframe().f_lineno)])
+            msgstr = g.appmsg.get_api_message("MSG-10023", [os.path.basename(__file__),
+                                                            str(inspect.currentframe().f_lineno),
+                                                            str(inspect.currentframe().f_lineno)])
             self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                str(inspect.currentframe().f_lineno), msgstr)
             return False, role_package_pkey, role_package_file
