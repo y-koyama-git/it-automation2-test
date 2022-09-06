@@ -694,7 +694,8 @@ def _insert_t_menu_define(objdbca, menu_data):
         # 登録を実行
         exec_result = objmenu.exec_maintenance(parameters)  # noqa: F405
         if not exec_result[0]:
-            raise Exception("499-00701", [exec_result[2]])  # loadTableバリデーションエラー
+            result_msg = _format_loadtable_msg(exec_result[2])
+            raise Exception("499-00701", [result_msg])  # loadTableバリデーションエラー
         
         # 登録されたレコードのUUIDを保管
         menu_create_id = exec_result[1].get('uuid')
@@ -727,7 +728,7 @@ def _update_t_menu_define(objdbca, current_t_menu_define, menu_data, type_name):
     try:
         # 更新対象レコードの「メニュー作成状態」が「1:未作成」の場合「初期化」「編集」はできないのでエラー判定
         menu_create_done_status = str(current_t_menu_define.get('MENU_CREATE_DONE_STATUS'))
-        if (type_name == 'initialize' or type_name == 'edit') and menu_create_done_status == "１":
+        if (type_name == 'edit') and menu_create_done_status == "1":
             raise Exception("499-00709", [])  # 「メニュー定義一覧」の更新対象のレコードの「メニュー作成状態」が「未作成」の場合「初期化」および「編集」は実行できません
         
         # 更新対象レコードの「メニュー作成状態」が「2:作成済み」の場合「新規作成」はできないのでエラー判定
@@ -798,7 +799,8 @@ def _update_t_menu_define(objdbca, current_t_menu_define, menu_data, type_name):
         # 「メニュー定義一覧」のレコードを更新
         exec_result = objmenu.exec_maintenance(parameters, menu_create_id)  # noqa: F405
         if not exec_result[0]:
-            raise Exception("499-00701", [exec_result[2]])  # loadTableバリデーションエラー
+            result_msg = _format_loadtable_msg(exec_result[2])
+            raise Exception("499-00701", [result_msg])  # loadTableバリデーションエラー
 
     except Exception as e:
         result_code = e.args[0]
@@ -888,7 +890,8 @@ def _insert_t_menu_column_group(objdbca, group_data_list):
             # 登録を実行
             exec_result = objmenu.exec_maintenance(parameters)  # noqa: F405
             if not exec_result[0]:
-                raise Exception("499-00701", [exec_result[2]])  # loadTableバリデーションエラー
+                result_msg = _format_loadtable_msg(exec_result[2])
+                raise Exception("499-00701", [result_msg])  # loadTableバリデーションエラー
             
             # 現在登録されている「カラムグループ作成情報」のレコード一覧を更新
             column_group_list = objdbca.table_select(t_menu_column_group, 'WHERE DISUSE_FLAG = %s', [0])
@@ -1008,8 +1011,9 @@ def _insert_t_menu_column(objdbca, menu_data, column_data_list):
                 # 登録を実行
                 exec_result = objmenu.exec_maintenance(parameters)  # noqa: F405
                 if not exec_result[0]:
-                    raise Exception("499-00701", [exec_result[2]])  # loadTableバリデーションエラー
-            
+                    result_msg = _format_loadtable_msg(exec_result[2])
+                    raise Exception("499-00701", [result_msg])  # loadTableバリデーションエラー
+                
     except Exception as e:
         result_code = e.args[0]
         msg_args = e.args[1]
@@ -1272,8 +1276,9 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
                 # 更新を実行
                 exec_result = objmenu.exec_maintenance(parameters, create_column_id)  # noqa: F405
                 if not exec_result[0]:
-                    raise Exception("499-00701", [exec_result[2]])  # loadTableバリデーションエラー
-
+                    result_msg = _format_loadtable_msg(exec_result[2])
+                    raise Exception("499-00701", [result_msg])  # loadTableバリデーションエラー
+                
     except Exception as e:
         result_code = e.args[0]
         msg_args = e.args[1]
@@ -1331,8 +1336,9 @@ def _disuse_t_menu_column(objdbca, current_t_menu_column_list, column_data_list)
                 # 廃止を実行
                 exec_result = objmenu.exec_maintenance(parameters, disuse_target_id)  # noqa: F405
                 if not exec_result[0]:
-                    raise Exception("499-00701", [exec_result[2]])  # loadTableバリデーションエラー
-        
+                    result_msg = _format_loadtable_msg(exec_result[2])
+                    raise Exception("499-00701", [result_msg])  # loadTableバリデーションエラー
+    
     except Exception as e:
         result_code = e.args[0]
         msg_args = e.args[1]
@@ -1371,7 +1377,8 @@ def _insert_t_menu_unique_constraint(objdbca, menu_data):
             # 登録を実行
             exec_result = objmenu.exec_maintenance(parameters)  # noqa: F405
             if not exec_result[0]:
-                raise Exception("499-00701", [exec_result[2]])  # loadTableバリデーションエラー
+                result_msg = _format_loadtable_msg(exec_result[2])
+                raise Exception("499-00701", [result_msg])  # loadTableバリデーションエラー
             
         else:
             # データが無い場合、登録せずreturn
@@ -1416,8 +1423,9 @@ def _update_t_menu_unique_constraint(objdbca, menu_data, target_recode):
         # 更新を実行
         exec_result = objmenu.exec_maintenance(parameters, unique_constraint_id)  # noqa: F405
         if not exec_result[0]:
-            raise Exception("499-00701", [exec_result[2]])  # loadTableバリデーションエラー
-            
+            result_msg = _format_loadtable_msg(exec_result[2])
+            raise Exception("499-00701", [result_msg])  # loadTableバリデーションエラー
+        
     except Exception as e:
         result_code = e.args[0]
         msg_args = e.args[1]
@@ -1454,8 +1462,9 @@ def _disuse_t_menu_unique_constraint(objdbca, target_recode):
         # 廃止を実行
         exec_result = objmenu.exec_maintenance(parameters, unique_constraint_id)  # noqa: F405
         if not exec_result[0]:
-            raise Exception("499-00701", [exec_result[2]])  # loadTableバリデーションエラー
-            
+            result_msg = _format_loadtable_msg(exec_result[2])
+            raise Exception("499-00701", [result_msg])  # loadTableバリデーションエラー
+        
     except Exception as e:
         result_code = e.args[0]
         msg_args = e.args[1]
@@ -1489,7 +1498,8 @@ def _insert_t_menu_role(objdbca, menu_name, role_list):
             # 登録を実行
             exec_result = objmenu.exec_maintenance(parameters)  # noqa: F405
             if not exec_result[0]:
-                raise Exception("499-00701", [exec_result[2]])  # loadTableバリデーションエラー
+                result_msg = _format_loadtable_msg(exec_result[2])
+                raise Exception("499-00701", [result_msg])  # loadTableバリデーションエラー
             
     except Exception as e:
         result_code = e.args[0]
@@ -1527,7 +1537,8 @@ def _disuse_t_menu_role(objdbca, role_list, current_role_dict):
             # 廃止を実行
             exec_result = objmenu.exec_maintenance(parameters, menu_role_id)  # noqa: F405
             if not exec_result[0]:
-                raise Exception("499-00701", [exec_result[2]])  # loadTableバリデーションエラー
+                result_msg = _format_loadtable_msg(exec_result[2])
+                raise Exception("499-00701", [result_msg])  # loadTableバリデーションエラー
             
     except Exception as e:
         result_code = e.args[0]
@@ -1616,3 +1627,21 @@ def _check_before_registar_validate(objdbca, menu_data, column_data_list):
         return False, result_code, msg_args
     
     return True, None, None
+
+
+def _format_loadtable_msg(loadtable_msg):
+    """
+        【内部呼び出し用】loadTableから受け取ったバリデーションエラーメッセージをフォーマットする
+        ARGS:
+            loadtable_msg: loadTableから返却されたメッセージ(dict)
+        RETRUN:
+            format_msg
+    """
+    result_msg = {}
+    for key, value_list in loadtable_msg.items():
+        msg_list = []
+        for value in value_list:
+            msg_list.append(value.get('msg'))
+        result_msg[key] = msg_list
+        
+    return result_msg
