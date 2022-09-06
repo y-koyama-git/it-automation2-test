@@ -74,11 +74,11 @@ class FloatColumn(Column):
 
         if preg_match is not None:
             if len(preg_match) != 0:
-                patarn = re.compile(preg_match, re.DOTALL)
-                tmp_result = patarn.fullmatch(str(val))
+                pattern = re.compile(preg_match, re.DOTALL)
+                tmp_result = pattern.fullmatch(str(val))
                 if tmp_result is None:
                     retBool = False
-                    msg = "正規表現エラー (閾値:{},値{})[{}]".format(patarn, val, self.rest_key_name)
+                    msg = "正規表現エラー (閾値:{},値{})[{}]".format(preg_match, val, self.rest_key_name)
                     return retBool, msg
 
         if val is not None:
