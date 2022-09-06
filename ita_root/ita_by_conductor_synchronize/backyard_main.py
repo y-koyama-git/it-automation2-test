@@ -56,7 +56,7 @@ def backyard_main(organization_id, workspace_id):
     if 'LANGUAGE' not in g:
         g.LANGUAGE = 'ja'
     if 'USER_ID' not in g:
-        g.USER_ID = 'cm'
+        g.USER_ID = '30101'
 
     local_env = {
         'language': g.LANGUAGE,

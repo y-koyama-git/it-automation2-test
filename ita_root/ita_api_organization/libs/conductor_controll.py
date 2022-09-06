@@ -138,21 +138,8 @@ def conductor_maintenance(objdbca, menu, conductor_data, target_uuid=''):
         # conductor instanceテーブルへのレコード追加
         tmp_result = objCexec.conductor_class_exec_maintenance(parameter, target_uuid)
         if tmp_result[0] is not True:
-            errs_info = objcclass.get_message('ERROR')
-            err_all = {}
-            tmp_errs = {}
-            status_code = '499-00201'
-            err_msg_count_flg = 0
-            for err_key, err_info in errs_info.items():
-                tmp_errs = {}
-                for err_key, err_info in errs_info.items():
-                    for err_megs in err_info:
-                        tmp_errs.setdefault(err_key, [])
-                        tmp_errs[err_key].append(err_megs.get('msg'))
-                err_all[0] = tmp_errs.copy()
-
-            if err_msg_count_flg == 0:
-                msg = json.dumps(err_all, ensure_ascii=False)  # noqa: F405
+            # 集約エラーメッセージ(JSON化)
+            status_code, msg = objcclass.get_error_message_str()
             raise Exception()
 
         objdbca.db_transaction_end(True)
