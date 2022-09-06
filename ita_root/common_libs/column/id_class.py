@@ -19,14 +19,10 @@ from flask import g
 # import column_class
 from .column_class import Column
 
-"""
-カラムクラス個別処理(Id)
-"""
-
 
 class IDColumn(Column):
     """
-    テキスト系クラス共通処理
+    カラムクラス個別処理(IDColumn)
     """
     def __init__(self, objdbca, objtable, rest_key_name, cmd_type):
         # カラムクラス名
@@ -63,14 +59,45 @@ class IDColumn(Column):
         self.objdbca = objdbca
         
         self.cmd_type = cmd_type
+
+        self.id_data_list = {}
+
+        self.data_list_set_flg = False
         
-    def get_values_by_key(self, where_equal=[]):
+    def get_id_data_list(self):
         """
-            Keyを検索条件に値を取得する
+            データリストを取得する
             ARGS:
-                where_equal:一致検索のリスト
+                なし
             RETRUN:
-                values:検索結果
+                データリスト
+        """
+        
+        if self.data_list_set_flg:
+            return self.id_data_list
+        else:
+            id_data_list = self.search_id_data_list()
+            self.set_id_data_list(id_data_list)
+            self.data_list_set_flg = True
+            return id_data_list
+
+    def set_id_data_list(self, id_data_list):
+        """
+            データリストを設定する
+            ARGS:
+                なし
+            RETRUN:
+                データリスト
+        """
+        self.id_data_list = id_data_list
+
+    def search_id_data_list(self):
+        """
+            データリストを検索する
+            ARGS:
+                なし
+            RETRUN:
+                データリスト
         """
         values = {}
         language = g.LANGUAGE.upper()
@@ -86,17 +113,36 @@ class IDColumn(Column):
         else:
             ref_col_name = "{}".format(self.get_objcol().get("REF_COL_NAME"))
 
-        # 一致検索の条件作成
-        if len(where_equal) > 0:
-            tmp_where = ",".join(["%s"] * len(where_equal))
-            where_str = (where_str + "AND `{}` IN ({})").format(ref_pkey_name, tmp_where)
-            bind_value_list = where_equal
-
         # 検索
         return_values = self.objdbca.table_select(ref_table_name, where_str, bind_value_list)
 
         for record in return_values:
             values[record[ref_pkey_name]] = record[ref_col_name]
+
+        return values
+
+    def get_values_by_key(self, where_equal=[]):
+        """
+            Keyを検索条件に値を取得する
+            ARGS:
+                where_equal:一致検索のリスト
+            RETRUN:
+                values:検索結果
+        """
+
+        values = {}
+
+        # データリストを取得
+        id_data_list = self.get_id_data_list()
+
+        # 一致検索
+        if len(where_equal) > 0:
+            for where_value in where_equal:
+                if where_value in id_data_list:
+                    values[where_value] = id_data_list[where_value]
+        else:
+            for key, value in id_data_list.items():
+                values[key] = value
 
         return values
 
@@ -109,36 +155,28 @@ class IDColumn(Column):
             RETRUN:
                 values:検索結果
         """
+        tmp_values = {}
         values = {}
-        language = g.LANGUAGE.upper()
-        ref_malti_lang = self.get_objcol().get("REF_MULTI_LANG")
-        ref_pkey_name = self.get_objcol().get("REF_PKEY_NAME")
-        ref_table_name = self.get_objcol().get("REF_TABLE_NAME")
-        where_str = "WHERE `DISUSE_FLAG` = '0' "
-        bind_value_list = []
 
-        # 連携先のテーブルが言語別のカラムを持つか判定
-        if ref_malti_lang == '1':
-            ref_col_name = "{}_{}".format(self.get_objcol().get("REF_COL_NAME"), language)
-        else:
-            ref_col_name = "{}".format(self.get_objcol().get("REF_COL_NAME"))
+        # データリストを取得
+        id_data_list = self.get_id_data_list()
 
-        # 一致検索の条件作成
+        # 一致検索
         if len(where_equal) > 0:
-            tmp_where = ",".join(["%s"] * len(where_equal))
-            where_str = (where_str + "AND `{}` IN ({})").format(ref_col_name, tmp_where)
-            bind_value_list = where_equal
+            for where_value in where_equal:
+                for key, value in id_data_list.items():
+                    if where_value == value:
+                        tmp_values[key] = value
+        else:
+            tmp_values = id_data_list
 
-        # あいまい検索の条件作成
+        # あいまい検索
         if len(where_like) > 0:
-            where_str = (where_str + "AND `{}` LIKE %s").format(ref_col_name)
-            bind_value_list.append('%' + where_like + '%')
-
-        # 検索
-        return_values = self.objdbca.table_select(ref_table_name, where_str, bind_value_list)
-
-        for record in return_values:
-            values[record[ref_pkey_name]] = record[ref_col_name]
+            for key, value in tmp_values.items():
+                if where_like in value:
+                    values[key] = value
+        else:
+            values = tmp_values
 
         return values
 

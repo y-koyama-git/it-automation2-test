@@ -19,39 +19,3 @@ class LinkIDColumn(IDColumn):
     """
     カラムクラス個別処理(LinkIDColumn)
     """
-    def __init__(self, objdbca, objtable, rest_key_name, cmd_type):
-
-        # カラムクラス名
-        self.class_name = self.__class__.__name__
-        # メッセージ
-        self.message = ''
-        # バリデーション閾値
-        self.dict_valid = {}
-        # テーブル情報
-        self.objtable = objtable
-
-        # テーブル名
-        table_name = ''
-        objmenu = objtable.get('MENUINFO')
-        if objmenu is not None:
-            table_name = objmenu.get('TABLE_NAME')
-        self.table_name = table_name
-
-        # カラム名
-        col_name = ''
-        objcols = objtable.get('COLINFO')
-        if objcols is not None:
-            objcol = objcols.get(rest_key_name)
-            if objcol is not None:
-                col_name = objcol.get('COL_NAME')
-
-        self.col_name = col_name
-        
-        # rest用項目名
-        self.rest_key_name = rest_key_name
-
-        self.db_qm = "'"
-
-        self.objdbca = objdbca
-        
-        self.cmd_type = cmd_type
