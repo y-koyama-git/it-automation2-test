@@ -14,8 +14,9 @@
 
 import connexion
 from common_libs.common import *  # noqa: F403
-from libs import menu_create as menu_create_lib
 from common_libs.api import api_filter, check_request_body
+from libs.organization_common import check_menu_info, check_auth_menu, check_sheet_type
+from libs import menu_create as menu_create_lib
 
 
 @api_filter
@@ -33,9 +34,21 @@ def define_and_execute_menu_create(organization_id, workspace_id, body=None):  #
 
     :rtype: InlineResponse20011
     """
+
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
     
+    # メニューの存在確認
+    menu = 'menu_definition_and_creation'
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['13']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
+
     # bodyのjson形式チェック
     check_request_body()
     
@@ -66,6 +79,17 @@ def execute_menu_create(organization_id, workspace_id, body=None):  # noqa: E501
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
     
+    # メニューの存在確認
+    menu = 'menu_creation_execution'
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['19']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
+
     # bodyのjson形式チェック
     check_request_body()
     
@@ -96,6 +120,28 @@ def get_exist_menu_create_data(organization_id, workspace_id, menu_create):  # n
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
     
+    # メニューの存在確認
+    menu = 'menu_definition_and_creation'
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['13']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
+
+    # メニューの存在確認
+    menu = 'menu_definition_list'
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['0']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
+
     # メニュー定義・作成(既存)用の情報取得
     data = menu_create_lib.collect_exist_menu_create_data(objdbca, menu_create)
     
@@ -118,6 +164,17 @@ def get_menu_create_data(organization_id, workspace_id):  # noqa: E501
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
     
+    # メニューの存在確認
+    menu = 'menu_definition_and_creation'
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['13']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
+
     # メニュー定義・作成(新規)用の情報取得
     data = menu_create_lib.collect_menu_create_data(objdbca)
     
@@ -142,6 +199,38 @@ def get_pulldown_initial(organization_id, workspace_id, menu, column):  # noqa: 
     :rtype: InlineResponse20011
     """
     
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+    
+    # メニューの存在確認
+    menu_def_and_cre = 'menu_definition_and_creation'
+    check_menu_info(menu_def_and_cre, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['13']
+    check_sheet_type(menu_def_and_cre, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu_def_and_cre, objdbca)
+
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['0', '1', '2', '3', '4']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    data = {}
+    # メニューに対するロール権限をチェック
+    # 権限が無かったらdataを空で返す
+    try:
+        check_auth_menu(menu_name_rest)
+    except AppException as e:
+        if e.args[0] == '401-00001':
+            return data,
+        else:
+            raise e
+
     data = {
         "id1": "初期値候補1",
         "id2": "初期値候補2",
@@ -168,6 +257,39 @@ def get_reference_item(organization_id, workspace_id, menu, column):  # noqa: E5
 
     :rtype: InlineResponse20011
     """
+
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+    
+    # メニューの存在確認
+    menu_def_and_cre = 'menu_definition_and_creation'
+    check_menu_info(menu_def_and_cre, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['13']
+    check_sheet_type(menu_def_and_cre, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu_def_and_cre, objdbca)
+
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['0', '1', '2', '3', '4']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    data = {}
+    # メニューに対するロール権限をチェック
+    # 権限が無かったらdataを空で返す
+    try:
+        check_auth_menu(menu_name_rest)
+    except AppException as e:
+        if e.args[0] == '401-00001':
+            return data,
+        else:
+            raise e
+
     data = {
         "id1": "column_name_rest_1",
         "id2": "column_name_rest_2",

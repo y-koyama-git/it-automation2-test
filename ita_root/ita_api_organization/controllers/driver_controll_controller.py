@@ -13,11 +13,11 @@
 #   limitations under the License.
 
 import connexion
-import six
 
 from common_libs.common import *  # noqa: F403
-from libs import execute_info
 from common_libs.api import api_filter
+from libs.organization_common import check_menu_info, check_auth_menu, check_sheet_type
+from libs import menu_info, menu_filter
 
 @api_filter
 def get_driver_execute_data(organization_id, workspace_id, menu, execution_no):  # noqa: E501
@@ -54,7 +54,30 @@ def get_driver_execute_info(organization_id, workspace_id, menu):  # noqa: E501
 
     :rtype: InlineResponse20018
     """
-    return 'do some magic!',
+
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+    
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['11']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
+    
+    # 作業実行メニューとMovement一覧の対応
+    movement_target = {'execution_ansible_role': 'movement_list_ansible_role'}
+
+    # 作業実行関連のメニューの基本情報および項目情報の取得
+    target_menus = ["operation_list", movement_target[menu]]
+    data = {}
+    for target in target_menus:
+        data[target] = menu_info.collect_menu_info(objdbca, target)
+
+    return data,
 
 
 @api_filter
@@ -76,7 +99,33 @@ def get_driver_execute_search_candidates(organization_id, workspace_id, menu, ta
 
     :rtype: InlineResponse2003
     """
-    return 'do some magic!',
+
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+    
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['11']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
+    
+    # 作業実行メニューとMovement一覧の対応
+    movement_target = {'execution_ansible_role': 'movement_list_ansible_role'}
+
+    # targetのチェック
+    target_menus = ["operation_list", movement_target[menu]]
+    if target not in target_menus:
+        log_msg_args = []
+        api_msg_args = []
+        raise AppException("499-00008", log_msg_args, api_msg_args)  # noqa: F405
+
+    # 対象項目のプルダウン検索候補一覧を取得
+    data = menu_info.collect_search_candidates(objdbca, target, column)
+    return data,
 
 
 @api_filter
@@ -184,33 +233,38 @@ def post_driver_execute_filter(organization_id, workspace_id, menu, target, body
 
     :rtype: InlineResponse2005
     """
+
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['15']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
+    
+    # 作業実行メニューとMovement一覧の対応
+    movement_target = {'execution_ansible_role': 'movement_list_ansible_role'}
+
+    # targetのチェック
+    target_menus = ["operation_list", movement_target[menu]]
+    if target not in target_menus:
+        log_msg_args = []
+        api_msg_args = []
+        raise AppException("499-00008", log_msg_args, api_msg_args)  # noqa: F405
+    
+    filter_parameter = {}
     if connexion.request.is_json:
-        body = FilterTargetBody1.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!',
-
-
-@api_filter
-def post_driver_execute_filter_count(organization_id, workspace_id, menu, target, body=None):  # noqa: E501
-    """post_driver_execute_filter_count
-
-    Movement,Operationを対象に、検索条件を指定し、レコードの件数する # noqa: E501
-
-    :param organization_id: OrganizationID
-    :type organization_id: str
-    :param workspace_id: WorkspaceID
-    :type workspace_id: str
-    :param menu: メニュー名
-    :type menu: str
-    :param target: movement_list or operation_list
-    :type target: str
-    :param body: 
-    :type body: dict | bytes
-
-    :rtype: InlineResponse2004
-    """
-    if connexion.request.is_json:
-        body = CountTargetBody1.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!',
+        body = dict(connexion.request.get_json())
+        filter_parameter = body
+        
+    # メニューのカラム情報を取得
+    result_data = menu_filter.rest_filter(objdbca, target, filter_parameter)
+    return result_data,
 
 
 @api_filter

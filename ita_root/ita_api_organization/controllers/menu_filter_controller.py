@@ -13,16 +13,14 @@
 #   limitations under the License.
 
 import connexion
-import six
-
-from common_libs.common import *  # noqa: F403
-from libs import menu_filter
-from flask import jsonify
-
 import sys
+
 sys.path.append('../../')
+from common_libs.common import *  # noqa: F403
 from common_libs.loadtable.load_table import loadTable
 from common_libs.api import api_filter
+from libs.organization_common import check_menu_info, check_auth_menu, check_sheet_type
+from libs import menu_filter
 
 
 @api_filter
@@ -42,6 +40,16 @@ def get_filter_count(organization_id, workspace_id, menu):  # noqa: E501
     """
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
+    
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['0', '1', '2', '3', '4']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
     
     filter_parameter = {}
     result_data = menu_filter.rest_count(objdbca, menu, filter_parameter)
@@ -65,6 +73,16 @@ def get_filter(organization_id, workspace_id, menu):  # noqa: E501
     """
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
+    
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['0', '1', '2', '3', '4']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
     
     filter_parameter = {}
     result_data = menu_filter.rest_filter(objdbca, menu, filter_parameter)
@@ -92,6 +110,16 @@ def get_journal(organization_id, workspace_id, menu, uuid):  # noqa: E501
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
 
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['0', '1', '2', '3', '4']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
+    
     result_data = menu_filter.rest_filter_journal(objdbca, menu, uuid)
     return result_data,
 
@@ -108,7 +136,7 @@ def post_filter(organization_id, workspace_id, menu, body=None):  # noqa: E501
     :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
-    :param body: 
+    :param body:
     :type body: dict | bytes
 
     :rtype: InlineResponse2005
@@ -116,6 +144,16 @@ def post_filter(organization_id, workspace_id, menu, body=None):  # noqa: E501
 
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
+    
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['0', '1', '2', '3', '4']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
     
     filter_parameter = {}
     if connexion.request.is_json:
@@ -139,13 +177,23 @@ def post_filter_count(organization_id, workspace_id, menu, body=None):  # noqa: 
     :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
-    :param body: 
+    :param body:
     :type body: dict | bytes
 
     :rtype: InlineResponse2005
     """
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
+    
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['0', '1', '2', '3', '4']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
     
     filter_parameter = {}
     if connexion.request.is_json:
