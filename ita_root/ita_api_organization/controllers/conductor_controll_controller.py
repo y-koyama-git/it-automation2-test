@@ -194,7 +194,7 @@ def get_conductor_execute_info(organization_id, workspace_id, menu):  # noqa: E5
     check_menu_info(menu, objdbca)
 
     # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['15']
+    sheet_type_list = ['14', '15']
     check_sheet_type(menu, sheet_type_list, objdbca)
 
     # メニューに対するロール権限をチェック
@@ -235,7 +235,7 @@ def get_execute_search_candidates(organization_id, workspace_id, menu, target, c
     check_menu_info(menu, objdbca)
 
     # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['15']
+    sheet_type_list = ['14', '15']
     check_sheet_type(menu, sheet_type_list, objdbca)
 
     # メニューに対するロール権限をチェック
@@ -279,7 +279,7 @@ def post_execute_filter(organization_id, workspace_id, menu, target, body=None):
     check_menu_info(menu, objdbca)
 
     # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['15']
+    sheet_type_list = ['14', '15']
     check_sheet_type(menu, sheet_type_list, objdbca)
 
     # メニューに対するロール権限をチェック
@@ -325,7 +325,7 @@ def get_conductor_execute_class_info(organization_id, workspace_id, menu):  # no
     check_menu_info(menu, objdbca)
 
     # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['15']
+    sheet_type_list = ['14', '15']
     check_sheet_type(menu, sheet_type_list, objdbca)
 
     # メニューに対するロール権限をチェック
@@ -360,7 +360,7 @@ def get_conductor_execute_class_data(organization_id, workspace_id, menu, conduc
     check_menu_info(menu, objdbca)
 
     # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['15']
+    sheet_type_list = ['14', '15']
     check_sheet_type(menu, sheet_type_list, objdbca)
 
     # メニューに対するロール権限をチェック
@@ -397,7 +397,7 @@ def post_conductor_excecute(organization_id, workspace_id, menu, body=None):  # 
     check_menu_info(menu, objdbca)
 
     # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['15']
+    sheet_type_list = ['14', '15']
     check_sheet_type(menu, sheet_type_list, objdbca)
 
     # メニューに対するロール権限をチェック

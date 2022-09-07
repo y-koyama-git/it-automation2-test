@@ -53,10 +53,10 @@ def backyard_main(organization_id, workspace_id):
 
     # 環境情報設定
     # 言語情報
-    if 'LANGUAGE' not in g:
-        g.LANGUAGE = 'ja'
-    if 'USER_ID' not in g:
-        g.USER_ID = '30101'
+    # if 'LANGUAGE' not in g:
+    g.LANGUAGE = 'ja'
+    # if 'USER_ID' not in g:
+    g.USER_ID = '30101'
 
     local_env = {
         'language': g.LANGUAGE,

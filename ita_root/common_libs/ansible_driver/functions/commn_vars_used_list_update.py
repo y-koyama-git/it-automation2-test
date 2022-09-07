@@ -76,12 +76,13 @@ def CommnVarsUsedListUpdate(objdbca, option, ContensID, FileID, VarsAry):
 
     if len(UsedPkeyList) != 0:
         # 不要レコードを抽出
-        strUsedPkeyList = ""
-        for PkeyID in UsedPkeyList:
-            if len(strUsedPkeyList) != 0:
-                strUsedPkeyList += ','
-            strUsedPkeyList += "'{}'".format(PkeyID)
-        sql = "WHERE FILE_ID = %s AND CONTENTS_ID= %s AND " + PkeyMember + " NOT IN (" + strUsedPkeyList + ")"
+        key_list = ""
+        for i in range(len(UsedPkeyList)):
+            if i == 0:
+                key_list = "'" + UsedPkeyList[i] + "'"
+            else:
+                key_list += "," + "'" + UsedPkeyList[i] + "'"
+        sql = "WHERE FILE_ID = %s AND CONTENTS_ID= %s AND " + PkeyMember + " NOT IN (" + key_list + ")"
         ret = objdbca.table_select(MasterTableName, sql, [FileID, ContensID])
     else:
         sql = "WHERE FILE_ID = %s AND CONTENTS_ID= %s "

@@ -239,7 +239,7 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
                 raise Exception(msg)
             
             # 「メニュー-テーブル紐付管理」にレコードを登録
-            result, msg = _insert_t_comn_menu_table_link(objdbca, sheet_type, vertical_flag, file_upload_only_flag, create_table_name, menu_uuid, recode_t_menu_define, recode_t_menu_unique_constraint, menu_group_col_name)  # noqa: E501
+            result, msg = _insert_t_comn_menu_table_link(objdbca, sheet_type, vertical_flag, file_upload_only_flag, create_table_name, create_view_name, menu_uuid, recode_t_menu_define, recode_t_menu_unique_constraint, menu_group_col_name)  # noqa: E501
             if not result:
                 raise Exception(msg)
             
@@ -495,7 +495,7 @@ def _insert_t_comn_role_menu_link(objdbca, menu_uuid, recode_t_menu_role):
     return result, None
 
 
-def _insert_t_comn_menu_table_link(objdbca, sheet_type, vertical_flag, file_upload_only_flag, create_table_name, menu_uuid, recode_t_menu_define, recode_t_menu_unique_constraint, menu_group_col_name):  # noqa: E501
+def _insert_t_comn_menu_table_link(objdbca, sheet_type, vertical_flag, file_upload_only_flag, create_table_name, create_view_name, menu_uuid, recode_t_menu_define, recode_t_menu_unique_constraint, menu_group_col_name):  # noqa: E501
     """
         「メニュー-テーブル紐付管理」メニューのテーブルにレコードを追加する
         ARGS:
@@ -504,6 +504,7 @@ def _insert_t_comn_menu_table_link(objdbca, sheet_type, vertical_flag, file_uplo
             vertical_flag: 縦メニュー利用の有無
             file_upload_only_flag: Trueの場合、シートタイプを「4: パラメータシート(ファイルアップロードあり)」とする
             create_table_name: 作成した対象のテーブル名
+            create_view_name: 作成した対象のビュー名
             menu_uuid: 対象のメニュー（「メニュー管理」のレコード）のUUID
             recode_t_menu_define: 「メニュー定義一覧」の対象のレコード
             recode_t_menu_unique_constraint: 「一意制約(複数項目)作成情報」の対象のレコード
@@ -549,9 +550,9 @@ def _insert_t_comn_menu_table_link(objdbca, sheet_type, vertical_flag, file_uplo
             if unique_constraint:
                 tmp_unique_constraint = json.loads(unique_constraint)
                 if vertical_flag:
-                    add_unique_constraint = ["operation_name", "host_name", "input_order"]
+                    add_unique_constraint = ["operation_name_select", "host_name", "input_order"]
                 else:
-                    add_unique_constraint = ["operation_name", "host_name"]
+                    add_unique_constraint = ["operation_name_select", "host_name"]
                 if tmp_unique_constraint:
                     tmp_unique_constraint.insert(0, add_unique_constraint)
                 else:
@@ -559,19 +560,23 @@ def _insert_t_comn_menu_table_link(objdbca, sheet_type, vertical_flag, file_uplo
                 unique_constraint = json.dumps(tmp_unique_constraint)
             else:
                 if vertical_flag:
-                    unique_constraint = '[["operation_name", "host_name", "input_order"]]'
+                    unique_constraint = '[["operation_name_select", "host_name", "input_order"]]'
                 else:
-                    unique_constraint = '[["operation_name", "host_name"]]'
+                    unique_constraint = '[["operation_name_select", "host_name"]]'
         
         # シートタイプが「1: パラメータシート（ホスト/オペレーションあり）」かつfile_upload_only_flagがTrueの場合、シートタイプを「4: パラメータシート（ファイルアップロードあり）」とする。
         if sheet_type == "1" and file_upload_only_flag:
             sheet_type = "4"
-            
+        
+        # シートタイプが「1: パラメータシート（ホスト/オペレーションあり）」かつ「参照用」メニューグループの場合、シートタイプを「5: 参照用（ホスト/オペレーションあり）」とする。
+        if sheet_type == "1" and menu_group_col_name == "MENU_GROUP_ID_REF":
+            sheet_type = "5"
+        
         # 「メニュー-テーブル紐付管理」にレコードを登録
         data_list = {
             "MENU_ID": menu_uuid,
-            "TABLE_NAME": create_table_name,  # ####メモ：VIEWを使う場合はここを修正する。
-            "VIEW_NAME": None,  # ####メモ：VIEWを使う場合はここを修正する。
+            "TABLE_NAME": create_table_name,
+            "VIEW_NAME": create_view_name,
             "PK_COLUMN_NAME_REST": "uuid",
             "MENU_INFO_JA": recode_t_menu_define.get('DESCRIPTION_JA'),
             "MENU_INFO_EN": recode_t_menu_define.get('DESCRIPTION_EN'),
@@ -793,8 +798,8 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 raise Exception("カラムグループ「オペレーション」のレコードが存在しません")
             operation_col_group_id = ret[0].get('COL_GROUP_ID')
             
-            # 「オペレーション名」用のレコードを作成
-            res_valid = _check_column_validation(objdbca, menu_uuid, "operation_name")  # ####メモ：メッセージ一覧から取得する
+            # 「オペレーション(日付:オペレーション名)」用のレコードを作成
+            res_valid = _check_column_validation(objdbca, menu_uuid, "operation_name_select")  # ####メモ：メッセージ一覧から取得する
             if not res_valid:
                 raise Exception("「メニュー-カラム紐付管理」に同じメニューとカラム名(rest)の組み合わせが既に存在している。")
             
@@ -802,7 +807,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "MENU_ID": menu_uuid,
                 "COLUMN_NAME_JA": "オペレーション名",  # ####メモ：メッセージ一覧から取得する
                 "COLUMN_NAME_EN": "Operation name",  # ####メモ：メッセージ一覧から取得する
-                "COLUMN_NAME_REST": "operation_name",  # ####メモ：メッセージ一覧から取得する
+                "COLUMN_NAME_REST": "operation_name_select",  # ####メモ：メッセージ一覧から取得する
                 "COL_GROUP_ID": operation_col_group_id,  # カラムグループ「オペレーション」
                 "COLUMN_CLASS": 7,  # IDColumn
                 "COLUMN_DISP_SEQ": disp_seq_num,
@@ -818,7 +823,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "SAVE_TYPE": None,
                 "AUTO_INPUT": 0,  # False
                 "INPUT_ITEM": 1,  # True
-                "VIEW_ITEM": 1,  # True
+                "VIEW_ITEM": 0,  # False
                 "UNIQUE_ITEM": 0,  # False
                 "REQUIRED_ITEM": 1,  # True
                 "AUTOREG_HIDE_ITEM": 1,  # True
@@ -830,6 +835,190 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "AFTER_VALIDATE_REGISTER": None,
                 "DESCRIPTION_JA": "オペレーションを選択",  # ####メモ：メッセージ一覧から取得する
                 "DESCRIPTION_EN": "Select operation",  # ####メモ：メッセージ一覧から取得する
+                "DISUSE_FLAG": "0",
+                "LAST_UPDATE_USER": g.get('USER_ID')
+            }
+            primary_key_name = 'COLUMN_DEFINITION_ID'
+            objdbca.table_insert(t_comn_menu_column_link, data_list, primary_key_name)
+            
+            # 表示順序を加算
+            disp_seq_num = int(disp_seq_num) + 10
+            
+            # 「オペレーション名」用のレコードを作成
+            res_valid = _check_column_validation(objdbca, menu_uuid, "operation_name_disp")  # ####メモ：メッセージ一覧から取得する
+            if not res_valid:
+                raise Exception("「メニュー-カラム紐付管理」に同じメニューとカラム名(rest)の組み合わせが既に存在している。")
+            
+            data_list = {
+                "MENU_ID": menu_uuid,
+                "COLUMN_NAME_JA": "オペレーション名",  # ####メモ：メッセージ一覧から取得する
+                "COLUMN_NAME_EN": "Operation name",  # ####メモ：メッセージ一覧から取得する
+                "COLUMN_NAME_REST": "operation_name_disp",  # ####メモ：メッセージ一覧から取得する
+                "COL_GROUP_ID": operation_col_group_id,  # カラムグループ「オペレーション」
+                "COLUMN_CLASS": 1,  # SingleTextColumn
+                "COLUMN_DISP_SEQ": disp_seq_num,
+                "REF_TABLE_NAME": None,
+                "REF_PKEY_NAME": None,
+                "REF_COL_NAME": None,
+                "REF_SORT_CONDITIONS": None,
+                "REF_MULTI_LANG": 0,  # False
+                "SENSITIVE_COL_NAME": None,
+                "FILE_UPLOAD_PLACE": None,
+                "BUTTON_ACTION": None,
+                "COL_NAME": "OPERATION_NAME",
+                "SAVE_TYPE": None,
+                "AUTO_INPUT": 0,  # False
+                "INPUT_ITEM": 2,  # False ####メモ：INPUT_ITEMの仕様変更で最終的に「2」なる想定
+                "VIEW_ITEM": 1,  # True
+                "UNIQUE_ITEM": 0,  # False
+                "REQUIRED_ITEM": 0,  # False
+                "AUTOREG_HIDE_ITEM": 1,  # True
+                "AUTOREG_ONLY_ITEM": 0,  # False
+                "INITIAL_VALUE": None,
+                "VALIDATE_OPTION": None,
+                "VALIDATE_REG_EXP": None,
+                "BEFORE_VALIDATE_REGISTER": None,
+                "AFTER_VALIDATE_REGISTER": None,
+                "DESCRIPTION_JA": "[元データ]基本コンソール/オペレーション一覧",  # ####メモ：メッセージ一覧から取得する
+                "DESCRIPTION_EN": "[Original data] Basic console/Operation list",  # ####メモ：メッセージ一覧から取得する
+                "DISUSE_FLAG": "0",
+                "LAST_UPDATE_USER": g.get('USER_ID')
+            }
+            primary_key_name = 'COLUMN_DEFINITION_ID'
+            objdbca.table_insert(t_comn_menu_column_link, data_list, primary_key_name)
+            
+            # 表示順序を加算
+            disp_seq_num = int(disp_seq_num) + 10
+            
+            # 「オペレーション(基準日時)」用のレコードを作成
+            res_valid = _check_column_validation(objdbca, menu_uuid, "base_datetime")  # ####メモ：メッセージ一覧から取得する
+            if not res_valid:
+                raise Exception("「メニュー-カラム紐付管理」に同じメニューとカラム名(rest)の組み合わせが既に存在している。")
+            
+            data_list = {
+                "MENU_ID": menu_uuid,
+                "COLUMN_NAME_JA": "基準日時",  # ####メモ：メッセージ一覧から取得する
+                "COLUMN_NAME_EN": "Base datetime",  # ####メモ：メッセージ一覧から取得する
+                "COLUMN_NAME_REST": "base_datetime",  # ####メモ：メッセージ一覧から取得する
+                "COL_GROUP_ID": operation_col_group_id,  # カラムグループ「オペレーション」
+                "COLUMN_CLASS": 5,  # DateTimeColumn
+                "COLUMN_DISP_SEQ": disp_seq_num,
+                "REF_TABLE_NAME": None,
+                "REF_PKEY_NAME": None,
+                "REF_COL_NAME": None,
+                "REF_SORT_CONDITIONS": None,
+                "REF_MULTI_LANG": 0,  # False
+                "SENSITIVE_COL_NAME": None,
+                "FILE_UPLOAD_PLACE": None,
+                "BUTTON_ACTION": None,
+                "COL_NAME": "BASE_TIMESTAMP",
+                "SAVE_TYPE": None,
+                "AUTO_INPUT": 1,  # True
+                "INPUT_ITEM": 0,  # False
+                "VIEW_ITEM": 1,  # True
+                "UNIQUE_ITEM": 0,  # False
+                "REQUIRED_ITEM": 0,  # False
+                "AUTOREG_HIDE_ITEM": 1,  # True
+                "AUTOREG_ONLY_ITEM": 0,  # False
+                "INITIAL_VALUE": None,
+                "VALIDATE_OPTION": None,
+                "VALIDATE_REG_EXP": None,
+                "BEFORE_VALIDATE_REGISTER": None,
+                "AFTER_VALIDATE_REGISTER": None,
+                "DESCRIPTION_JA": "基本コンソール/オペレーション一覧の「最終実行日時」に値がある場合は「最終実行日時」、値が無い場合は「実施予定日時」",  # ####メモ：メッセージ一覧から取得する
+                "DESCRIPTION_EN": "If \"Last execute date\" of \"Basic console / operation list\" has a value, \"Last execution date\" is displayed, otherwise \"Scheduled date for execution\" is displayed.",  # ####メモ：メッセージ一覧から取得する
+                "DISUSE_FLAG": "0",
+                "LAST_UPDATE_USER": g.get('USER_ID')
+            }
+            primary_key_name = 'COLUMN_DEFINITION_ID'
+            objdbca.table_insert(t_comn_menu_column_link, data_list, primary_key_name)
+            
+            # 表示順序を加算
+            disp_seq_num = int(disp_seq_num) + 10
+            
+            # 「オペレーション(実施予定日)」用のレコードを作成
+            res_valid = _check_column_validation(objdbca, menu_uuid, "operation_date")  # ####メモ：メッセージ一覧から取得する
+            if not res_valid:
+                raise Exception("「メニュー-カラム紐付管理」に同じメニューとカラム名(rest)の組み合わせが既に存在している。")
+            
+            data_list = {
+                "MENU_ID": menu_uuid,
+                "COLUMN_NAME_JA": "実施予定日",  # ####メモ：メッセージ一覧から取得する
+                "COLUMN_NAME_EN": "Operation date",  # ####メモ：メッセージ一覧から取得する
+                "COLUMN_NAME_REST": "operation_date",  # ####メモ：メッセージ一覧から取得する
+                "COL_GROUP_ID": operation_col_group_id,  # カラムグループ「オペレーション」
+                "COLUMN_CLASS": 5,  # DateTimeColumn
+                "COLUMN_DISP_SEQ": disp_seq_num,
+                "REF_TABLE_NAME": None,
+                "REF_PKEY_NAME": None,
+                "REF_COL_NAME": None,
+                "REF_SORT_CONDITIONS": None,
+                "REF_MULTI_LANG": 0,  # False
+                "SENSITIVE_COL_NAME": None,
+                "FILE_UPLOAD_PLACE": None,
+                "BUTTON_ACTION": None,
+                "COL_NAME": "OPERATION_DATE",
+                "SAVE_TYPE": None,
+                "AUTO_INPUT": 1,  # True
+                "INPUT_ITEM": 0,  # False
+                "VIEW_ITEM": 1,  # True
+                "UNIQUE_ITEM": 0,  # False
+                "REQUIRED_ITEM": 0,  # False
+                "AUTOREG_HIDE_ITEM": 1,  # True
+                "AUTOREG_ONLY_ITEM": 0,  # False
+                "INITIAL_VALUE": None,
+                "VALIDATE_OPTION": None,
+                "VALIDATE_REG_EXP": None,
+                "BEFORE_VALIDATE_REGISTER": None,
+                "AFTER_VALIDATE_REGISTER": None,
+                "DESCRIPTION_JA": "[元データ]基本コンソール/オペレーション一覧",  # ####メモ：メッセージ一覧から取得する
+                "DESCRIPTION_EN": "[Original data] Basic console/Operation list",  # ####メモ：メッセージ一覧から取得する
+                "DISUSE_FLAG": "0",
+                "LAST_UPDATE_USER": g.get('USER_ID')
+            }
+            primary_key_name = 'COLUMN_DEFINITION_ID'
+            objdbca.table_insert(t_comn_menu_column_link, data_list, primary_key_name)
+            
+            # 表示順序を加算
+            disp_seq_num = int(disp_seq_num) + 10
+            
+            # 「オペレーション(最終実行日時)」用のレコードを作成
+            res_valid = _check_column_validation(objdbca, menu_uuid, "last_execute_timestamp")  # ####メモ：メッセージ一覧から取得する
+            if not res_valid:
+                raise Exception("「メニュー-カラム紐付管理」に同じメニューとカラム名(rest)の組み合わせが既に存在している。")
+            
+            data_list = {
+                "MENU_ID": menu_uuid,
+                "COLUMN_NAME_JA": "最終実行日時",  # ####メモ：メッセージ一覧から取得する
+                "COLUMN_NAME_EN": "Last execute datetime",  # ####メモ：メッセージ一覧から取得する
+                "COLUMN_NAME_REST": "last_execute_timestamp",  # ####メモ：メッセージ一覧から取得する
+                "COL_GROUP_ID": operation_col_group_id,  # カラムグループ「オペレーション」
+                "COLUMN_CLASS": 5,  # DateTimeColumn
+                "COLUMN_DISP_SEQ": disp_seq_num,
+                "REF_TABLE_NAME": None,
+                "REF_PKEY_NAME": None,
+                "REF_COL_NAME": None,
+                "REF_SORT_CONDITIONS": None,
+                "REF_MULTI_LANG": 0,  # False
+                "SENSITIVE_COL_NAME": None,
+                "FILE_UPLOAD_PLACE": None,
+                "BUTTON_ACTION": None,
+                "COL_NAME": "LAST_EXECUTE_TIMESTAMP",
+                "SAVE_TYPE": None,
+                "AUTO_INPUT": 1,  # True
+                "INPUT_ITEM": 0,  # False
+                "VIEW_ITEM": 1,  # True
+                "UNIQUE_ITEM": 0,  # False
+                "REQUIRED_ITEM": 0,  # False
+                "AUTOREG_HIDE_ITEM": 1,  # True
+                "AUTOREG_ONLY_ITEM": 0,  # False
+                "INITIAL_VALUE": None,
+                "VALIDATE_OPTION": None,
+                "VALIDATE_REG_EXP": None,
+                "BEFORE_VALIDATE_REGISTER": None,
+                "AFTER_VALIDATE_REGISTER": None,
+                "DESCRIPTION_JA": "[元データ]基本コンソール/オペレーション一覧",  # ####メモ：メッセージ一覧から取得する
+                "DESCRIPTION_EN": "[Original data] Basic console/Operation list",  # ####メモ：メッセージ一覧から取得する
                 "DISUSE_FLAG": "0",
                 "LAST_UPDATE_USER": g.get('USER_ID')
             }

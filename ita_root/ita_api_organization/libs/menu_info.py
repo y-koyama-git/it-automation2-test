@@ -163,6 +163,11 @@ def collect_menu_info(objdbca, menu, menu_record={}, menu_table_link_record={}, 
 
     if ret:
         for count, recode in enumerate(ret, 1):
+
+            # VIEW_ITEMが0のレコードはスキップ
+            if recode.get('VIEW_ITEM') == '0':
+                continue
+
             # json形式のレコードは改行を削除
             validate_option = recode.get('VALIDATE_OPTION')
             if type(validate_option) is str:
@@ -421,7 +426,7 @@ def collect_pulldown_list(objdbca, menu, menu_record):
     ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
     
     pulldown_list = {}
-    # id 7(IDColumn), id 11(LinkIDColumn), id 18(RoleIDColumn), , id 22(EnvironmentIDColumn)
+    # 7(IDColumn), 11(LinkIDColumn), 18(RoleIDColumn), 22(EnvironmentIDColumn)
     id_column_list = ["7", "11", "18", "22"]
     for recode in ret:
         column_class_id = str(recode.get('COLUMN_CLASS'))
@@ -501,8 +506,8 @@ def collect_search_candidates(objdbca, menu, column, menu_record={}, menu_table_
         return []
     
     search_candidates = []
-    # id_column_list = ["7", "11", "18"]  # id 7(IDColumn), id 11(LinkIDColumn), id 18(AppIDColumn)
-    id_column_list = ["7", "11", "18", "22"]
+    # 7(IDColumn), 11(LinkIDColumn), 14(LastUpdateUserColumn), 18(RoleIDColumn), 22(EnvironmentIDColumn)
+    id_column_list = ["7", "11", "14", "18", "22"]
     
     if column_class_id in id_column_list:
         # プルダウンの一覧を取得

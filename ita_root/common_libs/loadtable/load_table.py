@@ -939,7 +939,6 @@ class loadTable():
             RETRUN:
                 status_code, result, msg,
         """
-
         status_code = '000-00000'  # 成功
         msg = ''
 
@@ -985,6 +984,7 @@ class loadTable():
                 where_str = ''
                 bind_value_list = []
                 conjunction = "where"
+                
                 # where生成
                 if len(filter_querys) > 0:
                     for filter_query in filter_querys:

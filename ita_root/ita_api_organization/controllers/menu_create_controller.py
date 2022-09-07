@@ -224,18 +224,14 @@ def get_pulldown_initial(organization_id, workspace_id, menu, column):  # noqa: 
     # メニューに対するロール権限をチェック
     # 権限が無かったらdataを空で返す
     try:
-        check_auth_menu(menu_name_rest)
+        check_auth_menu(menu)
     except AppException as e:
         if e.args[0] == '401-00001':
             return data,
         else:
             raise e
 
-    data = {
-        "id1": "初期値候補1",
-        "id2": "初期値候補2",
-        "id3": "初期値候補3"
-    }
+    data = menu_create_lib.collect_pulldown_initial_value(objdbca, menu, column)
     
     return data,
 
@@ -283,7 +279,7 @@ def get_reference_item(organization_id, workspace_id, menu, column):  # noqa: E5
     # メニューに対するロール権限をチェック
     # 権限が無かったらdataを空で返す
     try:
-        check_auth_menu(menu_name_rest)
+        check_auth_menu(menu)
     except AppException as e:
         if e.args[0] == '401-00001':
             return data,
