@@ -18,9 +18,6 @@ from flask import g  # noqa: F401
 from common_libs.common import *  # noqa: F403
 from common_libs.loadtable import *  # noqa: F403
 
-from libs.organization_common import check_menu_info  # noqa: F401
-from libs.organization_common import check_auth_menu  # noqa: F401
-from libs.organization_common import check_sheet_type  # noqa: F401
 
 from common_libs.conductor.classes.util import ConductorCommonLibs  # noqa: F401
 from common_libs.conductor.classes.exec_util import ConductorExecuteLibs  # noqa: F401
@@ -40,17 +37,6 @@ def conductor_maintenance(objdbca, menu, conductor_data, target_uuid=''):
             data
     """
     msg = ''
-    # メニューに対するロール権限をチェック
-    privilege = check_auth_menu(menu, objdbca)
-    if privilege == '2':
-        status_code = "401-00001"
-        log_msg_args = [menu]
-        api_msg_args = [menu]
-        raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
-
-    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['14']
-    menu_table_link_record = check_sheet_type(menu, sheet_type_list, objdbca)  # noqa: F841
 
     objmenu = load_table.loadTable(objdbca, menu)  # noqa: F405
     if objmenu.get_objtable() is False:
@@ -97,10 +83,6 @@ def conductor_maintenance(objdbca, menu, conductor_data, target_uuid=''):
             parameter.setdefault('parameter', tmp_parameter)
             parameter.setdefault('type', 'Update')
 
-        ###
-        # conductor_data バリデーション処理
-        ###
-        # raise Exception()
 
     except Exception:
         # 499-00801
@@ -135,7 +117,7 @@ def conductor_maintenance(objdbca, menu, conductor_data, target_uuid=''):
         # トランザクション開始
         objdbca.db_transaction_start()
 
-        # conductor instanceテーブルへのレコード追加
+        # conductor classテーブルへのレコード追加
         tmp_result = objCexec.conductor_class_exec_maintenance(parameter, target_uuid)
         if tmp_result[0] is not True:
             # 集約エラーメッセージ(JSON化)
@@ -168,13 +150,6 @@ def get_conductor_data(objdbca, menu, conductor_class_id):
         RETRUN:
             data
     """
-
-    # メニューに対するロール権限をチェック
-    privilege = check_auth_menu(menu, objdbca)  # noqa: F841
-    
-    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['14', '15', '16']
-    menu_table_link_record = check_sheet_type(menu, sheet_type_list, objdbca)  # noqa: F841
 
     objmenu = load_table.loadTable(objdbca, menu)  # noqa: F405
     if objmenu.get_objtable() is False:
@@ -221,11 +196,8 @@ def get_conductor_data_execute(objdbca, menu, conductor_class_id):
         RETRUN:
             data
     """
-    menu = 'conductor_class_edit'
-    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['14', '15', '16']
-    menu_table_link_record = check_sheet_type(menu, sheet_type_list, objdbca)  # noqa: F841
 
+    menu = 'conductor_class_edit'
     objmenu = load_table.loadTable(objdbca, menu)  # noqa: F405
     if objmenu.get_objtable() is False:
         status_code = "401-00003"
@@ -270,11 +242,8 @@ def get_conductor_execute_class_info(objdbca, menu):
         RETRUN:
             statusCode, {}, msg
     """
-    menu = 'conductor_class_edit'
-    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['14', '15', '16']
-    menu_table_link_record = check_sheet_type(menu, sheet_type_list, objdbca)  # noqa: F841
 
+    menu = 'conductor_class_edit'
     objmenu = load_table.loadTable(objdbca, menu)  # noqa: F405
     if objmenu.get_objtable() is False:
         status_code = "401-00003"
@@ -302,13 +271,6 @@ def get_conductor_class_info(objdbca, menu):
         RETRUN:
             statusCode, {}, msg
     """
-
-    # メニューに対するロール権限をチェック
-    privilege = check_auth_menu(menu, objdbca)  # noqa: F841
-    
-    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['14', '15', '16']
-    menu_table_link_record = check_sheet_type(menu, sheet_type_list, objdbca)  # noqa: F841
 
     objmenu = load_table.loadTable(objdbca, menu)  # noqa: F405
     if objmenu.get_objtable() is False:
@@ -383,18 +345,6 @@ def conductor_execute(objdbca, menu, parameter):
         RETRUN:
             data
     """
-
-    # メニューに対するロール権限をチェック
-    privilege = check_auth_menu(menu, objdbca)
-    if privilege == '2':
-        status_code = "401-00001"
-        log_msg_args = [menu]
-        api_msg_args = [menu]
-        raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
-
-    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['15']
-    menu_table_link_record = check_sheet_type(menu, sheet_type_list, objdbca)  # noqa: F841
 
     # 実行準備:loadtable読込
     try:
@@ -509,12 +459,6 @@ def get_conductor_info(objdbca, menu, conductor_instance_id):
         RETRUN:
             statusCode, {}, msg
     """
-    # メニューに対するロール権限をチェック
-    privilege = check_auth_menu(menu, objdbca)  # noqa: F841
-    
-    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['14', '15', '16']
-    menu_table_link_record = check_sheet_type(menu, sheet_type_list, objdbca)  # noqa: F841
 
     objmenu = load_table.loadTable(objdbca, menu)  # noqa: F405
     if objmenu.get_objtable() is False:
@@ -570,13 +514,6 @@ def get_conductor_instance_data(objdbca, menu, conductor_instance_id):
             data
     """
 
-    # メニューに対するロール権限をチェック
-    privilege = check_auth_menu(menu, objdbca)  # noqa: F841
-    
-    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['14', '15', '16']
-    menu_table_link_record = check_sheet_type(menu, sheet_type_list, objdbca)  # noqa: F841
-
     try:
         # 対象メニューのload_table生成(conductor_instance_list,conductor_node_instance_list,movement_list)
         c_menu = 'conductor_instance_list'
@@ -625,17 +562,6 @@ def conductor_execute_action(objdbca, menu, mode='', conductor_instance_id='', n
             data
     """
     msg = ''
-    # メニューに対するロール権限をチェック
-    privilege = check_auth_menu(menu, objdbca)
-    if privilege == '2':
-        status_code = "401-00001"
-        log_msg_args = [menu]
-        api_msg_args = [menu]
-        raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
-
-    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['15', '16']
-    menu_table_link_record = check_sheet_type(menu, sheet_type_list, objdbca)  # noqa: F841
 
     try:
         if mode == '' or mode is None:
@@ -716,17 +642,6 @@ def create_movement_zip(objdbca, menu, data_type, conductor_instance_id):
             data
     """
     result = {}
-    # メニューに対するロール権限をチェック
-    privilege = check_auth_menu(menu, objdbca)
-    if privilege == '2':
-        status_code = "401-00001"
-        log_msg_args = [menu]
-        api_msg_args = [menu]
-        raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
-
-    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['15', '16']
-    menu_table_link_record = check_sheet_type(menu, sheet_type_list, objdbca)  # noqa: F841
 
     try:
         if data_type == '' or data_type is None:
