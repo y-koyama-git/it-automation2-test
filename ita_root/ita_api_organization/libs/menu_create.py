@@ -365,15 +365,6 @@ def collect_pulldown_initial_value(objdbca, menu_name_rest, column_name_rest):
         RETRUN:
             initial_value_dict
     """
-    
-    # ####メモ：作り方
-    # 「他メニュー連携」ビューからレコード一覧を取得
-    # menuとcolumnから対象を特定
-    # レコード特定出来たら、テーブルを特定できる
-    # テーブルのレコード全部取得し、その中から「ID連携項目名」の値を一覧化する。
-    # ID連携多言語対応有無をみて、言語選択をするパターンもある。
-    # →このとき、プライマリキーのIDをkeyに、値をvalueにするdict型にする
-    
     # テーブル/ビュー名
     v_menu_other_link = 'V_MENU_OTHER_LINK'
     
@@ -384,9 +375,6 @@ def collect_pulldown_initial_value(objdbca, menu_name_rest, column_name_rest):
     # 「他メニュー連携」から対象のレコード一覧を取得
     ret = objdbca.table_select(v_menu_other_link, 'WHERE MENU_NAME_REST = %s AND REF_COL_NAME_REST = %s AND DISUSE_FLAG = %s', [menu_name_rest, column_name_rest, 0])  # noqa: E501
     if not ret:
-        # ####メモ：共通メッセージを追加する
-        # "499-00009": [column]が不正です。(column: {})
-        # "499-00010": [menu][column]が不正です。(menu: {}, column: {})
         log_msg_args = [menu_name_rest, column_name_rest]
         api_msg_args = [menu_name_rest, column_name_rest]
         raise AppException("499-00010", log_msg_args, api_msg_args)  # noqa: F405
