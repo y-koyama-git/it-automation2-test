@@ -224,7 +224,7 @@ def get_pulldown_initial(organization_id, workspace_id, menu, column):  # noqa: 
     # メニューに対するロール権限をチェック
     # 権限が無かったらdataを空で返す
     try:
-        check_auth_menu(menu_name_rest)
+        check_auth_menu(menu)
     except AppException as e:
         if e.args[0] == '401-00001':
             return data,
@@ -283,7 +283,7 @@ def get_reference_item(organization_id, workspace_id, menu, column):  # noqa: E5
     # メニューに対するロール権限をチェック
     # 権限が無かったらdataを空で返す
     try:
-        check_auth_menu(menu_name_rest)
+        check_auth_menu(menu)
     except AppException as e:
         if e.args[0] == '401-00001':
             return data,
