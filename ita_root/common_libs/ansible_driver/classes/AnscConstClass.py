@@ -113,8 +113,8 @@ class AnscConst:
     DF_COL_TYPE_KEY = '2'    # Key型
     
     # 具体値 SENSITIVE設定値
-    DF_SENSITIVE_OFF = '1'    # OFF
-    DF_SENSITIVE_ON = '2'     # ON
+    DF_SENSITIVE_OFF = '0'    # OFF
+    DF_SENSITIVE_ON = '1'     # ON
     
     # VARS_ATTRIBUTE_01 の 具体値定義
     GC_VARS_ATTR_STD = '1'       # 一般変数

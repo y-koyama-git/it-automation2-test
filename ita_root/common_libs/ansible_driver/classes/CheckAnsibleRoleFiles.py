@@ -12,7 +12,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-
+import getpass
 import os
 import shutil
 import re
@@ -141,6 +141,8 @@ class CheckAnsibleRoleFiles():
         """
 
         try:
+            if os.path.isdir(in_dist_path):
+                shutil.rmtree(in_dist_path)
             with zipfile.ZipFile(in_zip_path) as zip:
                 zip.extractall(in_dist_path)
 
@@ -3737,6 +3739,7 @@ class VarStructAnalysisFileAccess():
         tpf_vars_list = retAry[2]
         ITA2User_var_list = retAry[3]
         GBL_vars_list = retAry[4]
+        Role_name_list = retAry[5]
 
         return True, vars_list, array_vars_list, tpf_vars_list, ITA2User_var_list, GBL_vars_list
 
@@ -4260,6 +4263,16 @@ class VarStructAnalysisFileAccess():
         # ロールパッケージファイル(ZIP)の解凍先
         outdir = "%s/LegacyRoleZipFileUpload_%s" % (get_AnsibleDriverTmpPath(), os.getpid())
 
+        def_vars_list = {}
+        err_vars_list = []
+        def_varsval_list = {}
+        cpf_vars_list = {}
+        tpf_vars_list = {}
+        ITA2User_var_list = {}
+        User2ITA_var_list = {}
+        comb_err_vars_list = {}
+        role_name_list = {}
+
         # ロールパッケージファイル(ZIP)の解凍
         if roleObj.ZipextractTo(strTempFileFullname, outdir) == False:
             boolRet = False
@@ -4267,14 +4280,6 @@ class VarStructAnalysisFileAccess():
             strErrMsg = arryErrMsg[0]
 
         else:
-            def_vars_list = {}
-            err_vars_list = []
-            def_varsval_list = {}
-            cpf_vars_list = {}
-            tpf_vars_list = {}
-            ITA2User_var_list = {}
-            User2ITA_var_list = {}
-            comb_err_vars_list = {}
 
             # ロールパッケージファイル(ZIP)の解析
             ret, def_vars_list, err_vars_list, def_varsval_list, def_array_vars_list, cpf_vars_list, tpf_vars_list, ITA2User_var_list, User2ITA_var_list, comb_err_vars_list = roleObj.chkRolesDirectory(
@@ -4320,7 +4325,7 @@ class VarStructAnalysisFileAccess():
             if self.vars_struct_anal_only is True:
                 boolRet = True
                 retArray = [boolRet, intErrorType, aryErrMsgBody, strErrMsg]
-                return retArray, def_vars_list, def_varsval_list, def_array_vars_list, cpf_vars_list, tpf_vars_list, gbl_vars_list, ITA2User_var_list, User2ITA_var_list, save_vars_list
+                return retArray, def_vars_list, def_varsval_list, def_array_vars_list, cpf_vars_list, tpf_vars_list, gbl_vars_list, ITA2User_var_list, User2ITA_var_list, save_vars_list, role_name_list
 
             dbObj = AnsibleCommonLibs()
             ws_db = self.lv_ws_db
@@ -4442,64 +4447,6 @@ class VarStructAnalysisFileAccess():
 
                                 save_vars_list[CPFVars][cpf_var_name]  = 0
 
-                                # CPF変数がファイル管理に登録されているか判定
-                                if self.master_non_reg_chk is True:
-                                    if cpf_var_name in lva_contents_vars_master_list and lva_contents_vars_master_list[cpf_var_name] is not None:
-                                        if strErrMsg:
-                                            strErrMsg = '%s\n' % (strErrMsg)
-
-                                        strErrMsg += AnsibleMakeMessage().AnsibleMakeMessage(
-                                            AnscConst.LC_RUN_MODE_STD,
-                                            "MSG-10408",
-                                            [role_name, tgt_file, line_no, cpf_var_name]
-                                        )
-
-                                        boolRet = False
-
-            if boolRet is True:
-                strErrMsg = ""
-                strErrDetailMsg = ""
-                tpf_vars_struct = []
-
-                # テンプレートで使用している変数構造の取得
-                # テンプレートで使用しているグローバル変数の登録確認
-                # テンプレートで使用している読替変数の登録確認
-                errormsg = ""
-                self.getTemplateUseVarsStructiMain(tpf_vars_list, ITA2User_var_list, gbl_vars_list, tpf_vars_struct, errormsg)
-                if len(errormsg) > 0:
-                    boolRet = False
-                    strErrMsg = errormsg
-
-            if boolRet is True:
-                # 使用しているグローバル変数の具体値に設定されているテンプレート変数を取得する
-                wk_tpf_vars_list = []
-                errormsg = ""
-                wk_tpf_vars_list, errormsg = self.getGlobalVarsUseTemplateUseVars(gbl_vars_list, wk_tpf_vars_list, errormsg)
-
-                # 戻りはチェックしない、エラーメッセージを出力して先に進む
-                if len(errormsg) > 0:
-                    boolRet = False
-                    strErrMsg = errormsg
-
-            if boolRet is True:
-                # 代入値管理の具体値に設定されているテンプレート変数を取得する
-                errormsg = ""
-
-                # ToDo getVarEntryISTPFvars は別処理に置き換える
-                ret = self.getVarEntryISTPFvars(role_package_name, roleObj.getrolename(), wk_tpf_vars_list, '', disuse_role_chk)
-                if ret is False:
-                    errary = self.GetLastError()
-                    boolRet = False
-                    strErrMsg = errary[0]
-
-            if boolRet is True:
-                # 代入値管理の具体値に設定されているテンプレート変数の変数構造を取得する
-                errormsg = ""
-                self.getTemplateUseVarsStructiMain(wk_tpf_vars_list, ITA2User_var_list, gbl_vars_list, tpf_vars_struct, errormsg)
-                if len(errormsg) > 0:
-                    boolRet = False
-                    strErrMsg = errormsg
-
             if boolRet is True:
                 # テンプレート管理の変数定義とロール内の変数定義が一致しているか確認する
                 for role_name, tgt_file_list in self.php_array(tpf_vars_list):
@@ -4600,7 +4547,7 @@ class VarStructAnalysisFileAccess():
 
         retArray = [boolRet, intErrorType, aryErrMsgBody, strErrMsg]
 
-        return retArray, def_vars_list, def_varsval_list, def_array_vars_list, cpf_vars_list, tpf_vars_list, gbl_vars_list, ITA2User_var_list, User2ITA_var_list, save_vars_list
+        return retArray, def_vars_list, def_varsval_list, def_array_vars_list, cpf_vars_list, tpf_vars_list, gbl_vars_list, ITA2User_var_list, User2ITA_var_list, save_vars_list, role_name_list
 
     def AllRolePackageAnalysis(self, tgt_PkeyID, tgt_role_pkg_name, tgt_vars_list, tgt_array_vars_list, error_msg_code="MSG-10607"):
 

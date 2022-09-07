@@ -124,9 +124,7 @@ def CommnVarsUsedListDisuseSet(objdbca, option, ContensID, FileID):
     PkeyMember = ret[1][0]
     sql = "WHERE FILE_ID = %s AND CONTENTS_ID = %s "
     ret = objdbca.table_select(MasterTableName, sql, [FileID, ContensID])
-    if len(ret) == 0:
-        return False, msg
-    
+
     for row in ret:
         arrayValue = MemberAry
         arrayConfig = MemberAry
