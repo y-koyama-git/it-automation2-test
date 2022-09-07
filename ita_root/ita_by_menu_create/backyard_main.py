@@ -550,9 +550,9 @@ def _insert_t_comn_menu_table_link(objdbca, sheet_type, vertical_flag, file_uplo
             if unique_constraint:
                 tmp_unique_constraint = json.loads(unique_constraint)
                 if vertical_flag:
-                    add_unique_constraint = ["operation_name", "host_name", "input_order"]
+                    add_unique_constraint = ["operation_name_select", "host_name", "input_order"]
                 else:
-                    add_unique_constraint = ["operation_name", "host_name"]
+                    add_unique_constraint = ["operation_name_select", "host_name"]
                 if tmp_unique_constraint:
                     tmp_unique_constraint.insert(0, add_unique_constraint)
                 else:
@@ -560,9 +560,9 @@ def _insert_t_comn_menu_table_link(objdbca, sheet_type, vertical_flag, file_uplo
                 unique_constraint = json.dumps(tmp_unique_constraint)
             else:
                 if vertical_flag:
-                    unique_constraint = '[["operation_name", "host_name", "input_order"]]'
+                    unique_constraint = '[["operation_name_select", "host_name", "input_order"]]'
                 else:
-                    unique_constraint = '[["operation_name", "host_name"]]'
+                    unique_constraint = '[["operation_name_select", "host_name"]]'
         
         # シートタイプが「1: パラメータシート（ホスト/オペレーションあり）」かつfile_upload_only_flagがTrueの場合、シートタイプを「4: パラメータシート（ファイルアップロードあり）」とする。
         if sheet_type == "1" and file_upload_only_flag:
