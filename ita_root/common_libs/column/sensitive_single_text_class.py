@@ -71,8 +71,7 @@ class SensitiveSingleTextColumn(SingleTextColumn):
             if len(str(val)) > 0:
                 val = ky_encrypt(val)  # noqa: F405
             else:
-                retBool = False
-                msg = '値がありません'
+                val = None
 
         return retBool, msg, val
     
