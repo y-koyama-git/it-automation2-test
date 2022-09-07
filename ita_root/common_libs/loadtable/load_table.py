@@ -963,6 +963,39 @@ class loadTable():
                 else:
                     table_name = self.get_table_name()
 
+                # シートタイプが「参照用(5, 6)」の場合、専用の検索条件生成処理
+                ref_where_str = ''
+                if str(self.get_sheet_type()) in ["5", "6"]:
+                    base_datetime_condition = parameter.get('base_datetime')
+                    if not base_datetime_condition:
+                        # 「基準日時」に指定が無い場合のwhereを作成
+                        ref_where_str = textwrap.dedent("""
+                            BASE_TIMESTAMP = (
+                                select max(BASE_TIMESTAMP)
+                                from `{table_name}` as tbl
+                                where `{table_name}`.HOST_ID = tbl.HOST_ID
+                                and DISUSE_FLAG = "0"
+                            )
+                            and DISUSE_FLAG = "0"
+                        """).format(table_name=table_name).strip()
+                    else:
+                        # 「基準日時」に指定がある場合のwhereを作成
+                        base_datetime = base_datetime_condition.get('NORMAL')
+                        if base_datetime:
+                            ref_where_str = textwrap.dedent("""
+                                BASE_TIMESTAMP = (
+                                    select max(BASE_TIMESTAMP)
+                                    from `{table_name}` as tbl
+                                    where `{table_name}`.HOST_ID = tbl.HOST_ID
+                                    and DISUSE_FLAG = "0"
+                                    and tbl.BASE_TIMESTAMP <= '{base_datetime}'
+                                )
+                                and DISUSE_FLAG = "0"
+                            """).format(table_name=table_name, base_datetime=base_datetime).strip()
+                        
+                        # parameterから「基準日時(key:base_datetime)」を削除する
+                        parameter.pop('base_datetime')
+
                 # parameter check
                 if isinstance(parameter, dict):
                     for search_key, search_confs in parameter.items():
@@ -1007,6 +1040,16 @@ class loadTable():
                 if sort_key is not None:
                     str_orderby = ''
                     where_str = where_str + str_orderby
+                
+                # シートタイプ「参照用」の場合、参照用検索条件と結合
+                if str(self.get_sheet_type()) in ["5", "6"]:
+                    if where_str:
+                        conjunction = 'and'
+                        where_str = '{} {} {}'.format(where_str, conjunction, ref_where_str)
+                    else:
+                        conjunction = 'where'
+                        where_str = '{} {}'.format(conjunction, ref_where_str)
+
             elif mode in ['jnl', 'excel_jnl', 'count_jnl', 'jnl_all', 'excel_jnl_all', 'jnl_count_all']:
                 # 履歴テーブル
                 where_str = ''
