@@ -72,8 +72,7 @@ class SensitiveMultiTextColumn(MultiTextColumn):
                 retBool, msg, val = super().convert_value_input(val)
                 val = ky_encrypt(val)  # noqa: F405
             else:
-                retBool = False
-                msg = '値がありません'
+                val = None
 
         return retBool, msg, val
     
