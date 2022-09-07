@@ -12,14 +12,21 @@
 # limitations under the License.
 #
 from common_libs.common.util import get_timestamp
+from common_libs.common.exception import AppException
 from flask import g
 
 
 def operation_LAST_EXECUTE_TIMESTAMP_update(wsDb, operation_id):
-    # 最終実施日を設定する
-    data = {
-        "OPERATION_ID": operation_id,
-        "LAST_EXECUTE_TIMESTAMP": get_timestamp(),
-        "LAST_UPDATE_USER": g.USER_ID
-    }
-    wsDb.table_update('T_COMN_OPERATION', [data], 'OPERATION_ID')
+    try:
+        # 最終実施日を設定する
+        data = {
+            "OPERATION_ID": operation_id,
+            "LAST_EXECUTE_TIMESTAMP": get_timestamp(),
+            "LAST_UPDATE_USER": g.USER_ID
+        }
+        result = wsDb.table_update('T_COMN_OPERATION', [data], 'OPERATION_ID')
+        return True, result
+    except AppException as e:
+        result_code, log_msg_args, api_msg_args = e.args
+        log_msg = g.appmsg.get_log_message(result_code, log_msg_args)
+        return False, log_msg
