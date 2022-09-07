@@ -42,7 +42,7 @@
     "499-00706": "In the case of \"Edit\", the setting of the target of the existing item cannot be changed. (item: {}, target: {})",
     "499-00707": "In the case of \"Edit\",the target value of an existing item cannot be lowered. (item: {}, target: {})",
     "499-00708": "In the case of \"Edit\",the target value of an existing item cannot be increased. (item: {}, target: {})",
-    "499-00709": "\"Initialize\" and \"Edit\" cannot be executed when \"Menu create done status\" of the record to be updated in \"Menu definition list\" is \"Not created\".",
+    "499-00709": "\"Edit\" cannot be executed when \"Menu create done status\" of the record to be updated in \"Menu definition list\" is \"Not created\".",
     "499-00710": "\"create_new\" cannot be executed when \"Menu create done status\" of the record to be updated in \"Menu definition list\" is \"Created\"",
     "499-00711": "When the sheet type is \"Data sheet\", a menu with 0 items cannot be created.",
     "499-00801": "The format of the input parameter is invalid.",
