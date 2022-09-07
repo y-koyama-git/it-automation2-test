@@ -27,7 +27,6 @@ def external_valid_menu_before(objdbca, objtable, option):
     primary_key_name = "ROW_ID"
     for i in data_list:
         objdbca.table_update(table_name, i, primary_key_name, False)
-
     # option["entry_parameter"]["parameter"]はUI入力ベースの情報
     # option["current_parameter"]["parameter"]はDBに登録済みの情報
     if option["cmd_type"] == "Register":
@@ -209,5 +208,4 @@ def external_valid_menu_before(objdbca, objtable, option):
             msg += "\n"
         error_detail = obj.GetLastError()
         msg += g.appmsg.get_api_message("MSG-10887", [error_detail])
-
     return retBool, msg, option

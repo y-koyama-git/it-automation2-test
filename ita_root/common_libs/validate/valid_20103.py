@@ -12,68 +12,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import pprint
 from flask import g
 
 from common_libs.ansible_driver.classes.menu_required_check import AuthTypeParameterRequiredCheck
 
 # ITAのメッセージの引き取り
-def external_host_name_valid_before(objdbca, objtable, option):
-    """
-    登録前ホストネームバリデーション(登録/更新/廃止)
-    ARGS:
-        objdbca :DB接続クラスインスタンス
-        objtabl :メニュー情報、カラム紐付、関連情報
-        option :パラメータ、その他設定値
-        
-    RETRUN:
-        retBoo :True/ False
-        msg :エラーメッセージ
-        option :受け取ったもの
-    """
-    retBool = True
-    msg = ''
-    
-    # entry_parameterはUI入力ベースの情報
-    # current_parameterはDBに登録済みの情報
-    # host名取得
-    if option["cmd_type"] == "Register" or option["cmd_type"] == "Update":
-        if "host" in option["entry_parameter"]["parameter"]:
-            host_name = option["entry_parameter"]["parameter"]["host"]
-        else:
-            host_name = ""
-    
-    if option["cmd_type"] == "Discard":
-        host_name = option["current_parameter"]["parameter"]["host"]
-    
-    # ホスト名が数値文字列か判定
-    if host_name.isdecimal():
-        retBool = False
-        msg = g.appmsg.get_api_message("")
-
-    return retBool, msg, option,
-
-
-def external_valid_after(objdbca, objtable, option):
-    """
-    ARGS:
-        objdbca :DB接続クラスインスタンス
-        objtabl :メニュー情報、カラム紐付、関連情報
-        option :パラメータ、その他設定値
-        
-    RETRUN:
-        retBoo :True/ False
-        msg :エラーメッセージ
-        option :受け取ったもの
-    """
-    # print('xxxxx-1001')
-    # print('external_valid_after')
-    retBool = True
-    msg = ''
-    #  pprint.pprint(option)
-    return retBool, msg, option,
-
-
 def external_valid_menu_before(objdbca, objtable, option):
     """
     メニューバリデーション(登録/更新)
@@ -87,13 +30,9 @@ def external_valid_menu_before(objdbca, objtable, option):
         msg :エラーメッセージ
         option :受け取ったもの
     """
-    # print('xxxxx-1001')
-    # print('external_valid_menu_before')
     retBool = True
     msg = ''
     ret_str_body = ''
-    #  pprint.pprint(option)
-    
     # entry_parameterはUI入力ベースの情報
     # current_parameterはDBに登録済みの情報
     # 登録処理の場合
@@ -186,13 +125,4 @@ def external_valid_menu_before(objdbca, objtable, option):
         if len(msg) != 0:
             msg += "\n"
         msg += g.appmsg.get_api_message("ITABASEH-MNU-101081")
-    return retBool, msg, option,
-
-
-def external_valid_menu_after(objdbca, objtable, option):
-    # print('xxxxx-1001')
-    # print('external_valid_menu_after')
-    retBool = True
-    msg = ''
-    #  pprint.pprint(option)
     return retBool, msg, option,

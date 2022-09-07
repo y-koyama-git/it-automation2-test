@@ -124,7 +124,7 @@ class AuthTypeParameterRequiredCheck:
         result = ""
         msg = ""
         # 認証方式:鍵認証(パスフレーズなし), 認証方式:パスワード認証, 認証方式:鍵認証(鍵交換済み), 認証方式:鍵認証(パスフレーズあり), 認証方式:パスワード認証(winrm)
-        if AnscConst.DF_LOGIN_AUTH_TYPE_KEY or AnscConst.DF_LOGIN_AUTH_TYPE_PW or AnscConst.DF_LOGIN_AUTH_TYPE_KEY_EXCH or AnscConst.DF_LOGIN_AUTH_TYPE_KEY_PP_USE or AnscConst.DF_LOGIN_AUTH_TYPE_PW_WINRM:
+        if str_auth_mode == AnscConst.DF_LOGIN_AUTH_TYPE_KEY or str_auth_mode == AnscConst.DF_LOGIN_AUTH_TYPE_PW or str_auth_mode == AnscConst.DF_LOGIN_AUTH_TYPE_KEY_EXCH or str_auth_mode == AnscConst.DF_LOGIN_AUTH_TYPE_KEY_PP_USE or str_auth_mode == AnscConst.DF_LOGIN_AUTH_TYPE_PW_WINRM:
             # ログインユーザーIDの入力チェック
             if str_login_user is None:
                 error_cde = self.err_msg_code_ary[chk_type]['ERROR_TYPE8']
@@ -212,7 +212,6 @@ class AuthTypeParameterRequiredCheck:
         else:
             retBool = False
             msg = result
-            
         return retBool, msg
 
     def TowerHostListAuthTypeRequiredParameterCheck(self, chk_type, err_msg_parameter_ary, str_auth_mode, str_passwd, str_ssh_key_file, str_passphrase):
