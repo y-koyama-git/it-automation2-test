@@ -17,7 +17,7 @@ import connexion
 from common_libs.common import *  # noqa: F403
 from common_libs.api import api_filter
 from libs.organization_common import check_menu_info, check_auth_menu, check_sheet_type
-from libs import menu_info, menu_filter
+from libs import driver_controll
 
 @api_filter
 def get_driver_execute_data(organization_id, workspace_id, menu, execution_no):  # noqa: E501
@@ -36,6 +36,20 @@ def get_driver_execute_data(organization_id, workspace_id, menu, execution_no): 
 
     :rtype: InlineResponse20011
     """
+
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+    
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['12']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
+    
     return 'do some magic!',
 
 
@@ -145,8 +159,21 @@ def post_driver_cancel(organization_id, workspace_id, menu, execution_no):  # no
 
     :rtype: InlineResponse20011
     """
-    return 'do some magic!',
 
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+    
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['12']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
+    
+    return 'do some magic!',
 
 @api_filter
 def post_driver_excecute(organization_id, workspace_id, menu, body=None):  # noqa: E501
@@ -165,9 +192,29 @@ def post_driver_excecute(organization_id, workspace_id, menu, body=None):  # noq
 
     :rtype: InlineResponse20017
     """
+
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+    
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['11']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
+    
+    parameter = {}
     if connexion.request.is_json:
-        body = DriverExecuteBody.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!',
+        body = dict(connexion.request.get_json())
+        parameter = body
+
+    # 作業管理に登録
+    result = driver_controll.insert_execution_list(objdbca, menu, parameter, 'execute')
+
+    return result,
 
 
 @api_filter
@@ -187,9 +234,29 @@ def post_driver_execute_check_parameter(organization_id, workspace_id, menu, bod
 
     :rtype: InlineResponse20017
     """
+
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+    
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['11']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
+    
+    parameter = {}
     if connexion.request.is_json:
-        body = DriverExecuteCheckParameterBody.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!',
+        body = dict(connexion.request.get_json())
+        parameter = body
+
+    # 作業管理に登録
+    result = driver_controll.insert_execution_list(objdbca, menu, parameter, 'check_parameter')
+
+    return result,
 
 
 @api_filter
@@ -209,9 +276,29 @@ def post_driver_execute_dry_run(organization_id, workspace_id, menu, body=None):
 
     :rtype: InlineResponse20017
     """
+
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+    
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['11']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
+    
+    parameter = {}
     if connexion.request.is_json:
-        body = DriverExecuteDryRunBody.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!',
+        body = dict(connexion.request.get_json())
+        parameter = body
+
+    # 作業管理に登録
+    result = driver_controll.insert_execution_list(objdbca, menu, parameter, 'dry_run')
+
+    return result,
 
 
 @api_filter
@@ -241,7 +328,7 @@ def post_driver_execute_filter(organization_id, workspace_id, menu, target, body
     check_menu_info(menu, objdbca)
 
     # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['15']
+    sheet_type_list = ['11']
     check_sheet_type(menu, sheet_type_list, objdbca)
 
     # メニューに対するロール権限をチェック
@@ -284,4 +371,18 @@ def post_driver_scram(organization_id, workspace_id, menu, execution_no):  # noq
 
     :rtype: InlineResponse20011
     """
+
+    # DB接続
+    objdbca = DBConnectWs(workspace_id)  # noqa: F405
+    
+    # メニューの存在確認
+    check_menu_info(menu, objdbca)
+
+    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+    sheet_type_list = ['12']
+    check_sheet_type(menu, sheet_type_list, objdbca)
+
+    # メニューに対するロール権限をチェック
+    check_auth_menu(menu, objdbca)
+    
     return 'do some magic!',
