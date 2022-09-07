@@ -851,7 +851,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             
             data_list = {
                 "MENU_ID": menu_uuid,
-                "COLUMN_NAME_JA": "オペレーション名(表示用)",  # ####メモ：メッセージ一覧から取得する
+                "COLUMN_NAME_JA": "オペレーション名",  # ####メモ：メッセージ一覧から取得する
                 "COLUMN_NAME_EN": "Operation name",  # ####メモ：メッセージ一覧から取得する
                 "COLUMN_NAME_REST": "operation_name_disp",  # ####メモ：メッセージ一覧から取得する
                 "COL_GROUP_ID": operation_col_group_id,  # カラムグループ「オペレーション」

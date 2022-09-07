@@ -985,19 +985,6 @@ class loadTable():
                 bind_value_list = []
                 conjunction = "where"
                 
-                # ####メモ：ここに参照用パターンの処理を書く？
-                check_sheet_type = sheet_type = self.get_sheet_type()
-                print("シートタイプは：", check_sheet_type)
-                # ####例えば、シートタイプが「参照用」のモノだったら、専用の検索処理にする。
-                print("クエリーは：")
-                print(filter_querys)
-                # ####メモ：ここでシートタイプをチェックして、「参照用」のタイプだったら専用の検索処理に分岐
-                # 入力欄は「ホスト名」「基準日時」の2つしかこないはず
-                # 1.「基準日時」を空で検索すると、各ホストについて「基準日時が最新のレコード」を表示する
-                # 2.「基準日時」に値を入れると、「入力した日時時点での最新のレコード」を表示する
-                # 3.「ホスト名」を入れると1.の対象ホストが絞られる→WHERE条件そのまま使えばいい
-                
-                
                 # where生成
                 if len(filter_querys) > 0:
                     for filter_query in filter_querys:
