@@ -228,11 +228,15 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
             
             # カラムクラス「日時」用のパラメータを追加
             if column_class_name == "DateTimeColumn":
-                col_detail["detetime_default_value"] = recode.get('DATETIME_DEFAULT_VALUE')  # 日時 初期値
+                full_datetime_default_value = recode.get('DATETIME_DEFAULT_VALUE')
+                datetime_default_value = full_datetime_default_value.strftime('%Y/%m/%d %H:%M:%S')
+                col_detail["detetime_default_value"] = datetime_default_value  # 日時 初期値
             
             # カラムクラス「日付」用のパラメータを追加
             if column_class_name == "DateColumn":
-                col_detail["dete_default_value"] = recode.get('DATE_DEFAULT_VALUE')  # 日付 初期値
+                full_datet_default_value = recode.get('DATE_DEFAULT_VALUE')
+                date_default_value = full_datet_default_value.strftime('%Y/%m/%d')
+                col_detail["dete_default_value"] = date_default_value  # 日付 初期値
             
             # カラムクラス「プルダウン選択」用のパラメータを追加
             if column_class_name == "IDColumn":

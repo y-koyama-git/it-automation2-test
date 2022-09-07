@@ -112,8 +112,8 @@ CREATE TABLE T_MENU_COLUMN
     FLOAT_MIN                       DOUBLE,                                     -- 小数 最小値
     FLOAT_DIGIT                     INT,                                        -- 小数 桁数
     FLOAT_DEFAULT_VALUE             DOUBLE,                                     -- 小数 初期値
-    DATETIME_DEFAULT_VALUE          DATETIME,                                   -- 日時 初期値
-    DATE_DEFAULT_VALUE              DATE,                                       -- 日付 初期値
+    DATETIME_DEFAULT_VALUE          DATETIME(6)  ,                              -- 日時 初期値
+    DATE_DEFAULT_VALUE              DATETIME(6)  ,                              -- 日付 初期値
     OTHER_MENU_LINK_ID              VARCHAR(40),                                -- プルダウン選択 メニューグループ:メニュー:項目
     OTHER_MENU_LINK_DEFAULT_VALUE   TEXT,                                       -- プルダウン選択 初期値
     REFERENCE_ITEM                  TEXT,                                       -- プルダウン選択 参照項目
@@ -159,8 +159,8 @@ CREATE TABLE T_MENU_COLUMN_JNL
     FLOAT_MIN                       DOUBLE,                                     -- 小数 最小値
     FLOAT_DIGIT                     INT,                                        -- 小数 桁数
     FLOAT_DEFAULT_VALUE             DOUBLE,                                     -- 小数 初期値
-    DATETIME_DEFAULT_VALUE          DATETIME,                                   -- 日時 初期値
-    DATE_DEFAULT_VALUE              DATE,                                       -- 日付 初期値
+    DATETIME_DEFAULT_VALUE          DATETIME(6)  ,                              -- 日時 初期値
+    DATE_DEFAULT_VALUE              DATETIME(6)  ,                              -- 日付 初期値
     OTHER_MENU_LINK_ID              VARCHAR(40),                                -- プルダウン選択 メニューグループ:メニュー:項目
     OTHER_MENU_LINK_DEFAULT_VALUE   TEXT,                                       -- プルダウン選択 初期値
     REFERENCE_ITEM                  TEXT,                                       -- プルダウン選択 参照項目
