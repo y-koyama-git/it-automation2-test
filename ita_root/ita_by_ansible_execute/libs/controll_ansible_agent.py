@@ -29,7 +29,7 @@ class AnsibleAgent(ABC):
         self._workspace_id = workspace_id
 
     @abstractclassmethod
-    def container_start_up(self, execution_no, conductor_instance_id, driver_path, conductor_path):
+    def container_start_up(self, execution_no, conductor_instance_no, driver_path, conductor_path):
         pass
 
     @abstractclassmethod
@@ -51,7 +51,7 @@ class DockerMode(AnsibleAgent):
     def __init__(self, organization_id, workspace_id):
         super().__init__(organization_id, workspace_id)
 
-    def container_start_up(self, execution_no, conductor_instance_id, driver_path, conductor_path):
+    def container_start_up(self, execution_no, conductor_instance_no, driver_path, conductor_path):
         '''
         '''
         print("method: container_start_up")
@@ -154,7 +154,7 @@ class KubernetesMode(AnsibleAgent):
     def __init__(self, organization_id, workspace_id):
         super().__init__(organization_id, workspace_id)
 
-    def container_start_up(self, execution_no, conductor_instance_id, driver_path, conductor_path):
+    def container_start_up(self, execution_no, conductor_instance_no, driver_path, conductor_path):
         '''
         '''
         print("method: container_start_up")

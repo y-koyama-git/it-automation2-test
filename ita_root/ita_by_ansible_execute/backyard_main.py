@@ -26,7 +26,7 @@ import subprocess
 
 
 # ansible共通の定数をロード
-ans_const = AnscConst()
+ansc_const = AnscConst()
 
 
 def backyard_main(organization_id, workspace_id):
@@ -108,7 +108,7 @@ def child_process_exist_check(wsDb, ansibleAg):
             time_stamp = get_timestamp()
             data = {
                 "EXECUTION_NO": execution_no,
-                "STATUS_ID": ans_const.EXCEPTION,
+                "STATUS_ID": ansc_const.EXCEPTION,
                 "TIME_END": time_stamp,
             }
             if execute_data["TIME_START"] is None:
@@ -128,7 +128,7 @@ def child_process_exist_check(wsDb, ansibleAg):
 def get_running_process(wsDb):
     try:
         # 実行中の作業データを取得
-        status_id_list = [ans_const.PREPARE, ans_const.PROCESSING, ans_const.PROCESS_DELAYED]
+        status_id_list = [ansc_const.PREPARE, ansc_const.PROCESSING, ansc_const.PROCESS_DELAYED]
         prepared_list = list(map(lambda a: "%s", status_id_list))
 
         condition = 'WHERE `DISUSE_FLAG`=0 AND `STATUS_ID` in ({})'.format(','.join(prepared_list))
@@ -146,7 +146,7 @@ def run_unexecuted(wsDb, num_of_run_instance, organization_id, workspace_id):
         ( `TIME_BOOK` IS NULL AND `STATUS_ID` = %s ) OR
         ( `TIME_BOOK` <= NOW(6) AND `STATUS_ID` = %s )
     ) ORDER BY TIME_REGISTER ASC"""
-    records = wsDb.table_select('V_ANSC_EXEC_STS_INST', condition, [ans_const.NOT_YET, ans_const.RESERVE])
+    records = wsDb.table_select('V_ANSC_EXEC_STS_INST', condition, [ansc_const.NOT_YET, ansc_const.RESERVE])
 
     # 処理対象レコードが0件の場合は処理終了
     if len(records) == 0:
@@ -162,7 +162,7 @@ def run_unexecuted(wsDb, num_of_run_instance, organization_id, workspace_id):
 
         # 予約時間or最終更新日+ソート用カラム+作業番号（判別用）でリスト生成
         id = str(rec["LAST_UPDATE_TIMESTAMP"]) + "-" + str(rec["TIME_REGISTER"]) + "-" + execution_no
-        if rec["TIME_BOOK"] is not None:
+        if not rec["TIME_BOOK"]:
             if rec["LAST_UPDATE_TIMESTAMP"] < rec["TIME_BOOK"]:
                 id = str(rec["TIME_BOOK"]) + "-" + str(rec["TIME_REGISTER"]) + "-" + execution_no
         execution_order_list.append(id)
@@ -203,7 +203,7 @@ def instance_prepare(wsDb, execute_data, organization_id, workspace_id):
     driver_id = execute_data["DRIVER_ID"]
     driver_name = execute_data["DRIVER_NAME"]
     execution_no = execute_data["EXECUTION_NO"]
-    # conductor_instance_id = execute_data["CONDUCTOR_INSTANCE_NO"]
+    # conductor_instance_no = execute_data["CONDUCTOR_INSTANCE_NO"]
 
     # 処理対象の作業インスタンス情報取得(再取得)
     retBool, result = cm.get_execution_process_info(wsDb, execution_no)
@@ -214,16 +214,16 @@ def instance_prepare(wsDb, execute_data, organization_id, workspace_id):
     # 未実行状態で緊急停止出来るようにしているので
     # 未実行状態かを判定
     status_id = int(execute_data["STATUS_ID"])
-    if status_id != ans_const.NOT_YET and status_id != ans_const.RESERVE:
+    if status_id != ansc_const.NOT_YET and status_id != ansc_const.RESERVE:
         return False, "Emergency stop in unexecuted state.(execution_no: {})".format(execution_no)
 
     # # 処理対象の作業インスタンスのステータスを準備中に設定
     # wsDb.db_transaction_start()
     # data = {
     #     "EXECUTION_NO": execution_no,
-    #     "STATUS_ID": ans_const.PREPARE,
+    #     "STATUS_ID": ansc_const.PREPARE,
     # }
-    # if execute_data["TIME_START"] is None:
+    # if not execute_data["TIME_START"]:
     #     data["TIME_START"] = get_timestamp()
     # result = cm.update_execution_record(wsDb, data)
     # if result[0] is True:
