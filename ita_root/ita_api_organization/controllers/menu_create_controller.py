@@ -231,11 +231,7 @@ def get_pulldown_initial(organization_id, workspace_id, menu, column):  # noqa: 
         else:
             raise e
 
-    data = {
-        "id1": "初期値候補1",
-        "id2": "初期値候補2",
-        "id3": "初期値候補3"
-    }
+    data = menu_create_lib.collect_pulldown_initial_value(objdbca, menu, column)
     
     return data,
 

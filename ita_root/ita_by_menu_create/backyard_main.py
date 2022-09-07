@@ -567,7 +567,11 @@ def _insert_t_comn_menu_table_link(objdbca, sheet_type, vertical_flag, file_uplo
         # シートタイプが「1: パラメータシート（ホスト/オペレーションあり）」かつfile_upload_only_flagがTrueの場合、シートタイプを「4: パラメータシート（ファイルアップロードあり）」とする。
         if sheet_type == "1" and file_upload_only_flag:
             sheet_type = "4"
-            
+        
+        # シートタイプが「1: パラメータシート（ホスト/オペレーションあり）」かつ「参照用」メニューグループの場合、シートタイプを「5: 参照用（ホスト/オペレーションあり）」とする。
+        if sheet_type == "1" and menu_group_col_name == "MENU_GROUP_ID_REF":
+            sheet_type = "5"
+        
         # 「メニュー-テーブル紐付管理」にレコードを登録
         data_list = {
             "MENU_ID": menu_uuid,
@@ -795,13 +799,13 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             operation_col_group_id = ret[0].get('COL_GROUP_ID')
             
             # 「オペレーション(日付:オペレーション名)」用のレコードを作成
-            res_valid = _check_column_validation(objdbca, menu_uuid, "operation_name")  # ####メモ：メッセージ一覧から取得する
+            res_valid = _check_column_validation(objdbca, menu_uuid, "operation_name_select")  # ####メモ：メッセージ一覧から取得する
             if not res_valid:
                 raise Exception("「メニュー-カラム紐付管理」に同じメニューとカラム名(rest)の組み合わせが既に存在している。")
             
             data_list = {
                 "MENU_ID": menu_uuid,
-                "COLUMN_NAME_JA": "オペレーション名(選択用)",  # ####メモ：メッセージ一覧から取得する
+                "COLUMN_NAME_JA": "オペレーション名",  # ####メモ：メッセージ一覧から取得する
                 "COLUMN_NAME_EN": "Operation name",  # ####メモ：メッセージ一覧から取得する
                 "COLUMN_NAME_REST": "operation_name_select",  # ####メモ：メッセージ一覧から取得する
                 "COL_GROUP_ID": operation_col_group_id,  # カラムグループ「オペレーション」
@@ -840,6 +844,11 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             # 表示順序を加算
             disp_seq_num = int(disp_seq_num) + 10
             
+            # 「オペレーション名」用のレコードを作成
+            res_valid = _check_column_validation(objdbca, menu_uuid, "operation_name_disp")  # ####メモ：メッセージ一覧から取得する
+            if not res_valid:
+                raise Exception("「メニュー-カラム紐付管理」に同じメニューとカラム名(rest)の組み合わせが既に存在している。")
+            
             data_list = {
                 "MENU_ID": menu_uuid,
                 "COLUMN_NAME_JA": "オペレーション名(表示用)",  # ####メモ：メッセージ一覧から取得する
@@ -859,7 +868,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "COL_NAME": "OPERATION_NAME",
                 "SAVE_TYPE": None,
                 "AUTO_INPUT": 0,  # False
-                "INPUT_ITEM": 0,  # False ####メモ：INPUT_ITEMの仕様変更で最終的に「2」なる想定
+                "INPUT_ITEM": 2,  # False ####メモ：INPUT_ITEMの仕様変更で最終的に「2」なる想定
                 "VIEW_ITEM": 1,  # True
                 "UNIQUE_ITEM": 0,  # False
                 "REQUIRED_ITEM": 0,  # False
