@@ -49,8 +49,6 @@ spec:
                 name: secret-ita-maria
             - secretRef:
                 name: secret-ita-common
-            - secretRef:
-                name: secret-ita-org
             - configMapRef:
                 name: params-ita-maria
             - configMapRef:
