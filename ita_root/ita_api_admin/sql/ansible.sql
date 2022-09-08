@@ -89,7 +89,6 @@ CREATE TABLE T_ANSC_IF_INFO
     ANS_GIT_SSH_KEY_FILE_PASS       text,                                       -- パスフレーズ
     ANSIBLE_STORAGE_PATH_LNX        VARCHAR(255),                               -- データリレイストレージパス(ITA)
     ANSIBLE_STORAGE_PATH_ANS        VARCHAR(255),                               -- データリレイストレージパス(Ansible)
-    SYMPHONY_STORAGE_PATH_ANS       VARCHAR(255),                               -- Symphonyインスタンスデータリレイストレージパス(Ansible)
     CONDUCTOR_STORAGE_PATH_ANS      VARCHAR(255),                               -- Conductorインスタンスデータリレイストレージパス(Ansible)
     ANSIBLE_EXEC_OPTIONS            TEXT,                                       -- オプションパラメータ
     NULL_DATA_HANDLING_FLG          VARCHAR(2),                                 -- NULL連携
@@ -132,7 +131,6 @@ CREATE TABLE T_ANSC_IF_INFO_JNL
     ANS_GIT_SSH_KEY_FILE_PASS       text,                                       -- パスフレーズ
     ANSIBLE_STORAGE_PATH_LNX        VARCHAR(255),                               -- データリレイストレージパス(ITA)
     ANSIBLE_STORAGE_PATH_ANS        VARCHAR(255),                               -- データリレイストレージパス(Ansible)
-    SYMPHONY_STORAGE_PATH_ANS       VARCHAR(255),                               -- Symphonyインスタンスデータリレイストレージパス(Ansible)
     CONDUCTOR_STORAGE_PATH_ANS      VARCHAR(255),                               -- Conductorインスタンスデータリレイストレージパス(Ansible)
     ANSIBLE_EXEC_OPTIONS            TEXT,                                       -- オプションパラメータ
     NULL_DATA_HANDLING_FLG          VARCHAR(2),                                 -- NULL連携
