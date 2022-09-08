@@ -124,6 +124,6 @@ class DateColumn(Column):
         msg = ''
 
         if val is not None and len(str(val)) > 0:
-            val = val[0:9]
+            val = val[0:10]
 
         return retBool, msg, val
