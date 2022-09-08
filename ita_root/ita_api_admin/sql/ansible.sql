@@ -587,7 +587,6 @@ CREATE TABLE T_ANSR_EXEC_STS_INST
     RUN_MODE                        VARCHAR(2),                                 -- 実行種別
     STATUS_ID                       VARCHAR(2),                                 -- ステータス
     EXEC_MODE                       VARCHAR(2),                                 -- 実行エンジン
-    SYMPHONY_NAME                   VARCHAR(255),                               -- 呼出元Symphony
     CONDUCTOR_NAME                  VARCHAR(255),                               -- 呼出元Conductor
     EXECUTION_USER                  VARCHAR(255),                               -- 実行ユーザ
     TIME_REGISTER                   DATETIME(6),                                -- 登録日時
@@ -610,7 +609,6 @@ CREATE TABLE T_ANSR_EXEC_STS_INST
     TIME_END                        DATETIME(6),                                -- 作業状況/終了日時
     COLLECT_STATUS                  VARCHAR(2),                                 -- 収集状況/ステータス
     COLLECT_LOG                     VARCHAR(1024),                              -- 収集状況/収集ログ
-    SYMPHONY_INSTANCE_NO            VARCHAR(40),                                -- Symphonyインスタンス番号
     CONDUCTOR_INSTANCE_NO           VARCHAR(40),                                -- Conductorインスタンス番号
     I_ANS_EXEC_OPTIONS              TEXT,                                       -- オプションパラメータ
     LOGFILELIST_JSON                TEXT,                                       -- 分割された実行ログ情報
@@ -631,7 +629,6 @@ CREATE TABLE T_ANSR_EXEC_STS_INST_JNL
     RUN_MODE                        VARCHAR(2),                                 -- 実行種別
     STATUS_ID                       VARCHAR(2),                                 -- ステータス
     EXEC_MODE                       VARCHAR(2),                                 -- 実行エンジン
-    SYMPHONY_NAME                   VARCHAR(255),                               -- 呼出元Symphony
     CONDUCTOR_NAME                  VARCHAR(255),                               -- 呼出元Conductor
     EXECUTION_USER                  VARCHAR(255),                               -- 実行ユーザ
     TIME_REGISTER                   DATETIME(6),                                -- 登録日時
@@ -654,7 +651,6 @@ CREATE TABLE T_ANSR_EXEC_STS_INST_JNL
     TIME_END                        DATETIME(6),                                -- 作業状況/終了日時
     COLLECT_STATUS                  VARCHAR(2),                                 -- 収集状況/ステータス
     COLLECT_LOG                     VARCHAR(1024),                              -- 収集状況/収集ログ
-    SYMPHONY_INSTANCE_NO            VARCHAR(40),                                -- Symphonyインスタンス番号
     CONDUCTOR_INSTANCE_NO           VARCHAR(40),                                -- Conductorインスタンス番号
     I_ANS_EXEC_OPTIONS              TEXT,                                       -- オプションパラメータ
     LOGFILELIST_JSON                TEXT,                                       -- 分割された実行ログ情報
