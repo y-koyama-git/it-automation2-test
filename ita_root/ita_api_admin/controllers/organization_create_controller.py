@@ -55,7 +55,7 @@ def organization_create(body, organization_id):  # noqa: E501
 
     try:
         # make organization-db connect infomation
-        username, user_password = common_db.userinfo_generate("ORG")
+        username, user_password = common_db.userinfo_generate("ITA_ORG")
         org_db_name = username
 
         data = {
