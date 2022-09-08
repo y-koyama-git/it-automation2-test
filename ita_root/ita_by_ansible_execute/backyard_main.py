@@ -18,12 +18,11 @@ from common_libs.common.util import get_timestamp
 from common_libs.ci.util import app_exception, exception, log_err
 from common_libs.ansible_driver.classes.AnsrConstClass import AnscConst
 
-from libs.controll_ansible_agent import DockerMode, KubernetesMode
 from libs import common_functions as cm
 
-import os
 import subprocess
-
+import time
+import re
 
 # ansible共通の定数をロード
 ansc_const = AnscConst()
@@ -45,7 +44,7 @@ def backyard_main(organization_id, workspace_id):
             # 正常終了
             g.applogger.debug("ITAWDCH-STD-50002")
         else:
-            if result[1]:
+            if len(result) == 2:
                 log_err(result[1])
             g.applogger.debug("ITAWDCH-ERR-50001")
     except Exception as e:
@@ -54,18 +53,19 @@ def backyard_main(organization_id, workspace_id):
 
 
 def main_logic(organization_id, workspace_id, wsDb):
-    # container software
-    container_base = os.getenv('CONTAINER_BASE')
-    if container_base == 'docker':
-        ansibleAg = DockerMode(organization_id, workspace_id)
-    elif container_base == 'kubernetes':
-        ansibleAg = KubernetesMode(organization_id, workspace_id)
-    else:
-        return False, 'Not support container base.'
+    # # container software
+    # container_base = os.getenv('CONTAINER_BASE')
+    # if container_base == 'docker':
+    #     ansibleAg = DockerMode(organization_id, workspace_id)
+    # elif container_base == 'kubernetes':
+    #     ansibleAg = KubernetesMode(organization_id, workspace_id)
+    # else:
+    #     return False, 'Not support container base.'
 
     # 実行中のコンテナの状態確認
-    if child_process_exist_check(wsDb, ansibleAg) is False:
+    if child_process_exist_check(wsDb) is False:
         g.applogger.error("作業インスタンスの実行プロセスの起動確認が失敗しました。(作業No.:{})")  # ITAANSIBLEH-ERR-50074
+        return False,
 
     # 実行中の作業の数を取得
     result = get_running_process(wsDb)
@@ -81,19 +81,55 @@ def main_logic(organization_id, workspace_id, wsDb):
     return True,
 
 
-def child_process_exist_check(wsDb, ansibleAg):
-    # 実行中のコンテナの状態確認
+def child_process_exist_check(wsDb):
+    # 実行中の子プロの起動確認
+
+    try:
+        # psコマンドでbackyard_child_init.pyの起動プロセスリストを作成
+        # psコマンドがマレに起動プロセスリストを取りこぼすことがあるので3回分を作成
+        # command = ["python3", "backyard/backyard_child_init.py", organization_id, workspace_id, execution_no, driver_id]
+
+        child_process_1 = child_process_exist_check_ps()
+        time.sleep(0.05)
+        child_process_2 = child_process_exist_check_ps()
+        time.sleep(0.05)
+        child_process_3 = child_process_exist_check_ps()
+    except Exception:
+        log_err("ITAANSIBLEH-ERR-50073")
+        return False, ""
 
     result = get_running_process(wsDb)
     if result[0] is False:
-        return False
+        return False, ""
     records = result[1]
     for rec in records:
-        # driver_id = rec["DRIVER_ID"]
+        driver_id = rec["DRIVER_ID"]
         driver_name = rec["DRIVER_NAME"]
         execution_no = rec["EXECUTION_NO"]
 
-        if ansibleAg.is_container_running(execution_no) is False:
+        # 子プロ起動確認
+        is_running = False
+        # command = ["python3", "backyard/backyard_child_init.py", organization_id, workspace_id, execution_no, driver_id]
+        command_args = "{} {} {} {} {}".format(r'backyard/backyard_child_init.py', g.ORGANIZATION_ID, g.WORKSPACE_ID, execution_no, driver_id)
+
+        child_process_arr = child_process_1.split('\n')
+        for r_child_process in child_process_arr:
+            if re.search(command_args, r_child_process) is not None:
+                is_running = True
+
+        if is_running is False:
+            child_process_arr = child_process_2.split('\n')
+            for r_child_process in child_process_arr:
+                if re.search(command_args, r_child_process) is not None:
+                    is_running = True
+
+        if is_running is False:
+            child_process_arr = child_process_3.split('\n')
+            for r_child_process in child_process_arr:
+                if re.search(command_args, r_child_process) is not None:
+                    is_running = True
+
+        if is_running is False:
             log_err("作業インスタンスの状態が処理中/実行中でプロセスが存在していない？(作業No.:{}, driver_name:{})".format(execution_no, driver_name))  # ITAANSIBLEH-ERR-50071  # noqaa E501
 
             # 想定外エラーにする
@@ -101,7 +137,7 @@ def child_process_exist_check(wsDb, ansibleAg):
             result = cm.get_execution_process_info(wsDb, execution_no)
             if result[0] is False:
                 log_err(result[1])
-                return False
+                return False, execution_no
             execute_data = result[1]
 
             wsDb.db_transaction_start()
@@ -116,13 +152,13 @@ def child_process_exist_check(wsDb, ansibleAg):
             result = cm.update_execution_record(wsDb, data)
             if result[0] is True:
                 wsDb.db_commit()
-                g.applogger.debug("ステータスを更新しました。(作業No.:{})".format(result['EXECUTION_NO']))  # ITAANSIBLEH-ERR-50075
+                g.applogger.debug("ステータス[{}]に更新しました。(作業No.:{})".format(ansc_const.EXCEPTION, execution_no))  # ITAANSIBLEH-ERR-50075
             else:
                 wsDb.db_rollback()
-                g.applogger.error("ステータスの更新に失敗しました。(作業No.:{})".format(result['EXECUTION_NO']))  # ITAANSIBLEH-ERR-50072
-                return False
+                g.applogger.error("ステータス[{}]に更新失敗しました。(作業No.:{})".format(ansc_const.EXCEPTION, execution_no))  # ITAANSIBLEH-ERR-50072
+                return False, execution_no
 
-    return True
+    return True,
 
 
 def get_running_process(wsDb):
@@ -247,3 +283,36 @@ def instance_prepare(wsDb, execute_data, organization_id, workspace_id):
     g.applogger.debug("ITAANSIBLEH-STD-50078 (作業No.:{}, driver_name:{})".format(driver_name, execution_no))
 
     return True,
+
+
+def child_process_exist_check_ps():
+    try:
+        # ps -efw | grep backyard/backyard_child_init.py | grep -v grep 
+        cp1 = subprocess.run(
+            ["ps", "-efw"],
+            capture_output=True,
+            text=True
+        )
+        cp2 = subprocess.run(
+            ["grep", "backyard/backyard_child_init.py"],
+            capture_output=True,
+            text=True,
+            input=cp1.stdout
+        )
+        cp3 = subprocess.run(
+            ["grep", "-v", "grep"],
+            capture_output=True,
+            text=True,
+            input=cp2.stdout
+        )
+
+        if cp3.returncode == 0:
+            return cp3.stdout
+        elif cp3.returncode == 1 and not cp3.stderr:
+            return ""
+        else:
+            log_err(cp3.stderr)
+            raise Exception()
+    except Exception as e:
+        exception(e)
+        raise Exception()
