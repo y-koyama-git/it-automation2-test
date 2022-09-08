@@ -742,6 +742,7 @@ def _insert_t_menu_define(objdbca, menu_data):
         exec_result = objmenu.exec_maintenance(parameters)  # noqa: F405
         if not exec_result[0]:
             result_msg = _format_loadtable_msg(exec_result[2])
+            result_msg = json.dumps(result_msg, ensure_ascii=False)
             raise Exception("499-00701", [result_msg])  # loadTableバリデーションエラー
         
         # 登録されたレコードのUUIDを保管
@@ -847,6 +848,7 @@ def _update_t_menu_define(objdbca, current_t_menu_define, menu_data, type_name):
         exec_result = objmenu.exec_maintenance(parameters, menu_create_id)  # noqa: F405
         if not exec_result[0]:
             result_msg = _format_loadtable_msg(exec_result[2])
+            result_msg = json.dumps(result_msg, ensure_ascii=False)
             raise Exception("499-00701", [result_msg])  # loadTableバリデーションエラー
 
     except Exception as e:
@@ -938,6 +940,7 @@ def _insert_t_menu_column_group(objdbca, group_data_list):
             exec_result = objmenu.exec_maintenance(parameters)  # noqa: F405
             if not exec_result[0]:
                 result_msg = _format_loadtable_msg(exec_result[2])
+                result_msg = json.dumps(result_msg, ensure_ascii=False)
                 raise Exception("499-00701", [result_msg])  # loadTableバリデーションエラー
             
             # 現在登録されている「カラムグループ作成情報」のレコード一覧を更新
@@ -1059,6 +1062,7 @@ def _insert_t_menu_column(objdbca, menu_data, column_data_list):
                 exec_result = objmenu.exec_maintenance(parameters)  # noqa: F405
                 if not exec_result[0]:
                     result_msg = _format_loadtable_msg(exec_result[2])
+                    result_msg = json.dumps(result_msg, ensure_ascii=False)
                     raise Exception("499-00701", [result_msg])  # loadTableバリデーションエラー
                 
     except Exception as e:
@@ -1348,6 +1352,7 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
                 exec_result = objmenu.exec_maintenance(parameters, create_column_id)  # noqa: F405
                 if not exec_result[0]:
                     result_msg = _format_loadtable_msg(exec_result[2])
+                    result_msg = json.dumps(result_msg, ensure_ascii=False)
                     raise Exception("499-00701", [result_msg])  # loadTableバリデーションエラー
                 
     except Exception as e:
@@ -1408,6 +1413,7 @@ def _disuse_t_menu_column(objdbca, current_t_menu_column_list, column_data_list)
                 exec_result = objmenu.exec_maintenance(parameters, disuse_target_id)  # noqa: F405
                 if not exec_result[0]:
                     result_msg = _format_loadtable_msg(exec_result[2])
+                    result_msg = json.dumps(result_msg, ensure_ascii=False)
                     raise Exception("499-00701", [result_msg])  # loadTableバリデーションエラー
     
     except Exception as e:
@@ -1449,6 +1455,7 @@ def _insert_t_menu_unique_constraint(objdbca, menu_data):
             exec_result = objmenu.exec_maintenance(parameters)  # noqa: F405
             if not exec_result[0]:
                 result_msg = _format_loadtable_msg(exec_result[2])
+                result_msg = json.dumps(result_msg, ensure_ascii=False)
                 raise Exception("499-00701", [result_msg])  # loadTableバリデーションエラー
             
         else:
@@ -1495,6 +1502,7 @@ def _update_t_menu_unique_constraint(objdbca, menu_data, target_recode):
         exec_result = objmenu.exec_maintenance(parameters, unique_constraint_id)  # noqa: F405
         if not exec_result[0]:
             result_msg = _format_loadtable_msg(exec_result[2])
+            result_msg = json.dumps(result_msg, ensure_ascii=False)
             raise Exception("499-00701", [result_msg])  # loadTableバリデーションエラー
         
     except Exception as e:
@@ -1534,6 +1542,7 @@ def _disuse_t_menu_unique_constraint(objdbca, target_recode):
         exec_result = objmenu.exec_maintenance(parameters, unique_constraint_id)  # noqa: F405
         if not exec_result[0]:
             result_msg = _format_loadtable_msg(exec_result[2])
+            result_msg = json.dumps(result_msg, ensure_ascii=False)
             raise Exception("499-00701", [result_msg])  # loadTableバリデーションエラー
         
     except Exception as e:
@@ -1570,6 +1579,7 @@ def _insert_t_menu_role(objdbca, menu_name, role_list):
             exec_result = objmenu.exec_maintenance(parameters)  # noqa: F405
             if not exec_result[0]:
                 result_msg = _format_loadtable_msg(exec_result[2])
+                result_msg = json.dumps(result_msg, ensure_ascii=False)
                 raise Exception("499-00701", [result_msg])  # loadTableバリデーションエラー
             
     except Exception as e:
@@ -1609,6 +1619,7 @@ def _disuse_t_menu_role(objdbca, role_list, current_role_dict):
             exec_result = objmenu.exec_maintenance(parameters, menu_role_id)  # noqa: F405
             if not exec_result[0]:
                 result_msg = _format_loadtable_msg(exec_result[2])
+                result_msg = json.dumps(result_msg, ensure_ascii=False)
                 raise Exception("499-00701", [result_msg])  # loadTableバリデーションエラー
             
     except Exception as e:
