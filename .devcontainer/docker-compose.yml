@@ -82,9 +82,7 @@ services:
         - https_proxy=${HTTPS_PROXY}
     environment:
       - EXECUTE_INTERVAL=1
-      - PYTHONPATH=/exastro/
       - LANGUAGE=en
-      - USER_ID=20101
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
       - DB_DATADBASE=${DB_DATADBASE}
@@ -92,7 +90,6 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
       - STORAGEPATH=/storage/
-      - HOST_STORAGEPATH=${HOST_STORAGEPATH}
       - CONTAINER_BASE=${CONTAINER_BASE}
       - GITLAB_PROTOCOL=${GITLAB_PROTOCOL:-http}
       - GITLAB_HOST=${GITLAB_HOST}
