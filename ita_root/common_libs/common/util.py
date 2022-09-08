@@ -189,7 +189,7 @@ def arrange_stacktrace_format(t):
         retStr = retStr + "\n{} : exception block".format(exception_block_index)
         exception_block_index = exception_block_index + 1
 
-        trace_block_arr = re.split('File', exception_block)
+        trace_block_arr = re.split('File ', exception_block)
         for trace_block in trace_block_arr:
             row_arr = re.split('\n', str(trace_block.strip()))
             row_index = 0
