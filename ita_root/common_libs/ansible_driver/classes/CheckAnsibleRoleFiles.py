@@ -4264,7 +4264,7 @@ class VarStructAnalysisFileAccess():
         outdir = "%s/LegacyRoleZipFileUpload_%s" % (get_AnsibleDriverTmpPath(), os.getpid())
 
         def_vars_list = {}
-        err_vars_list = []
+        err_vars_list = {}
         def_varsval_list = {}
         cpf_vars_list = {}
         tpf_vars_list = {}
