@@ -1704,9 +1704,14 @@ class loadTable():
                 if len(rest_key) > 0:
 
                     objcol = self.get_objcol(rest_key)
-                    input_item = objcol.get(COLNAME_INPUT_ITEM)
-                    view_item = objcol.get(COLNAME_VIEW_ITEM)
-                    auto_input_item = objcol.get(COLNAME_AUTO_INPUT)
+                    if objcol is None:
+                        input_item = '0'
+                        view_item = '2'
+                        auto_input_item = '0'
+                    else:
+                        input_item = objcol.get(COLNAME_INPUT_ITEM)
+                        view_item = objcol.get(COLNAME_VIEW_ITEM)
+                        auto_input_item = objcol.get(COLNAME_AUTO_INPUT)
 
                     if isinstance(col_val, datetime.datetime):
                         col_val = '{}'.format(col_val.strftime('%Y/%m/%d %H:%M:%S.%f'))
