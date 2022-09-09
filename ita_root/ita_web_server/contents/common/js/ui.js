@@ -65,13 +65,14 @@ setUi() {
         '/user/menus/',
         '/user/menus/panels/'
     ];
-    // /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/info/
     if ( ui.params.menuNameRest && ui.params.menuNameRest !== ui.debugModeName ) {
         restApiUrls.push(`/menu/${ui.params.menuNameRest}/info/`);
     }
     
     fn.fetch( restApiUrls ).then(function( result ){
         if ( result ) {
+            ui.$.container.addClass('ready');
+            
             ui.rest = {};
             ui.rest.user = result[0],
             ui.rest.menuGroups = result[1].menu_groups,
@@ -94,6 +95,9 @@ setUi() {
                     case '0': case '1': case '2': case '3': case '4':
                         ui.defaultMenu();
                     break;
+                    // 5 - 6 : 別フィルターメニュー
+                    case '5': case '6':
+                    break;
                     // 11 : 作業実行
                     case '11':
                     break;
@@ -114,10 +118,9 @@ setUi() {
                     break;
                     // 16 : Conductor作業確認
                     case '16':
-                        ui.condcutor('');
+                        ui.condcutor('checking');
                     break;
                     // 17 : 比較実行
-                    // 18 : バージョン確認
                     // 19 : メニュー作成実行
                     default:
                     // メインメニュー
@@ -134,10 +137,11 @@ setUi() {
             }
         }
     }).catch(function( e ){
-        console.log('Error!')
-        alert(e.message);
-        window.console.error( e.message );
-        //location.replace(ui.params.path + 'system_error/');
+        if ( e.message !== 'Failed to fetch') {
+            fn.gotoErrPage( e.message );
+        } else {
+            window.console.error( e.message );
+        }
     });
 }
 
@@ -332,7 +336,7 @@ checkVersion( version ) {
         driverList.push(`<li class="driverItem">${fn.html.icon('plus')} ${item}</li>`);
     }
     
-    const versionHtml = `<div class="varsionContainer">
+    const versionHtml = `<div class="versionContainer">
         <div class="versionLogo"><img class="versionLogoImg" src="/_/ita/imgs/logo.svg" alt="Exastro IT Automation"></div>
         <div class="versionNumber"><span class="versionNumberWrap">Version: ${version.version}</span></div>
         <div class="installedDriver">
@@ -1069,7 +1073,7 @@ setCommonEvents() {
     
     const buttons = {
         cancel: { text: '閉じる', action: 'normal'},
-        ok: { text: 'メニュー情報詳細確認', action: 'positive'}
+        //ok: { text: 'メニュー情報詳細確認', action: 'positive'}
     }
     
     ui.$.content.find('.contentHeader').find('.contentMenuInfoButton').on('click', function(){
@@ -1079,10 +1083,12 @@ setCommonEvents() {
             + `<div class="menuInfoDescription">${fn.escape( menuInfo.menu_info, true )}</div>`;
         + `</div>`;
         fn.alert('メニュー情報', menuInfoHTml, 'confirm', buttons ).then(function( result ){
+            /*
             if ( result ) {
                 const filter = encodeURIComponent( JSON.stringify( {'menu_id':{NORMAL:menuInfo.menu_id}} ) );
                 window.location.href = `?menu=menu_list&filter=${filter}`;
             }
+            */
         });
     });
 }
