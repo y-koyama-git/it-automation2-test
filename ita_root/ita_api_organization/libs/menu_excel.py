@@ -166,7 +166,7 @@ def collect_excel_all(objdbca, organization_id, workspace_id, menu, menu_record,
     depth = get_col_group_depth(retList_t_common_menu_column_link, dict_column_group_id)
     
     # エクセルに表示するヘッダー項目を二次元配列に構築する
-    excel_header_list = create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, dict_column_group_id_name, dict_column_group_id)
+    excel_header_list, header_order = create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, dict_column_group_id_name, dict_column_group_id)
     
     # 1行目（項目名）のヘッダーを作成する
     ws = create_excel_header_firstline(ws, excel_header_list, depth, startRow, startClm, font_wh, al_cc, fill_bl, border)
@@ -194,10 +194,9 @@ def collect_excel_all(objdbca, organization_id, workspace_id, menu, menu_record,
     for param in mylist:
         for k, v in param.items():
             if k == 'parameter':
-                # カラム位置調整用フラグ
-                column_flg = False
                 for i, (key, value) in enumerate(v.items()):
                     if i == 0:
+                        # 初回で固定部分の設定をしておく
                         ws.cell(row=startRow + 7, column=1).fill = fill_wh
                         ws.cell(row=startRow + 7, column=1, value='')
                         
@@ -216,18 +215,14 @@ def collect_excel_all(objdbca, organization_id, workspace_id, menu, menu_record,
                         dataVaridationDict[get_column_letter(3)] = 'FILTER_ROW_EDIT_BY_FILE'
                     
                     if key == 'discard':
-                        column_num = 4
-                        column_flg = True
                         # 廃止
                         msg = g.appmsg.get_api_message('MSG-30006')
                         if value == '1':
                             value = msg
                         else:
                             value = ''
-                    else:
-                        column_num = startClm + i + 1
-                        if column_flg:
-                            column_num -= 1
+                    
+                    column_num = header_order.index(key) + 4
                     
                     ws.cell(row=startRow + 7, column=column_num).number_format = openpyxl.styles.numbers.FORMAT_TEXT
                     ws.cell(row=startRow + 7, column=column_num).font = font_bl
@@ -614,29 +609,39 @@ def create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, 
         ws.insert_rows(1, depth - 1)
     
     excel_header_list = [[] for i in range(depth)]
+    header_order = []
     
     # 表示する項目を二次元配列に構築する
     for i in range(depth):
         for j, dict_menu_column in enumerate(retList_t_common_menu_column_link):
             column_name = dict_menu_column.get('COLUMN_NAME_' + lang.upper())
+            column_name_rest = dict_menu_column.get('COLUMN_NAME_REST')
+            
+            # 廃止フラグ
             msg = g.appmsg.get_api_message('MSG-30015')
             if column_name == msg:
                 excel_header_list[depth - 1 - i].insert(0, column_name)
+                header_order.insert(0, column_name_rest)
                 continue
             if i == 0:
                 excel_header_list[depth - 1 - i].append(column_name)
+                header_order.append(column_name_rest)
             elif i == 1:
                 group_id = dict_menu_column.get('COL_GROUP_ID')
                 if group_id is None:
                     excel_header_list[depth - 1 - i].append(column_name)
+                    header_order.append(column_name_rest)
                 else:
                     excel_header_list[depth - 1 - i].append(dict_column_group_id_name.get(group_id))
+                    header_order.append(column_name_rest)
             else:
                 group_id = recursive_get_pa_col_group_id(i - 1, dict_menu_column.get('COL_GROUP_ID'), dict_column_group_id)
                 if group_id is None:
                     excel_header_list[depth - 1 - i].append(column_name)
+                    header_order.append(column_name_rest)
                 else:
                     excel_header_list[depth - 1 - i].append(dict_column_group_id_name.get(group_id))
+                    header_order.append(column_name_rest)
     
     # 親が一番上にくるようにリストを整える
     for i in range(len(excel_header_list[0])):
@@ -654,7 +659,7 @@ def create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, 
                         excel_header_list[j + cnt][i] = excel_header_list[depth - 1][i]
                     cnt += 1
     
-    return excel_header_list
+    return excel_header_list, header_order
 
 
 # 1行目（項目名）のヘッダーを作成し、結合する
@@ -1171,7 +1176,7 @@ def collect_excel_format(objdbca, organization_id, workspace_id, menu, menu_reco
     depth = get_col_group_depth(retList_t_common_menu_column_link, dict_column_group_id)
     
     # エクセルに表示するヘッダー項目を二次元配列に構築する
-    excel_header_list = create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, dict_column_group_id_name, dict_column_group_id)
+    excel_header_list, header_order = create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, dict_column_group_id_name, dict_column_group_id)
     
     # 1行目（項目名）のヘッダーを作成する
     ws = create_excel_header_firstline(ws, excel_header_list, depth, startRow, startClm, font_wh, al_cc, fill_bl, border)
@@ -1199,8 +1204,6 @@ def collect_excel_format(objdbca, organization_id, workspace_id, menu, menu_reco
     for param in mylist:
         for k, v in param.items():
             if k == 'parameter':
-                # カラム位置調整用フラグ
-                column_flg = False
                 for i, key in enumerate(param.keys()):
                     if i == 0:
                         ws.cell(row=startRow + 7, column=1).fill = fill_wh
@@ -1220,13 +1223,7 @@ def collect_excel_format(objdbca, organization_id, workspace_id, menu, menu_reco
                         ws.add_data_validation(dv)
                         dataVaridationDict[get_column_letter(3)] = 'FILTER_ROW_EDIT_BY_FILE'
                     
-                    if key == 'discard':
-                        column_num = 4
-                        column_flg = True
-                    else:
-                        column_num = startClm + i + 1
-                        if column_flg:
-                            column_num -= 1
+                    column_num = header_order.index(key) + 4
                     
                     ws.cell(row=startRow + 7, column=column_num).number_format = openpyxl.styles.numbers.FORMAT_TEXT
                     ws.cell(row=startRow + 7, column=column_num).font = font_bl
@@ -1406,7 +1403,7 @@ def collect_excel_journal(objdbca, organization_id, workspace_id, menu, menu_rec
     depth = get_col_group_depth(retList_t_common_menu_column_link, dict_column_group_id)
     
     # エクセルに表示するヘッダー項目を二次元配列に構築する
-    excel_header_list = create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, dict_column_group_id_name, dict_column_group_id)
+    excel_header_list, header_order = create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, dict_column_group_id_name, dict_column_group_id)
     
     # 1行目（項目名）のヘッダーを作成する
     ws = create_excel_header_firstline(ws, excel_header_list, depth, startRow, startClm, font_wh, al_cc, fill_bl, border)
@@ -1432,8 +1429,6 @@ def collect_excel_journal(objdbca, organization_id, workspace_id, menu, menu_rec
     for param in result:
         for k, v in param.items():
             if k == 'parameter':
-                # カラム位置調整用フラグ
-                column_flg = False
                 for i, (key, value) in enumerate(v.items()):
                     if i == 0:
                         # 廃止フラグ
@@ -1450,15 +1445,16 @@ def collect_excel_journal(objdbca, organization_id, workspace_id, menu, menu_rec
                     if key == 'journal_action':
                         continue
                     elif key == 'discard':
-                        column_flg = True
                         if value == '1':
                             # 廃止
                             msg = g.appmsg.get_api_message('MSG-30006')
                             ws.cell(row=startDetailRow, column=3, value=msg)
                     else:
-                        column_num = i + 1
-                        if column_flg:
-                            column_num -= 1
+                        if i < 3:
+                            column_num = i + 1
+                        else:
+                            column_num = header_order.index(key) + 3
+
                         ws.cell(row=startDetailRow, column=column_num).number_format = openpyxl.styles.numbers.FORMAT_TEXT
                         ws.cell(row=startDetailRow, column=column_num).font = font_bl
                         ws.cell(row=startDetailRow, column=column_num).border = border
@@ -1629,7 +1625,7 @@ def collect_excel_filter(objdbca, organization_id, workspace_id, menu, menu_reco
     depth = get_col_group_depth(retList_t_common_menu_column_link, dict_column_group_id)
     
     # エクセルに表示するヘッダー項目を二次元配列に構築する
-    excel_header_list = create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, dict_column_group_id_name, dict_column_group_id)
+    excel_header_list, header_order = create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, dict_column_group_id_name, dict_column_group_id)
     
     # 1行目（項目名）のヘッダーを作成する
     ws = create_excel_header_firstline(ws, excel_header_list, depth, startRow, startClm, font_wh, al_cc, fill_bl, border)
@@ -1654,8 +1650,8 @@ def collect_excel_filter(objdbca, organization_id, workspace_id, menu, menu_reco
     for param in result:
         for k, v in param.items():
             if k == 'parameter':
-                # カラム位置調整用フラグ
-                column_flg = False
+                # # カラム位置調整用フラグ
+                # column_flg = False
                 for i, (key, value) in enumerate(v.items()):
                     if i == 0:
                         ws.cell(row=startRow + 7, column=1).fill = fill_wh
@@ -1676,18 +1672,14 @@ def collect_excel_filter(objdbca, organization_id, workspace_id, menu, menu_reco
                         dataVaridationDict[get_column_letter(3)] = 'FILTER_ROW_EDIT_BY_FILE'
                     
                     if key == 'discard':
-                        column_num = 4
-                        column_flg = True
                         # 廃止
                         msg = g.appmsg.get_api_message('MSG-30006')
                         if value == '1':
                             value = msg
                         else:
                             value = ''
-                    else:
-                        column_num = startClm + i + 1
-                        if column_flg:
-                            column_num -= 1
+                    
+                    column_num = header_order.index(key) + 4
                     
                     ws.cell(row=startRow + 7, column=column_num).number_format = openpyxl.styles.numbers.FORMAT_TEXT
                     ws.cell(row=startRow + 7, column=column_num).font = font_bl
