@@ -77,7 +77,7 @@ class AppLog:
         logging.config.dictConfig(self._config)
         # set instance
         self.__logger_obj = logging.getLogger(self.__name__)
-        self.__logger_obj.debug("AppLog instance({}) is created".format(self.__name__))
+        self.__logger_obj.info("AppLog instance({}) is created".format(self.__name__))
 
     def set_user_setting(self, wsdb_instance):
         """

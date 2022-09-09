@@ -58,7 +58,8 @@ def make_response(data=None, msg="", result_code="000-00000", status_code=200, t
         res_body["data"] = data
 
     log_status = "success" if result_code == "000-00000" else "error"
-    g.applogger.info("[ts={}][api-end][{}] {}".format(api_timestamp, log_status, (res_body, status_code)))
+    g.applogger.debug("[ts={}]response={}".format(api_timestamp, (res_body, status_code)))
+    g.applogger.info("[ts={}][api-end][{}][status_code={}]".format(api_timestamp, log_status, status_code))
     return res_body, status_code
 
 
