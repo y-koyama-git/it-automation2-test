@@ -11,7 +11,6 @@ services:
         - https_proxy=${HTTPS_PROXY}
     environment:
       - LISTEN_PORT=8000
-      - PYTHONPATH=/exastro/
       - DEFAULT_LANGUAGE=ja
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
@@ -33,7 +32,6 @@ services:
         - https_proxy=${HTTPS_PROXY}
     environment:
       - LISTEN_PORT=8079
-      - PYTHONPATH=/exastro/
       - DEFAULT_LANGUAGE=ja
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
@@ -106,9 +104,7 @@ services:
         - https_proxy=${HTTPS_PROXY}
     environment:
       - EXECUTE_INTERVAL=1
-      - PYTHONPATH=/exastro/
       - LANGUAGE=en
-      - USER_ID=20401
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
       - DB_DATADBASE=${DB_DATADBASE}
@@ -127,9 +123,7 @@ services:
         - https_proxy=${HTTPS_PROXY}
     environment:
       - EXECUTE_INTERVAL=1
-      - PYTHONPATH=/exastro/
       - LANGUAGE=en
-      - USER_ID=20102
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
       - DB_DATADBASE=${DB_DATADBASE}
@@ -148,9 +142,7 @@ services:
         - https_proxy=${HTTPS_PROXY}
     environment:
       - EXECUTE_INTERVAL=1
-      - PYTHONPATH=/exastro/
       - LANGUAGE=en
-      - USER_ID=30101
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
       - DB_DATADBASE=${DB_DATADBASE}
@@ -169,9 +161,7 @@ services:
         - https_proxy=${HTTPS_PROXY}
     environment:
       - EXECUTE_INTERVAL=1
-      - PYTHONPATH=/exastro/
       - LANGUAGE=en
-      - USER_ID=50101
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
       - DB_DATADBASE=${DB_DATADBASE}
