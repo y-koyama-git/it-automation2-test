@@ -99,10 +99,10 @@ CREATE TABLE T_MENU_COLUMN
     DISP_SEQ                        INT,                                        -- 表示順序
     REQUIRED                        VARCHAR(2) ,                                -- 必須
     UNIQUED                         VARCHAR(2) ,                                -- 一意制約
-    SINGLE_MAX_LENGTH               TEXT,                                       -- 文字列(単一行) 最大バイト数
+    SINGLE_MAX_LENGTH               INT,                                        -- 文字列(単一行) 最大バイト数
     SINGLE_REGULAR_EXPRESSION       TEXT,                                       -- 文字列(単一行) 正規表現
     SINGLE_DEFAULT_VALUE            TEXT,                                       -- 文字列(単一行) 初期値
-    MULTI_MAX_LENGTH                TEXT,                                       -- 文字列(複数行) 最大バイト数
+    MULTI_MAX_LENGTH                INT,                                        -- 文字列(複数行) 最大バイト数
     MULTI_REGULAR_EXPRESSION        TEXT,                                       -- 文字列(複数行) 正規表現
     MULTI_DEFAULT_VALUE             TEXT,                                       -- 文字列(複数行) 初期値
     NUM_MAX                         INT,                                        -- 整数 最大値
@@ -146,10 +146,10 @@ CREATE TABLE T_MENU_COLUMN_JNL
     DISP_SEQ                        INT,                                        -- 表示順序
     REQUIRED                        VARCHAR(2) ,                                -- 必須
     UNIQUED                         VARCHAR(2) ,                                -- 一意制約
-    SINGLE_MAX_LENGTH               TEXT,                                       -- 文字列(単一行) 最大バイト数
+    SINGLE_MAX_LENGTH               INT,                                        -- 文字列(単一行) 最大バイト数
     SINGLE_REGULAR_EXPRESSION       TEXT,                                       -- 文字列(単一行) 正規表現
     SINGLE_DEFAULT_VALUE            TEXT,                                       -- 文字列(単一行) 初期値
-    MULTI_MAX_LENGTH                TEXT,                                       -- 文字列(複数行) 最大バイト数
+    MULTI_MAX_LENGTH                INT,                                        -- 文字列(複数行) 最大バイト数
     MULTI_REGULAR_EXPRESSION        TEXT,                                       -- 文字列(複数行) 正規表現
     MULTI_DEFAULT_VALUE             TEXT,                                       -- 文字列(複数行) 初期値
     NUM_MAX                         INT,                                        -- 整数 最大値
