@@ -1423,6 +1423,7 @@ def collect_excel_journal(objdbca, organization_id, workspace_id, menu, menu_rec
     
     # 明細部編集
     # 明細1行目編集
+    dataVaridationDict = {}
     ws, dataVaridationDict = detail_first_line_format(ws, startRow, dataVaridationDict)
     
     # ウィンドウ枠の固定
