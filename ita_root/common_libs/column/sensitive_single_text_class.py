@@ -85,5 +85,5 @@ class SensitiveSingleTextColumn(SingleTextColumn):
         """
         retBool = True
         msg = ''
-        val = ''
+        val = None
         return retBool, msg, val
