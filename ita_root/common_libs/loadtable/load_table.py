@@ -1718,15 +1718,16 @@ class loadTable():
                     objcolumn = self.get_columnclass(rest_key)
 
                     # ID → VALUE 変換処理不要ならVALUE変更無し
-                    tmp_exec = objcolumn.convert_value_output(col_val)
-                    if tmp_exec[0] is True:
-                        col_val = tmp_exec[2]
-
-                    # 内部処理用
-                    if mode in ['input']:
-                        if self.get_col_class_name(rest_key) in ['PasswordColumn', 'SensitiveSingleTextColumn', 'SensitiveMultiTextColumn']:
-                            objcolumn = self.get_columnclass(rest_key)
-                            col_val = util.ky_decrypt(col_val)    # noqa: F405
+                    if self.get_col_class_name(rest_key) not in ['PasswordColumn', 'SensitiveSingleTextColumn', 'SensitiveMultiTextColumn']:
+                        tmp_exec = objcolumn.convert_value_output(col_val)
+                        if tmp_exec[0] is True:
+                            col_val = tmp_exec[2]
+                    else:
+                        # 内部処理用
+                        if mode in ['input']:
+                            if col_val is not None:
+                                objcolumn = self.get_columnclass(rest_key)
+                                col_val = util.ky_decrypt(col_val)    # noqa: F405
 
                     if mode in ['input']:
                         rest_parameter.setdefault(rest_key, col_val)

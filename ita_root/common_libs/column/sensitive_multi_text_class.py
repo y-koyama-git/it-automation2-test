@@ -86,6 +86,6 @@ class SensitiveMultiTextColumn(MultiTextColumn):
         """
         retBool = True
         msg = ''
-        val = ''
+        val = None
 
         return retBool, msg, val
