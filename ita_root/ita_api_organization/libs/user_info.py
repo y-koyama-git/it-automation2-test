@@ -71,7 +71,6 @@ def collect_menu_group_panels(objdbca):
         # 対象ファイルの格納先を取得
         file_name = recode.get('MENU_GROUP_ICON')
         file_paths = get_upload_file_path(workspace_id, menu_group_list_id, menu_group_id, column_name_rest, file_name, '')  # noqa: F405
-        print(file_paths)
         
         # 対象ファイルをbase64エンコード
         encoded = file_encode(file_paths.get('file_path'))  # noqa: F405

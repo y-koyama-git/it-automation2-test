@@ -73,7 +73,7 @@ def before_request_handler():
 
         # initialize setting organization-db connect_info and connect check
         common_db = DBConnectCommon()  # noqa: F405
-        g.applogger.debug("ITA_DB is connected")
+        g.applogger.info("ITA_DB is connected")
 
         orgdb_connect_info = common_db.get_orgdb_connect_info(organization_id)
         common_db.db_disconnect()
@@ -94,7 +94,7 @@ def before_request_handler():
 
         # initialize setting workspcae-db connect_info and connect check
         org_db = DBConnectOrg()  # noqa: F405
-        g.applogger.debug("ORG_DB:{} can be connected".format(organization_id))
+        g.applogger.info("ORG_DB:{} can be connected".format(organization_id))
 
         wsdb_connect_info = org_db.get_wsdb_connect_info(workspace_id)
         org_db.db_disconnect()
@@ -108,7 +108,7 @@ def before_request_handler():
         g.db_connect_info["WSDB_DATADBASE"] = wsdb_connect_info["DB_DATADBASE"]
 
         ws_db = DBConnectWs(workspace_id)  # noqa: F405
-        g.applogger.debug("WS_DB:{} can be connected".format(workspace_id))
+        g.applogger.info("WS_DB:{} can be connected".format(workspace_id))
 
         # set log-level for user setting
         g.applogger.set_user_setting(ws_db)
