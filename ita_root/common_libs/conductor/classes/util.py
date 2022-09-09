@@ -18,6 +18,7 @@ import re
 import json
 import copy
 
+
 class ConductorCommonLibs():
     config_data = {}
     conductor_data = {}
@@ -298,7 +299,8 @@ class ConductorCommonLibs():
                     err_msg_args.append('conductor.id not exists')
 
         if 'conductor_name' not in c_data:
-            err_msg_args.append('conductor.conductor_name')
+            # err_msg_args.append('conductor.conductor_name')
+            err_msg_args.append(g.appmsg.get_api_message('MSG-40006'))
 
         if 'note' not in c_data:
             err_msg_args.append('conductor.note')
@@ -307,7 +309,7 @@ class ConductorCommonLibs():
             err_msg_args.append('conductor.last_update_date_time')
 
         if len(err_msg_args) != 0:
-            msg = g.appmsg.get_api_message('MSG-40006', [','.join(err_msg_args)])
+            msg = g.appmsg.get_api_message('MSG-40006')
             return False, msg,
             # return False, [','.join(err_msg_args)]
         else:
@@ -442,27 +444,32 @@ class ConductorCommonLibs():
 
             if node_type == 'end':
                 if 'end_type' not in block_1 or int(block_1['end_type']) not in self._node_end_type_list:
-                    err_msg_args.append('{}(end_type)'.format(key))
+                    # err_msg_args.append('{}(end_type)'.format(key))
+                    tmp_msg = g.appmsg.get_api_message('MSG-40017')
+                    err_msg_args.append(json.dumps({key: tmp_msg}, ensure_ascii=False))
                     continue
             elif node_type == 'movement':
                 res_chk = self.chk_type_movement(block_1)
                 if res_chk[0] is False:
-                    err_msg_args.append('{}({})'.format(key, res_chk[1]))
+                    # err_msg_args.append('{}({})'.format(key, res_chk[1]))
+                    err_msg_args.append(json.dumps({key: res_chk[1]}, ensure_ascii=False))
                     continue
             elif node_type == 'call':
                 res_chk = self.chk_type_call(block_1)
                 if res_chk[0] is False:
-                    err_msg_args.append('{}({})'.format(key, res_chk[1]))
+                    # err_msg_args.append('{}({})'.format(key, res_chk[1]))
+                    err_msg_args.append(json.dumps({key: res_chk[1]}, ensure_ascii=False))
                     continue
 
             # check node conditions
             res_chk = self.chk_node_conditions(node_type, block_1['terminal'])
             if res_chk[0] is False:
-                err_msg_args.append('{}({})'.format(key, res_chk[1]))
+                # err_msg_args.append('{}({})'.format(key, res_chk[1]))
+                err_msg_args.append(json.dumps({key: res_chk[1]}, ensure_ascii=False))
                 continue
 
         if len(err_msg_args) != 0:
-            msg = g.appmsg.get_api_message('MSG-40010', [','.join(err_msg_args)])
+            msg = g.appmsg.get_api_message('MSG-40010', [json.dumps(err_msg_args, ensure_ascii=False)])
             return False, msg,
             # return False, ['\n'.join(err_msg_args)]
         else:
@@ -482,33 +489,41 @@ class ConductorCommonLibs():
         err_msg_args = []
 
         if 'movement_id' not in node_blcok or not node_blcok['movement_id']:
-            err_msg_args.append('movement_id')
+            # err_msg_args.append('movement_id')
+            err_msg_args.append(g.appmsg.get_api_message('MSG-40014'))
         else:
             data_list = self.__db.table_select('T_COMN_MOVEMENT', 'WHERE `DISUSE_FLAG`=0 AND `MOVEMENT_ID`=%s', [node_blcok['movement_id']])
             if len(data_list) == 0:
-                err_msg_args.append('movement_id is not available')
-
+                # err_msg_args.append('movement_id is not available')
+                err_msg_args.append(g.appmsg.get_api_message('MSG-40014', [node_blcok.get('movement_id'), node_blcok.get('movement_name')]))
+                
             if 'movement_name' not in node_blcok:
-                err_msg_args.append('movement_name')
+                # err_msg_args.append('movement_name')
+                err_msg_args.append(g.appmsg.get_api_message('MSG-40014', [node_blcok.get('movement_id'), node_blcok.get('movement_name')]))
 
         if 'skip_flag' not in node_blcok:
-            err_msg_args.append('skip_flag')
+            # err_msg_args.append('skip_flag')
+            err_msg_args.append(g.appmsg.get_api_message('MSG-40015'))
 
         if 'operation_id' not in node_blcok:
-            err_msg_args.append('operation_id')
+            # err_msg_args.append('operation_id')
+            err_msg_args.append(g.appmsg.get_api_message('MSG-40016'))
         elif node_blcok['operation_id']:
             data_list = self.__db.table_select('T_COMN_OPERATION', 'WHERE `DISUSE_FLAG`=0 AND `OPERATION_ID`=%s', [node_blcok['operation_id']])
             if len(data_list) == 0:
-                err_msg_args.append('operation_id is not available')
+                # err_msg_args.append('operation_id is not available')
+                err_msg_args.append(g.appmsg.get_api_message('MSG-40016', [node_blcok.get('operation_id'), node_blcok.get('operation_name')]))
 
             if 'operation_name' not in node_blcok:
-                err_msg_args.append('operation_name')
+                # err_msg_args.append('operation_name')
+                err_msg_args.append(g.appmsg.get_api_message('MSG-40016', [node_blcok.get('operation_id'), node_blcok.get('operation_name')]))
 
         if 'orchestra_id' not in node_blcok or node_blcok['orchestra_id'] not in self._orchestra_id_list:
-            err_msg_args.append('orchestra_id')
+            # err_msg_args.append('orchestra_id')
+            err_msg_args.append(g.appmsg.get_api_message('MSG-40016', [node_blcok.get('operation_id'), node_blcok.get('operation_name')]))
 
         if len(err_msg_args) != 0:
-            return False, ','.join(err_msg_args)
+            return False, '\n'.join(err_msg_args)
         else:
             return True,
 
@@ -526,30 +541,37 @@ class ConductorCommonLibs():
         err_msg_args = []
 
         if 'call_conductor_id' not in node_blcok or not node_blcok['call_conductor_id']:
-            err_msg_args.append('call_conductor_id')
+            # err_msg_args.append('call_conductor_id')
+            err_msg_args.append(g.appmsg.get_api_message('MSG-40018'))
         else:
             data_list = self.__db.table_select('T_COMN_CONDUCTOR_CLASS', 'WHERE `DISUSE_FLAG`=0 AND `CONDUCTOR_CLASS_ID`=%s', [node_blcok['call_conductor_id']])  # noqa E501
             if len(data_list) == 0:
-                err_msg_args.append('call_conductor_id is not available')
-
+                # err_msg_args.append('call_conductor_id is not available')
+                tmp_msg = g.appmsg.get_api_message('MSG-40018', [node_blcok.get('call_conductor_id'), node_blcok.get('call_conductor_name')])
+                err_msg_args.append(tmp_msg)
             if 'call_conductor_name' not in node_blcok:
-                err_msg_args.append('call_conductor_name')
+                # err_msg_args.append('call_conductor_name')
+                tmp_msg = g.appmsg.get_api_message('MSG-40018', [node_blcok.get('call_conductor_id'), node_blcok.get('call_conductor_name')])
+                err_msg_args.append(tmp_msg)
 
         if 'skip_flag' not in node_blcok:
-            err_msg_args.append('skip_flag')
+            # err_msg_args.append('skip_flag')
+            err_msg_args.append(g.appmsg.get_api_message('MSG-40015'))
 
         if 'operation_id' not in node_blcok:
-            err_msg_args.append('operation_id')
+            # err_msg_args.append('operation_id')
+            err_msg_args.append(g.appmsg.get_api_message('MSG-40016'))
         elif node_blcok['operation_id']:
             data_list = self.__db.table_select('T_COMN_OPERATION', 'WHERE `DISUSE_FLAG`=0 AND `OPERATION_ID`=%s', [node_blcok['operation_id']])
             if len(data_list) == 0:
-                err_msg_args.append('operation_id is not available')
-
+                # err_msg_args.append('operation_id is not available')
+                err_msg_args.append(g.appmsg.get_api_message('MSG-40016', [node_blcok.get('operation_id'), node_blcok.get('operation_name')]))
             if 'operation_name' not in node_blcok:
-                err_msg_args.append('operation_name')
-
+                # err_msg_args.append('operation_name')
+                err_msg_args.append(g.appmsg.get_api_message('MSG-40016', [node_blcok.get('operation_id'), node_blcok.get('operation_name')]))
+                
         if len(err_msg_args) != 0:
-            return False, ','.join(err_msg_args)
+            return False, '\n'.join(err_msg_args)
         else:
             return True,
 
@@ -575,7 +597,9 @@ class ConductorCommonLibs():
         for terminalname, terminalinfo in terminal_blcok.items():
             # check whether node is connected
             if terminalinfo['targetNode'] not in self._node_id_list:
-                err_msg_args.append('terminal.{}.targetNode not connected'.format(terminalname))
+                # err_msg_args.append('terminal.{}.targetNode not connected'.format(terminalname))
+                tmp_msg = g.appmsg.get_api_message('MSG-40019', [terminalinfo['targetNode']])
+                err_msg_args.append(tmp_msg)
                 continue
 
             # check node connect point
@@ -583,7 +607,9 @@ class ConductorCommonLibs():
             target_node = terminalinfo['targetNode']
             target_node_type = self.node_datas[target_node]['type']
             if target_node_type not in connect_point_condition[terminal_type]:
-                err_msg_args.append('terminal.{}.target_node-connect-point is invalid'.format(terminalname))
+                # err_msg_args.append('terminal.{}.target_node-connect-point is invalid'.format(terminalname))
+                tmp_msg = g.appmsg.get_api_message('MSG-40020', [node_type, target_node_type])
+                err_msg_args.append(tmp_msg)
                 continue
 
         if len(err_msg_args) != 0:
@@ -621,14 +647,18 @@ class ConductorCommonLibs():
         for terminalname, terminalinfo in terminal_blcok.items():
             if terminalinfo['type'] == 'out':
                 if 'condition' not in terminalinfo or not terminalinfo['condition']:
-                    err_msg_args.append('terminal.{}.condition'.format(terminalname))
+                    # err_msg_args.append('terminal.{}.condition'.format(terminalname))
+                    tmp_msg = g.appmsg.get_api_message('MSG-40021')
+                    err_msg_args.append(tmp_msg)
                     continue
 
                 is_conditon_invalid = True
                 for condition in terminalinfo['condition']:
                     if condition not in self._node_status_list:
                         is_conditon_invalid = False
-                        err_msg_args.append('terminal.{}.condition'.format(terminalname))
+                        # err_msg_args.append('terminal.{}.condition'.format(terminalname))
+                        tmp_msg = g.appmsg.get_api_message('MSG-40022')
+                        err_msg_args.append(tmp_msg)
                         continue
                 if is_conditon_invalid is False:
                     continue
@@ -656,20 +686,26 @@ class ConductorCommonLibs():
         for terminalname, terminalinfo in terminal_blcok.items():
             if terminalinfo['type'] == 'out':
                 if 'case' not in terminalinfo or not terminalinfo['case']:
-                    err_msg_args.append('terminal.{}.case'.format(terminalname))
+                    # err_msg_args.append('terminal.{}.case'.format(terminalname))
+                    tmp_msg = g.appmsg.get_api_message('MSG-40023')
+                    err_msg_args.append(tmp_msg)
                     continue
                 elif terminalinfo['case'] == 'else':
                     continue
 
                 if 'condition' not in terminalinfo or not terminalinfo['condition'] or not terminalinfo['condition'][0]:
-                    err_msg_args.append('terminal.{}.condition'.format(terminalname))
+                    # err_msg_args.append('terminal.{}.condition'.format(terminalname))
+                    tmp_msg = g.appmsg.get_api_message('MSG-40023')
+                    err_msg_args.append(tmp_msg)
                     continue
 
                 is_conditon_invalid = True
                 for condition in terminalinfo['condition']:
                     if condition not in self._node_status_list:
                         is_conditon_invalid = False
-                        err_msg_args.append('terminal.{}.condition'.format(terminalname))
+                        # err_msg_args.append('terminal.{}.condition'.format(terminalname))
+                        tmp_msg = g.appmsg.get_api_message('MSG-40024', [condition])
+                        err_msg_args.append(tmp_msg)
                         continue
                 if is_conditon_invalid is False:
                     continue
@@ -680,13 +716,17 @@ class ConductorCommonLibs():
                 if condtion_caseno not in condition_caseno_list:
                     condition_caseno_list.append(condtion_caseno)
                 else:
-                    err_msg_args.append('terminal.{}.case is invalid'.format(terminalname))
+                    # err_msg_args.append('terminal.{}.case is invalid'.format(terminalname))
+                    tmp_msg = g.appmsg.get_api_message('MSG-40023')
+                    err_msg_args.append(tmp_msg)
                     continue
 
                 if condition_val not in condition_val_list:
                     condition_val_list.append(condition_val)
                 else:
-                    err_msg_args.append('terminal.{}.condition is duplicate'.format(terminalname))
+                    # err_msg_args.append('terminal.{}.condition is duplicate'.format(terminalname))
+                    tmp_msg = g.appmsg.get_api_message('MSG-40025', [condition_val])
+                    err_msg_args.append(tmp_msg)
                     continue
 
         if len(err_msg_args) != 0:
@@ -961,7 +1001,7 @@ class ConductorCommonLibs():
                                     raise Exception()
         except Exception:
             retBool = False
-            msg = g.appmsg.get_api_message('MSG-40011')
+            msg = json.dumps([json.dumps({"Usecase": g.appmsg.get_api_message('MSG-40011')}, ensure_ascii=False)], ensure_ascii=False)
         return retBool, msg,
 
     # parallel->margeNode検索
@@ -1034,7 +1074,7 @@ class ConductorCommonLibs():
     # Node検索処理呼び出し
     def search_target_node(self, terminal_type, base_node_id, target_node_type, c_data):
         """
-        search conductor data node 
+        search conductor data node
         Arguments:
             terminal_type: terminal type (in or out)
             base_node_id: node_id
@@ -1072,7 +1112,7 @@ class ConductorCommonLibs():
     # Node検索処理
     def search_node(self, terminal_type, base_node_id, c_data):
         """
-        search conductor node 
+        search conductor node
         Arguments:
             terminal_type: terminal type (in or out)
             base_node_id: node_id
@@ -1098,13 +1138,12 @@ class ConductorCommonLibs():
         retBool = True
         msg = ''
         try:
-            # print(chk_call_conductor_id, c_data, call_conductor_id_List)
             tmp_result = self.chk_loop_base_1(chk_conductor_id, c_data, call_conductor_id_List)
             if tmp_result is False:
                 retBool = False
         except Exception:
             retBool = False
-            msg = g.appmsg.get_api_message('MSG-40012')
+            msg = json.dumps([json.dumps({"Usecase": g.appmsg.get_api_message('MSG-40012')}, ensure_ascii=False)], ensure_ascii=False)
         return retBool, msg,
 
     # Callループチェック処理

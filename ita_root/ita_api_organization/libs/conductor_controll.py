@@ -122,6 +122,7 @@ def conductor_maintenance(objdbca, menu, conductor_data, target_uuid=''):
         if tmp_result[0] is not True:
             # 集約エラーメッセージ(JSON化)
             status_code, msg = objcclass.get_error_message_str()
+            msg = objCexec.maintenance_error_message_format(msg)
             raise Exception()
 
         objdbca.db_transaction_end(True)
