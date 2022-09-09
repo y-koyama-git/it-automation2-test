@@ -493,8 +493,8 @@ def collect_pulldown_list(objdbca, menu, menu_record):
     ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
     
     pulldown_list = {}
-    # 7(IDColumn), 11(LinkIDColumn), 18(RoleIDColumn), 22(EnvironmentIDColumn)
-    id_column_list = ["7", "11", "18", "22"]
+    # 7(IDColumn), 11(LinkIDColumn), 18(RoleIDColumn), 21(JsonIDColumn), 22(EnvironmentIDColumn)
+    id_column_list = ["7", "11", "18", "21", "22"]
     for recode in ret:
         column_class_id = str(recode.get('COLUMN_CLASS'))
         
@@ -573,8 +573,8 @@ def collect_search_candidates(objdbca, menu, column, menu_record={}, menu_table_
         return []
     
     search_candidates = []
-    # 7(IDColumn), 11(LinkIDColumn), 14(LastUpdateUserColumn), 18(RoleIDColumn), 22(EnvironmentIDColumn)
-    id_column_list = ["7", "11", "14", "18", "22"]
+    # 7(IDColumn), 11(LinkIDColumn), 14(LastUpdateUserColumn), 18(RoleIDColumn), 21(JsonIDColumn), 22(EnvironmentIDColumn)
+    id_column_list = ["7", "11", "14", "18", "21", "22"]
     
     if column_class_id in id_column_list:
         # プルダウンの一覧を取得

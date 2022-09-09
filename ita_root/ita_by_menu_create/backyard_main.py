@@ -1106,9 +1106,14 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 target_other_menu_link_recode = dict_t_menu_other_link.get(other_menu_link_id)
                 ref_table_name = target_other_menu_link_recode.get('REF_TABLE_NAME')
                 ref_pkey_name = target_other_menu_link_recode.get('REF_PKEY_NAME')
-                ref_col_name = target_other_menu_link_recode.get('REF_COL_NAME')
                 ref_sort_conditions = target_other_menu_link_recode.get('REF_SORT_CONDITIONS')
                 ref_multi_lang = target_other_menu_link_recode.get('REF_MULTI_LANG')
+                menu_create_flag = target_other_menu_link_recode.get('MENU_CREATE_FLAG')
+                if str(menu_create_flag) == "1":
+                    ref_col_name = target_other_menu_link_recode.get('REF_COL_NAME_REST')
+                    column_class = "21"  # JsonIDColumn
+                else:
+                    ref_col_name = target_other_menu_link_recode.get('REF_COL_NAME')
             
             # 「カラムグループ作成情報」のIDから同じフルカラムグループ名の対象を「カラムグループ管理」から探しIDを指定
             col_group_id = None
@@ -1290,7 +1295,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             "COL_NAME": "DISUSE_FLAG",
             "SAVE_TYPE": None,
             "AUTO_INPUT": 1,  # True
-            "INPUT_ITEM": 0,  # False
+            "INPUT_ITEM": 1,  # True
             "VIEW_ITEM": 1,  # True
             "UNIQUE_ITEM": 0,  # False
             "REQUIRED_ITEM": 1,  # True
