@@ -23,7 +23,7 @@ spec:
     command: [
       "bash",
       "-c",
-      "{{ container_mount_path_driver }}/.tmp/.playbook_execute_shell.sh > {{ container_mount_path_driver }}/out/exec_log 2> {{ container_mount_path_driver }}/out/error_log",
+      "{{ str_shell_command }}",
     ]
     env:
     - name: HTTP_PROXY
