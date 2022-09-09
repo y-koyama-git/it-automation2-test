@@ -598,6 +598,41 @@ class ConductorExecuteLibs():
             tmp_result = False,
         return tmp_result
 
+    def maintenance_error_message_format(self, msg):
+        """
+            Conductor登録, 更新のエラーメッセージフォーマット
+            ARGS:
+                msg:message
+            RETRUN:
+                bool, msg
+        """
+        result = {}
+        try:
+            try:
+                msg_json = {}
+                tmp_msg_json = json.loads(msg)
+                for eno, errinfo in tmp_msg_json.items():
+                    for ekey, einfo in errinfo.items():
+                        if ekey != '__line__':
+                            msg_json.setdefault(ekey, einfo)
+                        else:
+                            for node_err in einfo:
+                                node_err_json = json.loads(node_err)
+                                for tmp_node_err in node_err_json:
+                                    tmp_node_err_json = json.loads(tmp_node_err)
+                                    for node_name, node_msg in tmp_node_err_json.items():
+                                        msg_json.setdefault(node_name, node_msg.splitlines())
+                result = json.dumps(msg_json, ensure_ascii=False)
+            except Exception as e:
+                result = msg
+        except Exception as e:
+            g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
+            type_, value, traceback_ = sys.exc_info()
+            msg = traceback.format_exception(type_, value, traceback_)
+            g.applogger.error(msg)
+            result = False,
+        return result
+
     def conductor_instance_exec_maintenance(self, conductor_parameter, target_uuid='', cmd_type=''):
         """
             Conductor実行(conductorinstanceの登録,更新)
@@ -1325,8 +1360,8 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                 raise Exception()
             strage_path = os.environ.get('STORAGEPATH')  # noqa: F405
             tmp_conductor_storage_path = tmp_result[1].get('CONDUCTOR_STORAGE_PATH_ITA')
-            base_storage_path = "{}/{}/{}/driver/".format(strage_path, self.organization_id, self.workspace_id).replace('//', '/')
-            conductor_storage_path = tmp_conductor_storage_path.replace('%%%%%ITA_DRIVER_DIRECTORY%%%%%', base_storage_path)
+            base_storage_path = "{}/{}/{}/".format(strage_path, self.organization_id, self.workspace_id).replace('//', '/')
+            conductor_storage_path = tmp_conductor_storage_path.replace('%%%%%ITA_DRIVER_DIRECTORY%%%%%', base_storage_path).replace('//', '/')
             base_conductor_storage_path = "{}".format(conductor_storage_path).replace('//', '/')
             result.setdefault('base_storage_path', base_storage_path)
             result.setdefault('base_conductor_storage_path', base_conductor_storage_path)
@@ -2056,10 +2091,10 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                 orchestra_path,
                 execution_id
             ).replace('//', '/')
-            result['base'] = '{}'.format(movement_stprage_path)
-            result['in'] = '{}/in/'.format(movement_stprage_path)
-            result['out'] = '{}/out/'.format(movement_stprage_path)
-            result['status_file_path'] = '{}/out/MOVEMENT_STATUS_FILE'.format(movement_stprage_path)
+            result['base'] = '{}'.format(movement_stprage_path).replace('//', '/')
+            result['in'] = '{}/in/'.format(movement_stprage_path).replace('//', '/')
+            result['out'] = '{}/out/'.format(movement_stprage_path).replace('//', '/')
+            result['status_file_path'] = '{}/out/MOVEMENT_STATUS_FILE'.format(movement_stprage_path).replace('//', '/')
 
         except Exception as e:
             g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
@@ -2989,7 +3024,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('3')
 
             # ##################### 強制SKIP対応 #####################
-            skip = '1'
+            # skip = '1'
             # ##################### 強制SKIP対応 #####################
             # SKIP時
             if skip == '1':
@@ -3049,6 +3084,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                             status_file_info = self.get_status_file(status_file_path)
                             if status_file_info[0] is True:
                                 node_filter_data['parameter']['status_file'] = status_file_info[1].get('status_file_value')
+                        n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('13')
 
             # ステータス変更時のみ更新
             now_status_id = node_filter_data['parameter']['status_id']

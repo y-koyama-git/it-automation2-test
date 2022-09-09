@@ -12,35 +12,33 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 apiVersion: v1
-kind: PersistentVolumeClaim
+kind: PersistentVolume
 metadata:
-  name: ita-pvc
-  namespace: exastro-it-automation
-  labels:
-    app: centos-pv-test
+  name: ita-pv
   annotations:
-    "volume.beta.kubernetes.io/storage-class": "slow"
+    volume.beta.kubernetes.io/storage-class: "slow"
 spec:
+  capacity:
+    storage: 10Gi
   accessModes:
     - ReadWriteMany
-  resources:
-    requests:
-      storage: 10Gi
-  volumeName: ita-pv
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: /var/data/exastro-suite/exastro-it-automation/ita-general
+    type: DirectoryOrCreate
 ---
 apiVersion: v1
-kind: PersistentVolumeClaim
+kind: PersistentVolume
 metadata:
   name: ita-mariadb
-  namespace: exastro-it-automation
-  labels:
-    app: centos-pv-test
   annotations:
-    "volume.beta.kubernetes.io/storage-class": "slow"
+    volume.beta.kubernetes.io/storage-class: "slow"
 spec:
+  capacity:
+    storage: 1Gi
   accessModes:
     - ReadWriteOnce
-  resources:
-    requests:
-      storage: 1Gi
-  volumeName: ita-mariadb
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: /var/data/exastro-suite/exastro-it-automation/ita-mariadb
+    type: DirectoryOrCreate
