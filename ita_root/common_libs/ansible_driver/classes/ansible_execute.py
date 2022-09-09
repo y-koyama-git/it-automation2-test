@@ -18,6 +18,7 @@ from flask import g
 from common_libs.ansible_driver.classes.AnscConstClass import AnscConst
 from common_libs.ansible_driver.classes.AnsrConstClass import AnsrConst
 from common_libs.ansible_driver.functions.util import getAnsibleExecutDirPath, get_AnsibleDriverShellPath
+from libs.controll_ansible_agent import DockerMode, KubernetesMode
 from common_libs.common.util import ky_file_decrypt
 """
 Ansible coreコンテナの実行を制御するモジュール
@@ -73,14 +74,16 @@ class AnsibleExecute():
         """
         self.getLastErrormsg = msg
 
-    def execute_construct(self, driver_id, execute_no, virtualenv_name, execute_user, ansible_path, vault_password, run_mode, forks):
+    def execute_construct(self, driver_id, execute_no, conductor_instance_no, virtualenv_name, execute_user, ansible_path, vault_password, run_mode, forks):  # noqa: E501
         """
         作業実行コンテナよりansible-playbookコマンド実行
         Arguments:
             driver_id:      ドライバID:
                             AnscConst.DF_LEGACY_ROLE_DRIVER_ID
-            execute_no:     作業番号
+            execute_no:     作業番号:
                             T_ANSR_EXEC_STS_INST.EXECUTION_NO
+            conductor_instance_no:  コンダクターno:
+                            T_ANSR_EXEC_STS_INST.CONDUCTOR_INSTANCE_NO
             virtualenv_name:   仮想環境名
                                空白(2.0以降用)
             execute_user:      実行ユーザー
@@ -213,16 +216,24 @@ class AnsibleExecute():
         strorgSTDOUTFileName = "{}/{}/{}".format(execute_path, self.strOutFolderName, self.orgSTDOUTLogfile)
 
         # コンテナ内で実行するshell
-        strShellCommand = "{} {} 1> {} 2>> {}".format(strExecshellName, virtualenv_flg, strorgSTDOUTFileName, strSTDERRFileName)
+        str_shell_command = "{} {} 1> {} 2>> {}".format(strExecshellName, virtualenv_flg, strorgSTDOUTFileName, strSTDERRFileName)
 
         ###########################################
-        # コンテナキックの処理を組み込んで下さい
-        # 失敗した場合の標準出力・エラー出力が取れるのなら
-        # それも含めてなにかメッセージを出してほしい
+        # コンテナキックの処理
         # return True/False
         ###########################################
-        
-        return True
+        # container software
+        container_base = os.getenv('CONTAINER_BASE')
+        if container_base == 'docker':
+            ansibleAg = DockerMode()
+        elif container_base == 'kubernetes':
+            ansibleAg = KubernetesMode()
+
+        result = ansibleAg.container_start_up(execute_no, conductor_instance_no, str_shell_command)
+        if result[0] is True:
+            return True, ""
+        else:
+            return False, result[1]
 
     def execute_statuscheck(self, driver_id, execute_no):
         """
@@ -243,7 +254,7 @@ class AnsibleExecute():
 
         AnsObj = AnscConst()
 
-        retStatus = 2
+        retStatus = "2"
         # 作業実行パス取得（作業番号まで）
         execute_path = getAnsibleExecutDirPath(driver_id, execute_no)
         # 緊急停止ファイル作成
@@ -251,38 +262,34 @@ class AnsibleExecute():
         # ansible-playbookコマンド実行結果ファイル
         strResultFileName = "{}/{}/{}".format(execute_path, self.strOutFolderName, self.Resultfile)
 
+        # 実行コンテナ操作用クラス
+        container_base = os.getenv('CONTAINER_BASE')
+        if container_base == 'docker':
+            ansibleAg = DockerMode()
+        elif container_base == 'kubernetes':
+            ansibleAg = KubernetesMode()
+
         ##########################
-        # コンテナの実行状態確認の処理を組み込んで下さい
-        # 失敗した場合の標準出力・エラー出力が取れるのなら
-        # それも含めてなにかメッセージを出してほしい
-        # ret
+        # コンテナの実行状態確認
         #   True: 起動
         #   False: 停止
-        ret = True
-        ##########################
-
-        # コンテナが起動中
-        if ret is True:
+        res_is_container_running = ansibleAg.is_container_running(self, execute_no)
+        if res_is_container_running[0] is True:
             # 緊急停止ファイルの有無確認
             if os.path.isfile(strForcedFileName):
                 # 緊急停止ファイルあり
 
                 ##########################
-                # コンテナ停止の処理を組み込んで下さい
-                # 失敗した場合の標準出力・エラー出力が取れるのなら
-                # それも含めてなにかメッセージを出してほしい
-                # ret
+                # コンテナ停止
                 #   True: 停止
                 #   False: 停止失敗
-                ret = False
-                ##########################
-
-                if ret is True:
-
+                res_container_kill = ansibleAg.container_kill(execute_no)
+                if res_container_kill[0] is True:
                     # ステータス 緊急停止
                     retStatus = "8"
                 else:
                     # ステータス 想定外エラー
+                    self.setLastError(res_container_kill[1])
                     # msgstr = g.appmsg.get_api_message("", [])
                     # self.setLastError(msgstr)
                     retStatus = "7"
@@ -291,7 +298,7 @@ class AnsibleExecute():
                 retStatus = "3"
         else:
             # ansible-playbookコマンド実行結果ファイルより結果を取得
-            print(strResultFileName)
+            # print(strResultFileName)
             if os.path.isfile(strResultFileName):
                 # ansible-playbookコマンド実行結果ファイルより結果取得
                 strStatus = ""
@@ -307,9 +314,14 @@ class AnsibleExecute():
                     retStatus = "6"
             else:
                 # ansible-playbookコマンド実行結果ファイルなし
-                # ステータス 想定外エラー
-                msgstr = g.appmsg.get_api_message("MSG-10890", [])
-                self.setLastError(msgstr)
+                return_code = res_is_container_running[1].return_code
+                if return_code != 0:
+                    # コンテナの起動確認が正しく行えなかった
+                    self.setLastError(res_is_container_running[1])
+                else:
+                    # ステータス 想定外エラー
+                    msgstr = g.appmsg.get_api_message("MSG-10890", [])
+                    self.setLastError(msgstr)
                 retStatus = "7"
 
         # ansible-playbook 標準出力出力先
@@ -342,6 +354,11 @@ class AnsibleExecute():
             log_data = ""
         with open(strSTDOUTFileName, "w") as fd:
             fd.write(log_data)
+
+        # エラーメッセージをログに残す
+        strSTDERRFileName = "{}/{}/{}".format(execute_path, self.strOutFolderName, self.STDERRLogfile)
+        with open(strSTDERRFileName, "a") as fd:
+            fd.write(self.getLastErrormsg)
 
         return retStatus
     
