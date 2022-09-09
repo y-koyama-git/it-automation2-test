@@ -1270,7 +1270,7 @@ class loadTable():
         return status_code, result, msg,
 
     # [maintenance]:メニューのレコード操作
-    def exec_maintenance(self, parameters, target_uuid='', cmd_type='', pk_use_flg=False):
+    def exec_maintenance(self, parameters, target_uuid='', cmd_type='', pk_use_flg=False, auth_check=True):
         """
             RESTAPI[filter]:メニューのレコード操作
             ARGS:
@@ -1343,9 +1343,10 @@ class loadTable():
                     target_jnls = self.get_target_jnl_uuids(target_uuid)
 
             # 処理種別の権限確認(メッセージ集約せずに、400系エラーを返却)
-            exec_authority = self.check_authority_cmd(cmd_type)
-            if exec_authority[0] is not True:
-                return exec_authority
+            if auth_check == True:
+                exec_authority = self.check_authority_cmd(cmd_type)
+                if exec_authority[0] is not True:
+                    return exec_authority
             # 不要パラメータの除外
             entry_parameter = self.exclusion_parameter(cmd_type, entry_parameter)
             # 必須項目チェック
@@ -1700,20 +1701,12 @@ class loadTable():
                             rest_file.setdefault(jsonkey, file_data)
             else:
                 rest_key = self.get_rest_key(col_name)
-                view_item = self.get_objcol(rest_key)
-
-                if view_item is not None:
-                    view_item = view_item.get(COLNAME_VIEW_ITEM)
-                else:
-                    view_item = "1"
-    
-                auto_input_item = self.get_objcol(rest_key)
-                if auto_input_item is not None:
-                    auto_input_item = auto_input_item.get(COLNAME_AUTO_INPUT)
-                else:
-                    auto_input_item = "0"
-
                 if len(rest_key) > 0:
+
+                    objcol = self.get_objcol(rest_key)
+                    input_item = objcol.get(COLNAME_INPUT_ITEM)
+                    view_item = objcol.get(COLNAME_VIEW_ITEM)
+                    auto_input_item = objcol.get(COLNAME_AUTO_INPUT)
 
                     if isinstance(col_val, datetime.datetime):
                         col_val = '{}'.format(col_val.strftime('%Y/%m/%d %H:%M:%S.%f'))
@@ -1733,7 +1726,8 @@ class loadTable():
                     if mode in ['input']:
                         rest_parameter.setdefault(rest_key, col_val)
                     else:
-                        if view_item == '1' or auto_input_item == '1':
+                        # if view_item == '1' or auto_input_item == '1':
+                        if (auto_input_item == '1' or not (input_item == '2' and view_item == '0')):
                             rest_parameter.setdefault(rest_key, col_val)
 
                     if mode not in ['excel', 'excel_jnl']:
