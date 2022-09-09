@@ -19,6 +19,8 @@ FROM    registry.access.redhat.com/ubi8/ubi-init as common_build
 ARG USERNAME
 ARG GROUPNAME
 ARG APP_PATH
+ENV PYTHONPATH="/exastro/"
+ENV USER_ID="20102"
 
 RUN dnf install -y \
     gcc \
@@ -47,6 +49,8 @@ FROM    common_build as develop_build
 ARG USERNAME
 ARG GROUPNAME
 ARG APP_PATH
+ENV PYTHONPATH="/exastro/"
+ENV USER_ID="20102"
 
 RUN dnf install -y \
     sudo \
@@ -80,6 +84,8 @@ FROM    common_build
 ARG USERNAME
 ARG GROUPNAME
 ARG APP_PATH
+ENV PYTHONPATH="/exastro/"
+ENV USER_ID="20102"
 
 USER $USERNAME
 WORKDIR $APP_PATH
