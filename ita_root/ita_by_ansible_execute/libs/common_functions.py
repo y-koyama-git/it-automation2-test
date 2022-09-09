@@ -68,7 +68,7 @@ def get_execution_process_info(wsDb, execution_no):
 
 def update_execution_record(wsDb, data):
     try:
-        if data["LAST_UPDATE_USER"] is None:
+        if "LAST_UPDATE_USER" not in data:
             data["LAST_UPDATE_USER"] = g.USER_ID
         result = wsDb.table_update('T_ANSR_EXEC_STS_INST', [data], 'EXECUTION_NO')
         return True, result

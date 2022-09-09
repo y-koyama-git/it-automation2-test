@@ -199,8 +199,8 @@ def getAnsibleExecutDirPath(driver_id, execute_no):
 
 
 def getDataRelayStorageDir():
-    return "/{}/{}/{}".format("storage", g.get('ORGANIZATION_ID'), g.get('WORKSPACE_ID'))
-  
+    return os.environ.get('STORAGEPATH') + "{}/{}".format(g.get('ORGANIZATION_ID'), g.get('WORKSPACE_ID'))
+
 
 def getInputDataTempDir(EcecuteNo, DriverName):
     """

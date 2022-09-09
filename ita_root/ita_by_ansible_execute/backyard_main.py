@@ -53,15 +53,6 @@ def backyard_main(organization_id, workspace_id):
 
 
 def main_logic(organization_id, workspace_id, wsDb):
-    # # container software
-    # container_base = os.getenv('CONTAINER_BASE')
-    # if container_base == 'docker':
-    #     ansibleAg = DockerMode(organization_id, workspace_id)
-    # elif container_base == 'kubernetes':
-    #     ansibleAg = KubernetesMode(organization_id, workspace_id)
-    # else:
-    #     return False, 'Not support container base.'
-
     # 実行中のコンテナの状態確認
     if child_process_exist_check(wsDb) is False:
         g.applogger.error("作業インスタンスの実行プロセスの起動確認が失敗しました。(作業No.:{})")  # ITAANSIBLEH-ERR-50074
@@ -229,6 +220,8 @@ def run_unexecuted(wsDb, num_of_run_instance, organization_id, workspace_id):
         result = instance_prepare(wsDb, execute_data, organization_id, workspace_id)
         if result[0] is False:
             return False, result[1]
+        else:
+            g.applogger.debug(result[1])
 
     return True,
 
@@ -272,17 +265,13 @@ def instance_prepare(wsDb, execute_data, organization_id, workspace_id):
     g.applogger.debug("ITAANSIBLEH-STD-50077 (作業No.:{}, driver_name:{})".format(driver_name, execution_no))
 
     command = ["python3", "backyard/backyard_child_init.py", organization_id, workspace_id, execution_no, driver_id]
-    # child_process = subprocess.run(command, capture_output=True)
-    subprocess.Popen(command, stdout=subprocess.PIPE)
-    # check result
-    # print("return_code: %s" % child_process.returncode)
-    # print("stdout:\n%s" % child_process.stdout.decode('utf-8'))
-    # print("stderr:\n%s" % child_process.stderr.decode('utf-8'))
-    # child_process.check_returncode()
+    cp = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
     g.applogger.debug("ITAANSIBLEH-STD-50078 (作業No.:{}, driver_name:{})".format(driver_name, execution_no))
 
-    return True,
+    return True, {"return_code": cp.poll(),
+                  "stdout": cp.stdout,
+                  "stderr": cp.stderr}
 
 
 def child_process_exist_check_ps():
