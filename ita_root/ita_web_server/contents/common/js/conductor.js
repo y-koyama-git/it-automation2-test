@@ -34,7 +34,7 @@ constructor( target, mode ) {
     
     // Conductor class ID
     cd.id = fn.getParams().conductor_class_id;
-    console.log(cd.id)
+
     
     // 編集モードでIDの指定があれば閲覧モードにする
     if ( mode === 'edit' && ( cd.id !== undefined && cd.id !== '')) {
@@ -105,8 +105,7 @@ setup() {
         cd.init( result[0], result[1] );
     }).catch(function( error ){
         if ( error.message ) {
-            alert( error.message + '\nリロードします。' );
-            location.href = '?menu=conductor_class_edit';
+            console.error( error.message );
         }
     });
     
@@ -119,28 +118,26 @@ setup() {
 operationMenuHtml() {
     const menu = {
         edit: [
-            { type: 'registration', title: '登録', action: 'positive', width: '200px'},
-            { type: 'selectConductor', title: 'Conductor選択', action: 'default', width: '160px', separate: true },
-            { type: 'reset', title: 'リセット', action: 'negative', width: '120px'}
+            { icon: 'note', type: 'selectConductor', title: '選択', action: 'default', width: '100px' },
+            { icon: 'plus', type: 'registration', title: '登録', action: 'positive', width: '160px', separate: true },
+            { icon: 'return', type: 'reset', title: 'リセット', action: 'negative', width: '100px', separate: true }
         ],
         view: [
-            { type: 'edit', title: '編集', action: 'positive', width: '200px'},
-            { type: 'selectConductor', title: 'Conductor選択', action: 'default', width: '160px', separate: true },
-            { type: 'diversion', title: '流用新規', action: 'normal', width: '160px'},
-            { type: 'new', title: '新規', action: 'normal', width: '160px'}
+            { icon: 'note', type: 'selectConductor', title: '選択', action: 'default', width: '100px' },
+            { icon: 'edit', type: 'edit', title: '編集', action: 'positive', width: '160px', separate: true },
+            { icon: 'square_next', type: 'execute', title: '作業実行', action: 'default', width: '160px' },
+            { icon: 'copy', type: 'diversion', title: '流用新規', action: 'normal', width: '100px', separate: true },
+            { icon: 'clear', type: 'new', title: '新規', action: 'normal', width: '100px'}
         ],
         update: [
-            { type: 'update', title: '更新', action: 'positive', width: '200px'},
-            { type: 'refresh', title: '再読み込み', action: 'negative', separate: true, width: '120px'},
-            { type: 'cancel', title: 'キャンセル', action: 'negative', width: '120px'},
-        ],
-        execute: [
-            { type: 'execute', title: '作業実行', action: 'positive', width: '200px'},
-            { type: 'executeSelectConductor', title: 'Conductor選択', action: 'default', width: '160px', separate: true },
-            { type: 'executeSelectOperation', title: 'Operation選択', action: 'default', width: '160px'},
+            { icon: 'update02', type: 'update', title: '更新', action: 'positive', width: '160px'},
+            { icon: 'update01', type: 'refresh', title: '再読み込み', action: 'negative', separate: true, width: '120px'},
+            { icon: 'cross', type: 'cancel', title: 'キャンセル', action: 'negative', width: '120px'},
         ],
         checking: [
-            { type: 'stop', title: '緊急停止', action: 'danger', width: '200px'},
+            { icon: 'note', type: 'selectInstance', title: '選択', action: 'default', width: '100px' },
+            { icon: 'cal_off', type: '', title: '予約取消', action: 'danger', width: '120px', separate: true },
+            { icon: 'stop', type: 'stop', title: '緊急停止', action: 'danger', width: '120px'},
         ]
     };
     
@@ -151,7 +148,7 @@ operationMenuHtml() {
         if ( item.separate ) itemClass.push('operation-menu-separate');
         if ( item.width ) attr.style = `width:${item.width}`;
         list.push(`<li class="${itemClass.join(' ')}">`
-            + fn.html.button( item.title, ['itaButton', 'operation-menu-button'], attr )
+            + fn.html.button( `${fn.html.icon( item.icon )}${item.title}`, ['itaButton', 'operation-menu-button'], attr )
         + `</li>`)
     }
     return `
@@ -318,22 +315,21 @@ init( info, conductorData ) {
     cd.initHistory();
     
     // 初期表示
-    if ( cd.mode !== 'execute') {
-        if ( conductorData ) {
-            if ( cd.mode === 'checking') {
-                // 作業確認画面更新イベント登録
-                cd.$.window.on('conductorDrawEnd', function(){
-                    cd.$.window.off('conductorDrawEnd');
-                    cd.conductorStatusUpdate( 0 );
-                });
-            }
-            cd.loadConductor();
-        } else if ( fn.storage.check('conductor-edit-temp') ) {
-            cd.loadConductor( fn.storage.get('conductor-edit-temp'));
-        } else {
-            cd.InitialSetNode();
+    if ( conductorData ) {
+        if ( cd.mode === 'checking') {
+            // 作業確認画面更新イベント登録
+            cd.$.window.on('conductorDrawEnd', function(){
+                cd.$.window.off('conductorDrawEnd');
+                cd.conductorStatusUpdate( 0 );
+            });
         }
+        cd.loadConductor();
+    } else if ( fn.storage.check('conductor-edit-temp') ) {
+        cd.loadConductor( fn.storage.get('conductor-edit-temp'));
+    } else {
+        cd.InitialSetNode();
     }
+
     
     // 基本イベント
     cd.initEvents();    
@@ -347,7 +343,7 @@ InitialSetNode() {
     const cd = this;
     cd.newNode('start', 'left', 'center');
     cd.newNode('end', 'right', 'center');
-    cd.panelConductorReset();
+    cd.panelChange();
 }
 /*
 ##################################################
@@ -374,7 +370,7 @@ conductorMode( mode ) {
     cd.$.header.html( cd.headerHtml() );
     
     // モードテキスト切替
-    cd.$.mode.text( cd.mode.toUpperCase() );
+    cd.$.mode.text( WD.CONDUCTOR[ cd.mode ] );
 
     // パネル切替
     cd.select = [];
@@ -475,33 +471,52 @@ initEvents() {
       cd.panelChange();
 
       switch( type ) {
+          // コンダクター作業実行
           case 'execute':
-              // 実行しますか？
-              if ( window.confirm(`実行しますか？`) ) {
-                  cd.menuButtonDisabled( true );
-                  /*
-                      実行処理
-                  */
-              }
+              cd.menuButtonDisabled( true );
+              cd.conductorExecuteModal().then(function( result ){
+                  console.log(result)
+                  if ( result === 'cancel') {
+                      cd.menuButtonDisabled( false );
+                  } else {
+                      const executeData = {
+                          'conductor_class_id': cd.id,
+                          'operation_id': 'c162b3a9-e3e3-42e6-a1e2-9da1bdfd8daf',
+                          'schedule_date': '',
+                          'conductor_data': cd.data
+                      };
+                      fn.fetch('/menu/conductor_execution/conductor/execute/', null, 'POST', executeData ).then(function( exeResult ){
+                          window.location.href = `?menu=conductor_confirmation&conductor_instance_id=${exeResult.conductor_instance_id}`;
+                      }).catch(function( error ){
+                          cd.menuButtonDisabled( false );
+                      });
+                  }
+              });
           break;
+          // コンダクター新規登録
           case 'registration':
-              // 登録しますか？
               if ( window.confirm('登録しますか？') ) {
                   cd.menuButtonDisabled( true );
-
                   fn.fetch('/menu/conductor_class_edit/conductor/class/maintenance/', null, 'POST', cd.data ).then(function( result ){
-                      window.location.href = `?menu=conductor_class_edit&conductor_class_id=${result.conductor_class_id}`;
+                      cd.fetchConductor( result.conductor_class_id ).then(function(){
+                          cd.menuButtonDisabled( false );
+                          cd.conductorMode('view');
+                      });
                   }).catch(function( error ){
                       cd.menuButtonDisabled( false );
                   });
               }
           break;
+          // 登録済みコンダクターを選択し表示する
           case 'selectConductor': {
               cd.menuButtonDisabled( true );
               
               cd.selectConductorModalOpen().then(function( selectId ){
                   if ( selectId ) {
-                      window.location.href = `?menu=conductor_class_edit&conductor_class_id=${selectId}`;
+                      cd.fetchConductor( selectId ).then(function( result ){
+                          cd.menuButtonDisabled( false );
+                          cd.conductorMode('view');
+                      });
                   } else {
                       cd.menuButtonDisabled( false );
                   }
@@ -546,7 +561,7 @@ initEvents() {
               cd.data.conductor.note = null;
 
               cd.conductorMode('edit');
-              cd.panelConductorReset();
+              cd.panelChange();
 
               history.replaceState( null, null, '?menu=conductor_class_edit');
             }
@@ -556,7 +571,7 @@ initEvents() {
               cd.InitialSetNode();
               
               cd.conductorMode('edit');
-              cd.panelConductorReset();
+              cd.panelChange();
 
               history.replaceState( null, null, '?menu=conductor_class_edit');
           break;
@@ -564,26 +579,35 @@ initEvents() {
               // 更新しますか？
               if ( window.confirm('更新しますか？') ) {
                   cd.menuButtonDisabled( true );
-
                   fn.fetch(`/menu/conductor_class_edit/conductor/class/maintenance/${cd.id}/`, null, 'PATCH', cd.data ).then(function(result){
-                      window.location.href = `?menu=conductor_class_edit&conductor_class_id=${result.conductor_class_id}`;
+                      cd.fetchConductor( result.conductor_class_id ).then(function(){
+                          cd.menuButtonDisabled( false );
+                          cd.conductorMode('view');
+                      });
                   }).catch(function( error ){
                       cd.menuButtonDisabled( false );
                   });
-
               }
           break;
+          // 編集中データ再読み込み
           case 'refresh':
-            // 再読込しますか？
             if ( window.confirm('再読込しますか？') ) {
-                //
+                cd.menuButtonDisabled( true );
+                cd.fetchConductor( cd.id ).then(function( result ){
+                    cd.menuButtonDisabled( false );
+                });
             }
             break;
+          // 編集をキャンセルする
           case 'cancel':
-            // キャンセル確認無し
             cd.selectConductor( cd.original );
             cd.conductorMode('view');
           break;
+          
+          
+          
+          
+          
           case 'cansel-instance':
             // 予約取消
             if ( window.confirm('予約取消') ) {
@@ -1595,8 +1619,6 @@ initNode() {
     // --------------------------------------------------
     cd.$.area.on('mousedown', function( e ){
         if ( e.buttons === 1 ) {
-            // Viewモードは何もしない
-            if ( cd.mode === 'view') return false;
             
             // Skipチェックボックス
             if ( $( e.target ).closest('.node-skip').length && cd.mode !== 'checking') {
@@ -5513,15 +5535,6 @@ updateConductorData() {
 
 /*
 ##################################################
-  コンダクターパネルリセット
-##################################################
-*/
-panelConductorReset() {
-  const cd = this;
-  cd.panelChange();
-}
-/*
-##################################################
   コンダクターリセット
 ##################################################
 */
@@ -5549,7 +5562,6 @@ clearConductor() {
     cd.canvasPositionReset(0);
     // パネル情報
     cd.panelChange();
-    cd.panelConductorReset();
 }
 /*
 ##################################################
@@ -5579,6 +5591,7 @@ selectConductor( result ) {
     
     cd.clearConductor();
     cd.loadConductor( result );
+    cd.panelChange();
 }
 /*
 ##################################################
@@ -5686,6 +5699,100 @@ nodeReSet( reSetConductorData ) {
 }
 /*
 ##################################################
+  指定のIDのコンダクターを読み込む
+##################################################
+*/
+fetchConductor( conductorId ) {
+    const cd = this;
+    
+    let process = fn.processingModal();
+    
+    return new Promise(function( resolve ){
+        const url = `/menu/conductor_class_edit/conductor/class/${conductorId}/`;
+        fn.fetch( url ).then(function( result ){
+            cd.id = conductorId;
+            cd.selectConductor( result );
+            history.replaceState( null, null, `?menu=conductor_class_edit&conductor_class_id=${conductorId}`);
+        }).catch(function(){
+            alert('読み込みに失敗しました。');
+        }).then(function(){
+            process.close();
+            process = null;
+            
+            resolve();
+        });
+    });
+}
+/*
+##################################################
+  指定のIDのコンダクターを読み込む
+##################################################
+*/
+conductorExecuteModal() {
+    const cd = this;
+    
+    const html = `
+    <div class="dialogContentContainer">
+        <div class="dialogContentTitle">オペレーション</div>
+        <div class="dialogContentBody">${fn.html.button('オペレーション選択', 'executeScheduleOperetionSelectButton')}</div>
+        <div class="dialogContentTitle">スケジュール</div>
+        <div class="dialogContentBody">${fn.html.dateInput( true, 'executeSchedule', '')}</div>
+        <div class="dialogContentBody">予約日時を指定する場合は、日時フォーマット(YYYY/MM/DD HH:II)で入力して下さい。<br>
+        ブランクの場合は即時実行となります</div>
+    </div>`;
+    
+    return new Promise(function( resolve, reject ){
+
+        const funcs = {
+            execute: function(){
+                resolve('?????');
+            },
+            cancel: function(){
+                dialog.close();
+                dialog = null;
+                
+                resolve('cancel');
+            }
+        };
+
+        const buttons = {
+            execute: { text: '作業実行', action: 'positive'},
+            cancel: { text: 'キャンセル', action: 'negative'}
+        };
+
+        const config = {
+            mode: 'modeless',
+            position: 'center',
+            header: {
+                title: 'コンダクター作業実行'
+            },
+            footer: {
+                button: buttons
+            }
+        };
+
+        let dialog = new Dialog( config, funcs );
+
+        dialog.$.body.on('click', '.executeScheduleOperetionSelectButton', function(){
+            cd.selectOperationModalOpen().then(function( operationId ){
+                console.log( operationId );
+            });
+        });
+        dialog.$.body.on('click', '.executeSchedule', function(){
+            const $button = $( this );
+                  
+        });
+        
+
+
+        dialog.open( html );
+
+
+    
+    });
+}
+/*
+##################################################
   コンダクターを読み込む
 ##################################################
 */
@@ -5694,6 +5801,7 @@ loadConductor( loadConductorData ) {
     
     if ( loadConductorData ) {
         cd.data = $.extend( true, {}, loadConductorData );
+        cd.original = $.extend( true, {}, loadConductorData );
     }
 
     if ( cd.setting.debug === true ) {
@@ -5704,12 +5812,13 @@ loadConductor( loadConductorData ) {
     }
     
     try {
+    /*
       if ( cd.mode === 'edit') {
         // 読み込みデータはIDと追い越し判定用日時はリセットする
         cd.data['conductor'].id = null;
         cd.data['conductor'].last_update_date_time = null;
         cd.conductorMode('edit');
-      }
+      }*/
       cd.count.node = cd.data.config.nodeNumber;
       cd.count.terminal = cd.data.config.terminalNumber;
       cd.count.edge = cd.data.config.edgeNumber;
@@ -5740,5 +5849,535 @@ loadConductor( loadConductorData ) {
       }, 1 );
     }
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//   作業確認　Conducotr画面とパネルの情報を更新
+// 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+itaPopup( $target, id ) {
+  
+  const popupID = 'popup-' + id;
+  let $popup;
+  
+  // 各ノード個別の作業状況確認ポップアップ追加
+  if ( $('#' + popupID ).length ) {
+    $popup = $('#' + popupID );
+  } else {
+    $popup = $('<div/>').attr('id', popupID ).addClass('itaPopup')
+      .text('作業').css('display','none');
+    if ( !$target.is('.resultPopup') ) {
+      $body.append( $popup );
+    }
+  }
+  
+  // ノードの状態で表示・非表示を切り替える
+  if ( $target.is('.node-jump') ) {
+    $popup.css('visibility','visible');
+  } else {
+    $popup.css('visibility','hidden');
+  }
+  
+  if ( !$target.is('.resultPopup') ) {
+    // 画面を移動しても追従するようにする
+    $target.addClass('resultPopup').on({
+      'mouseenter': function(){
+        const $this = $( this );
+        $popup.css('display','block');
+
+        // 位置更新
+        const updatePosition = function() {
+          const mpx = $this.offset().left + ( ( $this.outerWidth() / 2 ) * editorValue.scaling ),
+                mpy = $this.offset().top - ( 4 * editorValue.scaling )
+          $popup.css({ left: mpx, top: mpy });
+        };
+        updatePosition();
+        // マウスムーブとスクロールでも位置を更新する
+        $this.on('mousemove', updatePosition )
+          .on( mousewheelevent, function(){
+          setTimeout( function(){ updatePosition(); }, 1 );
+        });
+      },
+      'mouseleave': function(){
+        const $this = $( this );
+        $popup.css('display','none');
+        $this.off('mousemove ' + mousewheelevent );
+      }
+    });
+  }
+}
+// let pollingTimerID = '';
+// 00_javascript.js( proxy.printConductorStatus( conductorInstanceID ) )
+// conductorUseList.conductorStatus
+conductorStatusUpdate( exeNumber ) {
+
+  // ポーリングタイム（ms）
+  //const intervalTime = 3000;
+  var tmpintervalTime = 3000;
+  if( document.getElementById('intervalOfDisp') !== null ) {
+    var tmpintervalTime = document.getElementById('intervalOfDisp').innerHTML;
+    if( isNaN( tmpintervalTime ) === true ) {
+       var tmpintervalTime = 3000;
+    }
+  }
+  const intervalTime = tmpintervalTime;
+ 
+
+  
+  // 最初（exeNumberが0）だけ実行する処理
+  if ( exeNumber === 0 ) {
+    // proxy.printConductorStatusでTrigger
+    $window.on('conductorStatusUpdate', function(){
+      conductorStatusUpdate(1);
+    });
+    // ボタンを一旦非表示に
+    $('#cansel-instance, #scram-instance').hide();
+  }
+
+  // パネル情報更新
+  const conductorInfo = conductorUseList.conductorStatus['CONDUCTOR_INSTANCE_INFO'];
+  const panelConducotrInfo = [
+    ['#conductor-instance-id', conductorInfo.CONDUCTOR_INSTANCE_ID ],
+    ['#conductor-instance-status', conductorStatus[ conductorInfo.STATUS_ID ][1] ],
+    ['#conductor-instance-pause', conductorInfo.PAUSE_STATUS ],
+    ['#conductor-instance-start', conductorInfo.TIME_START ],
+    ['#conductor-instance-end', conductorInfo.TIME_END ],
+    ['#conductor-instance-user', conductorInfo.EXECUTION_USER ],
+    ['#conductor-instance-reservation', conductorInfo.TIME_BOOK ],
+    ['#conductor-instance-emergency', conductorInfo.ABORT_EXECUTE_FLAG ],
+    ['#select-operation-id', conductorInfo.OPERATION_NO_IDBH ],
+    ['#select-operation-name', conductorInfo.OPERATION_NAME ]
+  ];
+  // 選択されている場合はそのノードのパネルを表示する
+  if ( g_selectedNodeID.length >= 1 ) {
+    panelChange( g_selectedNodeID[0] );
+  }
+  
+  const panelConducotrInfoLength = panelConducotrInfo.length;
+  
+  for ( let i = 0; i < panelConducotrInfoLength; i++ ) {
+    if ( panelConducotrInfo[ i ][ 1 ] === null ) panelConducotrInfo[ i ][ 1 ] = '';
+    $( panelConducotrInfo[ i ][ 0 ] ).text( panelConducotrInfo[ i ][ 1 ] );
+  }  
+  
+  // Node情報更新
+  const nodeInfo = conductorUseList.conductorStatus['NODE_INFO'],
+        nodeInfoLength = nodeInfo.length;
+  
+  // 条件分岐で選ばれなかった分岐以降を半透明にする
+  const nextNodeUnused = function( edgeID ) {
+
+    const nextNodeID = conductorData[ edgeID ].inNode,
+          nextNodeType = conductorData[ nextNodeID ].type;
+    
+    $('#' + edgeID ).attr('data-status','run-unused');
+    
+    nodeUnused( nextNodeID );
+
+  };
+  const nodeUnused = function( nodeID ) {
+    const nodeData = conductorData[ nodeID ],
+          outTerminals = terminalInOutID( nodeData['terminal'], 'out'),
+          outTerminalLength = outTerminals.length,
+          $node = $('#' + nodeID );
+    $node.addClass('run-unused');
+    conductorData[ nodeID ].endStatus = true;
+    for ( let i = 0; i < outTerminalLength; i++ ) {
+      nextNodeUnused( nodeData['terminal'][ outTerminals[ i ] ].edge );
+    }
+  };
+  const condionalBranchCheck = function( nodeID ) {
+    // 一つ前のノードの結果をチェックする
+    const inTerminal = terminalInOutID( conductorData[ nodeID ].terminal, 'in'),
+          tergetNodeID = conductorData[ nodeID ].terminal[ inTerminal[0] ].targetNode;
+    let   nodeStatus = nodeInfo[ tergetNodeID ].STATUS;
+    
+    // 一部のNodeステータスをMovementステータスに合わせる
+    if ( nodeStatus === '5') nodeStatus = '9';
+    if ( nodeStatus === '12' || nodeStatus === '13') nodeStatus = '14';
+    
+    // 終了しているかチェックする
+    if ( ['6','7','9','10','11','14','15','9999'].indexOf( nodeStatus ) !== -1 ) {
+      conductorData[ nodeID ].endStatus = true;
+      const inTerminalID = terminalInOutID( conductorData[ nodeID ].terminal, 'in'),
+            outTerminals = terminalInOutID( conductorData[ nodeID ].terminal, 'out'),
+            outTerminalLength = outTerminals.length,
+            $branchNode = $('#' + nodeID );
+      let otherFlag = true,
+          otherTerminal;
+      $branchNode.addClass('running');
+      $('#' + conductorData[ nodeID ].terminal[ inTerminal[0] ].edge ).attr('data-status', 'running');
+      for ( let i = 0; i < outTerminalLength; i++ ) {
+        const terminal = conductorData[ nodeID ]['terminal'][ outTerminals[ i ] ];
+        if ( terminal['condition'][0] !== '9999' ) {
+          if ( terminal['condition'].indexOf( nodeStatus ) !== -1 ) {
+            otherFlag = false;
+          } else {
+            $('#' + terminal.id ).closest('.node-sub').addClass('run-unused');
+            $branchNode.find( '.' + terminal.id + '-branch-line').attr('data-status', 'unused');
+            nextNodeUnused( terminal.edge );
+          }
+        } else {
+          otherTerminal = terminal;
+        }
+      }
+      if ( otherFlag !== true ) {
+        $('#' + otherTerminal.id ).closest('.node-sub').addClass('run-unused');
+        $branchNode.find( '.' + otherTerminal.id + '-branch-line').attr('data-status', 'unused');
+        nextNodeUnused( otherTerminal.edge );
+      }
+    }
+  };
+  
+  // Status file blanchの状態を更新する
+  const statusFileBranch = function( nodeID ) {
+    const $branchNode = $('#' + nodeID ),
+          inTerminalsID = terminalInOutID( conductorData[ nodeID ].terminal, 'in'),
+          inTerminal = conductorData[ nodeID ].terminal[ inTerminalsID[0] ],
+          prevNodeID = inTerminal.targetNode,
+          prevNodeStatus = nodeInfo[ prevNodeID ].STATUS,
+          prevNodeStatusFile = nodeInfo[ prevNodeID ].STATUS_FILE;
+    
+    // 前のNodeが終了しているかチェック
+    if ( ['5','9','12','13','14','15'].indexOf( prevNodeStatus ) !== -1 ) {
+      conductorData[ nodeID ].endStatus = true;
+      const $prevEdge = $('#' + inTerminal.edge ),
+            terminals = Object.keys( conductorData[ nodeID ].terminal ).map(function(k){
+                    return conductorData[ nodeID ].terminal[k];
+                }),
+            outTerminals = terminals.filter(function(v){
+                    if ( v.case !== undefined && v.case !== 'else') return true;
+                }).sort(function(a,b){
+                    if ( a.case > b.case ) {
+                        return 1;
+                    } else if ( a.case < b.case ) {
+                        return -1;
+                    } else {
+                        return 0;
+                    }
+                }),
+            outTerminalLength = outTerminals.length,
+            elseTerminal = terminals.filter(function(v){
+                    if ( v.case === 'else') return true;
+                });
+      
+      // Caseの順番にStatus fileの値とConditionの値をチェックする
+      let matchTerminalID = undefined;
+      for ( let i = 0; i < outTerminalLength; i++ ) {
+        if ( outTerminals[i].condition.join('') === prevNodeStatusFile && matchTerminalID === undefined ) {
+          $('#' + outTerminals[i].id ).closest('.node-sub').attr('data-match', 'true');
+          matchTerminalID = outTerminals[i].id;
+        } else {
+          $('#' + outTerminals[i].id ).closest('.node-sub').addClass('run-unused');
+          $branchNode.find( '.' + outTerminals[i].id + '-branch-line').attr('data-status', 'unused');
+          nextNodeUnused( outTerminals[i].edge );
+        }
+      }
+      // マッチしなかったらelse
+      if ( matchTerminalID === undefined ) {
+        matchTerminalID = elseTerminal[0].id;
+      } else {
+        $('#' + elseTerminal[0].id ).closest('.node-sub').addClass('run-unused');
+        $branchNode.find( '.' + elseTerminal[0].id + '-branch-line').attr('data-status', 'unused');
+        nextNodeUnused( elseTerminal[0].edge );
+      }
+
+      $branchNode.addClass('running');
+      if ( prevNodeStatusFile === undefined ) {
+        $branchNode.attr('data-status-file', 'unknown').find('.status-file-result-inner').text('Unknown');
+      } else {
+        $branchNode.attr('data-status-file', 'known').find('.status-file-result-inner').text( prevNodeStatusFile );
+      }
+      
+      $prevEdge.attr('data-status', 'running');
+    }
+  };
+  
+  // 並列マージの状態を更新する
+  const parallelMergeCheck = function( nodeID ) {
+    const inTerminals = terminalInOutID( conductorData[ nodeID ].terminal, 'in'),
+          inTerminalLength = inTerminals.length,
+          $node = $('#' + nodeID );
+    let   waitingCount = 0;
+    for ( let i = 0; i < inTerminalLength; i++ ) {
+      const tergetNodeID = conductorData[ nodeID ].terminal[ inTerminals[i] ].targetNode;
+      // 終了しているかチェックする
+      if ( ['5','9','12','13','14','15'].indexOf( nodeInfo[ tergetNodeID ].STATUS ) !== -1 ) {
+        waitingCount++;
+        $node.addClass('running');
+        $('#' + inTerminals[i] ).next().find('.merge-status').attr('data-status', 'waiting');
+        $('#' + conductorData[ nodeID ].terminal[ inTerminals[i] ].edge ).attr('data-status', 'running');
+      }      
+    }
+    // 全て待機状態ならコンプリートにする
+    if ( inTerminalLength === waitingCount ) {
+      $node.find('.merge-status').attr('data-status', 'complete');
+    }
+  };
+  
+  // Movement、Call、Endの状態を更新する
+  const movementCheck = function( nodeID ) {
+  
+    const nodeInfo = conductorUseList.conductorStatus['NODE_INFO'][ nodeID ],
+          nodeData = conductorData[ nodeID ],
+          $node = $('#' + nodeID ),
+          inTerminalID = terminalInOutID( conductorData[ nodeID ]['terminal'], 'in'),
+          $inEdge = $('#' + conductorData[ nodeID ]['terminal'][ inTerminalID[0] ].edge );
+    
+    let endMessage = '';
+    
+    // 作業結果URLがあれば追加する
+    const nodeJump = function(){
+      if ( nodeInfo.JUMP ) {
+        if ( !$node.find('.node-result').is('.node-jump') ) {
+          $node.find('.node-result').addClass('node-jump').attr({
+            'data-href': nodeInfo.JUMP
+          });
+        }
+      }
+    };
+    
+    switch( nodeInfo.STATUS ) {
+      case '1':
+        itaPopup( $node.find('.node-result'), $node.attr('id') );
+        return false;
+      case '2':
+        // 準備中
+        nodeJump();
+        $node.addClass('ready');
+        itaPopup( $node.find('.node-result'), $node.attr('id') );
+        $inEdge.attr('data-status', 'running');
+        return false;
+      case '3':
+      case '4':
+        // 実行中
+        nodeJump();
+        $node.removeClass('ready').addClass('running');
+        itaPopup( $node.find('.node-result'), $node.attr('id') );
+        $inEdge.attr('data-status', 'running');
+        return false;
+      case '5':
+      case '9':
+        endMessage = 'DONE';
+        break;
+      case '7':
+        endMessage = 'STOP';
+        break;
+      case '6':
+      case '10':
+      case '11':
+        endMessage = 'ERROR';
+        break;
+      case '12':
+      case '13':
+      case '14':
+        endMessage = 'SKIP';
+        break;
+      case '15':
+        endMessage = 'WARN';
+        break;
+    }
+    nodeJump();
+    $inEdge.attr('data-status', 'running');
+    $node.removeClass('ready').addClass('complete').attr('data-result', nodeInfo.STATUS );
+    itaPopup( $node.find('.node-result'), $node.attr('id') );
+    $node.find('.node-result').attr('data-result-text', endMessage );
+    conductorData[ nodeID ].endStatus = true;
+  };
+  
+  
+  // ParallelBranchの状態をチェックする
+  const parallelBranchCheck = function( nodeID ) {
+    const inTerminal = terminalInOutID( conductorData[ nodeID ].terminal, 'in'),
+          tergetNodeID = conductorData[ nodeID ].terminal[ inTerminal[0] ].targetNode;
+    // 終了しているかチェックする
+    if ( ['5','9','12','13','14'].indexOf( nodeInfo[ tergetNodeID ].STATUS ) !== -1 ) {
+      $('#' + nodeID ).addClass('running');
+      $('#' + conductorData[ nodeID ].terminal[ inTerminal[0] ].edge ).attr('data-status', 'running');
+    }
+  };
+  
+  
+  // Pauseの状態をチェックする
+  const pauseCheck = function( nodeID ) {
+  
+    const nodeInfo = conductorUseList.conductorStatus['NODE_INFO'][ nodeID ],
+          nodeData = conductorData[ nodeID ],
+          $node = $('#' + nodeID ),
+          $pauseButton = $node.find('.pause-resume-button'),
+          inTerminalID = terminalInOutID( conductorData[ nodeID ]['terminal'], 'in'),
+          $inEdge = $('#' + conductorData[ nodeID ]['terminal'][ inTerminalID[0] ].edge );
+    
+    switch( nodeInfo.STATUS ) {
+      case '8':
+        $node.addClass('running');
+        $inEdge.attr('data-status', 'running');
+        conductorData[ nodeID ].endStatus = true;
+        $node.find('.pause-status').attr('data-status', 'pause');
+        editor.log.set('notice', 'Pause => Node instance : ' + nodeInfo.NODE_INSTANCE_NO );
+        
+        $pauseButton.prop('disabled', false ).on('click', function() {
+          if ( confirm( getSomeMessage("ITABASEC020006",{0:conductorInstanceID})) ) {
+            clearTimeout( pollingTimerID );
+            $pauseButton.prop('disabled', true ).off();
+            $node.find('.pause-status').attr('data-status', 'resume');
+            proxy.holdReleaseNodeInstance( nodeInfo.NODE_INSTANCE_NO );
+          }
+        });
+        break;
+      case '9':
+        $node.addClass('running');
+        $inEdge.attr('data-status', 'running');
+        conductorData[ nodeID ].endStatus = true;
+        $node.find('.pause-status').attr('data-status', 'resume');
+        break;            
+    }
+  };
+  
+  const nodeStatusUpdate = function() {
+    for ( let nodeID in nodeInfo ) {
+      const nodeData = conductorData[ nodeID ];
+      // nodeData.endStatusがある場合はスキップ
+      if ( !nodeData.endStatus ) {
+        switch ( nodeData.type ) {
+          case 'conditional-branch':
+            condionalBranchCheck( nodeID );
+            break;
+          case 'parallel-branch':
+            parallelBranchCheck( nodeID );
+            break;
+          case 'status-file-branch':
+            statusFileBranch( nodeID );
+            break;
+          case 'merge':
+            parallelMergeCheck( nodeID );
+            break;
+          case 'movement':
+          case 'call':
+          case 'call_s':
+          case 'end':
+            movementCheck( nodeID );
+            break;
+          case 'start':
+            nodeData.endStatus = true;
+            $('#' + nodeID ).addClass('running');
+            break;
+          case 'pause':
+            pauseCheck( nodeID );
+            break;
+        }
+      }
+    }
+  };
+  
+  // ポーリングタイマー
+  const pollingTimer = function() {
+    pollingTimerID = setTimeout( function(){
+      proxy.printConductorStatus( conductorInstanceID );
+    }, intervalTime );
+  };
+  
+  // 実行状況別
+  switch( conductorInfo.STATUS_ID ) {
+    case '1':
+      // 未実行
+      $('#scram-instance').show().prop('disabled', false );
+      $('#cansel-instance').prop('disabled', true ).hide();
+      pollingTimer();
+      break;
+    case '2':
+      // 未実行（予約）
+      $('#cansel-instance').show().prop('disabled', false );
+      $('#scram-instance').prop('disabled', true ).hide();
+      pollingTimer();
+      break;
+    case '3':
+      // 準備中
+      $('#scram-instance').show().prop('disabled', true );
+    case '4':
+      // 実行中
+      $('#scram-instance').show().prop('disabled', false );
+      $('#cansel-instance').prop('disabled', true ).hide();
+      nodeStatusUpdate();
+      pollingTimer();
+      break;
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '10':
+    case '11':
+      // 終了
+      $('#scram-instance').prop('disabled', true );
+      nodeStatusUpdate();
+      $editor.addClass('run-complete');
+      break;
+    case '9':
+      // 予約取消
+      break;
+  }
+  
+  //インスタンスログ表示
+  switch( conductorInfo.STATUS_ID ) {
+    // 実行中-終了
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '10':
+      let logflgList = [];
+      if ( conductorInfo.EXEC_LOG !== "" ){
+        //editor-tab-contentsの表示とEXEC_LOGの差分の重複判定
+        var execLogMessages = conductorInfo.EXEC_LOG.split('\n');
+        $(".editor-log-content").each(function(lineNo, tmpmessage){
+            if( $(tmpmessage).text() != "" ){
+              //出力済み取得+タグ除去 //[logtype]XXXXX
+              var tmphtmlmsg = $(tmpmessage).text();
+              tmphtmlmsg = tmphtmlmsg.replace( /\[ERROR\]|\[NOTICE\]|\[WARNING\]/g , "" );
+
+              //execLogMessages重複判定
+              execLogMessages.forEach(function(execlog, index) {
+                if ( index in logflgList !== true ){
+                  logflgList[ index ] = 0;
+                }
+                if( execlog != '' ){
+                  //タグ除去 /[logtype]　XXXXX
+                  execlog = execlog.replace( /\[ERROR\] |\[NOTICE\] |\[WARNING\] /g , "" );
+                  //重複判定
+                  if ( tmphtmlmsg.indexOf( execlog ) != -1) {
+                    logflgList[ index ] = 1;
+                  }
+                }
+              });
+            }
+        });
+
+        //重複無し出力
+        execLogMessages.forEach(function(execlog, index) {
+          if( execlog != '' ){
+            var arrlogtype = execlog.split(' ');
+            var logtype = arrlogtype[0].replace( /\[|\]/g , "" );
+            var editorogtype = logtype.toLowerCase();
+            //[logtype] 削除
+            execlog = execlog.replace( '[' + logtype + '] ' , "" );
+            //実施中-
+            if ( logflgList.length !== 0 ) {
+              if( logflgList[ index ] == 0 ){
+                editor.log.set( editorogtype ,execlog );                
+              }                
+            }else{
+            //完了時
+                editor.log.set( editorogtype ,execlog );  
+            }
+          }
+        });
+      }
+      break;
+  }
+
+};
 
 }

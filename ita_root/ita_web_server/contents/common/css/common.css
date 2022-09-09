@@ -46,7 +46,8 @@ letter-spacing: .75px;
 font-size: 14px;
 outline: none;
 }
-.tbody .input {
+.tbody .input,
+.tbody .tableEditSelectFile {
 background-color: rgba( 255,255,255,.6 );
 }
 /* number */
@@ -100,29 +101,32 @@ transform: translate(-50%,-50%);
 .discardMark.true::after {
 width: 20px; height: 20px;
 background-color: var(--black80);
+border: 2px solid var(--white100);
 border-radius: 50%;
 }
 .discardMark.false::after {
 width: 20px; height: 2px;
-background-color: var(--black20);
+background-color: rgba( 0,0,0,.3 );
 }
 .tableEditChange .discardMark::after {
 background-color: #60C60D;
 }
+.journalChange .discardMark::after {
+background-color: var(--accentColor100);
+}
 
 
-.inputText:focus,
-.inputNumber:focus,
-.textarea:focus,
-.select:focus {
+.input:focus {
 background-color: var(--focusBackgroundColor);
 border-color: var(--focusColor);
 }
-.inputTextWrap {
+.inputTextWrap,
+.inputPasswordWrap {
 display: flex;
 width: 100%;
 }
-.inputTextWrap > div {
+.inputTextWrap > div,
+.inputPasswordWrap > div {
 min-width: 0;
 }
 .inputTextBody {
@@ -290,8 +294,6 @@ border-width: 2px;
 .checkboxText:checked ~ .checkboxTextLabel:hover > .checkboxTextMark {
 background-color: var(--accentColor100);
 }
-
-
 /* button */
 .button {
 overflow: hidden;
@@ -326,7 +328,7 @@ text-overflow: ellipsis;
 }
 .button .icon {
 margin-right: 8px;
-opacity: .5;
+opacity: .8;
 }
 .itaButton {
 border-radius: 3px;
@@ -408,12 +410,13 @@ letter-spacing: .75px;
 font-size: 14px;
 }
 .tableEditSelectFile::after {
-content: '■';
+content: '\e92c';
 display: block;
 position: absolute;
 right: 0; top: 0;
 z-index: 1;
 width: 30px; height: 30px;
+font-family: 'exastro-ui-icons' !important;
 }
 .tableEditSelectFile:focus {
 background-color: var(--focusBackgroundColor);
@@ -428,25 +431,112 @@ text-overflow: ellipsis;
 text-align: left;
 white-space: nowrap;
 }
+/* Password*/
+.inputPasswordBody {
+flex: 1 1 auto;
+}
+.inputPasswordToggle,
+.inputPasswordDeleteToggle {
+flex: 0 0 36px;
+padding-left: 4px;
+}
+.inputPasswordDeleteToggleText {
+flex: 1 1 auto;
+display: none;
+}
+.inputPasswordToggleButton,
+.inputPasswordDeleteToggleButton {
+display: block;
+width: 32px;
+}
+.inputPasswordToggleButton > .inner,
+.inputPasswordDeleteToggleButton > .inner {
+text-overflow: inherit;
+text-align: center;
+font-size: 16px;
+}
+.inputPasswordToggleButton .icon,
+.inputPasswordDeleteToggleButton .icon {
+margin: 0;
+}
+.inputPasswordDelete .inputPasswordBody,
+.inputPasswordDelete .inputPasswordToggle {
+display: none;
+}
+.inputPasswordDelete .inputPasswordDeleteToggleText {
+display: block;
+padding-right: 4px;
+}
+.inputPasswordDeleteToggle {
+display: flex;
+}
+.inputPasswordDelete .inputPasswordDeleteToggle {
+flex: 1 1 100%;
+min-width: 192px;
+padding: 0;
+}
+.inputPasswordDeleteToggleButton {
+flex: 0 0 32px;
+}
+.passwordDeleteText,
+.inputPasswordDeleteToggleText > .inner {
+display: block;
+width: 100%;
+min-height: 32px;
+background-color: rgba( 255,255,255,.6 );
+border: 1px solid #D00;
+border-radius: 4px;
+font-family: "Osaka-mono", "MS Gothic", "monospace";
+letter-spacing: .75px;
+line-height: 30px;
+text-align: center;
+font-size: 14px;
+color: #D00;
+}
+.passwordDeleteText {
+min-width: 120px; min-height: 24px;
+margin-bottom: 2px;
+line-height: 22px;
+}
+
 
 /* 無効 */
+.input:disabled,
 .button:disabled,
 .standBy .button {
 cursor: no-drop!important;
+}
+.input:disabled {
+color: var(--rowDiscardTextColor)!important;
+}
+.input[data-key="remarks"] {
+background-color: var(--white100);
 }
 .button:disabled > .inner {
 transform: none!important;
 background-color: var(--black20)!important;
 background-image: none!important;
 box-shadow: none;
-color: var(--black40)!important;
+color: var(--rowDiscardTextColor)!important;
 opacity: .5!important;
+}
+.tbody .tableEditSelectFile:disabled > .inner {
+background-color: transparent!important;
 }
 .standBy .button > .inner,
 .standBy .button:hover > .inner,
 .standBy .button:active > .inner {
 transform: none!important;
 background-image: none!important;
+}
+.tBodyTrDiscard .inputPasswordDeleteToggleText > .inner {
+border-color: var(--black40)!important;
+color: var(--rowDiscardTextColor)!important;
+opacity: .5;
+}
+.tBodyTrDiscard .input:disabled,
+.tBodyTrDiscard .tableEditSelectFile:disabled {
+opacity: .5;
 }
 
 /*
@@ -467,6 +557,8 @@ width: 100%; height: 100%;
 ##################################################
 */
 #container {
+position: relative;
+z-index: 0;
 width: 100%; height: 100%;
 min-width: 320px;
 min-height: 640px;
@@ -480,6 +572,32 @@ border-bottom: 4px solid var(--accentColor100);
 display: flex;
 width: 100%; height: calc( 100% - 48px );
 border-top: 1px solid var(--black100);
+}
+.containerLoading {
+display: flex;
+align-items: center;
+justify-content: center;
+position: absolute;
+left: 50%; top: 50%;
+transform: translate(-50%,-50%);
+width: 50%; height: 50%;
+background-color: rgba( 255,255,255,.5 );
+border-radius: 16px;
+}
+.containerLoading::after {
+content: '';
+display: block;
+width: 80px; height: 80px;
+border: 24px solid var(--mainColor20);
+border-bottom-color: var(--mainColor30);
+border-radius: 50%;
+animation: loading 1s infinite;
+}
+@keyframes loading {
+to { transform: rotate(360deg); }
+}
+#container.ready .containerLoading {
+display: none;
 }
 /*
 ##################################################
@@ -1280,6 +1398,8 @@ display: flex;
 ##################################################
 */
 .tableContainer {
+position: relative;
+z-index: 0;
 display: flex;
 flex-direction: column;
 width: 100%; height: 100%;
@@ -1290,41 +1410,18 @@ min-height: 0;
 .dialog .tableContainer {
 padding: 8px;
 }
-/* StandBy */
-.tableMessage,
-.tableErrorMessage {
-display: none;
-}
-.tableStandBy .tableHeader,
-.tableStandBy .tableBody,
-.tableStandBy .tableFooter,
-.filterStandBy .tbody,
-.filterStandBy .tableFooter,
-.historyStandBy .tableBody,
-.historyStandBy .tableFooter,
-.tableStandBy .tableErrorMessage,
-.filterStandBy .tableErrorMessage,
-.noData .tableFooter,
-.initFilterStandBy .tableFooter {
-display: none!important;
-}
-.filterStandBy .tableBody {
-overflow: hidden;
-flex: 0 0 auto;
-}
-.tableStandBy .tableMessage,
-.filterStandBy .tableMessage {
-flex: 1 1 auto;
+/* Loading */
+.tableLoading {
 display: flex;
 align-items: center;
 justify-content: center;
-position: relative;
-z-index: 0;
-background-color: var(--mainColor10);
-border-radius: 8px;
+position: absolute;
+z-index: 50;
+left: 0; top: 0;
+width: 100%; height: 100%;
+background-color: rgba( 255,255,255,.5 );
 }
-.tableStandBy .tableMessage::after,
-.filterStandBy .tableMessage::after {
+.tableLoading::after {
 content: '';
 display: block;
 width: 80px; height: 80px;
@@ -1333,8 +1430,23 @@ border-bottom-color: var(--mainColor30);
 border-radius: 50%;
 animation: loading 1s infinite;
 }
-@keyframes loading{
-to { transform: rotate(360deg); }
+/* StandBy */
+.tableMessage,
+.tableErrorMessage,
+.tableLoading {
+display: none;
+}
+.tableStandBy .tableLoading,
+.filterStandBy .tableLoading {
+display: flex;
+}
+.historyStandBy .tableBody,
+.historyStandBy .tableFooter,
+.tableStandBy .tableErrorMessage,
+.filterStandBy .tableErrorMessage,
+.noData .tableFooter,
+.initFilterStandBy .tableFooter {
+display: none!important;
 }
 .initFilterStandBy .tableBody,
 .noData .tableBody {
@@ -1527,9 +1639,10 @@ background-color: var(--rowDiscardHoverColor);
 position: sticky;
 top: 0;
 z-index: 10;
+background-color: var(--mainColor100);
 }
 .tHeadTr:first-child .tHeadLeftSticky {
-border-right: none;
+border-right-color: transparent;
 border-left: 1px solid var(--mainColor100);
 }
 .tHeadTr:first-child .tHeadLeftStickyLast {
@@ -1621,7 +1734,7 @@ text-align: center;
 .ci {
 padding: 4px 8px 2px;
 line-height: 1.5;
-letter-spacing: .75px;
+letter-spacing: 1px;
 white-space: nowrap;
 font-family: "Osaka-mono", "MS Gothic", "monospace";
 font-size: 14px;
@@ -1766,9 +1879,10 @@ border-width: 2px;
 .tableShowChangeValue .tBodyAfterValue,
 .tBodyBeforeValue {
 min-height: 32px;
-padding: 4px;
+padding: 4px 8px;
 border-width: 1px;
 border-style: solid;
+border-radius: 4px;
 }
 .tableShowChangeValue .tBodyAfterValue {
 background-color: #EFF9E7;
@@ -1778,7 +1892,7 @@ border-color: #90D756;
 display: none;
 position: relative;
 z-index: 0;
-margin-top: 16px;
+margin-top: 16px; margin-bottom: 2px;
 background-color: #FAE5E5;
 border-color: #E47F7F;
 }
@@ -1797,9 +1911,33 @@ border-bottom-color: #E47F7F;
 display: block;
 }
 .journalChange {
-letter-spacing: -0.25px;
+letter-spacing: .05px;
 font-weight: bold;
 color: var(--accentColor100);
+}
+.editType {
+display: block;
+min-width: 96px; min-height: 24px;
+margin-bottom: 2px; padding-left: 1px;
+border: 1px solid #CCC;
+border-left-width: 4px;
+border-right-width: 4px;
+border-radius: 2px;
+line-height: 22px;
+letter-spacing: 1px;
+font-size: 14px;
+}
+.editType.register  {
+border-color: var(--buttonColor);
+}
+.editType.update  {
+border-color: #56B20C;
+}
+.editType.discard  {
+border-color: #FFDD00;
+}
+.editType.restore  {
+border-color: #0078DC;
 }
 
 /* Filter */
@@ -1962,6 +2100,7 @@ padding-left: 8px;
 }
 .filterInputDatePicker,
 .inputDateCalendarButton {
+display: block;
 width: 32px;
 }
 .filterInputDatePicker > .inner,
@@ -2834,7 +2973,7 @@ font-size: 16px;
   バージョン確認
 ##################################################
 */
-.varsionContainer {
+.versionContainer {
 padding: 16px;
 }
 .versionLogo {
