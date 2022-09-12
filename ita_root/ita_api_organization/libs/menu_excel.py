@@ -16,6 +16,7 @@ from concurrent.futures import process
 from curses import keyname
 from dataclasses import dataclass
 from inspect import Parameter
+from zipfile import BadZipfile
 import openpyxl
 import base64
 from pyrsistent import m
@@ -1737,8 +1738,13 @@ def execute_excel_maintenance(objdbca, organization_id, workspace_id, menu, menu
     with open(file_path, "wb") as f:
         f.write(wbDecode)
     
-    # ファイルを読み込む
-    wb = openpyxl.load_workbook(file_path)
+    try:
+        # ファイルを読み込む
+        wb = openpyxl.load_workbook(file_path)
+    except BadZipfile as e:
+        # 次のファイルタイプのみ許容します。[.xlsx,.xlsm]
+        status_code = '499-00401'
+        raise AppException(status_code)
     
     # 対象メニューを特定するためのIDを取得する
     menu_id = menu_record[0].get('MENU_ID')
