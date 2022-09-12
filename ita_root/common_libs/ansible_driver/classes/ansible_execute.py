@@ -18,7 +18,7 @@ from flask import g
 from common_libs.ansible_driver.classes.AnscConstClass import AnscConst
 from common_libs.ansible_driver.classes.AnsrConstClass import AnsrConst
 from common_libs.ansible_driver.functions.util import getAnsibleExecutDirPath, get_AnsibleDriverShellPath
-from libs.controll_ansible_agent import DockerMode, KubernetesMode
+from common_libs.ansible_driver.classes.controll_ansible_agent import DockerMode, KubernetesMode
 from common_libs.common.util import ky_file_decrypt
 """
 Ansible coreコンテナの実行を制御するモジュール
