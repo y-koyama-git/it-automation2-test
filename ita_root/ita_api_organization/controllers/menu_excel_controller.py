@@ -201,10 +201,7 @@ def post_excel_maintenance(organization_id, workspace_id, menu, body=None):  # n
     excel_data = {}
     if connexion.request.is_json:
         body = dict(connexion.request.get_json())
-        excel_data = check_request_body_key(body, 'excel')  # "menu" keyが無かったら400-00002エラー
-        # excel_data = body.get('excel')
-        # if excel_data is None:
-        #     raise AppException("499-00002")
+        excel_data = check_request_body_key(body, 'excel')  # keyが無かったら400-00002エラー
         
     # メニューのカラム情報を取得
     result_data = menu_excel.execute_excel_maintenance(objdbca, organization_id, workspace_id, menu, menu_record, excel_data)
