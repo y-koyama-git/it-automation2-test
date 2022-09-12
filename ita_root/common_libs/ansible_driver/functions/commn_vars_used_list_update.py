@@ -60,7 +60,7 @@ def CommnVarsUsedListUpdate(objdbca, option, ContensID, FileID, VarsAry):
                 }
                 ret = objdbca.table_insert(MasterTableName, data_list, PkeyMember, False)
                 if ret is False:
-                    msg = g.appmsg.get_api_message("MSG-10178", os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno)
+                    msg = g.appmsg.get_api_message("MSG-10178", [os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno])
                     return False, msg
                 PkeyID = ret[0]["ROW_ID"]
                 UsedPkeyList.append(PkeyID)
@@ -70,7 +70,7 @@ def CommnVarsUsedListUpdate(objdbca, option, ContensID, FileID, VarsAry):
                 UsedPkeyList.append(arrayValue[PkeyMember])
                 ret = objdbca.table_update(MasterTableName, data_list, PkeyMember, False)
                 if ret is False:
-                    msg = g.appmsg.get_api_message("MSG-10178", os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno)
+                    msg = g.appmsg.get_api_message("MSG-10178", [os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno])
 
                     return False, msg
 
@@ -105,7 +105,7 @@ def CommnVarsUsedListUpdate(objdbca, option, ContensID, FileID, VarsAry):
             primary_key_name = "ROW_ID"
             result = objdbca.table_update(MasterTableName, data_list, primary_key_name, False)
             if result is False:
-                msg = g.appmsg.get_api_message("MSG-10178", os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno)
+                msg = g.appmsg.get_api_message("MSG-10178", [os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno])
                 return False, msg
 
     return True, msg
@@ -141,7 +141,7 @@ def CommnVarsUsedListDisuseSet(objdbca, option, ContensID, FileID):
             data_list = {PkeyMember: arrayValue[PkeyMember], 'REVIVAL_FLAG': arrayValue['REVIVAL_FLAG'], 'DISUSE_FLAG': arrayValue['DISUSE_FLAG'], 'LAST_UPDATE_USER': option["user"]}
             result = objdbca.table_update(MasterTableName, data_list, PkeyMember, False)
             if result is False:
-                msg = g.appmsg.get_api_message("MSG-10178", os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno)
+                msg = g.appmsg.get_api_message("MSG-10178", [os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno])
                 return False, msg
 
         else:
@@ -154,6 +154,6 @@ def CommnVarsUsedListDisuseSet(objdbca, option, ContensID, FileID):
             data_list = {PkeyMember: row[PkeyMember], 'REVIVAL_FLAG': arrayValue['REVIVAL_FLAG'], 'DISUSE_FLAG': arrayValue['DISUSE_FLAG'], 'LAST_UPDATE_USER': option["user"]}
             result = objdbca.table_update(MasterTableName, data_list, PkeyMember, False)
             if ret is False:
-                msg = g.appmsg.get_api_message("MSG-10178", os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno)
+                msg = g.appmsg.get_api_message("MSG-10178", [os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno])
                 return False, msg
     return True, msg
