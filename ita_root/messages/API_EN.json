@@ -72,6 +72,8 @@
     "499-00909": "System error",
     "499-00910": "Status does not allow schedule cancellation. (Status:{})",
     "499-00911": "Faild to initiate emergency stop. Check Ansible/Ansible Automation Controller state. (Execution No.:{}) {}",
+    "499-00912": "[Ansible Automation Controller interface representative host] is not registered in the Ansible interface information. (Execution No.:{})",
+    "499-00913": "The host is not registered in the Ansible Automation Controller host list. (Execution No.:{})",
     "999-00001": "System Error",
     "999-00002": "System Error",
     "999-00003": "System Error",
