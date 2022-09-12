@@ -131,23 +131,24 @@ def external_valid_menu_before(objdbca, objtable, option):
         # パスワードの設定値取得
         # PasswordColumnはデータの更新がないと$arrayRegDataの設定は空になっているので
         # パスワードが更新されているか判定
-        # 更新されていない場合は設定済みのパスワード($arrayVariant['edit_target_row'])取得
+        
         if "login_password" in option["entry_parameter"]["parameter"]:
             str_passwd = option["entry_parameter"]["parameter"]["login_password"]
         else:
             str_passwd = None
-
+        
+        # 更新されていない場合は設定済みのパスワードoption["current_parameter"]["parameter"]["login_password"]取得
         if str_passwd is None:
             str_passwd = option["current_parameter"]["parameter"]["login_password"]
         
         # パスワードの初期化は認証方式は関係ない
         # ログインパスワードが管理でない場合にパスワードがクリア。管理の場合は残る
         # 変更前と変更後のパスワードを判定して、違う場合にansible-vaultで暗号化した文字列を初期化
-        if option["entry_parameter"]["parameter"]["login_password"] != option["current_parameter"]["parameter"]["login_password"]:
+        if str_passwd != option["current_parameter"]["parameter"]["login_password"]:
             table_name = "T_ANSC_DEVICE"
             primary_key_name = "SYSTEM_ID"
             data_list = {"LOGIN_PW_ANSIBLE_VAULT": "", primary_key_name: option["current_parameter"]["parameter"]["managed_system_item_number"]}
-            objdbca.table_update(table_name, data_list, primary_key_name, True)
+            objdbca.table_update(table_name, data_list, primary_key_name, False)
         # パスフレーズの設定値取得
         # PasswordColumnはデータの更新がないと$arrayRegDataの設定は空になっているので
         # パスフレーズが更新されているか判定

@@ -41,38 +41,38 @@ def external_valid_menu_before(objdbca, objtable, option):
         if "host" in option["entry_parameter"]["parameter"]:
             host_name = option["entry_parameter"]["parameter"]["host"]
         else:
-            host_name = ""
+            host_name = None
         # 認証方式の設定値取得
         if "authentication_method" in option["entry_parameter"]["parameter"]:
             str_auth_mode = option["entry_parameter"]["parameter"]["authentication_method"]
         else:
-            str_auth_mode = ""
+            str_auth_mode = None
         # パスワードの設定値取得
         if "password" in option["entry_parameter"]["parameter"]:
             str_passwd = option["entry_parameter"]["parameter"]["password"]
         else:
-            str_passwd = ""
+            str_passwd = None
         # パスフレーズの設定値取得passphrase
         if "passphrase" in option["entry_parameter"]["parameter"]:
             str_passphrase = option["entry_parameter"]["parameter"]["passphrase"]
         else:
-            str_passphrase = ""
+            str_passphrase = None
         # 公開鍵ファイルの設定値取得
         if "ssh_private_key_file" in option["entry_parameter"]["parameter"]:
             str_ssh_key_file = option["entry_parameter"]["parameter"]["ssh_private_key_file"]
         else:
-            str_ssh_key_file = ""
+            str_ssh_key_file = None
     elif option["cmd_type"] == "Update":
         # host名取得
         if "host" in option["entry_parameter"]["parameter"]:
             host_name = option["entry_parameter"]["parameter"]["host"]
         else:
-            host_name = ""
+            host_name = None
         # 認証方式の設定値取得
         if "authentication_method" in option["entry_parameter"]["parameter"]:
             str_auth_mode = option["entry_parameter"]["parameter"]["authentication_method"]
         else:
-            str_auth_mode = ""
+            str_auth_mode = None
         # パスワードの設定値取得
         # PasswordColumnはデータの更新がないとoption["entry_parameter"]["parameter"]["password"]の設定は空になっているので
         # パスワードが更新されているか判定
@@ -80,9 +80,9 @@ def external_valid_menu_before(objdbca, objtable, option):
         if "password" in option["entry_parameter"]["parameter"]:
             str_passwd = option["entry_parameter"]["parameter"]["password"]
         else:
-            str_passwd = ""
+            str_passwd = None
             
-        if str_passwd == "":
+        if str_passwd is None:
             str_passwd = option["current_parameter"]["parameter"]["password"]
         # パスフレーズの設定値取得
         # PasswordColumnはデータの更新がないとoption["entry_parameter"]["parameter"]["passphrase"]の設定は空になっているので
@@ -91,9 +91,9 @@ def external_valid_menu_before(objdbca, objtable, option):
         if "passphrase" in option["entry_parameter"]["parameter"]:
             str_passphrase = option["entry_parameter"]["parameter"]["passphrase"]
         else:
-            str_passphrase = ""
+            str_passphrase = None
         
-        if str_passphrase == "":
+        if str_passphrase is None:
             str_passphrase = option["current_parameter"]["parameter"]["passphrase"]
         # 公開鍵ファイルの設定値取得
         # FileUploadColumnはファイルの更新がないと$arrayRegDataの設定は空になっているので
@@ -102,15 +102,15 @@ def external_valid_menu_before(objdbca, objtable, option):
         if "ssh_private_key_file" in option["entry_parameter"]["parameter"]:
             str_ssh_key_file = option["entry_parameter"]["parameter"]["ssh_private_key_file"]
         else:
-            str_ssh_key_file = ""
+            str_ssh_key_file = None
 
-        if str_ssh_key_file == "":
+        if str_ssh_key_file is None:
             str_ssh_key_file = option["current_parameter"]["parameter"]["ssh_private_key_file"]
     elif option["cmd_type"] == "Discard" or option["cmd_type"] == "Restore":
         host_name = option["current_parameter"]["parameter"]["host"]
 
     if option["cmd_type"] == "Register" or option["cmd_type"] == "Update":
-        err_msg_parameter_ary = ()
+        err_msg_parameter_ary = []
         chkobj = AuthTypeParameterRequiredCheck()
 
         ret_str_body = chkobj.TowerHostListAuthTypeRequiredParameterCheck(AuthTypeParameterRequiredCheck.chkType_Loadtable_TowerHostList, err_msg_parameter_ary, str_auth_mode, str_passwd, str_ssh_key_file, str_passphrase)
@@ -124,5 +124,5 @@ def external_valid_menu_before(objdbca, objtable, option):
         retBool = False
         if len(msg) != 0:
             msg += "\n"
-        msg += g.appmsg.get_api_message("ITABASEH-MNU-101081")
+        msg += g.appmsg.get_api_message("MSG-10879")
     return retBool, msg, option,
