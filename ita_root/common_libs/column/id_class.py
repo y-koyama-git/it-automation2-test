@@ -311,7 +311,7 @@ class IDColumn(Column):
                     bindkey = "__{}__{}".format(self.get_col_name(), listno)
                     bindkeys.append(bindkey)
                     bindvalues.setdefault(bindkey, bindvalue)
-                    listno = +1
+                    listno += 1
 
                 bindkey = "{}".format(",".join(map(str, bindkeys)))
                 str_where = " `{col_name}` IN ( {bindkey} ) ".format(
