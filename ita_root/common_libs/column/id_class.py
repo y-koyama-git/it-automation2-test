@@ -308,7 +308,7 @@ class IDColumn(Column):
             else:
                 for bindvalue in tmp_conf:
 
-                    bindkey = "__{}__{}".format(self.get_col_name(), listno)
+                    bindkey = "__{}__{}__".format(self.get_col_name(), listno)
                     bindkeys.append(bindkey)
                     bindvalues.setdefault(bindkey, bindvalue)
                     listno += 1

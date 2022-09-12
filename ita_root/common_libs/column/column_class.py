@@ -758,7 +758,7 @@ class Column():
                     if tmp_result[0] is True:
                         bindvalue = tmp_result[2]
 
-                    bindkey = "__{}__{}".format(self.get_col_name(), listno)
+                    bindkey = "__{}__{}__".format(self.get_col_name(), listno)
                     bindkeys.append(bindkey)
                     bindvalues.setdefault(bindkey, bindvalue)
                     listno = listno + 1
