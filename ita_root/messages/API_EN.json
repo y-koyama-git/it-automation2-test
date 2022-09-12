@@ -969,6 +969,7 @@
     "MSG-10888": "An unexpected error occurred in YAML parsing of header section. (Error details:{})",
     "MSG-10889": "Failed to create the authentication file required by sshAgent.",
     "MSG-10890": "Execute workflow terminated abnormally.",
+    "MSG-10891": "Emergency stop. Check the status (Execution No.:{}) Emergency stop. Check the status (Execution No.:{})",
     "MSG-30001": "Notes",
     "MSG-30002": "Execution process type",
     "MSG-30003": "●：Required\n○：Optional\n×：Cannot edit",
