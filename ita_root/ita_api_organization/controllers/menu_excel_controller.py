@@ -14,9 +14,10 @@
 
 import connexion
 from common_libs.common import *  # noqa: F403
-from common_libs.api import api_filter, check_request_body
+from common_libs.api import api_filter, check_request_body, check_request_body_key
 from libs.organization_common import check_menu_info, check_auth_menu, check_sheet_type
 from libs import menu_excel
+
 
 
 @api_filter
@@ -200,7 +201,7 @@ def post_excel_maintenance(organization_id, workspace_id, menu, body=None):  # n
     excel_data = {}
     if connexion.request.is_json:
         body = dict(connexion.request.get_json())
-        excel_data = body.get('excel')
+        excel_data = check_request_body_key(body, 'excel')  # keyが無かったら400-00002エラー
         
     # メニューのカラム情報を取得
     result_data = menu_excel.execute_excel_maintenance(objdbca, organization_id, workspace_id, menu, menu_record, excel_data)
