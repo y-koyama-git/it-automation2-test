@@ -11,6 +11,7 @@ services:
         - https_proxy=${HTTPS_PROXY}
     environment:
       - LISTEN_PORT=8000
+      - PYTHONPATH=/exastro/
       - DEFAULT_LANGUAGE=ja
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
@@ -32,6 +33,7 @@ services:
         - https_proxy=${HTTPS_PROXY}
     environment:
       - LISTEN_PORT=8079
+      - PYTHONPATH=/exastro/
       - DEFAULT_LANGUAGE=ja
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
