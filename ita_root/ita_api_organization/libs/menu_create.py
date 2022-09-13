@@ -951,8 +951,6 @@ def _insert_t_menu_column_group(objdbca, group_data_list):
                 if not target_parent:
                     raise Exception("499-00703", ["group"])  # 対象keyの値が不正です。(key: {})
                 
-                # ####メモ：本来は「カラムグループ作成情報」に対する「before_function」にてフルカラムグループ名を作成する処理を実行する。
-                # 最終で気にここでフルカラムグループ名を作成する処理は書かない想定。
                 # 『親フルカラムグループ/カラムグループ名』の命名規則でフルカラムグループ名を作成。
                 parent_full_name_ja = target_parent[0].get('FULL_COL_GROUP_NAME_JA')
                 parent_full_name_en = target_parent[0].get('FULL_COL_GROUP_NAME_EN')
@@ -981,8 +979,6 @@ def _insert_t_menu_column_group(objdbca, group_data_list):
                     "parent_column_group": parent_column_group,
                     "column_group_name_ja": col_group_name_ja,
                     "column_group_name_en": col_group_name_en,
-                    "full_column_group_name_ja": full_column_group_name_ja,
-                    "full_column_group_name_en": full_column_group_name_en
                 },
                 "type": "Register"
             }
