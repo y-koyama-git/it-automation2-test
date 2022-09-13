@@ -19,6 +19,7 @@ from common_libs.api import api_filter
 from libs.organization_common import check_menu_info, check_auth_menu, check_sheet_type
 from libs import driver_controll, menu_info, menu_filter
 from common_libs.ansible_driver.classes.AnscConstClass import AnscConst
+from common_libs.ansible_driver.functions.rest_libs import insert_execution_list, execution_scram
 
 @api_filter
 def get_driver_execute_data(organization_id, workspace_id, menu, execution_no):  # noqa: E501
@@ -222,10 +223,10 @@ def post_driver_excecute(organization_id, workspace_id, menu, body=None):  # noq
 
     Required = True
     # Movementチェック
-    driver_controll.movement_registr_check(objdbca, parameter, Required)
+    movement_row = driver_controll.movement_registr_check(objdbca, parameter, Required)
 
     # オペレーションチェック
-    driver_controll.operation_registr_check(objdbca, parameter, Required)
+    operation_row = driver_controll.operation_registr_check(objdbca, parameter, Required)
 
     # トランザクション開始
     objdbca.db_transaction_start()
@@ -235,7 +236,7 @@ def post_driver_excecute(organization_id, workspace_id, menu, body=None):  # noq
     conductor_id = None
     conductor_name = None
     run_mode = "1"
-    result = driver_controll.insert_execution_list(objdbca, run_mode, objAnsc.DF_LEGACY_ROLE_DRIVER_ID, parameter['operation_name'], parameter['movement_name'], schedule_date, conductor_id, conductor_name)
+    result = insert_execution_list(objdbca, run_mode, objAnsc.DF_LEGACY_ROLE_DRIVER_ID, operation_row, movement_row, schedule_date, conductor_id, conductor_name)
     # コミット・トランザクション終了
     objdbca.db_transaction_end(True)
  
@@ -285,10 +286,10 @@ def post_driver_execute_check_parameter(organization_id, workspace_id, menu, bod
 
     Required = True
     # Movementチェック
-    driver_controll.movement_registr_check(objdbca, parameter, Required)
+    movement_row = driver_controll.movement_registr_check(objdbca, parameter, Required)
 
     # オペレーションチェック
-    driver_controll.operation_registr_check(objdbca, parameter, Required)
+    operation_row = driver_controll.operation_registr_check(objdbca, parameter, Required)
 
     # トランザクション開始
     objdbca.db_transaction_start()
@@ -298,7 +299,7 @@ def post_driver_execute_check_parameter(organization_id, workspace_id, menu, bod
     conductor_id = None
     conductor_name = None
     run_mode = "3"
-    result = driver_controll.insert_execution_list(objdbca, run_mode, objAnsc.DF_LEGACY_ROLE_DRIVER_ID, parameter['operation_name'], parameter['movement_name'], schedule_date, conductor_id, conductor_name)
+    result = insert_execution_list(objdbca, run_mode, objAnsc.DF_LEGACY_ROLE_DRIVER_ID, operation_row, movement_row, schedule_date, conductor_id, conductor_name)
     # コミット・トランザクション終了
     objdbca.db_transaction_end(True)
 
@@ -348,10 +349,10 @@ def post_driver_execute_dry_run(organization_id, workspace_id, menu, body=None):
 
     Required = True
     # Movementチェック
-    driver_controll.movement_registr_check(objdbca, parameter, Required)
+    movement_row = driver_controll.movement_registr_check(objdbca, parameter, Required)
 
     # オペレーションチェック
-    driver_controll.operation_registr_check(objdbca, parameter, Required)
+    operation_row =driver_controll.operation_registr_check(objdbca, parameter, Required)
 
     # トランザクション開始
     objdbca.db_transaction_start()
@@ -361,7 +362,7 @@ def post_driver_execute_dry_run(organization_id, workspace_id, menu, body=None):
     conductor_id = None
     conductor_name = None
     run_mode = "2"
-    result = driver_controll.insert_execution_list(objdbca, run_mode, objAnsc.DF_LEGACY_ROLE_DRIVER_ID, parameter['operation_name'], parameter['movement_name'], schedule_date, conductor_id, conductor_name)
+    result = insert_execution_list(objdbca, run_mode, objAnsc.DF_LEGACY_ROLE_DRIVER_ID, operation_row, movement_row, schedule_date, conductor_id, conductor_name)
 
     # コミット・トランザクション終了
     objdbca.db_transaction_end(True)
@@ -457,7 +458,7 @@ def post_driver_scram(organization_id, workspace_id, menu, execution_no, body=No
 
     objAnsc = AnscConst()
 
-    result = driver_controll.execution_scram(objdbca, objAnsc.DF_LEGACY_ROLE_DRIVER_ID, execution_no)
+    result = execution_scram(objdbca, objAnsc.DF_LEGACY_ROLE_DRIVER_ID, execution_no)
     
     objdbca.db_transaction_end(False)  # roleback
     
