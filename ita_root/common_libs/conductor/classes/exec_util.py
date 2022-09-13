@@ -137,6 +137,7 @@ class ConductorExecuteLibs():
             result = {}
             result.setdefault('list', {})
             result.setdefault('dict', {})
+            result.setdefault('dict_name', {})
             for target_key, target_table_info in dict_target_table.items():
                 table_name = target_table_info.get('table_name')
                 sortkey = target_table_info.get('sortkey')
