@@ -216,6 +216,7 @@ dialog() {
           html = [];
     
     if ( d.config.width ) style.push(`width:${d.config.width};`);
+    if ( d.config.minWidth ) style.push(`min-width:${d.config.minWidth};`);
     if ( d.config.position ) style.push(`justify-content:${d.config.position};`);
     
     if ( d.config.height ) mainStyle.push(`height:${d.config.height};`);

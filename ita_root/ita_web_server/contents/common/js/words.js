@@ -74,7 +74,7 @@ const ja = {
         edit: '編集モード',
         view: '閲覧モード',
         update: '更新モード',
-        chacking: '確認モード'
+        confirmation: '確認モード'
     }
 };
 

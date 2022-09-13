@@ -100,6 +100,7 @@ setUi() {
                     break;
                     // 11 : 作業実行
                     case '11':
+                        ui.executeMenu();
                     break;
                     // 12 : 作業状態確認
                     case '12':
@@ -112,13 +113,9 @@ setUi() {
                     case '14':
                         ui.condcutor('edit');
                     break;
-                    // 15 : Conductor作業実行
-                    case '15':
-                        ui.condcutor('execute');
-                    break;
                     // 16 : Conductor作業確認
                     case '16':
-                        ui.condcutor('checking');
+                        ui.condcutor('confirmation');
                     break;
                     // 17 : 比較実行
                     // 19 : メニュー作成実行
@@ -882,18 +879,31 @@ defaultMenu() {
             $button.prop('disabled', true );
             
             fn.fetch( url ).then(function( result ){
-                fn.download( type, result, fileName );
-                fn.disabledTimer( $button, false, 1000 );
+                fn.download( type, result, fileName );                
             }).catch(function( error ){
-                alert( error.message );
-                location.replace('system_error/');
+                fn.gotoErrPage( error.message );
+            }).then(function(){
+                fn.disabledTimer( $button, false, 1000 );
             });
         };
         
         switch ( type ) {
-            case 'allDwonloadExcel':
-                downloadFile('excel', `/menu/${ui.params.menuNameRest}/excel/`, ui.currentPage.title + '_all');
-            break;
+            case 'allDwonloadExcel': {
+                $button.prop('disabled', true );
+                
+                fn.fetch(`/menu/${ui.params.menuNameRest}/filter/count/`).then(function( result ){
+                    const limit = ui.rest.info.menu_info.xls_print_limit;
+                    if ( limit && ui.rest.info.menu_info.xls_print_limit < result ) {
+                        alert(`Excel出力行数：${result}行\n\nExcel出力最大行数（${limit}行）を超過しているためダウンロードを中止します。`);
+                    } else {
+                        downloadFile('excel', `/menu/${ui.params.menuNameRest}/excel/`, ui.currentPage.title + '_all');
+                    }
+                }).catch(function( error ){
+                    fn.gotoErrPage( error.message );
+                }).then(function(){
+                    fn.disabledTimer( $button, false, 1000 );
+                });
+            } break;
             case 'allDwonloadJson':
                 downloadFile('json', `/menu/${ui.params.menuNameRest}/filter/`, ui.currentPage.title + '_all');
             break;
@@ -916,7 +926,7 @@ defaultMenu() {
 }
 /*
 ##################################################
-   全件ダウンロード・ファイル一括登録
+   タブ：全件ダウンロード・ファイル一括登録
 ##################################################
 */
 dataDownload() {
@@ -1016,6 +1026,43 @@ fileRegister( $button, type ) {
         }
         fn.disabledTimer( $button, false, 0 );
     });
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//   作業実行メニュー
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+executeMenu() {
+    const ui = this;
+    
+    const title = ui.currentPage.title,
+          menuInfo = fn.cv( ui.rest.info.menu_info.menu_info, '');
+    
+    const initSetFilter = fn.getParams().filter,
+          option = {};
+    if ( initSetFilter !== undefined ) option.initSetFilter = initSetFilter;  
+    
+    fn.fetch(`/menu/${ui.params.menuNameRest}/driver/execute/info/`).then(function( result ){
+        console.log(result)
+    }).catch(function( error ){
+        fn.gotoErrPage( error.message );
+    });
+    
+    
+    /*
+    ui.params.subKey = 'movement_list';
+    ui.params.restFilter = `/menu/${ui.params.menuNameRest}/driver/execute/info`;
+    ui.params.restFilterPulldown = `/menu/${ui.params.menuNameRest}/driver/execute/filter/${ui.params.subKey}/search/candidates/`
+    
+    
+    ui.mainTable = new DataTable('MT', 'execute', ui.rest.info, ui.params, option );
+    
+    ui.$.content.html( ui.commonContainer( title, menuInfo, '') );    
+    ui.$.content.find('.contentBody').html( ui.mainTable.setup() );*/
+    
+    ui.setCommonEvents();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
