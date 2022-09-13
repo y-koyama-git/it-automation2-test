@@ -106,6 +106,7 @@ class ConductorCommonLibs():
             self._node_status_list.append(data['STATUS_ID'])
         ###  暫定追加
         self._node_status_list.append('__else__')
+        self._node_status_list.append('9999')
         # print(self._node_status_list)
 
         data_list = wsdb_istc.table_select('T_COMN_ORCHESTRA', 'WHERE `DISUSE_FLAG`=0')
@@ -174,9 +175,9 @@ class ConductorCommonLibs():
             return False, err_code, res_chk[1]
 
         # check node call loop
-        res_chk = self.chk_call_loop_base_1(tmp_c_all_data.get('conductor').get('id'), tmp_c_all_data)
-        if res_chk[0] is False:
-            return False, err_code, res_chk[1]
+        # res_chk = self.chk_call_loop_base_1(tmp_c_all_data.get('conductor').get('id'), tmp_c_all_data)
+        # if res_chk[0] is False:
+        #     return False, err_code, res_chk[1]
 
         return True,
 
