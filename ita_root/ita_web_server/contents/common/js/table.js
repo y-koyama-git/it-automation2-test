@@ -27,6 +27,12 @@ class DataTable {
    params {
       menuNameRest: menu
    }
+   mode:
+      view: 閲覧
+      history: 履歴表示
+      diff: 結果確認（差分あり）
+      select: 選択
+      execute: 選択して実行
 ##################################################
 */
 constructor( tableId, mode, info, params, option = {}) {
@@ -39,6 +45,39 @@ constructor( tableId, mode, info, params, option = {}) {
     
     // 特殊表示用データ
     tb.option = option;
+    
+    // REST API URLs
+    tb.rest = {};
+    
+    // Filter
+    tb.rest.filter = ( tb.params.restFilter )?
+         tb.params.restFilter:
+        `/menu/${tb.params.menuNameRest}/filter/`;
+    
+    // Filter pulldown
+    tb.rest.filterPulldown = ( tb.params.restFilterPulldown )?
+        tb.params.restFilterPulldown:
+        `/menu/${tb.params.menuNameRest}/info/search/candidates/`;
+    
+    // Input pulldown
+    tb.rest.inputPulldown = ( tb.params.restInputPulldown )?
+        tb.params.restInputPulldown:
+        `/menu/${tb.params.menuNameRest}/info/pulldown/`;
+    
+    // Excel download
+    tb.rest.excelDownload = ( tb.params.restExcelDownload )?
+        tb.params.restExcelDownload:
+        `/menu/${tb.params.menuNameRest}/excel/`;
+    
+    // JSON download
+    tb.rest.jsonDownload = ( tb.params.restJsonDownload )?
+        tb.params.restJsonDownload:
+        `/menu/${tb.params.menuNameRest}/json/`;
+    
+    // Maintenance
+    tb.rest.maintenance = ( tb.params.restMaintenance )?
+        tb.params.restMaintenance:
+        `/menu/${tb.params.menuNameRest}/maintenance/all/`;
 }
 /*
 ##################################################
@@ -110,7 +149,7 @@ setHeaderHierarchy( mode ) {
             const type = columnKey.slice( 0, 1 );
             if ( type === 'g') {
                 tb.data.hierarchy[ row ].push( columnKey );
-                hierarchy( tb.info.column_group_info[ columnKey ].columns, row + 1, col );
+                hierarchy( tb.info.column_group_info[ columnKey ][`columns_${mode}`], row + 1, col );
             } else if ( type === 'c') {
                 const culumnRest =  tb.info.column_info[ columnKey ].column_name_rest;
                 tb.data.restNames[ culumnRest ] = tb.info.column_info[ columnKey ].column_name;                
@@ -127,7 +166,7 @@ setHeaderHierarchy( mode ) {
             }
         }
     };
-    hierarchy( tb.info.menu_info.columns, 0, 0 );
+    hierarchy( tb.info.menu_info[`columns_${mode}`], 0, 0 );
     
     // 固定列用情報
     tb.data.sticky = {};
@@ -146,6 +185,7 @@ setHeaderHierarchy( mode ) {
         tb.data.hierarchy[0].push( columnKey );
         tb.data.columnKeys.push( columnKey );
     }
+
 }
 /*
 ##################################################
@@ -244,6 +284,10 @@ setup() {
         case 'view': case 'edit':
             tb.workStart('table', 0 );
         break;
+        case 'select':
+            tb.flag.initFilter = true;
+            tb.flag.countSkip = true;
+        break;
     }
 
     tb.setTable( tb.mode );
@@ -295,7 +339,7 @@ setTable( mode ) {
     
     // Table headerメニュー
     switch ( tb.mode ) {
-        case 'view': case 'select': {            
+        case 'view': case 'select': case 'execute': {            
             const tableHeaderMenuList = {
                 Main: [],
                 Sub: [
@@ -305,11 +349,11 @@ setTable( mode ) {
             if ( tb.mode === 'select') {
                 tableHeaderMenuList.Main.push({ name: 'tableSelect', icon: 'check', title: '選択', action: 'default', width: '160px'});
                 tableHeaderMenuList.Main.push({ name: 'tableCancel', icon: 'cross', title: 'キャンセル', action: 'negative', width: '160px'});
-                
-                if ( tb.flag.insert ) tableHeaderMenuList.Main.push({ name: 'tableNew', icon: 'plus', title: '登録', action: 'positive', width: '120px', separate: true });
-                if ( tb.flag.update ) tableHeaderMenuList.Main.push({ name: 'tableEdit', icon: 'edit', title: '編集', action: 'positive', width: '120px', 'disabled': true });
             }
-            
+            if ( tb.mode === 'execute') {
+                tableHeaderMenuList.Main.push({ name: 'tableDryrun', icon: 'check', title: 'ドライラン', action: 'default', width: '160px'});
+                tableHeaderMenuList.Main.push({ name: 'tableRun', icon: 'check', title: '実行', action: 'positive', width: '160px'});
+            }
             if ( tb.mode === 'view') {
                 // 権限チェック
                 if ( tb.flag.insert ) tableHeaderMenuList.Main.push({ name: 'tableNew', icon: 'plus', title: '登録', action: 'positive', width: '200px'});
@@ -586,7 +630,7 @@ tableHtml() {
             if ( id === info.column_group_info[ key ].column_group_id ) return key;
         }
     };
-    
+
     // 配列階層からthead HTML作成
     const rowLength = hierarchy.length - 1;
     
@@ -605,15 +649,9 @@ tableHtml() {
             html[0] += fn.html.cell( fn.html.icon('ellipsis_v'), ['tHeadTh', 'tHeadLeftSticky', 'tHeadRowMenu'], 'th', headRowspan );
             tb.data.filterHeadColspan++;
         break;
-        case 'select':
+        case 'select': case 'execute':
             html[0] += fn.html.cell('選択', ['tHeadTh', 'tHeadLeftSticky'], 'th', headRowspan );
             tb.data.filterHeadColspan++;
-            if ( tb.flag.update ) {
-                const selectButton = fn.html.button('', 'rowSelectButton');
-                html[0] += fn.html.cell( selectButton, ['tHeadTh', 'tHeadLeftSticky', 'tHeadRowSelect'], 'th', headRowspan );
-                html[0] += fn.html.cell( fn.html.icon('ellipsis_v'), ['tHeadTh', 'tHeadLeftSticky', 'tHeadRowMenu'], 'th', headRowspan );
-                tb.data.filterHeadColspan += 2;
-            }
         break;
         case 'edit': {
             if ( tb.flag.edit || tb.flag.disuse || tb.flag.reuse ) {
@@ -669,17 +707,13 @@ tableHtml() {
                       attr = {id: columnKey};
                 
                 let name = fn.cv( column.column_name, '', true );
-                
-                // view_item
-                if ( column.view_item === '0' && column.column_name_rest !== 'discard') {
-                    continue;
-                }                
+                           
                 // selectモードの場合ボタンカラムは非表示
-                if ( tb.mode === 'select' && column.column_type === 'ButtonColumn') {
+                if ( ( tb.mode === 'select' || tb.mode === 'execute' ) && column.column_type === 'ButtonColumn') {
                     continue;
                 }
                 // ソート
-                if ( tb.mode === 'view' || tb.mode === 'select') {
+                if ( tb.mode === 'view' || tb.mode === 'select' || tb.mode === 'execute') {
                     const notSort = ['ButtonColumn', 'PasswordColumn', 'MaskColumn', 'SensitiveSingleTextColumn', 'SensitiveMultiTextColumn'];
                     if ( notSort.indexOf( column.column_type ) === -1 ) {
                         className.push('tHeadSort');
@@ -720,7 +754,7 @@ tableHtml() {
     }
     
     // フィルター入力欄
-    if ( tb.mode === 'view' || tb.mode === 'select') html.push( tb.filterHtml() );
+    if ( tb.mode === 'view' || tb.mode === 'select' || tb.mode === 'execute') html.push( tb.filterHtml() );
     
     return `
     <thead class="thead">
@@ -771,7 +805,7 @@ filterHtml() {
             continue;
         }
         // 選択モードの場合ボタンカラムは表示しない
-        if ( tb.mode === 'select' && type === 'ButtonColumn') {
+        if ( ( tb.mode === 'select' || tb.mode === 'execute') && type === 'ButtonColumn') {
             continue;
         }
         // フィルタータイプ
@@ -909,10 +943,12 @@ filterHtml() {
     const menuList = [
         { name: 'filter', title: 'フィルタ', action: 'restore'},
         { name: 'clear', title: 'フィルタクリア', action: 'negative'},
-        { name: 'auto', title: 'オートフィルタ'},
-        { name: 'excel', title: 'Excelダウンロード', action: 'default', separate: true, disabled: true },
-        { name: 'json', title: 'JSONダウンロード', action: 'default', disabled: true },
+        { name: 'auto', title: 'オートフィルタ'}
     ];
+    if ( tb.mode === 'view') {
+        menuList.push({ name: 'excel', title: 'Excelダウンロード', action: 'default', separate: true, disabled: true });
+        menuList.push({ name: 'json', title: 'JSONダウンロード', action: 'default', disabled: true });
+    }
     const menuListHtml = [];
     for ( const item of menuList ) {
         const listClassName = ['filterMenuItem'];
@@ -949,7 +985,9 @@ filterDownloadButtonCheck() {
     const excelLimit = tb.info.menu_info.xls_print_limit;
     
     if ( excelLimit === null || tb.data.count <= excelLimit ) {
-        $excel.prop('disabled', false );
+        $excel.removeClass('popup').prop('disabled', false ).removeAttr('title');
+    } else if ( excelLimit !== null ) {
+        $excel.addClass('popup').attr('title', `Excel出力最大行数（${excelLimit}行）を超過しているためダウンロードできません。`).prop('disabled', true );
     } else {
         $excel.prop('disabled', true );
     }
@@ -973,7 +1011,7 @@ setTableEvents() {
     VIEW モード
     ------------------------------
     */
-    if ( tb.mode === 'view' || tb.mode === 'select') {
+    if ( tb.mode === 'view' || tb.mode === 'select' || tb.mode === 'execute') {
         // フィルタプルダウン検索ボタン
         tb.$.thead.on('click', '.filterPulldownOpenButton', function(){
             if ( !tb.checkWork ) {
@@ -1031,10 +1069,10 @@ setTableEvents() {
                         tb.clearFilter.call( tb );
                     break;
                     case 'excel':
-                        downloadFile( $button, 'excel', `/menu/${tb.params.menuNameRest}/excel/`);
+                        downloadFile( $button, 'excel', tb.rest.excelDownload );
                     break;
                     case 'json':
-                        downloadFile( $button, 'json', `/menu/${tb.params.menuNameRest}/filter/`);
+                        downloadFile( $button, 'json', tb.rest.jsonDownload );
                     break;
                 }
             }
@@ -1294,7 +1332,7 @@ setTableEvents() {
     VIEW or EDIT モード
     ------------------------------
     */
-    if ( tb.mode === 'view' || tb.mode === 'edit' || tb.mode === 'select') {
+    if ( tb.mode === 'view' || tb.mode === 'edit') {
         
         // 行選択チェックボックスの外がクリックされても変更する
         tb.$.thead.find('.tHeadRowSelect').on('click', function( e ){
@@ -1366,7 +1404,7 @@ setTableEvents() {
     SELECT モード
     ------------------------------
     */
-    if ( tb.mode === 'select') {
+    if ( tb.mode === 'select' || tb.mode === 'execute') {
         // 行選択ラジオ
         tb.$.tbody.on('change', '.tBodyRowRadio', function(){
             if ( !tb.checkWork ) {
@@ -1640,7 +1678,7 @@ filterSelectOpen( $button ) {
 
     $button.addClass('buttonWaiting').prop('disabled', true );
     
-    fn.fetch(`/menu/${tb.params.menuNameRest}/info/search/candidates/${rest}/`).then(function( result ){
+    fn.fetch(`${tb.rest.filterPulldown}${rest}/`).then(function( result ){
         $select.html( tb.filterSelectBoxHtml( result, name, rest ) );
         $select.find('select').select2({
             placeholder: "Pulldown select",
@@ -1668,11 +1706,11 @@ filterSelectParamsOpen( filterParams ) {
               filterList = {};
         
         // フィルタリストの作成
-        for ( const key in filterParams ) {
-            if ( filterParams[ key ].LIST ) {
-                filterRestUrls.push(`/menu/${tb.params.menuNameRest}/info/search/candidates/${key}/`);
-                filterKeys.push(key);
-                filterList[ key ] = filterParams[ key ].LIST;
+        for ( const rest in filterParams ) {
+            if ( filterParams[ rest ].LIST ) {
+                filterRestUrls.push(`${tb.rest.filterPulldown}${rest}/`);
+                filterKeys.push( rest );
+                filterList[ rest ] = filterParams[ rest ].LIST;
             }
         }
         const length = filterKeys.length;
@@ -1714,28 +1752,34 @@ requestTbody() {
     
     tb.filterParams = tb.getFilterParameter();    
     
-    // 件数を確認する
-    fn.fetch(`/menu/${tb.params.menuNameRest}/filter/count/`, null, 'POST', tb.filterParams ).then(function( countResult ){
-        tb.data.count = Number( fn.cv( countResult, 0 ) );
-        
-        const printLimitNum = Number( fn.cv( tb.info.menu_info.web_print_limit, -1 ) ),
-              printConfirmNum = Number( fn.cv( tb.info.menu_info.web_print_confirm, -1 ) );
-        
-        // リミットチェック
-        if ( printLimitNum !== -1 && tb.data.count > printLimitNum ) {
-            alert(WD.TABLE.limit);
-            return false;
-        //表示確認
-        } else if ( printConfirmNum !== -1 && tb.data.count >= printConfirmNum ) {
-            if ( !confirm(WD.TABLE.confirm) ) {
-                return false;
-            }
-        }
-        
+    
+    if ( tb.flag.countSkip ) {
+        // 件数を確認しない
         tb.workerPost('filter', tb.filterParams );
-    }).catch(function( error ){
-        fn.gotoErrPage( error.message );
-    });
+    } else {
+        // 件数を確認する
+        fn.fetch( tb.rest.filter + `count/`, null, 'POST', tb.filterParams ).then(function( countResult ){
+            tb.data.count = Number( fn.cv( countResult, 0 ) );
+
+            const printLimitNum = Number( fn.cv( tb.info.menu_info.web_print_limit, -1 ) ),
+                  printConfirmNum = Number( fn.cv( tb.info.menu_info.web_print_confirm, -1 ) );
+
+            // リミットチェック
+            if ( printLimitNum !== -1 && tb.data.count > printLimitNum ) {
+                alert(WD.TABLE.limit);
+                return false;
+            //表示確認
+            } else if ( printConfirmNum !== -1 && tb.data.count >= printConfirmNum ) {
+                if ( !confirm(WD.TABLE.confirm) ) {
+                    return false;
+                }
+            }
+
+            tb.workerPost('filter', tb.filterParams );
+        }).catch(function( error ){
+            fn.gotoErrPage( error.message );
+        });
+    }
 }
 /*
 ##################################################
@@ -1752,7 +1796,7 @@ getFilterParameter() {
               value = $input.val(),
               rest = $input.attr('data-rest'),
               type = $input.attr('data-type');
-        console.log(value)
+
         if ( ( fn.typeof( value ) === 'string' && value ) || ( fn.typeof( value ) === 'array' && value.length ) ) {
             if ( !filterParams[ rest ] ) filterParams[ rest ] = {};
             
@@ -1791,7 +1835,7 @@ getFilterParameter() {
             }
         }
     });
-    console.log(filterParams)
+
     return filterParams;
 }
 /*
@@ -1841,7 +1885,7 @@ workerPost( type, data ) {
     switch ( type ) {
         case 'filter': {
             const url = fn.getRestApiUrl(
-                `/menu/${tb.params.menuNameRest}/filter/`,
+                tb.rest.filter,
                 tb.params.orgId,
                 tb.params.wsId );
 
@@ -1879,7 +1923,7 @@ workerPost( type, data ) {
         break;
         case 'history': {
             const url = fn.getRestApiUrl(
-                `/menu/${tb.params.menuNameRest}/filter/journal/${data}/`,
+                `${tb.rest.filter}journal/${data}/`,
                 tb.params.orgId,
                 tb.params.wsId );
 
@@ -1917,7 +1961,10 @@ setWorkerEvent() {
 
                 if ( message.data.order ) tb.data.order = message.data.order;
                 if ( message.data.discard ) tb.data.discard = message.data.discard;
-                if ( message.data.paging ) tb.paging = message.data.paging;
+                if ( message.data.paging ) {
+                    tb.paging = message.data.paging;
+                    tb.data.count = message.data.paging.num;
+                }
 
                 if ( type === 'changeEditDup' || type === 'changeEditRegi') {
                     tb.select.view = [];
@@ -1954,7 +2001,7 @@ setTbody() {
         + `</div>`);
     } else {
         tb.$.container.removeClass('noData');
-        if ( ( tb.mode === 'view' || tb.mode === 'select') && tb.flag.update ) {
+        if ( tb.mode === 'view' && tb.flag.update ) {
             tb.$.header.find('.itaButton[data-type="tableEdit"]').prop('disabled', false );
         }
     }
@@ -2146,21 +2193,8 @@ tbodyHtml() {
                 rowHtml.push( fn.html.cell( num, ['tBodyTd'], 'td') );
                 rowHtml.push( fn.html.cell( date, ['tBodyTd'], 'td') );
             break;
-            case 'select':
+            case 'select': case 'execute':
                 rowHtml.push( rowCheckInput('radio') );
-                if ( tb.flag.update ) {
-                    rowHtml.push( rowCheckInput() );
-                }
-                const viewMenu = [];
-                if ( tb.flag.update ) {
-                    viewMenu.push({ type: 'rowEdit', text: '編集', action: 'default', id: rowId, className: 'tBodyRowMenuTb'});
-                }
-                if ( tb.flag.insert ) {
-                    viewMenu.push({ type: 'rowDup', text: '複製', action: 'duplicat', id: rowId, className: 'tBodyRowMenuTb'});
-                }
-                if ( viewMenu.length ) {
-                    rowHtml.push( fn.html.cell( tb.rowMenuHtml( viewMenu ), ['tBodyLeftSticky', 'tBodyRowMenu', 'tBodyTh'], 'th'));
-                }
             break;
         }
 
@@ -2184,10 +2218,6 @@ cellHtml( parameter, columnKey, journal ) {
           columnName = columnInfo.column_name_rest,
           columnType = columnInfo.column_type;
     
-    // view_item
-    if ( columnInfo.view_item === '0' && columnName !== 'discard') {
-        return '';
-    }
     // Button column
     if ( columnInfo.column_type === 'ButtonColumn' && ['select', 'edit'].indexOf( tb.mode ) !== -1 ) {
         return '';
@@ -2768,7 +2798,7 @@ changeEdtiMode( changeMode ) {
     const tb = this;
     
     // テーブル構造を再セット
-    tb.setHeaderHierarchy('edit');
+    tb.setHeaderHierarchy('input');
     
     const info = tb.info.column_info;
     
@@ -2795,7 +2825,7 @@ changeEdtiMode( changeMode ) {
     tb.flag.initFilter = true;
 
     // セレクトデータを取得後に表示する
-    fn.fetch(`/menu/${tb.params.menuNameRest}/info/pulldown/`).then(function( result ){
+    fn.fetch( tb.rest.inputPulldown ).then(function( result ){
         
         // 選択項目
         tb.data.editSelect = result;
@@ -3040,7 +3070,7 @@ editOk() {
     }
 
     return new Promise(function( resolve, reject ){        
-        fn.fetch(`/menu/${tb.params.menuNameRest}/maintenance/all/`, null, 'POST', editData )
+        fn.fetch( tb.rest.maintenance, null, 'POST', editData )
             .then(function( result ){
                 resolve( result );
             })
