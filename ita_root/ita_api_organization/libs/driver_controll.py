@@ -175,10 +175,16 @@ def get_execution_info(objdbca, execution_no):
             win_rm_connect = tmp_row['FLAG_NAME']
 
         # 投入・結果データエンコード
+        file_name = 'InputData_' + execution_no.zfill(10) + '.zip'
         input_data = getLegayRoleExecutPopulatedDataUploadDirPath()
-        encord_input_data = ky_encrypt(input_data)
+        with open(input_data + '/' + file_name, "rb") as f:
+            bytes = f.read()
+            encord_input_data = base64.b64encode(bytes)
+        file_name = 'ResultData_' + execution_no.zfill(10) + '.zip'
         result_data = getLegayRoleExecutResultDataUploadDirPath()
-        encord_result_data = ky_encrypt(result_data)
+        with open(result_data + '/' + file_name, "rb") as f:
+            bytes = f.read()
+            encord_result_data = base64.b64encode(bytes)
 
         execution_info['target_execution'] = {'execution_no': execution_no,
                                             'execution_type': execution_type,
@@ -188,8 +194,8 @@ def get_execution_info(objdbca, execution_no):
                                             'execution_user': row['EXECUTION_USER'],
                                             'movement': {},
                                             'operation': {},
-                                            'input_data': encord_input_data,
-                                            'result_data': encord_result_data,
+                                            'input_data': str(encord_input_data),
+                                            'result_data': str(encord_result_data),
                                             'execution_situation': {}}
         execution_info['target_execution']['movement'] = {'id': row['MOVEMENT_ID'],
                                                         'name': row['I_MOVEMENT_NAME'],
