@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# from flask import g
+from flask import g
 from common_libs.ci.util import app_context_start
 from backyard_child_main import backyard_child_main
 import sys
@@ -23,7 +23,8 @@ def main():
     # print(args)
     organization_id = args[1]
     workspace_id = args[2]
-    app_context_start(backyard_child_main, organization_id, workspace_id)
+
+    app_context_start(backyard_child_main, False, organization_id, workspace_id)
 
 
 if __name__ == '__main__':
