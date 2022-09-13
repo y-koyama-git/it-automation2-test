@@ -51,7 +51,9 @@ def get_driver_execute_data(organization_id, workspace_id, menu, execution_no): 
     # メニューに対するロール権限をチェック
     check_auth_menu(menu, objdbca)
     
-    return 'do some magic!',
+    result = driver_controll.get_execution_info(objdbca, execution_no)
+
+    return result,
 
 
 @api_filter
@@ -173,7 +175,9 @@ def post_driver_cancel(organization_id, workspace_id, menu, execution_no):  # no
     # メニューに対するロール権限をチェック
     check_auth_menu(menu, objdbca)
     
-    return 'do some magic!',
+    result = driver_controll.reserve_cancel(objdbca, execution_no)
+
+    return result,
 
 @api_filter
 def post_driver_excecute(organization_id, workspace_id, menu, body=None):  # noqa: E501
