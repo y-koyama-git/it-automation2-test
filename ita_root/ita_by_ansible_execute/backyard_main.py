@@ -13,9 +13,8 @@
 #
 from flask import g
 from common_libs.common.dbconnect import DBConnectWs
-from common_libs.common.exception import AppException
 from common_libs.common.util import get_timestamp
-from common_libs.ci.util import app_exception, exception, log_err
+from common_libs.ci.util import log_err
 from common_libs.ansible_driver.classes.AnsrConstClass import AnscConst
 
 from libs import common_functions as cm
@@ -38,17 +37,13 @@ def backyard_main(organization_id, workspace_id):
     # db instance
     wsDb = DBConnectWs(g.get('WORKSPACE_ID'))  # noqa: F405
 
-    try:
-        result = main_logic(organization_id, workspace_id, wsDb)
-        if result[0] is True:
-            # 正常終了
-            g.applogger.debug("ITAWDCH-STD-50002")
-        else:
-            if len(result) == 2:
-                log_err(result[1])
-            g.applogger.debug("ITAWDCH-ERR-50001")
-    except Exception as e:
-        exception(e)
+    result = main_logic(organization_id, workspace_id, wsDb)
+    if result[0] is True:
+        # 正常終了
+        g.applogger.debug("ITAWDCH-STD-50002")
+    else:
+        if len(result) == 2:
+            log_err(result[1])
         g.applogger.debug("ITAWDCH-ERR-50001")
 
 
@@ -59,10 +54,7 @@ def main_logic(organization_id, workspace_id, wsDb):
         return False,
 
     # 実行中の作業の数を取得
-    result = get_running_process(wsDb)
-    if result[0] is False:
-        return False, result[1]
-    num_of_run_instance = len(result[1])
+    num_of_run_instance = len(get_running_process(wsDb))
 
     # 未実行（実行待ち）の作業を実行
     result = run_unexecuted(wsDb, num_of_run_instance, organization_id, workspace_id)
@@ -75,24 +67,17 @@ def main_logic(organization_id, workspace_id, wsDb):
 def child_process_exist_check(wsDb):
     # 実行中の子プロの起動確認
 
-    try:
-        # psコマンドでbackyard_child_init.pyの起動プロセスリストを作成
-        # psコマンドがマレに起動プロセスリストを取りこぼすことがあるので3回分を作成
-        # command = ["python3", "backyard/backyard_child_init.py", organization_id, workspace_id, execution_no, driver_id]
+    # psコマンドでbackyard_child_init.pyの起動プロセスリストを作成
+    # psコマンドがマレに起動プロセスリストを取りこぼすことがあるので3回分を作成
+    # command = ["python3", "backyard/backyard_child_init.py", organization_id, workspace_id, execution_no, driver_id]
 
-        child_process_1 = child_process_exist_check_ps()
-        time.sleep(0.05)
-        child_process_2 = child_process_exist_check_ps()
-        time.sleep(0.05)
-        child_process_3 = child_process_exist_check_ps()
-    except Exception:
-        log_err("ITAANSIBLEH-ERR-50073")
-        return False, ""
+    child_process_1 = child_process_exist_check_ps()
+    time.sleep(0.05)
+    child_process_2 = child_process_exist_check_ps()
+    time.sleep(0.05)
+    child_process_3 = child_process_exist_check_ps()
 
-    result = get_running_process(wsDb)
-    if result[0] is False:
-        return False, ""
-    records = result[1]
+    records = get_running_process(wsDb)
     for rec in records:
         driver_id = rec["DRIVER_ID"]
         driver_name = rec["DRIVER_NAME"]
@@ -144,27 +129,19 @@ def child_process_exist_check(wsDb):
             if result[0] is True:
                 wsDb.db_commit()
                 g.applogger.debug("ステータス[{}]に更新しました。(作業No.:{})".format(ansc_const.EXCEPTION, execution_no))  # ITAANSIBLEH-ERR-50075
-            else:
-                wsDb.db_rollback()
-                g.applogger.error("ステータス[{}]に更新失敗しました。(作業No.:{})".format(ansc_const.EXCEPTION, execution_no))  # ITAANSIBLEH-ERR-50072
-                return False, execution_no
 
     return True,
 
 
 def get_running_process(wsDb):
-    try:
-        # 実行中の作業データを取得
-        status_id_list = [ansc_const.PREPARE, ansc_const.PROCESSING, ansc_const.PROCESS_DELAYED]
-        prepared_list = list(map(lambda a: "%s", status_id_list))
+    # 実行中の作業データを取得
+    status_id_list = [ansc_const.PREPARE, ansc_const.PROCESSING, ansc_const.PROCESS_DELAYED]
+    prepared_list = list(map(lambda a: "%s", status_id_list))
 
-        condition = 'WHERE `DISUSE_FLAG`=0 AND `STATUS_ID` in ({})'.format(','.join(prepared_list))
-        records = wsDb.table_select('V_ANSC_EXEC_STS_INST', condition, status_id_list)
-        
-        return True, records
-    except AppException as e:
-        app_exception(e)
-        return False, ""
+    condition = 'WHERE `DISUSE_FLAG`=0 AND `STATUS_ID` in ({})'.format(','.join(prepared_list))
+    records = wsDb.table_select('V_ANSC_EXEC_STS_INST', condition, status_id_list)
+
+    return records
 
 
 def run_unexecuted(wsDb, num_of_run_instance, organization_id, workspace_id):
@@ -246,20 +223,17 @@ def instance_prepare(wsDb, execute_data, organization_id, workspace_id):
     if status_id != ansc_const.NOT_YET and status_id != ansc_const.RESERVE:
         return False, "Emergency stop in unexecuted state.(execution_no: {})".format(execution_no)
 
-    # # 処理対象の作業インスタンスのステータスを準備中に設定
-    # wsDb.db_transaction_start()
-    # data = {
-    #     "EXECUTION_NO": execution_no,
-    #     "STATUS_ID": ansc_const.PREPARE,
-    # }
-    # if not execute_data["TIME_START"]:
-    #     data["TIME_START"] = get_timestamp()
-    # result = cm.update_execution_record(wsDb, data)
-    # if result[0] is True:
-    #     wsDb.db_commit()
-    # else:
-    #     wsDb.db_rollback()
-    #     return False,
+    # 処理対象の作業インスタンスのステータスを準備中に設定
+    wsDb.db_transaction_start()
+    data = {
+        "EXECUTION_NO": execution_no,
+        "STATUS_ID": ansc_const.PREPARE,
+    }
+    if not execute_data["TIME_START"]:
+        data["TIME_START"] = get_timestamp()
+    result = cm.update_execution_record(wsDb, data)
+    if result[0] is True:
+        wsDb.db_commit()
 
     # 子プロセスにして、実行
     g.applogger.debug("ITAANSIBLEH-STD-50077 (作業No.:{}, driver_name:{})".format(driver_name, execution_no))
@@ -275,33 +249,34 @@ def instance_prepare(wsDb, execute_data, organization_id, workspace_id):
 
 
 def child_process_exist_check_ps():
-    try:
-        # ps -efw | grep backyard/backyard_child_init.py | grep -v grep 
-        cp1 = subprocess.run(
-            ["ps", "-efw"],
-            capture_output=True,
-            text=True
-        )
-        cp2 = subprocess.run(
-            ["grep", "backyard/backyard_child_init.py"],
-            capture_output=True,
-            text=True,
-            input=cp1.stdout
-        )
-        cp3 = subprocess.run(
-            ["grep", "-v", "grep"],
-            capture_output=True,
-            text=True,
-            input=cp2.stdout
-        )
+    # ps -efw | grep backyard/backyard_child_init.py | grep -v grep 
+    cp1 = subprocess.run(
+        ["ps", "-efw"],
+        capture_output=True,
+        text=True
+    )
+    if cp1.returncode != 0 and cp1.stderr:
+        cp1.check_returncode()
 
-        if cp3.returncode == 0:
-            return cp3.stdout
-        elif cp3.returncode == 1 and not cp3.stderr:
-            return ""
-        else:
-            log_err(cp3.stderr)
-            raise Exception()
-    except Exception as e:
-        exception(e)
-        raise Exception()
+    cp2 = subprocess.run(
+        ["grep", "backyard/backyard_child_init.py"],
+        capture_output=True,
+        text=True,
+        input=cp1.stdout
+    )
+    if cp2.returncode != 0 and cp2.stderr:
+        cp2.check_returncode()
+
+    cp3 = subprocess.run(
+        ["grep", "-v", "grep"],
+        capture_output=True,
+        text=True,
+        input=cp2.stdout
+    )
+
+    if cp3.returncode == 0:
+        return cp3.stdout
+    elif cp3.returncode == 1 and not cp3.stderr:
+        return ""
+    else:
+        cp3.check_returncode()
