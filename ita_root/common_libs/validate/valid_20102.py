@@ -50,7 +50,7 @@ def external_valid_menu_before(objdbca, objtable, option):
         
         # PasswordColumn
         str_token = option["current_parameter"]["parameter"]['authentication_token']
-        if len(str_token) == 0:
+        if not str_token:
             if "authentication_token" in option["entry_parameter"]["parameter"]:
                 str_token = option["entry_parameter"]["parameter"]['authentication_token']
 
