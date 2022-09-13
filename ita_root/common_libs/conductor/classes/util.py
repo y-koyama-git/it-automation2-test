@@ -177,7 +177,7 @@ class ConductorCommonLibs():
         # check node call loop
         # res_chk = self.chk_call_loop_base_1(tmp_c_all_data.get('conductor').get('id'), tmp_c_all_data)
         # if res_chk[0] is False:
-        #     return False, err_code, res_chk[1]
+        #    return False, err_code, res_chk[1]
 
         return True,
 
@@ -498,9 +498,9 @@ class ConductorCommonLibs():
                 # err_msg_args.append('movement_id is not available')
                 err_msg_args.append(g.appmsg.get_api_message('MSG-40014', [node_blcok.get('movement_id'), node_blcok.get('movement_name')]))
                 
-            if 'movement_name' not in node_blcok:
-                # err_msg_args.append('movement_name')
-                err_msg_args.append(g.appmsg.get_api_message('MSG-40014', [node_blcok.get('movement_id'), node_blcok.get('movement_name')]))
+            #if 'movement_name' not in node_blcok:
+            #    # err_msg_args.append('movement_name')
+            #    err_msg_args.append(g.appmsg.get_api_message('MSG-40014', [node_blcok.get('movement_id'), node_blcok.get('movement_name')]))
 
         if 'skip_flag' not in node_blcok:
             # err_msg_args.append('skip_flag')
@@ -515,9 +515,9 @@ class ConductorCommonLibs():
                 # err_msg_args.append('operation_id is not available')
                 err_msg_args.append(g.appmsg.get_api_message('MSG-40016', [node_blcok.get('operation_id'), node_blcok.get('operation_name')]))
 
-            if 'operation_name' not in node_blcok:
-                # err_msg_args.append('operation_name')
-                err_msg_args.append(g.appmsg.get_api_message('MSG-40016', [node_blcok.get('operation_id'), node_blcok.get('operation_name')]))
+            #if 'operation_name' not in node_blcok:
+            #    # err_msg_args.append('operation_name')
+            #    err_msg_args.append(g.appmsg.get_api_message('MSG-40016', [node_blcok.get('operation_id'), node_blcok.get('operation_name')]))
 
         if 'orchestra_id' not in node_blcok or node_blcok['orchestra_id'] not in self._orchestra_id_list:
             # err_msg_args.append('orchestra_id')
@@ -551,9 +551,10 @@ class ConductorCommonLibs():
                 tmp_msg = g.appmsg.get_api_message('MSG-40018', [node_blcok.get('call_conductor_id'), node_blcok.get('call_conductor_name')])
                 err_msg_args.append(tmp_msg)
             if 'call_conductor_name' not in node_blcok:
+                pass
                 # err_msg_args.append('call_conductor_name')
-                tmp_msg = g.appmsg.get_api_message('MSG-40018', [node_blcok.get('call_conductor_id'), node_blcok.get('call_conductor_name')])
-                err_msg_args.append(tmp_msg)
+                # tmp_msg = g.appmsg.get_api_message('MSG-40018', [node_blcok.get('call_conductor_id'), node_blcok.get('call_conductor_name')])
+                # err_msg_args.append(tmp_msg)
 
         if 'skip_flag' not in node_blcok:
             # err_msg_args.append('skip_flag')
@@ -568,8 +569,9 @@ class ConductorCommonLibs():
                 # err_msg_args.append('operation_id is not available')
                 err_msg_args.append(g.appmsg.get_api_message('MSG-40016', [node_blcok.get('operation_id'), node_blcok.get('operation_name')]))
             if 'operation_name' not in node_blcok:
+                pass
                 # err_msg_args.append('operation_name')
-                err_msg_args.append(g.appmsg.get_api_message('MSG-40016', [node_blcok.get('operation_id'), node_blcok.get('operation_name')]))
+                # err_msg_args.append(g.appmsg.get_api_message('MSG-40016', [node_blcok.get('operation_id'), node_blcok.get('operation_name')]))
                 
         if len(err_msg_args) != 0:
             return False, '\n'.join(err_msg_args)
