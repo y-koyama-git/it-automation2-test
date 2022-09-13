@@ -54,7 +54,7 @@ def put_var_struct_analysis(objdbca, option, pkey_id, TPF_var_name, var_struct_s
             if ret is not None:
                 # 多段定義の場合
                 if vars_list.get(var_name) is None:
-                    msg = g.appmsg.get_api_message("MSG-10572", var_name)
+                    msg = g.appmsg.get_api_message("MSG-10572", [var_name])
                     retBool = False
                 else:
                     if vars_list[var_name] == 0:
@@ -63,7 +63,7 @@ def put_var_struct_analysis(objdbca, option, pkey_id, TPF_var_name, var_struct_s
                         GBL_vars_info['1'][var_name] = '0'
                     else:
                         # 複数具体値定義の場合
-                        msg = g.appmsg.get_api_message("MSG-10572", var_name)
+                        msg = g.appmsg.get_api_message("MSG-10572", [var_name])
                         retBool = False
             else:
                 ret = re.search(AnscConst.VAR_parent_VarName, var_name)
@@ -74,7 +74,7 @@ def put_var_struct_analysis(objdbca, option, pkey_id, TPF_var_name, var_struct_s
                             array_vars_use = True
                 else:
                     # 変数名がastrollで扱えない場合
-                    msg = g.appmsg.get_api_message("MSG-'10569", var_name)
+                    msg = g.appmsg.get_api_message("MSG-'10569", [var_name])
                     retBool = False
     
     # 一時ファイル削除

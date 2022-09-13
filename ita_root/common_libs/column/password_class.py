@@ -80,6 +80,6 @@ class PasswordColumn(TextColumn):
         """
         retBool = True
         msg = ''
-        val = ''
+        val = None
 
         return retBool, msg, val

@@ -130,7 +130,7 @@ class AuthTypeParameterRequiredCheck:
                 error_cde = self.err_msg_code_ary[chk_type]['ERROR_TYPE8']
                 if len(result) != 0:
                     result += "\n"
-                result = g.appmsg.get_api_message(error_cde, err_msg_parameter_ary)
+                result = g.appmsg.get_api_message(error_cde, [err_msg_parameter_ary])
 
         # 認証方式毎の必須入力チェック
         if str_auth_mode == AnscConst.DF_LOGIN_AUTH_TYPE_KEY:  # 認証方式:鍵認証(パスフレーズなし)
@@ -138,7 +138,7 @@ class AuthTypeParameterRequiredCheck:
                 error_cde = self.err_msg_code_ary[chk_type]['ERROR_TYPE2']
                 if len(result) != 0:
                     result += "\n"
-                result = g.appmsg.get_api_message(error_cde, err_msg_parameter_ary)
+                result = g.appmsg.get_api_message(error_cde, [err_msg_parameter_ary])
         elif str_auth_mode == AnscConst.DF_LOGIN_AUTH_TYPE_PW or str_auth_mode == AnscConst.DF_LOGIN_AUTH_TYPE_PW_WINRM:  # 認証方式:パスワード認証, 認証方式:パスワード認証(winrm)
             # 機器一覧ロードテーブルからの場合、ロードテーブルで既存のチェック処理があるので、そこでチェック
             if chk_type == AuthTypeParameterRequiredCheck.chkType_WorkflowExec_DevaiceList:
@@ -146,25 +146,25 @@ class AuthTypeParameterRequiredCheck:
                     error_cde = self.err_msg_code_ary[chk_type]['ERROR_TYPE1']
                     if len(result) != 0:
                         result += "\n"
-                    result = g.appmsg.get_api_message(error_cde, err_msg_parameter_ary)
+                    result = g.appmsg.get_api_message(error_cde, [err_msg_parameter_ary])
         elif str_auth_mode == AnscConst.DF_LOGIN_AUTH_TYPE_KEY_EXCH:  # 認証方式:鍵認証(鍵交換済み)
             pass
         elif str_auth_mode == AnscConst.DF_LOGIN_AUTH_TYPE_KEY_PP_USE:  # 認証方式:鍵認証(パスフレーズあり)
             if str_ssh_key_file == "" or str_ssh_key_file is None:
                 error_cde = self.err_msg_code_ary[chk_type]['ERROR_TYPE3']
-                result = g.appmsg.get_api_message(error_cde, err_msg_parameter_ary)
+                result = g.appmsg.get_api_message(error_cde, [err_msg_parameter_ary])
             if str_passphrase == "" or str_passphrase is None:
                 error_cde = self.err_msg_code_ary[chk_type]['ERROR_TYPE4']
                 if len(result) != 0:
                     result += "\n"
-                result += g.appmsg.get_api_message(error_cde, err_msg_parameter_ary)
+                result += g.appmsg.get_api_message(error_cde, [err_msg_parameter_ary])
         elif str_auth_mode is None:  # 認証方式: 未選択
             pass
         else:  # 認証方式が不正
             error_cde = self.err_msg_code_ary[chk_type]['ERROR_TYPE7']
             if len(result) != 0:
                 result += "\n"
-            result += g.appmsg.get_api_message(error_cde, err_msg_parameter_ary)
+            result += g.appmsg.get_api_message(error_cde, [err_msg_parameter_ary])
         
         # 作業実行からの場合に実行ドライバとPioneerプロトコルと認証方式の組み合わせ確認
         if chk_type == AuthTypeParameterRequiredCheck.chkType_WorkflowExec_DevaiceList:
@@ -174,7 +174,7 @@ class AuthTypeParameterRequiredCheck:
                     error_cde = self.err_msg_code_ary[chk_type]['ERROR_TYPE5']
                     if len(result) != 0:
                         result += "\n"
-                    result += g.appmsg.get_api_message(error_cde, err_msg_parameter_ary)
+                    result += g.appmsg.get_api_message(error_cde, [err_msg_parameter_ary])
             """
             str_protocol_idがないためコメントアウト
             elif driver_id == AnscConst.DF_PIONEER_DRIVER_ID:  # pioneer
@@ -183,12 +183,12 @@ class AuthTypeParameterRequiredCheck:
                         error_cde = self.err_msg_code_ary[chk_type]['ERROR_TYPE9']
                         if len(result) != 0:
                             result += "\n"
-                        result += g.appmsg.get_api_message(error_cde, err_msg_parameter_ary)
+                        result += g.appmsg.get_api_message(error_cde, [err_msg_parameter_ary])
                     elif str_auth_mode == '':
                         error_cde = self.err_msg_code_ary[chk_type]['ERROR_TYPE5']
                         if len(result) != 0:
                             result += "\n"
-                        result += g.appmsg.get_api_message(error_cde, err_msg_parameter_ary)
+                        result += g.appmsg.get_api_message(error_cde, [err_msg_parameter_ary])
                 elif str_protocol_id == '1':  # telnet
                     # 認証方式:鍵認証(パスフレーズなし), 認証方式:パスワード認証, 認証方式:鍵認証(鍵交換済み), 認証方式:鍵認証(パスフレーズあり), 認証方式:パスワード認証(winrm)
                     if str_auth_mode == AnscConst.DF_LOGIN_AUTH_TYPE_KEY or str_auth_mode == AnscConst.DF_LOGIN_AUTH_TYPE_PW or str_auth_mode == AnscConst.DF_LOGIN_AUTH_TYPE_KEY_EXCH or str_auth_mode == AnscConst.DF_LOGIN_AUTH_TYPE_KEY_PP_USE or str_auth_mode == AnscConst.DF_LOGIN_AUTH_TYPE_PW_WINRM or str_auth_mode == '':
@@ -198,13 +198,13 @@ class AuthTypeParameterRequiredCheck:
                     error_cde = self.err_msg_code_ary[chk_type]['ERROR_TYPE10']
                     if len(result) != 0:
                         result += "\n"
-                    result += g.appmsg.get_api_message(error_cde, err_msg_parameter_ary)
+                    result += g.appmsg.get_api_message(error_cde, [err_msg_parameter_ary])
                 else:
                     # 認証方式が不正
                     error_cde = self.err_msg_code_ary[chk_type]['ERROR_TYPE11']
                     if len(result) != 0:
                         result += "\n"
-                    result += g.appmsg.get_api_message(error_cde, err_msg_parameter_ary)
+                    result += g.appmsg.get_api_message(error_cde, [err_msg_parameter_ary])
             """
         if len(result) == 0:
             retBool = True
@@ -240,33 +240,32 @@ class AuthTypeParameterRequiredCheck:
         result = ""
         msg = ""
         if str_auth_mode == AnscConst.DF_LOGIN_AUTH_TYPE_KEY:  # 鍵認証(パスフレーズなし)
-            if str_ssh_key_file == "" or str_ssh_key_file is None:
+            if str_ssh_key_file is None:
                 error_cde = self.err_msg_code_ary[chk_type]['ERROR_TYPE2']
                 if len(result) != 0:
                     result += "\n"
-                result = g.appmsg.get_api_message(error_cde, err_msg_parameter_ary)
+                result = g.appmsg.get_api_message(error_cde, [err_msg_parameter_ary])
         if str_auth_mode == AnscConst.DF_LOGIN_AUTH_TYPE_PW:        # 認証方式:パスワード認証
-            if str_passwd == "" or str_passwd is None:
-                
+            if str_passwd is None:
                 error_cde = self.err_msg_code_ary[chk_type]['ERROR_TYPE1']
                 if len(result) != 0:
                     result += "\n"
-                result = g.appmsg.get_api_message(error_cde, err_msg_parameter_ary)
+                result = g.appmsg.get_api_message(error_cde, [err_msg_parameter_ary])
                 
         if str_auth_mode == AnscConst.DF_LOGIN_AUTH_TYPE_KEY_EXCH:   # 認証方式:鍵認証(鍵交換済み)
             pass
         if str_auth_mode == AnscConst.DF_LOGIN_AUTH_TYPE_KEY_PP_USE:  # 認証方式:鍵認証(パスフレーズあり)
-            if str_ssh_key_file == "" or str_ssh_key_file is None:
+            if str_ssh_key_file is None:
                 error_cde = self.err_msg_code_ary[chk_type]['ERROR_TYPE3']
                 if len(result) != 0:
                     result += "\n"
-                result = g.appmsg.get_api_message(error_cde, err_msg_parameter_ary)
+                result = g.appmsg.get_api_message(error_cde, [err_msg_parameter_ary])
                 
-            if str_passphrase == "" or str_passphrase is None:
+            if str_passphrase is None:
                 error_cde = self.err_msg_code_ary[chk_type]['ERROR_TYPE4']
                 if len(result) != 0:
                     result += "\n"
-                result += g.appmsg.get_api_message(error_cde, err_msg_parameter_ary)
+                result += g.appmsg.get_api_message(error_cde, [err_msg_parameter_ary])
                 
         if len(result) == 0:
             retBool = True

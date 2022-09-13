@@ -19,8 +19,12 @@ FROM    registry.access.redhat.com/ubi8/ubi-init as common_build
 ARG USERNAME
 ARG GROUPNAME
 ARG APP_PATH
-ENV PYTHONPATH="/exastro/"
-ENV USER_ID="20102"
+ENV PYTHONPATH=/exastro/
+ENV USER_ID=20102
+ENV EXECUTE_INTERVAL=1
+ENV DEFAULT_LANGUAGE=ja
+ENV STORAGEPATH=/storage/
+ENV CONTAINER_BASE=docker
 
 RUN dnf install -y \
     gcc \
@@ -56,8 +60,6 @@ FROM    common_build as develop_build
 ARG USERNAME
 ARG GROUPNAME
 ARG APP_PATH
-ENV PYTHONPATH="/exastro/"
-ENV USER_ID="20102"
 
 RUN dnf install -y \
     sudo \
@@ -91,8 +93,6 @@ FROM    common_build
 ARG USERNAME
 ARG GROUPNAME
 ARG APP_PATH
-ENV PYTHONPATH="/exastro/"
-ENV USER_ID="20102"
 
 WORKDIR $APP_PATH
 
@@ -103,3 +103,4 @@ COPY ./ita_root/backyard/ $APP_PATH/backyard/
 
 
 ENTRYPOINT ["backyard/entrypoint.sh"]
+

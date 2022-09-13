@@ -189,28 +189,44 @@ fetch: function( url, token, method = 'GET', json ) {
                     reject( e );
                 }
             }
+            
+            console.group('Fetch');
             console.log( u );
             console.log( init );
+            console.groupEnd('Fetch');
+            
             fetch( u, init ).then(function( response ){
-                console.log( response );
                 if ( errorCount === 0 ) {
+                
+                    console.group('Fetch response');
+                    console.log( response );
+                    
                     if( response.ok ) {
                         //200の場合
-                        response.json().then(function( result ){ console.log( result );
-                                resolve( result.data );
+                        response.json().then(function( result ){
+                            console.log( result );
+                            console.groupEnd('Fetch response');
+                            
+                            resolve( result.data );
                         });
                     } else {
                         errorCount++;
                         if( response.status === 499 ) {
                             //バリデーションエラーは呼び出し元に返す
-                             response.json().then(function( result ){ console.log( result );
+                             response.json().then(function( result ){
+                                console.log( result );
+                                console.groupEnd('Fetch response');
+                                
                                 reject( result );
                             }).catch(function( e ) {
                                 cmn.systemErrorAlert();
                             }); 
                         } else if ( response.status === 401 ){
                             //権限無しの場合、トップページに戻す
-                            response.json().then(function( result ){ console.log( result );
+                            response.json().then(function( result ){
+                                console.log( result );
+                                console.groupEnd('Fetch response');
+                                
                                 alert(result.message);
                                 location.replace('/' + organization_id + '/workspaces/' + workspace_id + '/ita/');
                             }).catch(function( e ) {
@@ -1519,6 +1535,9 @@ html: {
                 + fn.html.button('<span class="icon icon-cal"></span>', ['itaButton', 'inputDateCalendarButton'], buttonAttrs )
             + `</div>`
         + `</div>`;
+    },
+    required: function() {
+        return `<span class="required">必須</span>`;
     }
 },
 /*
@@ -1656,12 +1675,13 @@ errorModal: function( error, pageName ) {
    選択用モーダルの初期設定
 ##################################################
 */
-initSelectModal: function( title, menu ) {
+initSelectModal: function( title, menu, restUrls, sub = '') {
     
     return new Promise(function( resolve, reject ) {
         const config = {
             mode: 'modeless',
-            width: '100%',
+            width: 'auto',
+            minWidth: '640px',
             height: '100%',
             header: {
                 title: title
@@ -1670,11 +1690,15 @@ initSelectModal: function( title, menu ) {
         const modal = new Dialog( config );
         modal.open();
         
-        fn.fetch(`/menu/${menu}/info/`).then(function( info ){
+        fn.fetch( restUrls.info ).then(function( info ){
             const params = cmn.getCommonParams();
             params.menuNameRest = menu;
+            params.restFilter = restUrls.filter;
+            params.restFilterPulldown = restUrls.pulldown;
             
-            const table = new DataTable('SE_' + menu.toUpperCase(), 'select', info, params );
+            if ( sub !== '') info = info[ sub ];
+            
+            const table = new DataTable(`SE_${menu.toUpperCase()}${sub}`, 'select', info, params );
             modal.setBody( table.setup() );
             
             resolve({
@@ -1841,6 +1865,17 @@ setCommonEvents: function() {
 },
 /*
 ##################################################
+   メッセージを出す
+##################################################
+*/
+message: function( type, message, title, icon, closeTime ) {
+    const msg = new Message( type, message, title, icon, closeTime );
+    msg.open();
+    
+    return msg;
+},
+/*
+##################################################
    エラーページへ移動
 ##################################################
 */
@@ -1873,3 +1908,91 @@ gotoErrPage: function( message ) {
     return cmn;
 
 }());
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//   Message
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////
+class Message {
+/*
+##################################################
+   Constructor
+##################################################
+*/
+constructor( type, title, message, icon, closeTime = 5000 ) {
+    const ms = this;
+    
+    ms.type = type;
+    ms.message = message;
+    ms.title = title;
+    if ( icon ) {
+        ms.icon = icon;
+    } else {
+        switch ( type ) {
+            case 'success': ms.icon = 'check'; break;
+            case 'warning': ms.icon = 'circle_exclamation'; break;
+            case 'danger': ms.icon = 'circle_exclamation'; break;
+            case 'unkown': ms.icon = 'circle_question'; break;
+            default: ms.icon = 'circle_info';
+        }        
+    }
+    ms.closeTime = closeTime;
+    
+    ms.$ = {};
+    ms.$.window = $( window );
+    ms.$.body = $('body');
+}
+/*
+##################################################
+   Open
+##################################################
+*/
+open() {
+    const ms = this;
+    
+    // Container
+    if ( !fn.exists('#messageContainer') ) {
+        ms.$.body.append('<div id="messageContainer"></div>');
+    }
+    
+    const html = [];
+    html.push(`<div class="messageTime">${fn.date( new Date(), 'yyyy/MM/dd HH:mm:ss')}</div>`);
+    if ( ms.icon ) html.push(`<div class="messageIcon">${fn.html.icon( ms.icon )}</div>`);
+    if ( ms.title ) html.push(`<div class="messageTitle">${ms.title}</div>`);
+    if ( ms.message ) html.push(`<div class="messageBody">${ms.message}</div>`);
+    html.push(`<div class="messageClose"><button class="messageCloseButton">${fn.html.icon('cross')}</button></div>`);
+    
+    ms.$.container = $('#messageContainer');
+    ms.$.message = $(`<div class="messageItem" data-message="${ms.type}">${html.join('')}</div>`);
+    
+    ms.$.container.append( ms.$.message );
+    ms.timerId = setTimeout(function(){
+        ms.close();
+    }, ms.closeTime );
+    
+    ms.$.message.find('.messageCloseButton').on('click', function(){
+        clearTimeout( ms.timerId );
+        ms.close();
+    });
+}
+/*
+##################################################
+   Close
+##################################################
+*/
+close() {
+    const ms = this;
+    ms.$.message.fadeOut( 300 );
+    /*
+    ms.$.message.fadeOut( 300, function(){
+        ms.$.message.remove();
+
+        if ( !ms.$.container.find('.messageItem').length ) {
+            ms.$.container.remove();
+        }
+    });
+    */
+}
+
+}

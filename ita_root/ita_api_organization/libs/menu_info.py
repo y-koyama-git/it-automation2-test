@@ -13,6 +13,7 @@
 #   limitations under the License.
 
 import textwrap
+import datetime
 from common_libs.common import *  # noqa: F403
 from common_libs.loadtable import *  # noqa: F403
 from common_libs.column import *  # noqa: F403
@@ -189,13 +190,46 @@ def collect_menu_info(objdbca, menu, menu_record={}, menu_table_link_record={}, 
                 if target_data:
                     column_group_name = target_data.get('full_column_group_name')
             
+            # カラムクラスIDを取得
+            column_class = recode.get('COLUMN_CLASS')
+            
+            # カラム名(rest)を取得
+            column_name_rest = recode.get('COLUMN_NAME_REST')
+            
+            # 初期値(initial_value)を取得
+            initial_value = recode.get('INITIAL_VALUE')
+            
+            # カラムクラスが「7: IDColumn」かつ初期値が設定されている場合、初期値の値(ID)から表示用の値を取得する
+            if str(column_class) == "7" and initial_value:
+                objmenu = load_table.loadTable(objdbca, menu)
+                objcolumn = objmenu.get_columnclass(column_name_rest)
+                tmp_exec = objcolumn.convert_value_output(initial_value)
+                if tmp_exec[0] is True:
+                    initial_value = tmp_exec[2]
+            
+            # カラムクラスが「5: DateTimeColumn」かつ初期値が設定されている場合、初期値の値(日時)をフォーマット
+            if str(column_class) == "5" and initial_value:
+                try:
+                    initial_value = datetime.datetime.strptime(initial_value, '%Y-%m-%d %H:%M:%S')
+                    initial_value = initial_value.strftime('%Y/%m/%d %H:%M:%S')
+                except Exception:
+                    initial_value = None
+                
+            # カラムクラスが「6: DateTColumn」かつ初期値が設定されている場合、初期値の値(日付)をフォーマット
+            if str(column_class) == "6" and initial_value:
+                try:
+                    initial_value = datetime.datetime.strptime(initial_value, '%Y-%m-%d %H:%M:%S')
+                    initial_value = initial_value.strftime('%Y/%m/%d')
+                except Exception:
+                    initial_value = None
+            
             detail = {
                 'column_id': recode.get('COLUMN_DEFINITION_ID'),
                 'column_name': recode.get('COLUMN_NAME_' + lang.upper()),
-                'column_name_rest': recode.get('COLUMN_NAME_REST'),
+                'column_name_rest': column_name_rest,
                 'column_group_id': column_group_id,
                 'column_group_name': column_group_name,
-                'column_type': column_class_master[recode.get('COLUMN_CLASS')],
+                'column_type': column_class_master[column_class],
                 'column_disp_seq': recode.get('COLUMN_DISP_SEQ'),
                 'description': recode.get('DESCRIPTION_' + lang.upper()),
                 'ref_table_name': recode.get('REF_TABLE_NAME'),
@@ -211,7 +245,7 @@ def collect_menu_info(objdbca, menu, menu_record={}, menu_table_link_record={}, 
                 'view_item': recode.get('VIEW_ITEM'),
                 'unique_item': recode.get('UNIQUE_ITEM'),
                 'required_item': recode.get('REQUIRED_ITEM'),
-                'initial_value': recode.get('INITIAL_VALUE'),
+                'initial_value': initial_value,
                 'validate_option': validate_option,
                 'before_validate_register': before_validate_register,
                 'after_validate_register': after_validate_register
@@ -219,7 +253,6 @@ def collect_menu_info(objdbca, menu, menu_record={}, menu_table_link_record={}, 
             col_num = 'c{}'.format(count)
             column_info_data[col_num] = detail
             
-            # ####メモ：縦メニュー用の考慮がされていないため、最終的な修正が必要。
             # カラムグループ利用があれば、カラムグループ管理用配列に追加
             if column_group_id:
                 tmp_column_group, column_group_parent_of_child = add_tmp_column_group(column_group_list,
@@ -253,7 +286,6 @@ def collect_menu_info(objdbca, menu, menu_record={}, menu_table_link_record={}, 
                                                                             )
         
         # 大元のカラムの並び順を作成し格納
-        # ####メモ：縦メニュー用の考慮がされていないため、最終的な修正が必要。
         columns, columns_input, columns_view = collect_parent_sord_order(column_info_data, column_group_parent_of_child, key_to_id)
         menu_info_data['columns'] = columns
         menu_info_data['columns_input'] = columns_input
@@ -493,8 +525,8 @@ def collect_pulldown_list(objdbca, menu, menu_record):
     ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
     
     pulldown_list = {}
-    # 7(IDColumn), 11(LinkIDColumn), 18(RoleIDColumn), 22(EnvironmentIDColumn)
-    id_column_list = ["7", "11", "18", "22"]
+    # 7(IDColumn), 11(LinkIDColumn), 18(RoleIDColumn), 21(JsonIDColumn), 22(EnvironmentIDColumn)
+    id_column_list = ["7", "11", "18", "21", "22"]
     for recode in ret:
         column_class_id = str(recode.get('COLUMN_CLASS'))
         
@@ -505,7 +537,6 @@ def collect_pulldown_list(objdbca, menu, menu_record):
 
         objmenu = load_table.loadTable(objdbca, menu)
         objcolumn = objmenu.get_columnclass(column_name_rest)
-        # ####メモ：現状、ソートコンディションを考慮していない。
         column_pulldown_list = objcolumn.get_values_by_key()
         pulldown_list[column_name_rest] = column_pulldown_list
 
@@ -573,8 +604,8 @@ def collect_search_candidates(objdbca, menu, column, menu_record={}, menu_table_
         return []
     
     search_candidates = []
-    # 7(IDColumn), 11(LinkIDColumn), 14(LastUpdateUserColumn), 18(RoleIDColumn), 22(EnvironmentIDColumn)
-    id_column_list = ["7", "11", "14", "18", "22"]
+    # 7(IDColumn), 11(LinkIDColumn), 14(LastUpdateUserColumn), 18(RoleIDColumn), 21(JsonIDColumn), 22(EnvironmentIDColumn)
+    id_column_list = ["7", "11", "14", "18", "21", "22"]
     
     if column_class_id in id_column_list:
         # プルダウンの一覧を取得

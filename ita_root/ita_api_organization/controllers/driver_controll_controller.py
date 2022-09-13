@@ -17,7 +17,8 @@ import connexion
 from common_libs.common import *  # noqa: F403
 from common_libs.api import api_filter
 from libs.organization_common import check_menu_info, check_auth_menu, check_sheet_type
-from libs import driver_controll
+from libs import driver_controll, menu_info, menu_filter
+
 
 @api_filter
 def get_driver_execute_data(organization_id, workspace_id, menu, execution_no):  # noqa: E501
@@ -133,8 +134,8 @@ def get_driver_execute_search_candidates(organization_id, workspace_id, menu, ta
     # targetのチェック
     target_menus = ["operation_list", movement_target[menu]]
     if target not in target_menus:
-        log_msg_args = []
-        api_msg_args = []
+        log_msg_args = [target]
+        api_msg_args = [target]
         raise AppException("499-00008", log_msg_args, api_msg_args)  # noqa: F405
 
     # 対象項目のプルダウン検索候補一覧を取得
@@ -175,6 +176,7 @@ def post_driver_cancel(organization_id, workspace_id, menu, execution_no):  # no
     
     return 'do some magic!',
 
+
 @api_filter
 def post_driver_excecute(organization_id, workspace_id, menu, body=None):  # noqa: E501
     """post_driver_excecute
@@ -187,7 +189,7 @@ def post_driver_excecute(organization_id, workspace_id, menu, body=None):  # noq
     :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
-    :param body: 
+    :param body:
     :type body: dict | bytes
 
     :rtype: InlineResponse20017
@@ -229,7 +231,7 @@ def post_driver_execute_check_parameter(organization_id, workspace_id, menu, bod
     :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
-    :param body: 
+    :param body:
     :type body: dict | bytes
 
     :rtype: InlineResponse20017
@@ -271,7 +273,7 @@ def post_driver_execute_dry_run(organization_id, workspace_id, menu, body=None):
     :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
-    :param body: 
+    :param body:
     :type body: dict | bytes
 
     :rtype: InlineResponse20017
@@ -315,7 +317,7 @@ def post_driver_execute_filter(organization_id, workspace_id, menu, target, body
     :type menu: str
     :param target: movement_list or operation_list
     :type target: str
-    :param body: 
+    :param body:
     :type body: dict | bytes
 
     :rtype: InlineResponse2005
