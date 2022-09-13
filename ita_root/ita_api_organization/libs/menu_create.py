@@ -13,6 +13,7 @@
 #   limitations under the License.
 
 import json
+import ast
 from common_libs.common import *  # noqa: F403
 from common_libs.loadtable import *  # noqa: F403
 from flask import g
@@ -135,9 +136,7 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
     menu['unique_constraint_current'] = None
     ret = objdbca.table_select(t_menu_unique_constraint, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
     if ret:
-        str_unique_constraint = json.dumps(ret[0].get('UNIQUE_CONSTRAINT_ITEM'))
-        unique_constraint_current = json.loads(str_unique_constraint)
-        menu['unique_constraint_current'] = json.loads(unique_constraint_current)
+        menu['unique_constraint_current'] = ast.literal_eval(ret[0].get('UNIQUE_CONSTRAINT_ITEM'))
     
     # メニュー情報を格納
     menu_info['menu'] = menu
@@ -178,7 +177,7 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
                 "column_class_id": "",
                 "column_class_name": "",
                 "description": recode.get('DESCRIPTION_' + lang.upper()),
-                "remarks": recode.get(''),
+                "remarks": recode.get('NOTE'),
                 "last_update_date_time": last_update_date_time
             }
             
@@ -241,7 +240,11 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
             if column_class_name == "IDColumn":
                 col_detail["pulldown_selection"] = recode.get('OTHER_MENU_LINK_ID')  # プルダウン選択 メニューグループ:メニュー:項目
                 col_detail["pulldown_selection_default_value"] = recode.get('OTHER_MENU_LINK_DEFAULT_VALUE')  # プルダウン選択 初期値
-                col_detail["reference_item"] = recode.get('REFERENCE_ITEM')  # プルダウン選択 参照項目
+                col_detail["reference_item"] = ast.literal_eval(recode.get('REFERENCE_ITEM'))  # プルダウン選択 参照項目
+                # str_unique_constraint = json.dumps(ret[0].get('UNIQUE_CONSTRAINT_ITEM'))
+                # unique_constraint_current = json.loads(str_unique_constraint)
+                # menu['unique_constraint_current'] = json.loads(unique_constraint_current)
+            
             
             # カラムクラス「パスワード」用のパラメータを追加
             if column_class_name == "PasswordColumn":
@@ -647,11 +650,15 @@ def _create_exist_execute(objdbca, create_param, type_name):  # noqa: C901
         if current_t_menu_unique_constraint and unique_constraint:
             target_recode = current_t_menu_unique_constraint[0]
             retbool, result_code, msg_args = _update_t_menu_unique_constraint(objdbca, menu_data, target_recode)
+            if not retbool:
+                raise Exception(result_code, msg_args)
         
         # 「一意制約(複数項目)」の値がない、かつ「一意制約(複数項目)作成情報」にレコードが存在する場合、レコードを廃止
         elif current_t_menu_unique_constraint and not unique_constraint:
             target_recode = current_t_menu_unique_constraint[0]
             retbool, result_code, msg_args = _disuse_t_menu_unique_constraint(objdbca, target_recode)
+            if not retbool:
+                raise Exception(result_code, msg_args)
         
         # 「一意制約(複数項目)」の値があり、かつ「一意制約(複数項目)作成情報」にレコードが存在しない場合、レコードを登録
         elif not current_t_menu_unique_constraint and unique_constraint:
@@ -1087,7 +1094,12 @@ def _insert_t_menu_column(objdbca, menu_data, column_data_list):
                 if column_class == "IDColumn":
                     parameter["pulldown_selection"] = column_data.get('pulldown_selection')  # プルダウン選択 メニューグループ:メニュー:項目
                     parameter["pulldown_selection_default_value"] = column_data.get('pulldown_selection_default_value')  # プルダウン選択 初期値
-                    parameter["reference_item"] = column_data.get('reference_item')  # プルダウン選択 参照項目
+                    reference_item = column_data.get('reference_item')
+                    if reference_item:
+                        reference_item_dump = json.dumps(reference_item)
+                        parameter["reference_item"] = str(reference_item_dump)  # プルダウン選択 参照項目
+                    else:
+                        parameter["reference_item"] = None
                 
                 # カラムクラス「パスワード」用のパラメータを追加
                 if column_class == "PasswordColumn":
@@ -1303,7 +1315,6 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
                         if current_link_maximum_bytes > update_link_maximum_bytes:
                             raise Exception("499-00707", [item_name, "link_maximum_bytes"])  # 「編集」の際は既存項目の対象の値が下回る変更はできません。(項目: {}, 対象: {})
                 
-                print("チェック4")
                 # 更新用パラメータを作成
                 parameter = {
                     "item_name_ja": item_name,  # 項目名(ja)
@@ -1392,7 +1403,12 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
                 if column_class == "IDColumn":
                     parameter["pulldown_selection"] = column_data.get('pulldown_selection')  # プルダウン選択 メニューグループ:メニュー:項目
                     parameter["pulldown_selection_default_value"] = column_data.get('pulldown_selection_default_value')  # プルダウン選択 初期値
-                    parameter["reference_item"] = column_data.get('reference_item')  # プルダウン選択 参照項目
+                    reference_item = column_data.get('reference_item')
+                    if reference_item:
+                        reference_item_dump = json.dumps(reference_item)
+                        parameter["reference_item"] = str(reference_item_dump)  # プルダウン選択 参照項目
+                    else:
+                        parameter["reference_item"] = None
                 
                 # カラムクラス「パスワード」用のパラメータを追加
                 if column_class == "PasswordColumn":
@@ -1549,6 +1565,9 @@ def _update_t_menu_unique_constraint(objdbca, menu_data, target_recode):
             boolean, result_code, msg_args
     """
     try:
+        # menu_dataから登録用のメニュー名を取得
+        menu_name = menu_data.get('menu_name')
+        
         # 更新対象レコードからuuidと最終更新日時を取得
         unique_constraint_id = target_recode.get('UNIQUE_CONSTRAINT_ID')
         last_update_timestamp = target_recode.get('LAST_UPDATE_TIMESTAMP')
@@ -1560,6 +1579,7 @@ def _update_t_menu_unique_constraint(objdbca, menu_data, target_recode):
         objmenu = load_table.loadTable(objdbca, 'unique_constraint_creation_info')  # noqa: F405
         parameters = {
             "parameter": {
+                "menu_name": menu_name,
                 "unique_constraint_item": str(unique_constraint_dump),
                 "last_update_date_time": last_update_date_time
             },
