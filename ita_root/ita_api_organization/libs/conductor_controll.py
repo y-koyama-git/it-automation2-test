@@ -349,8 +349,8 @@ def conductor_execute(objdbca, menu, parameter):
 
     # 実行準備:loadtable読込
     try:
-        conductor_class_id = parameter.get('conductor_class_id')
-        operation_id = parameter.get('operation_id')
+        conductor_class_name = parameter.get('conductor_class_name')
+        operation_name = parameter.get('operation_name')
         schedule_date = parameter.get('schedule_date')
 
         # 対象メニューのload_table生成(conductor_instance_list,conductor_node_instance_list,movement_list)
@@ -377,8 +377,8 @@ def conductor_execute(objdbca, menu, parameter):
         }
     except Exception:
         status_code = "499-00804"
-        log_msg_args = [conductor_class_id, operation_id, schedule_date]
-        api_msg_args = [conductor_class_id, operation_id, schedule_date]
+        log_msg_args = [conductor_class_name, operation_name, schedule_date]
+        api_msg_args = [conductor_class_name, operation_name, schedule_date]
         raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
 
     # 実行:パラメータチェック
@@ -394,6 +394,8 @@ def conductor_execute(objdbca, menu, parameter):
     except Exception as e:
         raise AppException(e)  # noqa: F405
 
+    parameter = chk_parameter[2]
+
     # 実行:パラメータ生成
     try:
         # Conductor実行　パラメータ生成
@@ -402,8 +404,8 @@ def conductor_execute(objdbca, menu, parameter):
             raise Exception()
     except Exception:
         status_code = "499-00804"
-        log_msg_args = [conductor_class_id, operation_id, schedule_date]
-        api_msg_args = [conductor_class_id, operation_id, schedule_date]
+        log_msg_args = [conductor_class_name, operation_name, schedule_date]
+        api_msg_args = [conductor_class_name, operation_name, schedule_date]
         raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
     
     # 実行:Instance登録 maintenance
