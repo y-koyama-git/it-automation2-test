@@ -33,8 +33,8 @@ def insert_execution_list(objdbca, run_mode, driver_id, operation_row, movement_
             objdbca:DB接クラス  DBConnectWs()
             type: 1: '作業実行' or 2:'ドライラン' or 3:'パラメータ確認'
             driver_id: ドライバ区分　AnscConst().DF_LEGACY_ROLE_DRIVER_ID
-            operation_name: オペレーション情報
-            movement_name: movement情報
+            operation_row: オペレーション情報
+            movement_row: movement情報
             schedule_date: 予約日時 yyyy/mm/dd hh:mm:ss
             conductor_id: conductorID
             conductor_name: conductor name
