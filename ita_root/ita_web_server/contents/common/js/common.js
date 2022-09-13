@@ -189,28 +189,44 @@ fetch: function( url, token, method = 'GET', json ) {
                     reject( e );
                 }
             }
+            
+            console.group('Fetch');
             console.log( u );
             console.log( init );
+            console.groupEnd('Fetch');
+            
             fetch( u, init ).then(function( response ){
-                console.log( response );
                 if ( errorCount === 0 ) {
+                
+                    console.group('Fetch response');
+                    console.log( response );
+                    
                     if( response.ok ) {
                         //200の場合
-                        response.json().then(function( result ){ console.log( result );
-                                resolve( result.data );
+                        response.json().then(function( result ){
+                            console.log( result );
+                            console.groupEnd('Fetch response');
+                            
+                            resolve( result.data );
                         });
                     } else {
                         errorCount++;
                         if( response.status === 499 ) {
                             //バリデーションエラーは呼び出し元に返す
-                             response.json().then(function( result ){ console.log( result );
+                             response.json().then(function( result ){
+                                console.log( result );
+                                console.groupEnd('Fetch response');
+                                
                                 reject( result );
                             }).catch(function( e ) {
                                 cmn.systemErrorAlert();
                             }); 
                         } else if ( response.status === 401 ){
                             //権限無しの場合、トップページに戻す
-                            response.json().then(function( result ){ console.log( result );
+                            response.json().then(function( result ){
+                                console.log( result );
+                                console.groupEnd('Fetch response');
+                                
                                 alert(result.message);
                                 location.replace('/' + organization_id + '/workspaces/' + workspace_id + '/ita/');
                             }).catch(function( e ) {
@@ -223,7 +239,9 @@ fetch: function( url, token, method = 'GET', json ) {
                     }
                 }
             }).catch(function( error ){
-                reject( error );
+                if ( errorCount === 0 ) {
+                    reject( error );
+                }
             });
         });
     };
@@ -244,8 +262,7 @@ fetch: function( url, token, method = 'GET', json ) {
 */
 systemErrorAlert: function() {
     if ( windowFlag ) {
-        alert( WD.COMMON.sys_err );
-        // location.replace('system_error/');
+        cmn.gotoErrPage( WD.COMMON.sys_err );
     } else {
         window.console.error( WD.COMMON.sys_err );
         throw new Error( WD.COMMON.sys_err );
@@ -1283,7 +1300,7 @@ html: {
         if ( option.widthAdjustment ) className.push('inputTextWidthAdjustment')
         attr.push(`class="${className.join(' ')}"` );
         
-        let input = `<input type="text" ${attr.join(' ')}>`;
+        let input = `<input type="text" ${attr.join(' ')} autocomplete="off">`;
         
         if ( option.widthAdjustment ) {
             input = ``
@@ -1301,13 +1318,51 @@ html: {
         }
         return  input;
     },
-    inputPassword: function( className, value, name, attrs = {}) {
-        const attr = inputCommon( value, name, attrs );
-        attr.push(`class="${classNameCheck( className, 'inputPassword input').join(' ')}"`);
+    inputPassword: function( className, value, name, attrs = {}, option = {} ) {
+        const wrapClass = ['inputPasswordWrap'],
+              attr = inputCommon( value, name, attrs );
         
-        return `<div class="inputPasswordWrap">`
-            + `<div class="inputPasswordBody"><input type="password" ${attr.join(' ')}></div>`
-            + `<div class="inputPasswordToggle"><button type="button" class="button inputPasswordToggleButton"></button></div>`
+        className = classNameCheck( className, 'inputPassword input');
+        if ( option.widthAdjustment ) className.push('inputTextWidthAdjustment')
+        attr.push(`class="${className.join(' ')}"` );
+        
+        let input = `<input type="password" ${attr.join(' ')} autocomplete="new-password">`;
+        
+        if ( option.widthAdjustment ) {
+            input = ``
+            + `<div class="inputTextWidthAdjustmentWrap">`
+                + input
+                + `<div class="inputTextWidthAdjustmentText">${value}</div>`
+            + `</div>`
+        }
+        
+        // パスワード表示
+        const eyeAttrs = { action: 'default'};
+        if ( attrs.disabled ) eyeAttrs.disabled = 'disabled';
+        input = `<div class="inputPasswordBody">${input}</div>`
+        + `<div class="inputPasswordToggle">${cmn.html.button( cmn.html.icon('eye_close'), 'itaButton inputPasswordToggleButton', eyeAttrs )}</div>`;
+        
+        // パスワード削除
+        if ( option.deleteToggle ) {
+            const deleteClass = ['itaButton', 'inputPasswordDeleteToggleButton', 'popup'],
+                  deleteAttrs = { action: 'danger', title: '入力済みパスワードの削除'};
+            let iconName = 'cross';
+            
+            if ( attrs.disabled ) deleteAttrs.disabled = 'disabled';
+            if ( option.deleteFlag ) {
+                deleteClass.push('on');
+                deleteAttrs.action = 'restore';
+                iconName = 'ellipsis';
+                wrapClass.push('inputPasswordDelete');
+            }
+            input += `<div class="inputPasswordDeleteToggle">`
+                + `<div class="inputPasswordDeleteToggleText"><span class="inner">削除</span></div>`
+                + cmn.html.button( cmn.html.icon( iconName ), deleteClass, deleteAttrs)
+            + `</div>`;
+        }
+        
+        return `<div class="${wrapClass.join(' ')}">`
+            + input
         + `</div>`;
     },
     inputNumber: function( className, value, name, attrs = {}) {
@@ -1425,7 +1480,7 @@ html: {
         attr.push(`rowspan="${rowspan}"`);
         attr.push(`colspan="${colspan}"`);
         return ``
-        + `<${type} ${attr.join(' ')}}>`
+        + `<${type} ${attr.join(' ')}>`
             + `<div class="ci">${element}</div>`
         + `</${type}>`;
     },
@@ -1464,16 +1519,25 @@ html: {
         className = classNameCheck( className, 'inputDate');
         
         const placeholder = ( timeFlag )? 'yyyy-MM-dd HH:mm:ss': 'yyyy-MM-dd';
+        attrs.timeFlag = timeFlag;
         attrs.placeholder = placeholder;
+        
+        const buttonAttrs = { action: 'default'};
+        if ( attrs.disabled ) {
+            buttonAttrs.disabled = 'disabled';
+        }
                 
         return `<div class="inputDateContainer">`
             + `<div class="inputDateBody">`
                 + fn.html.inputText( className, value, name, attrs )
             + `</div>`
             + `<div class="inputDateCalendar">`
-                + fn.html.button('<span class="icon icon-cal"></span>', ['itaButton', 'inputDateCalendarButton'], { action: 'normal'} )
+                + fn.html.button('<span class="icon icon-cal"></span>', ['itaButton', 'inputDateCalendarButton'], buttonAttrs )
             + `</div>`
         + `</div>`;
+    },
+    required: function() {
+        return `<span class="required">必須</span>`;
     }
 },
 /*
@@ -1611,12 +1675,13 @@ errorModal: function( error, pageName ) {
    選択用モーダルの初期設定
 ##################################################
 */
-initSelectModal: function( title, menu ) {
+initSelectModal: function( title, menu, restUrls, sub = '') {
     
     return new Promise(function( resolve, reject ) {
         const config = {
             mode: 'modeless',
-            width: '100%',
+            width: 'auto',
+            minWidth: '640px',
             height: '100%',
             header: {
                 title: title
@@ -1625,11 +1690,15 @@ initSelectModal: function( title, menu ) {
         const modal = new Dialog( config );
         modal.open();
         
-        fn.fetch(`/menu/${menu}/info/`).then(function( info ){
+        fn.fetch( restUrls.info ).then(function( info ){
             const params = cmn.getCommonParams();
             params.menuNameRest = menu;
+            params.restFilter = restUrls.filter;
+            params.restFilterPulldown = restUrls.pulldown;
             
-            const table = new DataTable('SE_' + menu.toUpperCase(), 'select', info, params );
+            if ( sub !== '') info = info[ sub ];
+            
+            const table = new DataTable(`SE_${menu.toUpperCase()}${sub}`, 'select', info, params );
             modal.setBody( table.setup() );
             
             resolve({
@@ -1653,6 +1722,32 @@ setCommonEvents: function() {
         const $text = $( this ),
               value = $text.val();
         $text.next('.inputTextWidthAdjustmentText').text( value );
+    });
+    
+    // パスワード表示・非表示切替
+    $body.on('click', '.inputPasswordToggleButton', function(){
+        const $button = $( this ),
+              $input = $button.closest('.inputPasswordWrap').find('.inputPassword');
+        
+        if ( !$button.is('.on') ) {
+            $button.addClass('on');
+            $button.find('.inner').html( cmn.html.icon('eye_open'));
+            $input.attr('type', 'text');
+        } else {
+            $button.removeClass('on');
+            $button.find('.inner').html( cmn.html.icon('eye_close'));
+            $input.attr('type', 'password');
+        }
+    });
+    
+    // パスワード候補を初回クリックで出さないようにする
+    $body.on('pointerdown', '.inputPassword', function( e ){
+        e.preventDefault();
+        const $input = $( this );
+        
+        setTimeout( function(){
+            $input.focus();
+        }, 1 );
     });
     
     // 切替ボタン
@@ -1767,6 +1862,38 @@ setCommonEvents: function() {
             targetCheck();
         }
     });
+},
+/*
+##################################################
+   メッセージを出す
+##################################################
+*/
+message: function( type, message, title, icon, closeTime ) {
+    const msg = new Message( type, message, title, icon, closeTime );
+    msg.open();
+    
+    return msg;
+},
+/*
+##################################################
+   エラーページへ移動
+##################################################
+*/
+gotoErrPage: function( message ) {
+    if ( windowFlag ) {
+        if ( message ) {
+            window.alert( message );
+        } else {
+            window.alert('Unknown error.');
+        }
+        // window.location.href = './system_error/';
+    } else {
+        if ( message ) {
+            console.error( message );
+        } else {
+            console.error('Unknown error.');
+        }
+    }
 }
 
 };
@@ -1781,3 +1908,91 @@ setCommonEvents: function() {
     return cmn;
 
 }());
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//   Message
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////
+class Message {
+/*
+##################################################
+   Constructor
+##################################################
+*/
+constructor( type, title, message, icon, closeTime = 5000 ) {
+    const ms = this;
+    
+    ms.type = type;
+    ms.message = message;
+    ms.title = title;
+    if ( icon ) {
+        ms.icon = icon;
+    } else {
+        switch ( type ) {
+            case 'success': ms.icon = 'check'; break;
+            case 'warning': ms.icon = 'circle_exclamation'; break;
+            case 'danger': ms.icon = 'circle_exclamation'; break;
+            case 'unkown': ms.icon = 'circle_question'; break;
+            default: ms.icon = 'circle_info';
+        }        
+    }
+    ms.closeTime = closeTime;
+    
+    ms.$ = {};
+    ms.$.window = $( window );
+    ms.$.body = $('body');
+}
+/*
+##################################################
+   Open
+##################################################
+*/
+open() {
+    const ms = this;
+    
+    // Container
+    if ( !fn.exists('#messageContainer') ) {
+        ms.$.body.append('<div id="messageContainer"></div>');
+    }
+    
+    const html = [];
+    html.push(`<div class="messageTime">${fn.date( new Date(), 'yyyy/MM/dd HH:mm:ss')}</div>`);
+    if ( ms.icon ) html.push(`<div class="messageIcon">${fn.html.icon( ms.icon )}</div>`);
+    if ( ms.title ) html.push(`<div class="messageTitle">${ms.title}</div>`);
+    if ( ms.message ) html.push(`<div class="messageBody">${ms.message}</div>`);
+    html.push(`<div class="messageClose"><button class="messageCloseButton">${fn.html.icon('cross')}</button></div>`);
+    
+    ms.$.container = $('#messageContainer');
+    ms.$.message = $(`<div class="messageItem" data-message="${ms.type}">${html.join('')}</div>`);
+    
+    ms.$.container.append( ms.$.message );
+    ms.timerId = setTimeout(function(){
+        ms.close();
+    }, ms.closeTime );
+    
+    ms.$.message.find('.messageCloseButton').on('click', function(){
+        clearTimeout( ms.timerId );
+        ms.close();
+    });
+}
+/*
+##################################################
+   Close
+##################################################
+*/
+close() {
+    const ms = this;
+    ms.$.message.fadeOut( 300 );
+    /*
+    ms.$.message.fadeOut( 300, function(){
+        ms.$.message.remove();
+
+        if ( !ms.$.container.find('.messageItem').length ) {
+            ms.$.container.remove();
+        }
+    });
+    */
+}
+
+}

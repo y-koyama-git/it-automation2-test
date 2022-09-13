@@ -31,16 +31,21 @@ constructor( target, mode ) {
     
     cd.target = target;
     cd.version = '2.0.0';
+    cd.mode = mode;
     
-    // Conductor class ID
-    cd.id = fn.getParams().conductor_class_id;
-    console.log(cd.id)
-    
-    // 編集モードでIDの指定があれば閲覧モードにする
-    if ( mode === 'edit' && ( cd.id !== undefined && cd.id !== '')) {
-        cd.mode = 'view';
+    if ( mode === 'confirmation') {
+        // Conductor class ID
+        cd.id = fn.getParams().conductor_instance_id;
+        cd.menu = 'conductor_confirmation';
     } else {
-        cd.mode = mode;
+        // Conductor class ID
+        cd.id = fn.getParams().conductor_class_id;
+        cd.menu = 'conductor_class_edit';
+
+        // 編集モードでIDの指定があれば閲覧モードにする
+        if ( mode === 'edit' && ( cd.id !== undefined && cd.id !== '')) {
+            cd.mode = 'view';
+        }
     }
 }
 /*
@@ -54,7 +59,7 @@ setup() {
     const html = `
     <div id="editor" class="load-wait" data-editor-mode="">
         <div class="editor-inner">
-            <div id="editor-menu">
+            <div id="editor-menu" class="operation-menu">
                 ${cd.operationMenuHtml()}
             </div>
             <div id="editor-header">
@@ -88,6 +93,7 @@ setup() {
     cd.$.panel = cd.$.editor.find('#editor-panel');
     cd.$.mode = cd.$.editor.find('#editor-mode');
     
+    cd.$.main = cd.$.editor.find('#editor-main');
     cd.$.area = cd.$.editor.find('#canvas-visible-area'),
     cd.$.canvas = cd.$.editor.find('#canvas'),
     cd.$.artBoard = cd.$.editor.find('#art-board');
@@ -95,18 +101,37 @@ setup() {
     // HTMLセット
     cd.$.target.html( cd.$.editor );
     
-    // 必要なデータの読み込み
-    const restApiUrls = ['/menu/conductor_class_edit/conductor/class/info/'];
-    if ( cd.id ) {
-        restApiUrls.push(`/menu/conductor_class_edit/conductor/class/${cd.id}/`);
+    const restApiUrls = [];
+    
+    if ( cd.mode === 'confirmation' && cd.id ) {
+        // 作業確認モード：インスタンスIDがある場合
+        restApiUrls.push(`/menu/${cd.menu}/conductor/info/${cd.id}/`);
+        restApiUrls.push(`/menu/${cd.menu}/conductor/${cd.id}/`);
+    } else if ( cd.mode === 'confirmation') {
+        // 作業確認モード：インスタンスIDがない場合待機状態にする
+        cd.$.main.addClass('conductorInstanceIdStandBy');
+        cd.$.header.remove();
+        cd.$.editor.removeClass('load-wait');
+        cd.$.mode.text( WD.CONDUCTOR[ cd.mode ] );
+        cd.$.main.html(`<div class="conductorInstanceIdStandByMessage"><span class="icon icon-circle_info"></span>
+        ConductorインスタンスIDが未設定です。<br>
+        ConductorインスタンスIDを入力し作業確認ボタンを押下するか、<br>
+        <a href="?menu=conductor_list">Conductor作業一覧</a>ページにて詳細ボタンを押下してください。</di>`);
+        cd.instanceIdEvent();
+        return false;
+    } else {
+        // 編集・作業実行モード
+        restApiUrls.push(`/menu/${cd.menu}/conductor/class/info/`);
+        if ( cd.id ) {
+            restApiUrls.push(`/menu/${cd.menu}/conductor/class/${cd.id}/`);
+        }
     }
     
     fn.fetch( restApiUrls ).then(function( result ){
         cd.init( result[0], result[1] );
     }).catch(function( error ){
         if ( error.message ) {
-            alert( error.message + '\nリロードします。' );
-            location.href = '?menu=conductor_class_edit';
+            console.error( error );
         }
     });
     
@@ -117,46 +142,58 @@ setup() {
 ##################################################
 */
 operationMenuHtml() {
+    const cd = this;
+    
     const menu = {
         edit: [
-            { type: 'registration', title: '登録', action: 'positive', width: '200px'},
-            { type: 'selectConductor', title: 'Conductor選択', action: 'default', width: '160px', separate: true },
-            { type: 'reset', title: 'リセット', action: 'negative', width: '120px'}
+            { icon: 'note', type: 'selectConductor', title: '選択', action: 'default', width: '100px' },
+            { icon: 'plus', type: 'registration', title: '登録', action: 'positive', width: '160px', separate: true },
+            { icon: 'return', type: 'reset', title: 'リセット', action: 'negative', width: '100px', separate: true }
         ],
         view: [
-            { type: 'edit', title: '編集', action: 'positive', width: '200px'},
-            { type: 'selectConductor', title: 'Conductor選択', action: 'default', width: '160px', separate: true },
-            { type: 'diversion', title: '流用新規', action: 'normal', width: '160px'},
-            { type: 'new', title: '新規', action: 'normal', width: '160px'}
+            { icon: 'note', type: 'selectConductor', title: '選択', action: 'default', width: '100px' },
+            { icon: 'edit', type: 'edit', title: '編集', action: 'positive', width: '160px', separate: true },
+            { icon: 'square_next', type: 'execute', title: '作業実行', action: 'default', width: '160px' },
+            { icon: 'copy', type: 'diversion', title: '流用新規', action: 'normal', width: '100px', separate: true },
+            { icon: 'plus', type: 'new', title: '新規', action: 'normal', width: '100px'}
         ],
         update: [
-            { type: 'update', title: '更新', action: 'positive', width: '200px'},
-            { type: 'refresh', title: '再読み込み', action: 'negative', separate: true, width: '120px'},
-            { type: 'cancel', title: 'キャンセル', action: 'negative', width: '120px'},
+            { icon: 'update02', type: 'update', title: '更新', action: 'positive', width: '160px'},
+            { icon: 'update01', type: 'refresh', title: '再読み込み', action: 'negative', separate: true, width: '120px'},
+            { icon: 'cross', type: 'cancel', title: 'キャンセル', action: 'negative', width: '120px'},
         ],
-        execute: [
-            { type: 'execute', title: '作業実行', action: 'positive', width: '200px'},
-            { type: 'executeSelectConductor', title: 'Conductor選択', action: 'default', width: '160px', separate: true },
-            { type: 'executeSelectOperation', title: 'Operation選択', action: 'default', width: '160px'},
-        ],
-        checking: [
-            { type: 'stop', title: '緊急停止', action: 'danger', width: '200px'},
+        confirmation: [
+            { icon: 'check', type: 'work-confirm', title: '作業確認', action: 'default', width: '120px', disabled: true },
+            { icon: 'cal_off', type: 'cansel-instance', title: '予約取消', action: 'danger', width: '120px', disabled: true, separate: true },
+            { icon: 'stop', type: 'scram-instance', title: '緊急停止', action: 'danger', width: '120px', disabled: true },
         ]
     };
     
     const list = [];
-    for ( const item of menu[ this.mode ] ) {
+    for ( const item of menu[ cd.mode ] ) {
         const itemClass = ['operation-menu-item'],
               attr = { action: item.action, menu: item.type };
+        if ( item.disabled ) attr.disabled = 'disabled';
         if ( item.separate ) itemClass.push('operation-menu-separate');
         if ( item.width ) attr.style = `width:${item.width}`;
         list.push(`<li class="${itemClass.join(' ')}">`
-            + fn.html.button( item.title, ['itaButton', 'operation-menu-button'], attr )
+            + fn.html.button( `${fn.html.icon( item.icon )}${item.title}`, ['itaButton', 'operation-menu-button'], attr )
         + `</li>`)
     }
     return `
     <ul class="operation-menu-list">
+        ${( cd.mode === 'confirmation')? `<li class="operation-menu-item">${fn.html.inputText( 'inputConductorInstanceId', cd.id, null, {}, { widthAdjustment: true, before: 'ConductorインスタンスID' })}</li>`: ''}
         ${list.join('')}
+    </ul>
+    <ul class="operation-submenu-list">
+        <li class="operation-menu-item">${
+            fn.html.button('フルスクリーン', ['itaButton', `fullscreen-on operation-menu-button`],
+                { action: 'default', menu: 'fullscreen-on', style: 'width:160px'})
+        }</li>
+        <li class="operation-menu-item">${
+            fn.html.button('フルスクリーン解除', ['itaButton', `fullscreen-off operation-menu-button`],
+                { action: 'default', menu: 'fullscreen-off', style: 'width:160px'})
+        }</li>
     </ul>`;
 }
 /*
@@ -198,10 +235,6 @@ headerHtml() {
         </ul>
     </div>
     <div class="editor-header-sub-menu">
-        <ul class="editor-menu-list">
-            <li class="editor-menu-item full-screen-hide"><button class="editor-menu-button" data-menu="full-screen-on">フルスクリーン</button></li>
-            <li class="editor-menu-item full-screen-show"><button class="editor-menu-button" data-menu="full-screen-off">フルスクリーン解除</button></li>
-        </ul>
     </div>`;
 }
 /*
@@ -288,14 +321,27 @@ init( info, conductorData ) {
         edge: 1
     };
     
-    // Conductor構造データ
-    if ( conductorData ) {
-        cd.data = conductorData;
-        cd.original = $.extend( true, {}, conductorData );
+    if ( cd.mode === 'confirmation') {
+        if ( conductorData.conductor_class && Object.keys( conductorData.conductor_class ).length === 0 ) {
+            alert(`ConductorインスタンスID [ ${cd.id} ]の読み込みに失敗しました。`);
+            window.location.href = '?menu=conductor_confirmation';
+            return false;
+        }
+        cd.data = conductorData.conductor_class;
+        cd.confirmation = {
+            conductor: conductorData.conductor,
+            node: conductorData.node
+        };
     } else {
-        cd.setInitialConductorData();
+        // Conductor構造データ
+        if ( conductorData ) {
+            cd.data = conductorData;
+            cd.original = $.extend( true, {}, conductorData );
+        } else {
+            cd.setInitialConductorData();
+        }
     }
-
+    
     // 読み込み完了
     cd.$.editor.removeClass('load-wait');
     
@@ -314,29 +360,23 @@ init( info, conductorData ) {
     // ノード初期設定
     cd.initNode();
     
-    // 履歴初期設定
-    cd.initHistory();
+    if ( cd.mode !== 'confirmation') {
+        // 履歴初期設定
+        cd.initHistory();
+    }
     
     // 初期表示
-    if ( cd.mode !== 'execute') {
-        if ( conductorData ) {
-            if ( cd.mode === 'checking') {
-                // 作業確認画面更新イベント登録
-                cd.$.window.on('conductorDrawEnd', function(){
-                    cd.$.window.off('conductorDrawEnd');
-                    cd.conductorStatusUpdate( 0 );
-                });
-            }
-            cd.loadConductor();
-        } else if ( fn.storage.check('conductor-edit-temp') ) {
-            cd.loadConductor( fn.storage.get('conductor-edit-temp'));
-        } else {
-            cd.InitialSetNode();
-        }
+    if ( conductorData ) {
+        cd.loadConductor();
+    } else if ( fn.storage.check('conductor-edit-temp') ) {
+        cd.loadConductor( fn.storage.get('conductor-edit-temp'));
+    } else {
+        cd.InitialSetNode();
     }
     
     // 基本イベント
-    cd.initEvents();    
+    cd.initEvents();  
+    cd.rowResize();
 }
 /*
 ##################################################
@@ -347,7 +387,7 @@ InitialSetNode() {
     const cd = this;
     cd.newNode('start', 'left', 'center');
     cd.newNode('end', 'right', 'center');
-    cd.panelConductorReset();
+    cd.panelChange();
 }
 /*
 ##################################################
@@ -374,7 +414,7 @@ conductorMode( mode ) {
     cd.$.header.html( cd.headerHtml() );
     
     // モードテキスト切替
-    cd.$.mode.text( cd.mode.toUpperCase() );
+    cd.$.mode.text( WD.CONDUCTOR[ cd.mode ] );
 
     // パネル切替
     cd.select = [];
@@ -422,7 +462,17 @@ checkAction( mode ) {
    メッセージ
 ##################################################
 */
-message( message ) {
+message( type, title, message ) {
+    try {
+        const list = JSON.parse( message ),
+              body = [];
+        for ( const key in list ) {
+            body.push(`<li class="messageErrorItem">${key + ' / ' + list[ key ]}</li>`);
+        }
+        fn.message( type, title, `<ul class="messageErrorList">${body.join('')}</ul>`);
+    } catch( e ) {
+        fn.message( type, message );
+    }
 }
 /*
 ##################################################
@@ -463,11 +513,11 @@ initEvents() {
             cd.saveConductor( cd.data );
         }
     });
-    
+
     // --------------------------------------------------
     // メニューボタン
     // --------------------------------------------------
-    cd.$.menu.on('click', '.operation-menu-button ', function(){
+    cd.$.menu.on('click', '.operation-menu-button ', function(){ 
       const $button = $( this ),
             type = $button.attr('data-menu');
 
@@ -475,52 +525,64 @@ initEvents() {
       cd.panelChange();
 
       switch( type ) {
+          // コンダクター作業実行
           case 'execute':
-              // 実行しますか？
-              if ( window.confirm(`実行しますか？`) ) {
-                  cd.menuButtonDisabled( true );
-                  /*
-                      実行処理
-                  */
-              }
+              cd.menuButtonDisabled( true );
+              cd.conductorExecuteModal().then(function( result ){
+                  if ( result === 'cancel') {
+                      cd.menuButtonDisabled( false );
+                  } else {
+                      const executeData = {
+                          'conductor_class_id': cd.id,
+                          'operation_id': result.operation_id,
+                          'schedule_date': result.schedule_date,
+                          'conductor_data': cd.data
+                      };
+                      fn.fetch(`/menu/${cd.menu}/conductor/execute/`, null, 'POST', executeData ).then(function( exeResult ){
+                          window.location.href = `?menu=conductor_confirmation&conductor_instance_id=${exeResult.conductor_instance_id}`;
+                      }).catch(function( error ){
+                          cd.menuButtonDisabled( false );
+                          cd.message('danger', '作業実行に失敗しました。');
+                      });
+                  }
+              });
           break;
+          // コンダクター新規登録
           case 'registration':
-              // 登録しますか？
               if ( window.confirm('登録しますか？') ) {
                   cd.menuButtonDisabled( true );
-
-                  fn.fetch('/menu/conductor_class_edit/conductor/class/maintenance/', null, 'POST', cd.data ).then(function( result ){
-                      window.location.href = `?menu=conductor_class_edit&conductor_class_id=${result.conductor_class_id}`;
+                  fn.fetch(`/menu/${cd.menu}/conductor/class/maintenance/`, null, 'POST', cd.data ).then(function( result ){
+                      cd.fetchConductor( result.conductor_class_id ).then(function(){
+                          cd.menuButtonDisabled( false );
+                          cd.conductorMode('view');
+                          cd.message('success', '登録しました。');
+                      });
                   }).catch(function( error ){
                       cd.menuButtonDisabled( false );
+                      cd.message('danger', '登録に失敗しました。', error.message );
                   });
               }
           break;
+          // 登録済みコンダクターを選択し表示する
           case 'selectConductor': {
               cd.menuButtonDisabled( true );
               
-              cd.selectConductorModalOpen().then(function( selectId ){
+              cd.selectModalOpen('conductor').then(function( selectId ){
                   if ( selectId ) {
-                      window.location.href = `?menu=conductor_class_edit&conductor_class_id=${selectId}`;
+                      cd.fetchConductor( selectId ).then(function( result ){
+                          cd.menuButtonDisabled( false );
+                          cd.conductorMode('view');
+                          cd.message('success', '読み込み完了しました。');
+                      });
                   } else {
                       cd.menuButtonDisabled( false );
                   }
               });
           } break;
-          case 'executeSelectConductor': {
-              cd.menuButtonDisabled( true );
-              
-              cd.selectConductorModalOpen().then(function( selectId ){
-                  if ( selectId ) {
-                      console.log(selectId)
-                  }
-                  cd.menuButtonDisabled( false );
-              });
-          } break;
           case 'executeSelectOperation': {
               cd.menuButtonDisabled( true );
               
-              cd.selectOperationModalOpen().then(function( selectId ){
+              cd.selectModalOpen('operation').then(function( selectId ){
                   if ( selectId ) {
                       console.log(selectId)
                   }
@@ -534,6 +596,7 @@ initEvents() {
               if ( window.confirm('リセットしますか？') ) {
                     cd.clearConductor();
                     cd.InitialSetNode();
+                    cd.message('info', 'リセットしました。');
               }
           break;
           case 'diversion':
@@ -546,9 +609,10 @@ initEvents() {
               cd.data.conductor.note = null;
 
               cd.conductorMode('edit');
-              cd.panelConductorReset();
+              cd.panelChange();
 
               history.replaceState( null, null, '?menu=conductor_class_edit');
+              cd.message('info', '流用しました。');
             }
             break;
           case 'new':
@@ -556,7 +620,7 @@ initEvents() {
               cd.InitialSetNode();
               
               cd.conductorMode('edit');
-              cd.panelConductorReset();
+              cd.panelChange();
 
               history.replaceState( null, null, '?menu=conductor_class_edit');
           break;
@@ -564,43 +628,71 @@ initEvents() {
               // 更新しますか？
               if ( window.confirm('更新しますか？') ) {
                   cd.menuButtonDisabled( true );
-
-                  fn.fetch(`/menu/conductor_class_edit/conductor/class/maintenance/${cd.id}/`, null, 'PATCH', cd.data ).then(function(result){
-                      window.location.href = `?menu=conductor_class_edit&conductor_class_id=${result.conductor_class_id}`;
+                  fn.fetch(`/menu/${cd.menu}/conductor/class/maintenance/${cd.id}/`, null, 'PATCH', cd.data ).then(function(result){
+                      cd.fetchConductor( result.conductor_class_id ).then(function(){
+                          cd.menuButtonDisabled( false );
+                          cd.conductorMode('view');
+                          cd.message('success', '更新しました。');
+                      });
                   }).catch(function( error ){
                       cd.menuButtonDisabled( false );
+                      cd.message('danger', '更新に失敗しました。', error.message );
                   });
-
               }
           break;
+          // 編集中データ再読み込み
           case 'refresh':
-            // 再読込しますか？
             if ( window.confirm('再読込しますか？') ) {
-                //
+                cd.menuButtonDisabled( true );
+                cd.fetchConductor( cd.id ).then(function( result ){
+                    cd.menuButtonDisabled( false );
+                    cd.message('success', '再読込しました。');
+                });
             }
             break;
+          // 編集をキャンセルする
           case 'cancel':
-            // キャンセル確認無し
             cd.selectConductor( cd.original );
             cd.conductorMode('view');
           break;
+          // 作業確認
+          case 'work-confirm': {
+              const instanceId = cd.$.menu.find('.inputConductorInstanceId').val();
+              window.location.href = `?menu=conductor_confirmation&conductor_instance_id=${instanceId}`;
+          } break;
           case 'cansel-instance':
             // 予約取消
-            if ( window.confirm('予約取消') ) {
+            if ( window.confirm('予約を取消ますか？') ) {
               cd.menuButtonDisabled( true );
               //
             }
             break;
           case 'scram-instance':
             // 強制停止
-            if ( window.confirm('強制停止') ) {
+            if ( window.confirm('強制停止しますか？') ) {
               clearTimeout( cd.pollingTimerID );
               cd.menuButtonDisabled( true );
               //
             }
             break;
+          // 画面フルスクリーン
+          case 'fullscreen-on':
+          case 'fullscreen-off':
+              cd.fullScreen();
+          break;
         }
     });
+    
+    // --------------------------------------------------
+    // フルスクリーン切り替え時にイベントを追加する
+    // --------------------------------------------------
+    document.onfullscreenchange = document.onmozfullscreenchange = document.onwebkitfullscreenchange = document.onmsfullscreenchange = function () {
+        if( cd.fullScreenCheck() ){
+            cd.$.body.addClass('editor-full-screen');
+        } else {
+            cd.$.body.removeClass('editor-full-screen');
+        }
+    }
     
     // --------------------------------------------------
     // エディタボタン
@@ -617,7 +709,7 @@ initEvents() {
             break;
           case 'conductor-read':
             fn.fileSelect('json').then(function( result ){
-                
+                console.log(result);
             });
             break;
           case 'undo':
@@ -636,10 +728,6 @@ initEvents() {
           case 'view-reset':
             cd.canvasPositionReset();
             break;
-          case 'full-screen-on':
-          case 'full-screen-off':
-            editor.fullScreen( $body.get(0) );
-            break;
         }
         // Undo Redoは別管理
         if ( ['undo','redo'].indexOf( buttonType ) === -1 ) {
@@ -655,10 +743,172 @@ initEvents() {
             }
         }
     });
+        
+    // --------------------------------------------------
+    // 作業確認　インスタンスＩＤ入力時ボタン有効無効化
+    // --------------------------------------------------
+    if ( cd.mode === 'confirmation') {
+        cd.$.menu.on('input', '.inputConductorInstanceId', function(){
+            const val = $( this ).val(),
+                  $button = cd.$.menu.find('.operation-menu-button[data-menu="work-confirm"]');
+            if ( val === '') {
+                $button.prop('disabled', true );
+            } else {
+                $button.prop('disabled', false );
+            }
+        });
+        cd.$.menu.find('.inputConductorInstanceId').trigger('input');
+    }
 }
 /*
 ##################################################
-   infoからnameを返すeditor-edit
+   インスタンスIDが未入力時のイベント
+##################################################
+*/
+instanceIdEvent() {
+    const cd = this;
+    
+    cd.$.menu.find('.inputConductorInstanceId').trigger('input');
+    
+    cd.$.menu.on('input', '.inputConductorInstanceId', function(){
+        const val = $( this ).val(),
+              $button = cd.$.menu.find('.operation-menu-button[data-menu="work-confirm"]');
+        if ( val === '') {
+            $button.prop('disabled', true );
+        } else {
+            $button.prop('disabled', false );
+        }
+    });
+    
+    cd.$.menu.on('click', '.operation-menu-button ', function(){
+        const instanceId = cd.$.menu.find('.inputConductorInstanceId').val();
+        window.location.href = `?menu=conductor_confirmation&conductor_instance_id=${instanceId}`;
+    });
+}
+/*
+##################################################
+   フルスクリーン
+##################################################
+*/
+// フルスクリーンチェック
+fullScreenCheck() {
+  if (
+    ( document.fullScreenElement !== undefined && document.fullScreenElement === null ) ||
+    ( document.msFullscreenElement !== undefined && document.msFullscreenElement === null ) ||
+    ( document.mozFullScreen !== undefined && !document.mozFullScreen ) || 
+    ( document.webkitIsFullScreen !== undefined && !document.webkitIsFullScreen )
+  ) {
+    return false;
+  } else {
+    return true;
+  }
+}
+// フルスクリーン切り替え
+fullScreen( elem ) {
+
+  if ( elem === undefined ) elem = document.body;
+  
+  if ( !this.fullScreenCheck() ) {
+    if ( elem.requestFullScreen ) {
+      elem.requestFullScreen();
+    } else if ( elem.mozRequestFullScreen ) {
+      elem.mozRequestFullScreen();
+    } else if ( elem.webkitRequestFullScreen ) {
+      elem.webkitRequestFullScreen( Element.ALLOW_KEYBOARD_INPUT );
+    } else if (elem.msRequestFullscreen) {
+      elem.msRequestFullscreen();
+    }
+  } else {
+    if ( document.cancelFullScreen ) {
+      document.cancelFullScreen();
+    } else if ( document.mozCancelFullScreen ) {
+      document.mozCancelFullScreen();
+    } else if ( document.webkitCancelFullScreen ) {
+      document.webkitCancelFullScreen();
+    } else if ( document.msExitFullscreen ) {
+      document.msExitFullscreen();
+    }
+  }
+}
+/*
+##################################################
+   リサイズバー
+##################################################
+*/
+rowResize() {
+    const cd = this;
+
+    const blockMinHeightPercent = 0.2, // これ以上小さくしない
+          $resizeArea = cd.$.editor.find('.editor-row-resize');
+
+    $resizeArea.each( function(){
+
+      const $resizeArea = $( this ),
+            $resizeBar = $resizeArea.find('.editor-row-resize-bar'),
+            $resizeBlock = $resizeArea.find('.editor-block'),
+            $resizeSection1 = $resizeBlock.eq(0),
+            $resizeSection2 = $resizeBlock.eq(1);
+
+      $resizeBar.on('mousedown', function( e ) {
+
+        // 全ての選択を解除する
+        getSelection().removeAllRanges();
+
+        cd.setAction('row-resize');
+
+        const initialPoint = e.clientY;
+        let movePoint = 0, newSection1Height = 0;
+
+        // 高さを一旦固定値に
+        $resizeBlock.each( function(){
+          $( this ).css('height', $( this ).outerHeight() );
+        });
+
+        const initialSection1Height = newSection1Height = $resizeSection1.outerHeight(),
+              initialHeight = $resizeArea.outerHeight(),
+              minHeight = Math.floor( initialHeight * blockMinHeightPercent ),
+              maxHeight = initialHeight - minHeight;
+
+        cd.$.window.on({
+          'mousemove.rowResize' : function( e ){
+
+            movePoint = e.clientY - initialPoint;
+
+            newSection1Height = initialSection1Height + movePoint;
+
+            if ( newSection1Height < minHeight ) {
+              newSection1Height = minHeight;
+              movePoint = minHeight - initialSection1Height;
+            } else if ( newSection1Height > maxHeight ) {
+              newSection1Height = maxHeight;
+              movePoint = maxHeight - initialSection1Height;
+            }
+
+            $resizeSection1.css('height', newSection1Height );
+            $resizeSection2.css('height', initialHeight - newSection1Height );
+            $resizeBar.css('transform','translateY(' + movePoint + 'px)');
+
+          },
+          'mouseup.rowResize' : function(){
+            cd.$.window.off('mousemove.rowResize mouseup.rowResize');
+            cd.clearAction();
+
+            // 高さを割合に戻す
+            const section1Ratio = newSection1Height / initialHeight * 100;
+            $resizeSection1.css('height', section1Ratio + '%' );
+            $resizeSection2.css('height', ( 100 - section1Ratio ) + '%' );
+            $resizeBar.css({
+              'transform' : 'translateY(0)',
+              'top' : section1Ratio + '%'
+            });
+          }
+        });   
+      });
+    });
+}
+/*
+##################################################
+   infoからnameを返す
 ##################################################
 */
 getName( id, type ) {
@@ -679,7 +929,7 @@ getConductorName( id ) {
 } 
 /*
 ##################################################
-   Movement nameを返す
+   Operation nameを返す
 ##################################################
 */
 getOperationName( id ) {
@@ -1413,12 +1663,12 @@ initNode() {
     
     // Movementステータス
     cd.status.movement = {
+      '5': ['done', '正常終了'], // 正常終了
       '6': ['fail', '異常終了'], // 異常終了
-      '7': ['stop', '緊急停止'], // 緊急停止
-      '9': ['done', '正常終了'], // 正常終了
-      '10': ['error', '準備エラー'], // 準備エラー
-      '11': ['error', '想定外エラー'], // 想定外エラー
-      '14': ['skip', 'Skip完了'], // Skip完了
+      '7': ['error', '想定外エラー'], // 想定外エラー
+      '8': ['stop', '緊急停止'], // 緊急停止
+      '12': ['error', '準備エラー'], // 準備エラー
+      '13': ['skip', 'Skip終了'], // Skip終了
       '15': ['warning', '警告終了'], // 警告終了
       '9999': ['other', 'Other'],
     };
@@ -1459,6 +1709,13 @@ initNode() {
         'parallel-branch' : ['', '', '', 'function function-parallel'],
         'status-file-branch' : ['', '', '', 'function function-status-file'],
         'merge' : ['', '', '', 'function function-merge']
+    };
+    
+    cd.setting.movementCircleText = {
+        '1': 'AL', // Ansible Legacy
+        '2': 'AP', // Ansible Pioneer
+        '3': 'ALR', // Ansible Legacy Role
+        '4': 'Tf',  // Terraform
     };
         
     // --------------------------------------------------
@@ -1595,11 +1852,9 @@ initNode() {
     // --------------------------------------------------
     cd.$.area.on('mousedown', function( e ){
         if ( e.buttons === 1 ) {
-            // Viewモードは何もしない
-            if ( cd.mode === 'view') return false;
             
             // Skipチェックボックス
-            if ( $( e.target ).closest('.node-skip').length && cd.mode !== 'checking') {
+            if ( $( e.target ).closest('.node-skip').length && cd.mode !== 'confirmation') {
                 cd.nodeDeselect();
                 const $node = $( e.target ).closest('.node'),
                       nodeID = $node.attr('id');
@@ -2238,30 +2493,33 @@ createNode( nodeID ) {
 
     let nodeCircle, nodeType, nodeName;
     if ( nodeData.type === 'movement') {
-        const movementData = cd.info.list.movement.find(function( m ){
-            return nodeData.movement_id === m.id;
-        });
-        nodeCircle = 'M';
-        /*
-        if ( nodeData.movement_id.length > 4 ) {
-            nodeCircle = nodeData.movement_id.slice( 0, 4 );
-        } else {
-            nodeCircle = nodeData.movement_id;
-        }
-        */
+        nodeName = cd.getMovementName( nodeData.movement_id );
         
-        // IDからオーケストラと名前を設定する
-        if ( movementData !== undefined ) {
-            cd.data[ nodeID ]['orchestra_id'] = movementData.orchestra_id;
-            cd.data[ nodeID ]['movement_name'] = movementData.name;     
+        if ( cd.mode !== 'confirmation') {
+            // Movementが存在するか確認する
+            const movementData = cd.info.list.movement.find(function( m ){
+                return nodeData.movement_id === m.id;
+            });
+
+            // Movementデータから名称をセット
+            if ( nodeName !== undefined ) {
+                nodeData.orchestra_id = movementData.orchestra_id;
+                nodeData.movement_name = movementData.name;
+            } else {
+                // 見つからない場合
+                nodeData.orchestra_id = 0;
+                nodeData.movement_name = 'Unknown';
+            }
+            nodeCircle = cd.setting.movementCircleText[ movementData.orchestra_id ];
+            nodeType = cd.getOrchestratorName( movementData.orchestra_id );
+            
         } else {
-            // 見つからない場合
-            cd.data[ nodeID ]['orchestra_id'] = 0;
-            cd.data[ nodeID ]['movement_name'] = 'Unknown';
+            nodeType = cd.getOrchestratorName( nodeData.orchestra_id );
+            nodeCircle = cd.setting.movementCircleText[ nodeData.orchestra_id ];
         }
-        nodeType = cd.info.dict.orchestra[ cd.data[ nodeID ]['orchestra_id'] ];
-        if ( nodeType === undefined ) nodeType = 'Unknown';
-        nodeName = cd.data[ nodeID ]['movement_name'];   
+        if ( !nodeName ) nodeName = 'Unknown';
+        if ( !nodeType ) nodeType = 'unknown';
+        if ( !nodeCircle ) nodeCircle = 'Mv';
         nodeClass.push('node-' + nodeType.toLocaleLowerCase().replace(/\s/g, '-') );
     } else {
         nodeCircle = nodeText[ nodeData.type ][0];
@@ -2272,7 +2530,7 @@ createNode( nodeID ) {
     if ( nodeData.type === 'end') {
         const endStatus = cd.status.end[ cd.data[ nodeID ].end_type ][1],
               endID = cd.status.end[ cd.data[ nodeID ].end_type ][0];
-        if ( cd.data[ nodeID ].end_type !== '5') {
+        if ( cd.data[ nodeID ].end_type !== '6') {
             nodeName += ' : ' + endStatus;
         }
         attrData.push('data-end-status="' + endID + '"');
@@ -2299,8 +2557,7 @@ createNode( nodeID ) {
         const callConductorId = nodeData['call_conductor_id'];
         if ( callConductorId !== undefined && callConductorId !== null ) {
             nodeClass.push('call-select');
-            nodeName = '[' + nodeData['call_conductor_id'] + ']:' + cd.info.dict.conductor[ callConductorId ];
-            if ( cd.mode === 'checking') nodeName = cd.info.dict.conductor[ callConductorId ];
+            nodeName = cd.getConductorName(  callConductorId);
         }
         nodeHTML += ``
         + `<div class="node-name">`
@@ -2408,14 +2665,14 @@ createNode( nodeID ) {
           selectOperationID = '',
           selectOperationName = '';
       // 作業確認の場合はステータス情報を参照する
-      if ( cd.mode === 'checking') {
-          skipFlag = ( cd.status.conductor['node_info'][ nodeID ]['skip'] === '2' ) ? true : false;
-          selectOperationID = cd.status.conductor['node_info'][ nodeID ]['operation_id'];
-          selectOperationName = cd.status.conductor['node_info'][ nodeID ]['oepration_name'];
+      if ( cd.mode === 'confirmation') {
+          skipFlag = ( cd.confirmation.node[ nodeID ].skip === 'True') ? true : false;
+          selectOperationID = cd.confirmation.node[ nodeID ].operation_id;
+          selectOperationName = cd.confirmation.node[ nodeID ].oepration_name;
       } else {
-          skipFlag = ( Number( nodeData.SKIP_FLAG ) === 1 ) ? true : false;
-          selectOperationID = nodeData['OPERATION_NO_IDBH'];
-          selectOperationName = cd.info.dict.operation[ selectOperationID ];
+          skipFlag = ( Number( nodeData.skip_flag ) === 1 ) ? true : false;
+          selectOperationID = nodeData['operation_id'];
+          selectOperationName = cd.getOperationName( selectOperationID );
       }
       
       if ( skipFlag ) {
@@ -2424,8 +2681,8 @@ createNode( nodeID ) {
       }
       if ( selectOperationID !== undefined && selectOperationID !== null ) {
         nodeClass.push('operation');
-        nodeOperationData = '[' + selectOperationID + ']:' + selectOperationName;
-        if ( cd.mode === 'checking') nodeOperationData = selectOperationName;
+        nodeOperationData = selectOperationName;
+        if ( cd.mode === 'confirmation') nodeOperationData = selectOperationName;
       }
       nodeHTML += ''
       + '<div class="node-skip"><input class="node-skip-checkbox" tabindex="-1" type="checkbox"' + nodeCheckedType + '><label class="node-skip-label">Skip</label></div>'
@@ -2502,7 +2759,7 @@ initialNode( nodeType, movementID ) {
         'type' : 'out'
       }
       if ( nodeType === 'conditional-branch') {
-        cd.data[ nodeID ]['terminal'][ outTerminalID1 ]['condition'] = [ 9 ];
+        cd.data[ nodeID ]['terminal'][ outTerminalID1 ]['condition'] = [ 5 ];
         cd.data[ nodeID ]['terminal'][ outTerminalID2 ]['condition'] = [ 9999 ];
       } else if ( nodeType === 'status-file-branch') {
         cd.data[ nodeID ]['terminal'][ outTerminalID1 ]['case'] = 1;
@@ -2532,7 +2789,7 @@ initialNode( nodeType, movementID ) {
     }
     
     if ( nodeType === 'end' ) {
-      cd.data[ nodeID ]['end_type'] = '5';
+      cd.data[ nodeID ]['end_type'] = '6';
     }
 
     return cd.createNode( nodeID );
@@ -3547,22 +3804,28 @@ initPanel() {
     // 終了ステータス
     cd.status = {};
     cd.status.end = {
-      '5': ['done', '正常'], // 正常
-      '11': ['warning', '警告'], // 警告
-      '7': ['error', '異常'] // 異常
+      '6': ['done', '正常'], // 正常
+      '7': ['warning', '警告'], // 警告
+      '8': ['error', '異常'] // 異常
     };
     
     // 初期パネルをセットする
     cd.setInitPanel();
+    cd.$.conductorParameter = $('#conductor-parameter > .editor-block-inner');
     
-    // Movementリスト
-    cd.movementList();
+    if ( cd.mode !== 'confirmation') {
+        // Movementリスト
+        cd.movementList();
+        
+        // 整列
+        cd.nodeAlignment();
+    }
     
-    cd.$.conductorParameter = $('#conductor-parameter > .editor-block-inner'),
-    cd.$.statusFileCaseList = $('#status-file-case-list').find('tbody');
-    
-    // 整列
-    cd.nodeAlignment();
+    // パネル情報
+    cd.panelInfo = {
+        type: null,
+        id: null
+    };    
     
     // パネルイベント
     cd.panelEvents();
@@ -3580,7 +3843,8 @@ setInitPanel() {
         <div class="editor-block-inner">
         </div>
     </div>
-    <div class="editor-row-resize-bar"></div>
+    ${( cd.mode !== 'confirmation')?
+    `<div class="editor-row-resize-bar"></div>
     <div id="conductor-node" class="editor-block">
         <div class="editor-block-inner">
             <div class="editor-tab">
@@ -3604,7 +3868,8 @@ setInitPanel() {
                 </div>
             </div>
         </div>
-    </div>`;
+    </div>`: ``
+    }`;
     
     cd.$.panel.html( html );
 }
@@ -3615,6 +3880,9 @@ setInitPanel() {
 */
 setPanel( type, nodeId ) {
     const cd = this;
+    
+    cd.panelInfo.type = type;
+    cd.panelInfo.id = nodeId;
 
     let html = '';
     switch( type ) {
@@ -3650,6 +3918,12 @@ setPanel( type, nodeId ) {
         break;
         case 'alignment':
             html = cd.panelAlignmentHtml();
+        break;
+        case 'confirmationConductor':
+            html = cd.panelConfirmationConductorHtml();
+        break;
+        case 'confirmationNode':
+            html = cd.panelConfirmationNodeHtml( nodeId );
         break;
     }
     cd.$.conductorParameter.html( html );
@@ -3765,7 +4039,7 @@ panelTextareaHtml( note ) {
     const cd = this;
     return `
     <div class="panel-group">
-        <div class="panel-group-title">Note</div>
+        <div class="panel-group-title">備考</div>
         ${( cd.mode !== 'edit' && cd.mode!== 'update')?
             `<span class="view panel-note panel-span"></span>`:
             `<textarea title="タイトル説明" class="panel-note panel-textarea" spellcheck="false">${note}</textarea>`
@@ -3785,35 +4059,44 @@ panelConductorHtml() {
           id = fn.cv( condcutor.id, '', true ),
           name = fn.cv( condcutor.conductor_name, '', true ),
           note = fn.cv( condcutor.note, '', true ),
-          update = fn.cv( condcutor.last_update_date_time, '', true );
+          update = fn.date( condcutor.last_update_date_time, 'yyyy/MM/dd HH:mm:ss');
 
     const html = `
-    <table class="panel-table">
-        <tbody>
-            <tr>
-                <th class="panel-th">ID :</th>
-                <td class="panel-td" colspan="2">
-                    <span class="panel-span">${id}</span>
-                </td>
-            </tr>
-            <tr ${( cd.mode === 'edit' || cd.mode === 'update')? `class="popup" title="タイトル説明"`: ''}>
-                <th class="panel-th">名称 :</th>
-                <td class="panel-td" colspan="2">
-                    ${( cd.mode !== 'edit' && cd.mode !== 'update')?
-                        `<span class="view panel-span">${name}</span>`:
-                        `<input value="${name}" maxlength="256" id="conductor-class-name" class="panel-text" type="text">`
-                    }
-                </td>
-            </tr>
-            <tr>
-                <th class="panel-th">更新日時 :</th>
-                <td class="panel-td" colspan="2"><span class="panel-span">${update}</span></td>
-            </tr>
-        </tbody>
-    </table>
+    <div class="panel-group">
+        <div class="panel-group-title">Conductor ID</div>
+        <table class="panel-table">
+            <tbody>
+                <tr>
+                    <td class="panel-td">
+                        <span class="panel-span">${id}</span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="panel-group">
+        <div class="panel-group-title">Conductor情報</div>
+        <table class="panel-table">
+            <tbody>
+                <tr ${( cd.mode === 'edit' || cd.mode === 'update')? `class="popup" title="タイトル説明"`: ''}>
+                    <th class="panel-th">名称${(cd.mode === 'edit' || cd.mode === 'update')? fn.html.required(): ''} :</th>
+                    <td class="panel-td">
+                        ${( cd.mode !== 'edit' && cd.mode !== 'update')?
+                            `<span class="view panel-span">${name}</span>`:
+                            `<input value="${name}" maxlength="256" id="conductor-class-name" class="panel-text" type="text">`
+                        }
+                    </td>
+                </tr>
+                <tr>
+                    <th class="panel-th">更新日時 :</th>
+                    <td class="panel-td"><span class="panel-span">${update}</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
     ${cd.panelTextareaHtml( note )}`;
     
-    return cd.panelCommon('Condcutor基本', html );
+    return cd.panelCommon('Condcutor', html );
 }
 /*
 ##################################################
@@ -3827,49 +4110,53 @@ panelMovementHtml( nodeId ) {
           id = fn.cv( node.movement_id, '', true ),
           name = fn.cv( node.movement_name, '', true ),
           note = fn.cv( node.note, '', true ),
-          orchestrator = fn.cv( cd.getOrchestratorName( node.orchestra_id ), ''),
+          orchestrator = fn.cv( cd.getOrchestratorName( node.orchestra_id ), 'Unkown'),
           operation = fn.cv( cd.getOperationName( node.operation_id ), ''),
-          skip = ( node.skip_flag === '1')? ' checked': '';
+          skip = ( node.skip_flag === '1')? { checked: 'checked'}: {};
           
     const html = `
-    <table class="panel-table">
-        <tbody>
-            <tr>
-                <th class="panel-th">Movement ID :</th>
-                <td class="panel-td"><span id="movement-id" class="panel-span">${id}</span></td>
-            </tr>
-            <tr>
-                <th class="panel-th">Orchestrator :</th>
-                <td class="panel-td"><span id="movement-orchestrator" class="panel-span">${orchestrator}</span></td>
-            </tr>
-            <tr>
-                <th class="panel-th">Name :</th>
-                <td class="panel-td"><span id="movement-name" class="panel-span">${name}</span></td>
-            </tr>
-            <tr>
-                <th class="panel-th">Default skip :</th>
-                <td class="panel-td"><input id="movement-default-skip" class="panel-checkbox" type="checkbox"${skip}></td>
-            </tr>
-        </tbody>
-    </table>
     <div class="panel-group">
-        <div class="panel-group-title">Operation select</div>
+        <div class="panel-group-title">Movement ID</div>
         <table class="panel-table">
             <tbody>
                 <tr>
-                    <th class="panel-th">Operation :</th>
-                    <td class="panel-td"><span id="movement-operation" class="panel-span" data-id="" data-value="">${operation}</span></td>
+                    <td class="panel-td"><span class="panel-span">${id}</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="panel-group">
+        <div class="panel-group-title">Movement情報</div>
+        <table class="panel-table">
+            <tbody>
+                <tr>
+                    <th class="panel-th">名称 :</th>
+                    <td class="panel-td"><span class="panel-span">${name}</span></td>
+                </tr>
+                <tr>
+                    <th class="panel-th">スキップ :</th>
+                    <td class="panel-td"><span class="panel-span-noborder">${fn.html.check('panel-checkbox', null, null, null, skip )}</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="panel-group">
+        <div class="panel-group-title">個別オペレーション</div>
+        <table class="panel-table">
+            <tbody>
+                <tr>
+                    <td class="panel-td"><span class="panel-span">${operation}</span></td>
                 </tr>
             </tbody>
         </table>
         <ul class="panel-button-group">
-            <li class="panel-button-group-item"><button class="panel-button operation-select-button">Operation select</button></li>
-            <li class="panel-button-group-item"><button class="panel-button operation-clear-button">Clear</button></li>
+            <li class="panel-button-group-item"><button class="panel-button panel-select-button" data-type="operation">オペレーション選択</button></li>
+            <li class="panel-button-group-item"><button class="panel-button panel-select-button" data-type="clearOperation">クリア</button></li>
         </ul>
     </div>
     ${cd.panelTextareaHtml( note )}`;
     
-    return cd.panelCommon('Movement', html );
+    return cd.panelCommon( orchestrator, html );
 }
 /*
 ##################################################
@@ -3886,7 +4173,7 @@ panelEndHtml( nodeId ) {
     // Radio選択HTML
     const html = [];
     
-    const order = [ 5, 11, 7 ],
+    const order = [ 6, 7, 8 ],
           orderLength = order.length;
     for ( let i = 0; i < orderLength; i++ ) {
         const name = cd.status.end[ order[i] ][ 0 ],
@@ -3903,20 +4190,23 @@ panelEndHtml( nodeId ) {
     }
     
     return cd.panelCommon('Conductor end', `
-    <table class="panel-table">
-        <tbody>
-            <tr>
-                <th class="panel-th">End status :</th>
-                <td class="panel-td">
-                    <div class="end-status-select">
-                        <ul class="end-status-select-list">
-                            ${html.join('')}
-                        </ul>
-                    </div>
-                </td>
-            </tr>
-        </tbody>
-    </table>
+    ${(cd.mode === 'edit' || cd.mode === 'update')? `
+    <div class="panel-group">
+        <div class="panel-group-title">終了ステータス</div>
+        <table class="panel-table">
+            <tbody>
+                <tr>
+                    <td class="panel-td">
+                        <div class="end-status-select">
+                            <ul class="end-status-select-list">
+                                ${html.join('')}
+                            </ul>
+                        </div>
+                    </td>
+                <tr>
+            </tbody>
+        </table>
+    </div>`:``}
     ${cd.panelTextareaHtml( note )}`);
 }
 /*
@@ -3931,19 +4221,22 @@ panelParallelBranchHtml( nodeId ) {
           note = fn.cv( node.note, '', true );
           
     return cd.panelCommon('Parallel branch', `
-    <table class="panel-table">
-      <tbody>
-          <tr>
-              <th class="panel-th">Case :</th>
-              <td class="panel-td">
-                  <ul class="panel-button-group">
-                      <li class="panel-button-group-item"><button class="branch-add panel-button">Add</button></li>
-                      <li class="panel-button-group-item"><button class="branch-delete panel-button">Delete</button></li>
-                  </ul>
-              </td>
-          </tr>
-      </tbody>
-      </table>
+    ${(cd.mode === 'edit' || cd.mode === 'update')? `
+    <div class="panel-group">
+        <div class="panel-group-title">平行分岐設定</div>
+        <table class="panel-table">
+          <tbody>
+              <tr>
+                  <td class="panel-td">
+                      <ul class="panel-button-group">
+                          <li class="panel-button-group-item"><button class="branch-add panel-button">分岐追加</button></li>
+                          <li class="panel-button-group-item"><button class="branch-delete panel-button">分岐削除</button></li>
+                      </ul>
+                  </td>
+              </tr>
+          </tbody>
+          </table>
+      </div>`:``}
       ${cd.panelTextareaHtml( note )}`);
 }
 /*
@@ -3958,19 +4251,22 @@ panelMergeHtml( nodeId ) {
           note = fn.cv( node.note, '', true );
     
     return cd.panelCommon('Parallel merge', `
-    <table class="panel-table">
-      <tbody>
-        <tr>
-          <th class="panel-th">Case :</th>
-          <td class="panel-td">
-            <ul class="panel-button-group">
-              <li class="panel-button-group-item"><button class="branch-add panel-button">Add</button></li>
-              <li class="panel-button-group-item"><button class="branch-delete panel-button">Delete</button></li>
-            </ul>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    ${(cd.mode === 'edit' || cd.mode === 'update')? `
+    <div class="panel-group">
+        <div class="panel-group-title">平行マージ設定</div>
+        <table class="panel-table">
+          <tbody>
+            <tr>
+              <td class="panel-td">
+                <ul class="panel-button-group">
+                  <li class="panel-button-group-item"><button class="branch-add panel-button">マージ追加</button></li>
+                  <li class="panel-button-group-item"><button class="branch-delete panel-button">マージ削除</button></li>
+                </ul>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+    </div>`:``}
     ${cd.panelTextareaHtml( note )}`);
     
 }
@@ -3995,8 +4291,6 @@ panelConditionalBranchHtml( nodeId ) {
             const caseNo = Number( terminalData.case ),
                   conditionLength = terminalData.condition.length,
                   conditionHTML = [];
-                  console.log(caseCount)
-                  console.log(caseNo)
             if ( caseCount !== caseNo ) {
                 for ( let i = 0; i < conditionLength; i++ ) {
                   const condition = terminalData.condition[ i ];
@@ -4021,40 +4315,43 @@ panelConditionalBranchHtml( nodeId ) {
     }
           
     return cd.panelCommon('Conditional branch', `
-    <table class="panel-table">
-      <tbody>
-        <tr>
-          <th class="panel-th">Case :</th>
-          <td class="panel-td">
-            <ul class="panel-button-group">
-              <li class="panel-button-group-item"><button class="branch-add panel-button">Add</button></li>
-              <li class="panel-button-group-item"><button class="branch-delete panel-button">Delete</button></li>
-            </ul>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    <hr class="panel-hr">
-    <div id="branch-condition-move">
-    <table id="branch-case-list" class="panel-table ">
-      <tbody>
-          ${caseHtml.join('')}
-      </tbody>
-    </table>
-    <hr class="panel-hr">
-    <table class="panel-table">
-      <tbody>
-        <tr>
-          <th class="panel-th">Other :</th>
-          <td class="panel-td">
-              <ul id="noset-conditions" class="branch-case">
-                  ${nosetConditionHTML.join('')}
-              </ul>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    </div>
+    ${(cd.mode === 'edit' || cd.mode === 'update')? `
+    <div class="panel-group">
+        <div class="panel-group-title">条件分岐設定</div>
+        <table class="panel-table">
+          <tbody>
+            <tr>
+              <td class="panel-td">
+                <ul class="panel-button-group">
+                  <li class="panel-button-group-item"><button class="branch-add panel-button">分岐追加</button></li>
+                  <li class="panel-button-group-item"><button class="branch-delete panel-button">分岐削除</button></li>
+                </ul>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <hr class="panel-hr">
+        <div id="branch-condition-move">
+            <table id="branch-case-list" class="panel-table ">
+              <tbody>
+                  ${caseHtml.join('')}
+              </tbody>
+            </table>
+            <hr class="panel-hr">
+            <table class="panel-table">
+              <tbody>
+                <tr>
+                  <th class="panel-th">Other :</th>
+                  <td class="panel-td">
+                      <ul id="noset-conditions" class="branch-case">
+                          ${nosetConditionHTML.join('')}
+                      </ul>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+        </div>
+    </div>`:``}
     ${cd.panelTextareaHtml( note )}`);
 }
 /*
@@ -4066,46 +4363,52 @@ panelCallHtml( nodeId ) {
     const cd = this;
     
     const node = cd.data[ nodeId ],
-          note = fn.cv( node.note, '', true );
+          note = fn.cv( node.note, '', true ),
+          conductor = fn.cv( cd.getConductorName( node.call_conductor_id ), ''),
+          operation = fn.cv( cd.getOperationName( node.operation_id ), ''),
+          skip = ( node.skip_flag === '1')? ' checked': '';
           
     return cd.panelCommon('Condcutor call', `
-    <table class="panel-table">
-      <tbody>
-        <tr>
-          <th class="panel-th">Default skip :</th>
-          <td class="panel-td"><input id="conductor-call-default-skip" class="panel-checkbox" type="checkbox"></td>
-        </tr>
-      </tbody>
-    </table>
     <div class="panel-group">
-      <div class="panel-group-title">Conductor select</div>
-      <table class="panel-table">
-        <tbody>
-          <tr>
-            <th class="panel-th">Conductor :</th>
-            <td class="panel-td"><span id="conductor-call-name" class="panel-span" data-id="" data-value=""></span></td>
-          </tr>
-        </tbody>
-      </table>
-      <ul class="panel-button-group">
-        <li class="panel-button-group-item"><button id="conductor-call-select" class="panel-button">Conductor select</button></li>
-        <li class="panel-button-group-item"><button id="conductor-call-clear" class="panel-button">Clear</button></li>
-      </ul>
+        <div class="panel-group-title">Conductor call情報</div>
+        <table class="panel-table">
+          <tbody>
+            <tr>
+              <th class="panel-th">スキップ :</th>
+              <td class="panel-td"><span class="panel-span-noborder">${fn.html.check('panel-checkbox', null, null, null, skip )}</span></td>
+            </tr>
+          </tbody>
+        </table>
     </div>
     <div class="panel-group">
-      <div class="panel-group-title">Operation select</div>
+      <div class="panel-group-title">呼び出しConductor ${(cd.mode === 'edit' || cd.mode === 'update')? fn.html.required(): ''}</div>
       <table class="panel-table">
         <tbody>
           <tr>
-            <th class="panel-th">Operation :</th>
-            <td class="panel-td"><span class="panel-span" data-id="" data-value=""></span></td>
+            <td class="panel-td"><span id="conductor-call-name" class="panel-span">${conductor}</span></td>
           </tr>
         </tbody>
       </table>
-      <ul class="panel-button-group">
-        <li class="panel-button-group-item"><button class="panel-button operation-select-button">Operation select</button></li>
-        <li class="panel-button-group-item"><button class="panel-button operation-clear-button">Clear</button></li>
-      </ul>
+      ${(cd.mode === 'edit' || cd.mode === 'update')?
+      `<ul class="panel-button-group">
+        <li class="panel-button-group-item"><button class="panel-button panel-select-button" data-type="conductor">Conductor選択</button></li>
+        <li class="panel-button-group-item"><button class="panel-button panel-select-button" data-type="clearConductor">クリア</button></li>
+      </ul>`: ``
+      }
+    </div>
+    <div class="panel-group">
+        <div class="panel-group-title">個別オペレーション</div>
+        <table class="panel-table">
+            <tbody>
+                <tr>
+                    <td class="panel-td"><span id="movement-operation" class="panel-span">${operation}</span></td>
+                </tr>
+            </tbody>
+        </table>
+        <ul class="panel-button-group">
+            <li class="panel-button-group-item"><button class="panel-button panel-select-button" data-type="operation">オペレーション選択</button></li>
+            <li class="panel-button-group-item"><button class="panel-button panel-select-button" data-type="clearOperation">クリア</button></li>
+        </ul>
     </div>
     ${cd.panelTextareaHtml( note )}`);
 }
@@ -4155,27 +4458,30 @@ panelStatusBranchHtml( nodeId ) {
     }
 
 return cd.panelCommon('Status file branch', `
-  <table class="panel-table">
-      <tbody>
-          <tr>
-              <th class="panel-th">Case :</th>
-              <td class="panel-td">
-                  <ul class="panel-button-group">
-                      <li class="panel-button-group-item"><button class="branch-add panel-button">Add</button></li>
-                      <li class="panel-button-group-item"><button class="branch-delete panel-button">Delete</button></li>
-                  </ul>
-              </td>
-          </tr>
-      </tbody>
-  </table>
-  <hr class="panel-hr">
-  <div id="status-file-case-move">
-    <table id="status-file-case-list" class="panel-table ">
-        <tbody>
-            ${listHTML}
-        </tbody>
-    </table>
-  </div>
+  ${(cd.mode === 'edit' || cd.mode === 'update')? `
+  <div class="panel-group">
+        <div class="panel-group-title">ステータスファイル分岐設定</div>
+        <table class="panel-table">
+          <tbody>
+              <tr>
+                  <td class="panel-td">
+                      <ul class="panel-button-group">
+                          <li class="panel-button-group-item"><button class="branch-add panel-button">条件追加</button></li>
+                          <li class="panel-button-group-item"><button class="branch-delete panel-button">条件削除</button></li>
+                      </ul>
+                  </td>
+              </tr>
+          </tbody>
+      </table>
+      <hr class="panel-hr">
+      <div id="status-file-case-move">
+        <table id="status-file-case-list" class="panel-table ">
+            <tbody>
+                ${listHTML}
+            </tbody>
+        </table>
+      </div>
+  </div>`:``}
   ${cd.panelTextareaHtml( note )}`);
 }
 /*
@@ -4219,6 +4525,151 @@ panelCommonHtml( nodeId, title ) {
 }
 /*
 ##################################################
+  確認モードコンダクターパネル
+##################################################
+*/
+panelConfirmationConductorHtml() {
+    const cd = this;
+    
+    const conductorInfo = cd.confirmation.conductor;
+    
+    return cd.panelCommon('Conductor', `
+    <div class="panel-group">
+      <div class="panel-group-title">ConductorインスタンスID</div>
+      <table class="panel-table">
+          <tbody>
+              <tr>
+                  <td class="panel-td"><span id="conductor-instance-id" class="panel-span">${fn.cv( conductorInfo.conductor_instance_id, '', true )}</span></td>
+              </tr>
+          </tbody>
+      </table>
+    </div>
+    <div class="panel-group">
+      <div class="panel-group-title">Conductorインスタンス情報</div>
+      <table class="panel-table">
+          <tbody>
+              <tr>
+                <th class="panel-th">名称 :</th>
+                <td class="panel-td"><span id="conductor-class-name-view" class="view panel-span">${fn.cv( conductorInfo.conductor_name, '', true )}</span></td>
+              </tr>
+              <tr>
+                  <th class="panel-th">ステータス :</th>
+                  <td class="panel-td"><span id="conductor-instance-status" class="panel-span">${fn.cv( conductorInfo.status_id, '', true )}</span></td>
+              </tr>
+              <tr>
+                  <th class="panel-th">開始時間 :</th>
+                  <td class="panel-td"><span id="conductor-instance-start" class="panel-span">${fn.cv( conductorInfo.time_start, '', true )}</span></td>
+              </tr>
+              <tr>
+                  <th class="panel-th">終了時間 :</th>
+                  <td class="panel-td"><span id="conductor-instance-end" class="panel-span">${fn.cv( conductorInfo.time_end, '', true )}</span></td>
+              </tr>
+              <tr>
+                  <th class="panel-th">実行ユーザ :</th>
+                  <td class="panel-td"><span id="conductor-instance-user" class="panel-span">${fn.cv( conductorInfo.execution_user, '', true )}</span></td>
+              </tr>
+              <tr>
+                  <th class="panel-th">予約日時 :</th>
+                  <td class="panel-td"><span id="conductor-instance-reservation" class="panel-span">${fn.cv( conductorInfo.time_book, '', true )}</span></td>
+              </tr>
+              <tr>
+                  <th class="panel-th">緊急停止 :</th>
+                  <td class="panel-td"><span id="conductor-instance-emergency" class="panel-span">${fn.cv( conductorInfo.abort_execute_flag, '', true )}</span></td>
+              </tr>
+          </tbody>
+      </table>
+    </div>
+    <div class="panel-group">
+        <div class="panel-group-title">オペレーション</div>
+        <table class="panel-table">
+            <tbody>
+                <tr>
+                    <td class="panel-td"><span class="panel-span">${fn.cv( conductorInfo.operation_name, '', true )}</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    ${cd.panelTextareaHtml( fn.cv( conductorInfo.remarks, '', true ) )}`);
+}
+/*
+##################################################
+  確認モードノードパネル
+##################################################
+*/
+panelConfirmationNodeHtml( nodeId ) {
+    const cd = this;
+    
+    const nodeInfo = cd.confirmation.node[ nodeId ];
+    
+    return cd.panelCommon('Node', `
+    <div class="panel-group">
+      <div class="panel-group-title">NodeインスタンスID</div>
+      <table class="panel-table">
+          <tbody>
+              <tr>
+                  <td class="panel-td"><span class="panel-span">${fn.cv( nodeInfo.node_instance_id, '', true )}</span></td>
+              </tr>
+          </tbody>
+      </table>
+    </div>
+    <div class="panel-group">
+      <div class="panel-group-title">Nodeインスタンス情報</div>
+      <table class="panel-table">
+          <tbody>
+              <tr>
+                  <th class="panel-th">種別 :</th>
+                  <td class="panel-td"><span class="panel-span">${fn.cv( nodeInfo.node_type, '', true )}</span></td>
+              </tr>
+              <tr>
+                  <th class="panel-th">Node ID :</th>
+                  <td class="panel-td"><span class="panel-span">${fn.cv( nodeInfo.node_name, '', true )}</span></td>
+              </tr>
+              <tr>
+                  <th class="panel-th">ステータス :</th>
+                  <td class="panel-td"><span class="panel-span">${fn.cv( nodeInfo.status_id, '', true )}</span></td>
+              </tr>
+              <tr>
+                  <th class="panel-th">Stファイル :</th>
+                  <td class="panel-td"><span class="panel-span">${fn.cv( nodeInfo.status_file, '', true )}</span></td>
+              </tr>
+              <tr>
+                  <th class="panel-th">開始日時 :</th>
+                  <td class="panel-td"><span class="panel-span">${fn.cv( nodeInfo.time_start, '', true )}</span></td>
+              </tr>
+              <tr>
+                  <th class="panel-th">終了日時 :</th>
+                  <td class="panel-td"><span class="panel-span">${fn.cv( nodeInfo.time_end, '', true )}</span></td>
+              </tr>
+          </tbody>
+      </table>
+    </div>
+    ${( nodeInfo.jump.menu_id )? `
+    <div class="panel-group">
+        <div class="panel-group-title">作業状況確認</div>
+        <ul class="panel-button-group">
+            <li class="panel-button-group-item"><button class="panel-button">確認</button></li>
+        </ul>
+    </div>`: ``}
+    ${( nodeInfo.operation_id )? `
+    <div class="panel-group">
+        <div class="panel-group-title">個別オペレーション</div>
+        <table class="panel-table">
+            <tbody>
+                <tr>
+                    <th class="panel-th">ID :</th>
+                    <td class="panel-td"><span class="panel-span">${fn.cv( nodeInfo.operation_id, '', true )}</span></td>
+                </tr>
+                <tr>
+                    <th class="panel-th">名称 :</th>
+                    <td class="panel-td"><span class="panel-span">${fn.cv( nodeInfo.operation_name, '', true )}</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>`: ``}
+    ${cd.panelTextareaHtml( fn.cv( nodeInfo.remarks, '', true ) )}`);
+}
+/*
+##################################################
   Movementリスト
 ##################################################
 */
@@ -4230,7 +4681,7 @@ movementList() {
           $movementListRows = cd.$.panel.find('#movement-list-rows'),
           movementList = cd.info.list.movement,
           orchestraList = cd.info.list.orchestra;
-    
+
     // Orchestratorリスト
     const $orchestraList = cd.$.panel.find('#orchestrator-list');
     
@@ -4408,7 +4859,6 @@ movementList() {
 ##################################################
 */
 functionList() {
-
 }
 /*
 ##################################################
@@ -4417,90 +4867,23 @@ functionList() {
 */
 panelChange( nodeID ) {
   const cd = this;
-
-  // 複数選択されている場合は整列パネルを表示する
+  
   if ( cd.select.length <= 1 ) {
       let panelType = '';
-      
-      // nodeIDが未定義の場合はコンダクターパネルを表示
-      if ( nodeID === undefined ) {
+      if (  nodeID === undefined && cd.mode === 'confirmation') {
+          panelType = 'confirmationConductor';
+      } else if ( nodeID === undefined ) {
           panelType = 'conductor';
-      } else if ( cd.mode === 'checking') {
-          // 作業確認の場合はすべてNodeとする
-          panelType = 'node';
+      } else if ( cd.mode === 'confirmation') {
+          panelType = 'confirmationNode';
       } else {
           panelType = cd.data[ nodeID ].type;
       }
       cd.setPanel( panelType, nodeID );
   } else {
+      // 複数選択されている場合は整列パネルを表示する
       cd.setPanel('alignment');
   }
-
-    /*
-
-    
-    // パネルごとの処理
-    switch( panelType ) {
-      case 'movement': {
-          $('#movement-id').text( cd.data[ nodeID ].movement_id );
-          $('#movement-orchestrator').text( cd.info.dict.orchestra[ cd.data[ nodeID ].orchestra_id ] );
-          $('#movement-name').text( cd.data[ nodeID ].movement_name );
-          panelOperation('#movement-operation');          
-          // Skip
-          const nodeChecked = ( Number( cd.data[ nodeID ].skip_flag ) === 1 ) ? true : false;
-          $('#movement-default-skip').prop('checked', nodeChecked );
-        }
-        break;
-      case 'call': {
-          let callConductor = cd.data[ nodeID ].call_conductor_id;
-          if ( callConductor !== undefined && callConductor !== null ) {
-            const conductorName = cd.info.dict.conductor[ callConductor ];
-            callConductor = '[' + callConductor + ']:' + conductorName;
-          } else {
-            callConductor = '';
-          }
-          $('#conductor-call-name').text( callConductor );
-          panelOperation('#conductor-call-operation');
-          // Skip
-          const nodeChecked = ( Number( cd.data[ nodeID ].skip_flag ) === 1 ) ? true : false;
-          $('#conductor-call-default-skip').prop('checked', nodeChecked );
-        }
-
-      case 'node': {
-        // パネル情報更新
-        const nodeInfo = cd.status.conductor['node_info'][ nodeID ];
-        const panelNodeInfo = [
-          ['#node-type', cd.data[ nodeID ].type ],
-          ['#node-instance-id', nodeInfo.NODE_INSTANCE_NO ],
-          ['#node-name', nodeInfo.NODE_NAME ],
-          ['#node-status', cd.status.node[ nodeInfo.STATUS ][1] ],
-          ['#node-status-file', nodeInfo.STATUS_FILE ],
-          ['#node-start', nodeInfo.TIME_START ],
-          ['#node-end', nodeInfo.TIME_END ],
-          ['#node-oepration-id', nodeInfo.OPERATION_ID ],
-          ['#node-operation-name', nodeInfo.OPERATION_NAME ]
-        ];
-
-        const panelNodeInfoLength = panelNodeInfo.length;
-
-        for ( let i = 0; i < panelNodeInfoLength; i++ ) {
-          if ( panelNodeInfo[ i ][ 1 ] === null || panelNodeInfo[ i ][ 1 ] === undefined ) panelNodeInfo[ i ][ 1 ] = '';
-          $( panelNodeInfo[ i ][ 0 ] ).text( panelNodeInfo[ i ][ 1 ] );
-        }
-        // Jump
-        if ( 'JUMP' in nodeInfo ) {
-          const jumpURL = nodeInfo.JUMP;
-          $('#node-Jump').html('<a href="' + jumpURL + '" target="_blank">ジャンプ</a>');
-        } else {
-          $('#node-Jump').empty();
-        }
-        break;
-      }
-      default:
-    }
-
-  }
-  */
 }
 /*
 ##################################################
@@ -4794,13 +5177,13 @@ operationUpdate( nodeID, id, name ) {
     const cd = this;
 
     const $node = $('#' + nodeID );
-    if ( id !== 0 ) { 
+    if ( id !== null ) { 
       $node.addClass('operation');
-      cd.data[ nodeID ].OPERATION_NO_IDBH = id;
-      $node.find('.node-operation-data').text('[' + id + ']:' + name );
+      cd.data[ nodeID ].operation_id = id;
+      $node.find('.node-operation-data').text( name );
     } else {
       $node.removeClass('operation');
-      cd.data[ nodeID ].OPERATION_NO_IDBH = null;
+      cd.data[ nodeID ].operation_id = null;
       $node.find('.node-operation-data').text('');
     }
     cd.panelChange( nodeID );
@@ -4814,76 +5197,16 @@ callConductorUpdate( nodeID, id, name ) {
     const cd = this;
           
     const $node = $('#' + nodeID );
-    if ( id !== 0 ) { 
-      cd.data[ nodeID ].CALL_CONDUCTOR_ID = id;
-      $node.addClass('call-select').find('.select-conductor-name-inner').text('[' + id + ']:' + name );
+    if ( id !== null ) { 
+      cd.data[ nodeID ].call_conductor_id = id;
+      $node.addClass('call-select').find('.select-conductor-name-inner').text( name );
     } else {
-      cd.data[ nodeID ].CALL_CONDUCTOR_ID = null;
+      cd.data[ nodeID ].call_conductor_id = null;
       $node.removeClass('call-select').find('.select-conductor-name-inner').text('Not selected');
     }
     cd.nodeSet( $('#' + nodeID ) );
     cd.connectEdgeUpdate( nodeID );
     cd.panelChange( nodeID );
-}
-/*
-##################################################
-  モーダル用リスト
-##################################################
-*/
-modalSelectList( type ) {
-  const cd = this;
-  
-  const $modalBody = $('.editor-modal-body');
-  let operationListHTML = ''
-  + '<div class="modal-table-wrap">'
-    + '<table class="modal-table modal-select-table">'
-      + '<thead>'
-        + '<th class="id">ID</th><th class="name">Name</th>'
-      + '</thead>'
-      + '<tbody>'
-        + '<tr data-id="0" data-name="unselected" class="selected"><th>-</th><td>Unselected</td></tr>';
-  if ( type === 'operation') {
-    operationListHTML += cd.modalTr( cd.info.list.operation, 'operation_id','operation_name')
-  } else if ( type === 'conductor') {
-    operationListHTML += cd.modalTr( cd.info.list.conductor, 'conductor_id','conductor_name')
-  }
-  operationListHTML += ''
-      + '</tbody>'
-    + '</table>'
-  + '</div>';
-  
-  $modalBody.html( operationListHTML );
-  
-  // 選択
-  $modalBody.find('.modal-select-table').on('click', 'tr', function(){
-      const $tr = $( this );
-      $modalBody.find('tbody').find('.selected').removeClass('selected');
-      $tr.addClass('selected');
-  });
-  
-  // 決定・取り消しボタン
-  const $modalButton = $('.editor-modal-footer-menu-button');
-  $modalButton.prop('disabled', false ).on('click', function() {
-    const $button = $( this ),
-          btnType = $button.attr('data-button-type');
-    switch( btnType ) {
-      case 'ok': {
-        const nodeID = cd.select[0],
-              $selectTr = $modalBody.find('tbody').find('.selected'),
-              dataID = Number( $selectTr.attr('data-id') ),
-              dataName = $selectTr.attr('data-name');
-        if ( type === 'operation') {
-          cd.operationUpdate( nodeID, dataID, dataName );
-        } else if ( type === 'conductor') {
-          cd.callConductorUpdate( nodeID, dataID, dataName );
-        }
-        //editor.modalClose();
-      } break;
-      case 'cancel':
-        //editor.modalClose();
-        break;
-    }
-  }); 
 }
 /*
 ##################################################
@@ -5017,7 +5340,7 @@ panelEvents() {
           const nodeID = cd.select[0],
                 $node = $('#' + nodeID ),
                 val = $( this ).val(),
-                nodeName = ( val === '5')? 'End': 'End : ' + cd.status.end[ val ][ 1 ];
+                nodeName = ( val === '6')? 'End': 'End : ' + cd.status.end[ val ][ 1 ];
           $node.attr('data-end-status', cd.status.end[ val ][ 0 ] )
             .find('.node-name > span').text( nodeName );
           
@@ -5029,8 +5352,35 @@ panelEvents() {
     });
     
     // Operation選択
-    cd.$.conductorParameter.on('click', '.operation-select-button', function(){
-        operationModal.open('');
+    cd.$.conductorParameter.on('click', '.panel-select-button', function(){
+        const $button = $( this ),
+              type = $button.attr('data-type'),
+              nodeId = cd.select[0];
+        
+        switch ( type ) {
+            case 'operation':
+                cd.selectModalOpen('operation').then(function( selectId ){
+                    if ( selectId ) {
+                        const operationName = cd.getOperationName( selectId );
+                        cd.operationUpdate( nodeId, selectId, operationName );
+                    }
+                });
+            break;
+            case 'clearOperation':
+                cd.operationUpdate( nodeId, null );
+            break;
+            case 'conductor':
+                cd.selectModalOpen('condcutor').then(function( selectId ){
+                    if ( selectId ) {
+                        const conductorName = cd.getConductorName( selectId );
+                        cd.callConductorUpdate( nodeId, selectId, conductorName );
+                    }
+                });
+            break;
+            case 'clearConductor':
+                cd.callConductorUpdate( nodeId, null );
+            break;
+        }
     });    
     
 }
@@ -5399,81 +5749,50 @@ conductorHistory() {
 // 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/*
-##################################################
-  コンダクター選択
-##################################################
-*/
-selectConductorModalOpen() {
+selectModalOpen( type ) {
     const cd = this;
+    
+    const restUrls = { info: `/menu/${cd.menu}/conductor/execute/info/`};
+    let infoSubKey;
+    
+    if ( type === 'operation') {
+        restUrls.filter = `/menu/${cd.menu}/conductor/execute/filter/operation_list/`;
+        restUrls.pulldown = `/menu/${cd.menu}/conductor/execute/filter/operation_list/search/candidates/`;
+        infoSubKey = 'operation_list';
+    } else {
+        restUrls.filter = `/menu/${cd.menu}/conductor/execute/filter/conductor_class_list/`;
+        restUrls.pulldown = `/menu/${cd.menu}/conductor/execute/filter/conductor_class_list/search/candidates/`;
+        infoSubKey = 'conductor_class_list';
+    }
+    
+    if ( !cd.modal ) cd.modal = {};
     return new Promise(function( resolve, reject ){
         const setClickEvent = function() {
-            const button = '.tableHeaderMainMenuButton[data-type="tableSelect"],.tableHeaderMainMenuButton[data-type="tableCancel"]';
-            cd.selectConductorModal.table.$.header.one('click', button, function(){
-                cd.selectConductorModal.modal.hide();
+            const button = '.tableHeaderMainMenuButton[data-type="tableSelect"], .tableHeaderMainMenuButton[data-type="tableCancel"]';
+            cd.modal[ type ].table.$.header.one('click', button, function(){
+                cd.modal[ type ].modal.hide();
                 
                 const $button = $( this ),
-                      type = $button.attr('data-type');
-                switch ( type ) {
+                      buttonType = $button.attr('data-type');
+                switch ( buttonType ) {
                     case 'tableSelect': {
-                        const selectId = cd.selectConductorModal.table.select.select;
+                        const selectId = cd.modal[ type ].table.select.select;
                         resolve( selectId );
                     } break;
                     case 'tableCancel':
-                        cd.selectConductorModal.modal.hide();
                         resolve( null );
                     break;
                 }
             });
         };
         
-        if ( !cd.selectConductorModal ) {
-            fn.initSelectModal('Conductor選択', 'conductor_class_list').then(function( modal ){
-                cd.selectConductorModal = modal;
+        if ( !cd.modal[ type ] ) {
+            fn.initSelectModal('Conductor選択', cd.menu, restUrls, infoSubKey ).then(function( modal ){
+                cd.modal[ type ] = modal;
                 setClickEvent();
             });
         } else {
-            cd.selectConductorModal.modal.show();
-            setClickEvent();
-        }
-    });
-}
-
-/*
-##################################################
-  オペレーション選択
-##################################################
-*/
-selectOperationModalOpen() {
-    const cd = this;
-    return new Promise(function( resolve, reject ){
-        const setClickEvent = function() {
-            const button = '.tableHeaderMainMenuButton[data-type="tableSelect"],.tableHeaderMainMenuButton[data-type="tableCancel"]';
-            cd.selectOperationModal.table.$.header.one('click', button, function(){
-                cd.selectOperationModal.modal.hide();
-                
-                const $button = $( this ),
-                      type = $button.attr('data-type');
-                switch ( type ) {
-                    case 'tableSelect': {
-                        const selectId = cd.selectOperationModal.table.select.select;
-                        resolve( selectId );
-                    } break;
-                    case 'tableCancel':
-                        cd.selectOperationModal.modal.hide();
-                        resolve( null );
-                    break;
-                }
-            });
-        };
-        
-        if ( !cd.selectOperationModal ) {
-            fn.initSelectModal('オペレーション選択', 'operation_list').then(function( modal ){
-                cd.selectOperationModal = modal;
-                setClickEvent();
-            });
-        } else {
-            cd.selectOperationModal.modal.show();
+            cd.modal[ type ].modal.show();
             setClickEvent();
         }
     });
@@ -5513,15 +5832,6 @@ updateConductorData() {
 
 /*
 ##################################################
-  コンダクターパネルリセット
-##################################################
-*/
-panelConductorReset() {
-  const cd = this;
-  cd.panelChange();
-}
-/*
-##################################################
   コンダクターリセット
 ##################################################
 */
@@ -5549,7 +5859,6 @@ clearConductor() {
     cd.canvasPositionReset(0);
     // パネル情報
     cd.panelChange();
-    cd.panelConductorReset();
 }
 /*
 ##################################################
@@ -5579,6 +5888,7 @@ selectConductor( result ) {
     
     cd.clearConductor();
     cd.loadConductor( result );
+    cd.panelChange();
 }
 /*
 ##################################################
@@ -5663,7 +5973,7 @@ nodeReSet( reSetConductorData ) {
         }
       }
       // 作業確認時リザルトマークにイベントを付ける
-      if ( cd.mode === 'checking') {
+      if ( cd.mode === 'confirmation') {
         cd.$.area.find('.node-result').on({
           'mouseenter': function(){
             const $result = $( this );
@@ -5686,6 +5996,113 @@ nodeReSet( reSetConductorData ) {
 }
 /*
 ##################################################
+  指定のIDのコンダクターを読み込む
+##################################################
+*/
+fetchConductor( conductorId ) {
+    const cd = this;
+    
+    let process = fn.processingModal();
+    
+    return new Promise(function( resolve ){
+        const url = `/menu/${cd.menu}/conductor/class/${conductorId}/`;
+        fn.fetch( url ).then(function( result ){
+            cd.id = conductorId;
+            cd.selectConductor( result );
+            history.replaceState( null, null, `?menu=conductor_class_edit&conductor_class_id=${conductorId}`);
+        }).catch(function(){
+            alert('読み込みに失敗しました。');
+        }).then(function(){
+            process.close();
+            process = null;
+            
+            resolve();
+        });
+    });
+}
+/*
+##################################################
+  作業実行
+##################################################
+*/
+conductorExecuteModal() {
+    const cd = this;
+    
+    const html = `
+    <div class="dialogContentContainer">
+        <div class="dialogContentBlock">
+            <div class="dialogContentTitle">オペレーション</div>
+            <div class="dialogContentBody">
+                ${fn.html.button('オペレーション選択', 'executeOperetionSelectButton')}
+                <div class="executeOperetionId"></div>
+                <div class="executeOperetionName"></div>
+            </div>
+        </div>
+        <div class="dialogContentBlock">
+            <div class="dialogContentTitle">スケジュール</div>
+            <div class="dialogContentBody">
+                ${fn.html.dateInput( true, 'executeSchedule', '')}
+                <p>予約日時を指定する場合は、日時フォーマット(YYYY/MM/DD HH:II)で入力して下さい。<br>ブランクの場合は即時実行となります。</p>
+            </div>
+        </div>
+    </div>`;
+    
+    return new Promise(function( resolve, reject ){
+
+        const funcs = {
+            execute: function(){
+                resolve({
+                    operation_id: $id.text(),
+                    schedule_date: ''
+                });
+            },
+            cancel: function(){
+                dialog.close();
+                dialog = null;
+                
+                resolve('cancel');
+            }
+        };
+
+        const buttons = {
+            execute: { text: '作業実行', action: 'positive'},
+            cancel: { text: 'キャンセル', action: 'negative'}
+        };
+
+        const config = {
+            mode: 'modeless',
+            position: 'center',
+            header: {
+                title: 'コンダクター作業実行'
+            },
+            footer: {
+                button: buttons
+            }
+        };
+
+        let dialog = new Dialog( config, funcs );
+        
+        dialog.$.body.on('click', '.executeOperetionSelectButton', function(){
+            cd.selectModalOpen('operation').then(function( operationId ){
+                $id.text( operationId );
+                $name.text( cd.info.dict.operation[operationId] );
+            });
+        });
+        dialog.$.body.on('click', '.executeSchedule', function(){
+            const $button = $( this );
+                  
+        });
+        
+        dialog.open( html );
+        
+        const $id = dialog.$.body.find('.executeOperetionId'),
+              $name = dialog.$.body.find('.executeOperetionName');
+
+    
+    });
+}
+/*
+##################################################
   コンダクターを読み込む
 ##################################################
 */
@@ -5694,6 +6111,7 @@ loadConductor( loadConductorData ) {
     
     if ( loadConductorData ) {
         cd.data = $.extend( true, {}, loadConductorData );
+        cd.original = $.extend( true, {}, loadConductorData );
     }
 
     if ( cd.setting.debug === true ) {
@@ -5704,27 +6122,16 @@ loadConductor( loadConductorData ) {
     }
     
     try {
+    /*
       if ( cd.mode === 'edit') {
         // 読み込みデータはIDと追い越し判定用日時はリセットする
         cd.data['conductor'].id = null;
         cd.data['conductor'].last_update_date_time = null;
         cd.conductorMode('edit');
-      }
+      }*/
       cd.count.node = cd.data.config.nodeNumber;
       cd.count.terminal = cd.data.config.terminalNumber;
       cd.count.edge = cd.data.config.edgeNumber;
-
-      // Conductor情報
-      const conductorID = cd.data['conductor'].id;
-      if ( conductorID !== '' && conductorID !== null ) {
-        $('#conductor-class-id').text( conductorID );
-      } else {
-        $('#conductor-class-id').text('Auto numbering');
-      }
-      let conductorNoteText = cd.data['conductor'].note;
-      if ( conductorNoteText === undefined && conductorNoteText === null ) {
-        conductorNoteText = '';
-      }
       
       cd.nodeReSet( cd.data );
       cd.nodeViewAll( 0 );
@@ -5740,5 +6147,523 @@ loadConductor( loadConductorData ) {
       }, 1 );
     }
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//   作業確認　Conducotr画面とパネルの情報を更新
+// 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/*
+##################################################
+  作業状況ポップアップ
+##################################################
+*/
+itaPopup( $target, id ) {
+  
+  const popupID = 'popup-' + id;
+  let $popup;
+  
+  // 各ノード個別の作業状況確認ポップアップ追加
+  if ( $('#' + popupID ).length ) {
+    $popup = $('#' + popupID );
+  } else {
+    $popup = $('<div/>').attr('id', popupID ).addClass('itaPopup')
+      .text('作業').css('display','none');
+    if ( !$target.is('.resultPopup') ) {
+      $body.append( $popup );
+    }
+  }
+  
+  // ノードの状態で表示・非表示を切り替える
+  if ( $target.is('.node-jump') ) {
+    $popup.css('visibility','visible');
+  } else {
+    $popup.css('visibility','hidden');
+  }
+  
+  if ( !$target.is('.resultPopup') ) {
+    // 画面を移動しても追従するようにする
+    $target.addClass('resultPopup').on({
+      'mouseenter': function(){
+        const $this = $( this );
+        $popup.css('display','block');
+
+        // 位置更新
+        const updatePosition = function() {
+          const mpx = $this.offset().left + ( ( $this.outerWidth() / 2 ) * editorValue.scaling ),
+                mpy = $this.offset().top - ( 4 * editorValue.scaling )
+          $popup.css({ left: mpx, top: mpy });
+        };
+        updatePosition();
+        // マウスムーブとスクロールでも位置を更新する
+        $this.on('mousemove', updatePosition )
+          .on( mousewheelevent, function(){
+          setTimeout( function(){ updatePosition(); }, 1 );
+        });
+      },
+      'mouseleave': function(){
+        const $this = $( this );
+        $popup.css('display','none');
+        $this.off('mousemove ' + mousewheelevent );
+      }
+    });
+  }
+}
+/*
+##################################################
+  作業確認初期設定
+##################################################
+*/
+initConductorStatus() {
+    // $('#cansel-instance, #scram-instance').hide();
+}
+/*
+##################################################
+  作業確認
+##################################################
+*/
+// let pollingTimerID = '';
+// 00_javascript.js( proxy.printConductorStatus( conductorInstanceID ) )
+// conductorUseList.conductorStatus
+conductorStatusUpdate() {
+
+  // パネル情報更新
+  const conductorInfo = conductorUseList.conductorStatus['CONDUCTOR_INSTANCE_INFO'];
+  const panelConducotrInfo = [
+    ['#conductor-instance-id', conductorInfo.CONDUCTOR_INSTANCE_ID ],
+    ['#conductor-instance-status', conductorStatus[ conductorInfo.STATUS_ID ][1] ],
+    ['#conductor-instance-pause', conductorInfo.PAUSE_STATUS ],
+    ['#conductor-instance-start', conductorInfo.TIME_START ],
+    ['#conductor-instance-end', conductorInfo.TIME_END ],
+    ['#conductor-instance-user', conductorInfo.EXECUTION_USER ],
+    ['#conductor-instance-reservation', conductorInfo.TIME_BOOK ],
+    ['#conductor-instance-emergency', conductorInfo.ABORT_EXECUTE_FLAG ],
+    ['#select-operation-id', conductorInfo.OPERATION_NO_IDBH ],
+    ['#select-operation-name', conductorInfo.OPERATION_NAME ]
+  ];
+  // 選択されている場合はそのノードのパネルを表示する
+  if ( g_selectedNodeID.length >= 1 ) {
+    panelChange( g_selectedNodeID[0] );
+  }
+  
+  const panelConducotrInfoLength = panelConducotrInfo.length;
+  
+  for ( let i = 0; i < panelConducotrInfoLength; i++ ) {
+    if ( panelConducotrInfo[ i ][ 1 ] === null ) panelConducotrInfo[ i ][ 1 ] = '';
+    $( panelConducotrInfo[ i ][ 0 ] ).text( panelConducotrInfo[ i ][ 1 ] );
+  }  
+  
+  // Node情報更新
+  const nodeInfo = conductorUseList.conductorStatus['NODE_INFO'],
+        nodeInfoLength = nodeInfo.length;
+  
+  // 条件分岐で選ばれなかった分岐以降を半透明にする
+  const nextNodeUnused = function( edgeID ) {
+
+    const nextNodeID = conductorData[ edgeID ].inNode,
+          nextNodeType = conductorData[ nextNodeID ].type;
+    
+    $('#' + edgeID ).attr('data-status','run-unused');
+    
+    nodeUnused( nextNodeID );
+
+  };
+  const nodeUnused = function( nodeID ) {
+    const nodeData = conductorData[ nodeID ],
+          outTerminals = terminalInOutID( nodeData['terminal'], 'out'),
+          outTerminalLength = outTerminals.length,
+          $node = $('#' + nodeID );
+    $node.addClass('run-unused');
+    conductorData[ nodeID ].endStatus = true;
+    for ( let i = 0; i < outTerminalLength; i++ ) {
+      nextNodeUnused( nodeData['terminal'][ outTerminals[ i ] ].edge );
+    }
+  };
+  const condionalBranchCheck = function( nodeID ) {
+    // 一つ前のノードの結果をチェックする
+    const inTerminal = terminalInOutID( conductorData[ nodeID ].terminal, 'in'),
+          tergetNodeID = conductorData[ nodeID ].terminal[ inTerminal[0] ].targetNode;
+    let   nodeStatus = nodeInfo[ tergetNodeID ].STATUS;
+    
+    // 一部のNodeステータスをMovementステータスに合わせる
+    if ( nodeStatus === '5') nodeStatus = '9';
+    if ( nodeStatus === '12' || nodeStatus === '13') nodeStatus = '14';
+    
+    // 終了しているかチェックする
+    if ( ['6','7','9','10','11','14','15','9999'].indexOf( nodeStatus ) !== -1 ) {
+      conductorData[ nodeID ].endStatus = true;
+      const inTerminalID = terminalInOutID( conductorData[ nodeID ].terminal, 'in'),
+            outTerminals = terminalInOutID( conductorData[ nodeID ].terminal, 'out'),
+            outTerminalLength = outTerminals.length,
+            $branchNode = $('#' + nodeID );
+      let otherFlag = true,
+          otherTerminal;
+      $branchNode.addClass('running');
+      $('#' + conductorData[ nodeID ].terminal[ inTerminal[0] ].edge ).attr('data-status', 'running');
+      for ( let i = 0; i < outTerminalLength; i++ ) {
+        const terminal = conductorData[ nodeID ]['terminal'][ outTerminals[ i ] ];
+        if ( terminal['condition'][0] !== '9999' ) {
+          if ( terminal['condition'].indexOf( nodeStatus ) !== -1 ) {
+            otherFlag = false;
+          } else {
+            $('#' + terminal.id ).closest('.node-sub').addClass('run-unused');
+            $branchNode.find( '.' + terminal.id + '-branch-line').attr('data-status', 'unused');
+            nextNodeUnused( terminal.edge );
+          }
+        } else {
+          otherTerminal = terminal;
+        }
+      }
+      if ( otherFlag !== true ) {
+        $('#' + otherTerminal.id ).closest('.node-sub').addClass('run-unused');
+        $branchNode.find( '.' + otherTerminal.id + '-branch-line').attr('data-status', 'unused');
+        nextNodeUnused( otherTerminal.edge );
+      }
+    }
+  };
+  
+  // Status file blanchの状態を更新する
+  const statusFileBranch = function( nodeID ) {
+    const $branchNode = $('#' + nodeID ),
+          inTerminalsID = terminalInOutID( conductorData[ nodeID ].terminal, 'in'),
+          inTerminal = conductorData[ nodeID ].terminal[ inTerminalsID[0] ],
+          prevNodeID = inTerminal.targetNode,
+          prevNodeStatus = nodeInfo[ prevNodeID ].STATUS,
+          prevNodeStatusFile = nodeInfo[ prevNodeID ].STATUS_FILE;
+    
+    // 前のNodeが終了しているかチェック
+    if ( ['5','9','12','13','14','15'].indexOf( prevNodeStatus ) !== -1 ) {
+      conductorData[ nodeID ].endStatus = true;
+      const $prevEdge = $('#' + inTerminal.edge ),
+            terminals = Object.keys( conductorData[ nodeID ].terminal ).map(function(k){
+                    return conductorData[ nodeID ].terminal[k];
+                }),
+            outTerminals = terminals.filter(function(v){
+                    if ( v.case !== undefined && v.case !== 'else') return true;
+                }).sort(function(a,b){
+                    if ( a.case > b.case ) {
+                        return 1;
+                    } else if ( a.case < b.case ) {
+                        return -1;
+                    } else {
+                        return 0;
+                    }
+                }),
+            outTerminalLength = outTerminals.length,
+            elseTerminal = terminals.filter(function(v){
+                    if ( v.case === 'else') return true;
+                });
+      
+      // Caseの順番にStatus fileの値とConditionの値をチェックする
+      let matchTerminalID = undefined;
+      for ( let i = 0; i < outTerminalLength; i++ ) {
+        if ( outTerminals[i].condition.join('') === prevNodeStatusFile && matchTerminalID === undefined ) {
+          $('#' + outTerminals[i].id ).closest('.node-sub').attr('data-match', 'true');
+          matchTerminalID = outTerminals[i].id;
+        } else {
+          $('#' + outTerminals[i].id ).closest('.node-sub').addClass('run-unused');
+          $branchNode.find( '.' + outTerminals[i].id + '-branch-line').attr('data-status', 'unused');
+          nextNodeUnused( outTerminals[i].edge );
+        }
+      }
+      // マッチしなかったらelse
+      if ( matchTerminalID === undefined ) {
+        matchTerminalID = elseTerminal[0].id;
+      } else {
+        $('#' + elseTerminal[0].id ).closest('.node-sub').addClass('run-unused');
+        $branchNode.find( '.' + elseTerminal[0].id + '-branch-line').attr('data-status', 'unused');
+        nextNodeUnused( elseTerminal[0].edge );
+      }
+
+      $branchNode.addClass('running');
+      if ( prevNodeStatusFile === undefined ) {
+        $branchNode.attr('data-status-file', 'unknown').find('.status-file-result-inner').text('Unknown');
+      } else {
+        $branchNode.attr('data-status-file', 'known').find('.status-file-result-inner').text( prevNodeStatusFile );
+      }
+      
+      $prevEdge.attr('data-status', 'running');
+    }
+  };
+  
+  // 並列マージの状態を更新する
+  const parallelMergeCheck = function( nodeID ) {
+    const inTerminals = terminalInOutID( conductorData[ nodeID ].terminal, 'in'),
+          inTerminalLength = inTerminals.length,
+          $node = $('#' + nodeID );
+    let   waitingCount = 0;
+    for ( let i = 0; i < inTerminalLength; i++ ) {
+      const tergetNodeID = conductorData[ nodeID ].terminal[ inTerminals[i] ].targetNode;
+      // 終了しているかチェックする
+      if ( ['5','9','12','13','14','15'].indexOf( nodeInfo[ tergetNodeID ].STATUS ) !== -1 ) {
+        waitingCount++;
+        $node.addClass('running');
+        $('#' + inTerminals[i] ).next().find('.merge-status').attr('data-status', 'waiting');
+        $('#' + conductorData[ nodeID ].terminal[ inTerminals[i] ].edge ).attr('data-status', 'running');
+      }      
+    }
+    // 全て待機状態ならコンプリートにする
+    if ( inTerminalLength === waitingCount ) {
+      $node.find('.merge-status').attr('data-status', 'complete');
+    }
+  };
+  
+  // Movement、Call、Endの状態を更新する
+  const movementCheck = function( nodeID ) {
+  
+    const nodeInfo = conductorUseList.conductorStatus['NODE_INFO'][ nodeID ],
+          nodeData = conductorData[ nodeID ],
+          $node = $('#' + nodeID ),
+          inTerminalID = terminalInOutID( conductorData[ nodeID ]['terminal'], 'in'),
+          $inEdge = $('#' + conductorData[ nodeID ]['terminal'][ inTerminalID[0] ].edge );
+    
+    let endMessage = '';
+    
+    // 作業結果URLがあれば追加する
+    const nodeJump = function(){
+      if ( nodeInfo.JUMP ) {
+        if ( !$node.find('.node-result').is('.node-jump') ) {
+          $node.find('.node-result').addClass('node-jump').attr({
+            'data-href': nodeInfo.JUMP
+          });
+        }
+      }
+    };
+    
+    switch( nodeInfo.STATUS ) {
+      case '1':
+        itaPopup( $node.find('.node-result'), $node.attr('id') );
+        return false;
+      case '2':
+        // 準備中
+        nodeJump();
+        $node.addClass('ready');
+        itaPopup( $node.find('.node-result'), $node.attr('id') );
+        $inEdge.attr('data-status', 'running');
+        return false;
+      case '3':
+      case '4':
+        // 実行中
+        nodeJump();
+        $node.removeClass('ready').addClass('running');
+        itaPopup( $node.find('.node-result'), $node.attr('id') );
+        $inEdge.attr('data-status', 'running');
+        return false;
+      case '5':
+      case '9':
+        endMessage = 'DONE';
+        break;
+      case '7':
+        endMessage = 'STOP';
+        break;
+      case '6':
+      case '10':
+      case '11':
+        endMessage = 'ERROR';
+        break;
+      case '12':
+      case '13':
+      case '14':
+        endMessage = 'SKIP';
+        break;
+      case '15':
+        endMessage = 'WARN';
+        break;
+    }
+    nodeJump();
+    $inEdge.attr('data-status', 'running');
+    $node.removeClass('ready').addClass('complete').attr('data-result', nodeInfo.STATUS );
+    itaPopup( $node.find('.node-result'), $node.attr('id') );
+    $node.find('.node-result').attr('data-result-text', endMessage );
+    conductorData[ nodeID ].endStatus = true;
+  };
+  
+  
+  // ParallelBranchの状態をチェックする
+  const parallelBranchCheck = function( nodeID ) {
+    const inTerminal = terminalInOutID( conductorData[ nodeID ].terminal, 'in'),
+          tergetNodeID = conductorData[ nodeID ].terminal[ inTerminal[0] ].targetNode;
+    // 終了しているかチェックする
+    if ( ['5','9','12','13','14'].indexOf( nodeInfo[ tergetNodeID ].STATUS ) !== -1 ) {
+      $('#' + nodeID ).addClass('running');
+      $('#' + conductorData[ nodeID ].terminal[ inTerminal[0] ].edge ).attr('data-status', 'running');
+    }
+  };
+  
+  
+  // Pauseの状態をチェックする
+  const pauseCheck = function( nodeID ) {
+  
+    const nodeInfo = conductorUseList.conductorStatus['NODE_INFO'][ nodeID ],
+          nodeData = conductorData[ nodeID ],
+          $node = $('#' + nodeID ),
+          $pauseButton = $node.find('.pause-resume-button'),
+          inTerminalID = terminalInOutID( conductorData[ nodeID ]['terminal'], 'in'),
+          $inEdge = $('#' + conductorData[ nodeID ]['terminal'][ inTerminalID[0] ].edge );
+    
+    switch( nodeInfo.STATUS ) {
+      case '8':
+        $node.addClass('running');
+        $inEdge.attr('data-status', 'running');
+        conductorData[ nodeID ].endStatus = true;
+        $node.find('.pause-status').attr('data-status', 'pause');
+        editor.log.set('notice', 'Pause => Node instance : ' + nodeInfo.NODE_INSTANCE_NO );
+        
+        $pauseButton.prop('disabled', false ).on('click', function() {
+          if ( confirm( getSomeMessage("ITABASEC020006",{0:conductorInstanceID})) ) {
+            clearTimeout( pollingTimerID );
+            $pauseButton.prop('disabled', true ).off();
+            $node.find('.pause-status').attr('data-status', 'resume');
+            proxy.holdReleaseNodeInstance( nodeInfo.NODE_INSTANCE_NO );
+          }
+        });
+        break;
+      case '9':
+        $node.addClass('running');
+        $inEdge.attr('data-status', 'running');
+        conductorData[ nodeID ].endStatus = true;
+        $node.find('.pause-status').attr('data-status', 'resume');
+        break;            
+    }
+  };
+  
+  const nodeStatusUpdate = function() {
+    for ( let nodeID in nodeInfo ) {
+      const nodeData = conductorData[ nodeID ];
+      // nodeData.endStatusがある場合はスキップ
+      if ( !nodeData.endStatus ) {
+        switch ( nodeData.type ) {
+          case 'conditional-branch':
+            condionalBranchCheck( nodeID );
+            break;
+          case 'parallel-branch':
+            parallelBranchCheck( nodeID );
+            break;
+          case 'status-file-branch':
+            statusFileBranch( nodeID );
+            break;
+          case 'merge':
+            parallelMergeCheck( nodeID );
+            break;
+          case 'movement':
+          case 'call':
+          case 'call_s':
+          case 'end':
+            movementCheck( nodeID );
+            break;
+          case 'start':
+            nodeData.endStatus = true;
+            $('#' + nodeID ).addClass('running');
+            break;
+          case 'pause':
+            pauseCheck( nodeID );
+            break;
+        }
+      }
+    }
+  };
+  
+  // 実行状況別
+  switch( conductorInfo.STATUS_ID ) {
+    case '1':
+      // 未実行
+      $('#scram-instance').show().prop('disabled', false );
+      $('#cansel-instance').prop('disabled', true ).hide();
+      pollingTimer();
+      break;
+    case '2':
+      // 未実行（予約）
+      $('#cansel-instance').show().prop('disabled', false );
+      $('#scram-instance').prop('disabled', true ).hide();
+      pollingTimer();
+      break;
+    case '3':
+      // 準備中
+      $('#scram-instance').show().prop('disabled', true );
+    case '4':
+      // 実行中
+      $('#scram-instance').show().prop('disabled', false );
+      $('#cansel-instance').prop('disabled', true ).hide();
+      nodeStatusUpdate();
+      pollingTimer();
+      break;
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '10':
+    case '11':
+      // 終了
+      $('#scram-instance').prop('disabled', true );
+      nodeStatusUpdate();
+      $editor.addClass('run-complete');
+      break;
+    case '9':
+      // 予約取消
+      break;
+  }
+  
+  //インスタンスログ表示
+  switch( conductorInfo.STATUS_ID ) {
+    // 実行中-終了
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '10':
+      let logflgList = [];
+      if ( conductorInfo.EXEC_LOG !== "" ){
+        //editor-tab-contentsの表示とEXEC_LOGの差分の重複判定
+        var execLogMessages = conductorInfo.EXEC_LOG.split('\n');
+        $(".editor-log-content").each(function(lineNo, tmpmessage){
+            if( $(tmpmessage).text() != "" ){
+              //出力済み取得+タグ除去 //[logtype]XXXXX
+              var tmphtmlmsg = $(tmpmessage).text();
+              tmphtmlmsg = tmphtmlmsg.replace( /\[ERROR\]|\[NOTICE\]|\[WARNING\]/g , "" );
+
+              //execLogMessages重複判定
+              execLogMessages.forEach(function(execlog, index) {
+                if ( index in logflgList !== true ){
+                  logflgList[ index ] = 0;
+                }
+                if( execlog != '' ){
+                  //タグ除去 /[logtype]　XXXXX
+                  execlog = execlog.replace( /\[ERROR\] |\[NOTICE\] |\[WARNING\] /g , "" );
+                  //重複判定
+                  if ( tmphtmlmsg.indexOf( execlog ) != -1) {
+                    logflgList[ index ] = 1;
+                  }
+                }
+              });
+            }
+        });
+
+        //重複無し出力
+        execLogMessages.forEach(function(execlog, index) {
+          if( execlog != '' ){
+            var arrlogtype = execlog.split(' ');
+            var logtype = arrlogtype[0].replace( /\[|\]/g , "" );
+            var editorogtype = logtype.toLowerCase();
+            //[logtype] 削除
+            execlog = execlog.replace( '[' + logtype + '] ' , "" );
+            //実施中-
+            if ( logflgList.length !== 0 ) {
+              if( logflgList[ index ] == 0 ){
+                editor.log.set( editorogtype ,execlog );                
+              }                
+            }else{
+            //完了時
+                editor.log.set( editorogtype ,execlog );  
+            }
+          }
+        });
+      }
+      break;
+  }
+
+};
 
 }

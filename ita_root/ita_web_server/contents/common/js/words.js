@@ -65,6 +65,16 @@ const ja = {
         insert: '登録',
         err_row: 'エラー列',
         err_details: 'エラー内容',
+        register: '登録',
+        update: '更新',
+        discard: '廃止',
+        restore: '復活'
+    },
+    CONDUCTOR: {
+        edit: '編集モード',
+        view: '閲覧モード',
+        update: '更新モード',
+        confirmation: '確認モード'
     }
 };
 

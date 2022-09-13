@@ -16,6 +16,7 @@ from concurrent.futures import process
 from curses import keyname
 from dataclasses import dataclass
 from inspect import Parameter
+from zipfile import BadZipfile
 import openpyxl
 import base64
 from pyrsistent import m
@@ -34,7 +35,7 @@ from openpyxl.styles import PatternFill, Border, Side, Alignment
 from openpyxl.utils import get_column_letter
 from openpyxl.utils.cell import absolute_coordinate
 from common_libs.loadtable import *
-from libs import menu_maintenance_all
+from libs import menu_maintenance_all, menu_info
 
 def collect_excel_all(objdbca, organization_id, workspace_id, menu, menu_record, menu_table_link_record):
     """
@@ -50,241 +51,231 @@ def collect_excel_all(objdbca, organization_id, workspace_id, menu, menu_record,
         RETURN:
             Excelをbase64した値
     """
-    try:
-        # 言語設定取得
-        lang = g.LANGUAGE
-        
-        # make storage directory for excel
-        strage_path = os.environ.get('STORAGEPATH')
-        excel_dir = strage_path + "/".join([organization_id, workspace_id]) + "/tmp/excel"
-        if not os.path.isdir(excel_dir):
-            os.makedirs(excel_dir)
-            g.applogger.debug("made excel_dir")
-        
-        # テーブル名
-        t_common_column_class = 'T_COMN_COLUMN_CLASS'
-        t_common_column_group = 'T_COMN_COLUMN_GROUP'
-        t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
-        
-        # メニューのカラム情報を取得
-        objmenu = load_table.loadTable(objdbca, menu)   # noqa: F405
-        mode = 'excel'
-        result_data = objmenu.rest_filter({}, mode)
-        
-        #### result_code,msg未対応
-        result = {
-            "result": "result_code", #result_data[0],
-            "data": result_data, #result_data[1],
-            "message": "msg" #result_data[2]
-        }
-        
-        # 対象メニューを特定するためのIDを取得する
-        menu_id = menu_record[0].get('MENU_ID')
-        menu_name = menu_record[0].get('MENU_NAME_' + lang.upper())
-        file_name = menu_name + '_' + datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.xlsx'
-        file_path = excel_dir + '/' + file_name
-        
-        # 『メニュー-カラム紐付管理』テーブルから対象のデータを取得
-        retList_t_common_menu_column_link = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
-        if not retList_t_common_menu_column_link:
-            log_msg_args = [menu]
-            api_msg_args = [menu]
-            raise AppException("499-00005", log_msg_args, api_msg_args)  # noqa: F405
-        
-        # 『カラムクラスマスタ』テーブルからcolumn_typeの一覧を取得
-        ret = objdbca.table_select(t_common_column_class, 'WHERE COLUMN_CLASS_NAME LIKE %s AND DISUSE_FLAG = %s', ['%IDColumn%', 0])
-        column_class_master = {}
-        for recode in ret:
-            column_class_master[recode.get('COLUMN_CLASS_ID')] = recode.get('COLUMN_CLASS_NAME')
-
-        # 使用するCOL_GROUP_IDだけを配列に確保しておく
-        active_col_group_id = ['']
-        for i, dict_menu_column in enumerate(retList_t_common_menu_column_link):
-            tmp = dict_menu_column.get('COL_GROUP_ID')
-            if tmp is not None and tmp not in active_col_group_id:
-                active_col_group_id.append(tmp)
-        
-        # 登録更新廃止復活フラグを取得する
-        menu_table_link_list = []
-        menu_table_link_list.append(menu_table_link_record[0].get('ROW_INSERT_FLAG'))
-        menu_table_link_list.append(menu_table_link_record[0].get('ROW_UPDATE_FLAG'))
-        menu_table_link_list.append(menu_table_link_record[0].get('ROW_DISUSE_FLAG'))
-        menu_table_link_list.append(menu_table_link_record[0].get('ROW_REUSE_FLAG'))
-        
-        # 色の設定
-        # 背景色
-        fill_wh = PatternFill(fill_type='solid', fgColor='FFFFFF')
-        fill_bl = PatternFill(fill_type='solid', fgColor='00459D')
-        fill_gr = PatternFill(fill_type='solid', fgColor='D9D9D9')
-        
-        # 文字色
-        font_bl = openpyxl.styles.Font(name='メイリオ', size=8, color='000000')
-        font_wh = openpyxl.styles.Font(name='メイリオ', size=8, color='FFFFFF')
-        
-        # Alignmentの設定
-        al_cc = Alignment(horizontal='center', vertical='center')
-        al_lt = Alignment(horizontal='left', vertical='top')
-        
-        # 罫線の設定
-        side = Side(border_style="thin", color="000000")
-        sideDash = Side(border_style="dashed", color="000000")
-        border = Border(left=side, right=side, top=side, bottom=side)
-        borderDash = Border(left=side, right=side, top=sideDash, bottom=sideDash)
-        
-        # ワークブックの新規作成と保存
-        wb = Workbook()
-        
-        # マスタ
-        msg = g.appmsg.get_api_message('MSG-30012')
-        wb.create_sheet(msg)
-        # フィルタ条件
-        msg = g.appmsg.get_api_message('MSG-30013')
-        wb.create_sheet(msg)
-        
-        # 「マスタ」シート作成
-        # 「マスタ」シートの名前の定義をメインのシートの入力規則で使用するため「マスタ」シートから作成する
-        name_define_list = make_master_sheet(wb, objdbca, lang, retList_t_common_menu_column_link, column_class_master, menu_table_link_list)
-        
-        # シートを指定して編集
-        ws = wb.active
-        ws.title = menu_name
-        
-        # ヘッダー部編集
-        startRow = 1
-        startClm = 4
-        
-        # 『カラムグループ管理』テーブルからカラムグループ一覧を取得
-        ret = objdbca.table_select(t_common_column_group, 'WHERE COL_GROUP_ID IN %s AND DISUSE_FLAG = %s', [active_col_group_id, 0])
-        dict_column_group_id = {}
-        dict_column_group_id_name = {}
-        if ret:
-            for recode in ret:
-                dict_column_group_id[recode.get('COL_GROUP_ID')] = recode.get('PA_COL_GROUP_ID')
-                # IDと名前の辞書も作成する
-                dict_column_group_id_name[recode.get('COL_GROUP_ID')] = recode.get('COL_GROUP_NAME_' + lang.upper())
-        
-        # ヘッダーの階層の深さを調べる
-        depth = get_col_group_depth(retList_t_common_menu_column_link, dict_column_group_id)
-        
-        # エクセルに表示するヘッダー項目を二次元配列に構築する
-        excel_header_list = create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, dict_column_group_id_name, dict_column_group_id)
-        
-        # 1行目（項目名）のヘッダーを作成する
-        ws = create_excel_header_firstline(ws, excel_header_list, depth, startRow, startClm, font_wh, al_cc, fill_bl, border)
-        
-        startRow = startRow + depth
-        startDetailRow = startRow + 7
-        
-        # 2行目以降を作成する
-        # 固定部分
-        ws = make_template(ws, startRow, font_bl, fill_gr, borderDash, depth)
-        
-        # エクセルヘッダー部のカラム情報を作成する
-        ws = create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_column_link)
-        
-        # 明細部編集
-        # parameterとfileのリストを取得
-        mylist = result.get("data")[1]
-        
-        # ウィンドウ枠の固定
-        ws.freeze_panes = ws.cell(row=startRow + 7, column=4).coordinate
-        # 入力規則記憶用辞書
-        dataVaridationDict = {}
-        for param in mylist:
-            for k, v in param.items():
-                if k == 'parameter':
-                    # カラム位置調整用フラグ
-                    column_flg = False
-                    for i, (key, value) in enumerate(v.items()):
-                        if i == 0:
-                            ws.cell(row=startRow + 7, column=1).fill = fill_wh
-                            ws.cell(row=startRow + 7, column=1, value='')
-                            
-                            ws.cell(row=startRow + 7, column=2).fill = fill_wh
-                            ws.cell(row=startRow + 7, column=2, value='')
-                            
-                            # 実行処理種別
-                            ws.cell(row=startRow + 7, column=3).font = font_bl
-                            ws.cell(row=startRow + 7, column=3).alignment = al_cc
-                            ws.cell(row=startRow + 7, column=3).border = border
-                            ws.cell(row=startRow + 7, column=3, value='-')
-                            # 入力規則の設定
-                            dv = DataValidation(type='list', formula1='FILTER_ROW_EDIT_BY_FILE')
-                            dv.add(ws.cell(row=startRow + 7, column=3))
-                            ws.add_data_validation(dv)
-                            dataVaridationDict[get_column_letter(3)] = 'FILTER_ROW_EDIT_BY_FILE'
-                        
-                        if key == 'discard':
-                            column_num = 4
-                            column_flg = True
-                            # 廃止
-                            msg = g.appmsg.get_api_message('MSG-30006')
-                            if value == '1':
-                                value = msg
-                            else:
-                                value = ''
-                        else:
-                            column_num = startClm + i + 1
-                            if column_flg:
-                                column_num -= 1
-                        
-                        ws.cell(row=startRow + 7, column=column_num).number_format = openpyxl.styles.numbers.FORMAT_TEXT
-                        ws.cell(row=startRow + 7, column=column_num).font = font_bl
-                        ws.cell(row=startRow + 7, column=column_num).border = border
-                        ws.cell(row=startRow + 7, column=column_num, value=value)
-                        if key in name_define_list:
-                            dv = DataValidation(type='list', formula1=key)
-                            dv.add(ws.cell(row=startRow + 7, column=column_num))
-                            ws.add_data_validation(dv)
-                            if key not in dataVaridationDict:
-                                dataVaridationDict[get_column_letter(column_num)] = key
-                    startRow = startRow + 1
-        
-        # 空行追加処理
-        ws = create_blank_line(ws, dataVaridationDict, 10)
-        
-        # 登録が×の列をグレーにする
-        # 明細の数を求める
-        column_num = ws.max_column + 1
-        row_num = ws.max_row - startDetailRow + 1
-        for col_i in range(4, column_num):
-            for row_j in range(row_num):
-                if ws.cell(row=depth + 1, column=col_i).value == '×':
-                    # セルの背景色をグレーにする
-                    ws.cell(row=startDetailRow + row_j, column=col_i).fill = fill_gr
-        
-        # フッターを作成する
-        ws = create_footer(ws, font_wh, al_lt, al_cc, fill_bl)
-        
-        # フィルタ条件シートを指定して編集
-        # フィルタ条件
-        msg = g.appmsg.get_api_message('MSG-30013')
-        ws_filter = wb[msg]
-        # 出力日時
-        msg = g.appmsg.get_api_message('MSG-30014')
-        ws_filter['A1'] = msg
-        # 廃止
-        msg = g.appmsg.get_api_message('MSG-30006')
-        ws_filter['D1'] = msg
-        ws_filter['A2'] = datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
-        # 廃止含まず
-        msg = g.appmsg.get_api_message('MSG-30016')
-        ws_filter['D2'] = msg
-        
-        wb.save(file_path)  # noqa: E303
-        
-        # 編集してきたエクセルファイルをエンコードする
-        wbEncode = file_encode(file_path)  # noqa: F405 F841
-        # エンコード後wbは削除する
-        os.remove(file_path)
-        
-        return wbEncode
+    # 言語設定取得
+    lang = g.LANGUAGE
     
-    except Exception as result:
-        return result
+    # make storage directory for excel
+    strage_path = os.environ.get('STORAGEPATH')
+    excel_dir = strage_path + "/".join([organization_id, workspace_id]) + "/tmp/excel"
+    if not os.path.isdir(excel_dir):
+        os.makedirs(excel_dir)
+        g.applogger.debug("made excel_dir")
+    
+    # テーブル名
+    t_common_column_group = 'T_COMN_COLUMN_GROUP'
+    t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
+    
+    # メニューのカラム情報を取得
+    objmenu = load_table.loadTable(objdbca, menu)   # noqa: F405
+    mode = 'excel'
+    result_data = objmenu.rest_filter({}, mode)
+    
+    #### result_code,msg未対応
+    result = {
+        "result": "result_code", #result_data[0],
+        "data": result_data, #result_data[1],
+        "message": "msg" #result_data[2]
+    }
+    
+    # 対象メニューを特定するためのIDを取得する
+    menu_id = menu_record[0].get('MENU_ID')
+    menu_name = menu_record[0].get('MENU_NAME_' + lang.upper())
+    file_name = menu_name + '_' + datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.xlsx'
+    file_path = excel_dir + '/' + file_name
+    
+    # 『メニュー-カラム紐付管理』テーブルから対象のデータを取得
+    retList_t_common_menu_column_link = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
+    if not retList_t_common_menu_column_link:
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException("499-00005", log_msg_args, api_msg_args)  # noqa: F405
+    
+    # 使用するCOL_GROUP_IDだけを配列に確保しておく
+    active_col_group_id = ['']
+    for i, dict_menu_column in enumerate(retList_t_common_menu_column_link):
+        tmp = dict_menu_column.get('COL_GROUP_ID')
+        if tmp is not None and tmp not in active_col_group_id:
+            active_col_group_id.append(tmp)
+    
+    # IDColumn項目のプルダウン一覧の取得
+    pulldown_list = menu_info.collect_pulldown_list(objdbca, menu, menu_record)
+    
+    # 登録更新廃止復活フラグを取得する
+    menu_table_link_list = []
+    menu_table_link_list.append(menu_table_link_record[0].get('ROW_INSERT_FLAG'))
+    menu_table_link_list.append(menu_table_link_record[0].get('ROW_UPDATE_FLAG'))
+    menu_table_link_list.append(menu_table_link_record[0].get('ROW_DISUSE_FLAG'))
+    menu_table_link_list.append(menu_table_link_record[0].get('ROW_REUSE_FLAG'))
+    
+    # 色の設定
+    # 背景色
+    fill_wh = PatternFill(fill_type='solid', fgColor='FFFFFF')
+    fill_bl = PatternFill(fill_type='solid', fgColor='00459D')
+    fill_gr = PatternFill(fill_type='solid', fgColor='D9D9D9')
+    
+    # 文字色
+    font_bl = openpyxl.styles.Font(name='メイリオ', size=8, color='000000')
+    font_wh = openpyxl.styles.Font(name='メイリオ', size=8, color='FFFFFF')
+    
+    # Alignmentの設定
+    al_cc = Alignment(horizontal='center', vertical='center')
+    al_lt = Alignment(horizontal='left', vertical='top')
+    
+    # 罫線の設定
+    side = Side(border_style="thin", color="000000")
+    sideDash = Side(border_style="dashed", color="000000")
+    border = Border(left=side, right=side, top=side, bottom=side)
+    borderDash = Border(left=side, right=side, top=sideDash, bottom=sideDash)
+    
+    # ワークブックの新規作成と保存
+    wb = Workbook()
+    
+    # マスタ
+    msg = g.appmsg.get_api_message('MSG-30012')
+    wb.create_sheet(msg)
+    # フィルタ条件
+    msg = g.appmsg.get_api_message('MSG-30013')
+    wb.create_sheet(msg)
+    
+    # 「マスタ」シート作成
+    # 「マスタ」シートの名前の定義をメインのシートの入力規則で使用するため「マスタ」シートから作成する
+    name_define_list = make_master_sheet(wb, objdbca, lang, retList_t_common_menu_column_link, menu_table_link_list, pulldown_list)
+    
+    # シートを指定して編集
+    ws = wb.active
+    ws.title = menu_name
+    
+    # ヘッダー部編集
+    startRow = 1
+    startClm = 4
+    
+    # 『カラムグループ管理』テーブルからカラムグループ一覧を取得
+    ret = objdbca.table_select(t_common_column_group, 'WHERE COL_GROUP_ID IN %s AND DISUSE_FLAG = %s', [active_col_group_id, 0])
+    dict_column_group_id = {}
+    dict_column_group_id_name = {}
+    if ret:
+        for recode in ret:
+            dict_column_group_id[recode.get('COL_GROUP_ID')] = recode.get('PA_COL_GROUP_ID')
+            # IDと名前の辞書も作成する
+            dict_column_group_id_name[recode.get('COL_GROUP_ID')] = recode.get('COL_GROUP_NAME_' + lang.upper())
+    
+    # ヘッダーの階層の深さを調べる
+    depth = get_col_group_depth(retList_t_common_menu_column_link, dict_column_group_id)
+    
+    # エクセルに表示するヘッダー項目を二次元配列に構築する
+    excel_header_list, header_order = create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, dict_column_group_id_name, dict_column_group_id)
+    
+    # 1行目（項目名）のヘッダーを作成する
+    ws = create_excel_header_firstline(ws, excel_header_list, depth, startRow, startClm, font_wh, al_cc, fill_bl, border)
+    
+    startRow = startRow + depth
+    startDetailRow = startRow + 7
+    
+    # 2行目以降を作成する
+    # 固定部分
+    ws = make_template(ws, startRow, font_bl, fill_gr, borderDash, depth)
+    
+    # エクセルヘッダー部のカラム情報を作成する
+    ws, dataVaridationDict = create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_column_link, name_define_list)
+    
+    # 明細部編集
+    # 明細1行目編集
+    ws, dataVaridationDict = detail_first_line_format(ws, startRow, dataVaridationDict)
+    
+    # parameterとfileのリストを取得
+    mylist = result.get("data")[1]
+    
+    # ウィンドウ枠の固定
+    ws.freeze_panes = ws.cell(row=startRow + 7, column=4).coordinate
+    
+    for param in mylist:
+        for k, v in param.items():
+            if k == 'parameter':
+                for i, (key, value) in enumerate(v.items()):
+                    if i == 0:
+                        # 初回で固定部分の設定をしておく
+                        ws.cell(row=startRow + 7, column=1).fill = fill_wh
+                        ws.cell(row=startRow + 7, column=1, value='')
+                        
+                        ws.cell(row=startRow + 7, column=2).fill = fill_wh
+                        ws.cell(row=startRow + 7, column=2, value='')
+                        
+                        # 実行処理種別
+                        ws.cell(row=startRow + 7, column=3).font = font_bl
+                        ws.cell(row=startRow + 7, column=3).alignment = al_cc
+                        ws.cell(row=startRow + 7, column=3).border = border
+                        ws.cell(row=startRow + 7, column=3, value='-')
+                        # 入力規則の設定
+                        dv = DataValidation(type='list', formula1='FILTER_ROW_EDIT_BY_FILE')
+                        dv.add(ws.cell(row=startRow + 7, column=3))
+                        ws.add_data_validation(dv)
+                        dataVaridationDict[get_column_letter(3)] = 'FILTER_ROW_EDIT_BY_FILE'
+                    
+                    if key == 'discard':
+                        # 廃止
+                        msg = g.appmsg.get_api_message('MSG-30006')
+                        if value == '1':
+                            value = msg
+                        else:
+                            value = ''
+                    
+                    column_num = header_order.index(key) + 4
+                    
+                    ws.cell(row=startRow + 7, column=column_num).number_format = openpyxl.styles.numbers.FORMAT_TEXT
+                    ws.cell(row=startRow + 7, column=column_num).font = font_bl
+                    ws.cell(row=startRow + 7, column=column_num).border = border
+                    ws.cell(row=startRow + 7, column=column_num, value=value)
+                    if key in name_define_list:
+                        dv = DataValidation(type='list', formula1=key)
+                        dv.add(ws.cell(row=startRow + 7, column=column_num))
+                        ws.add_data_validation(dv)
+                        if key not in dataVaridationDict:
+                            dataVaridationDict[get_column_letter(column_num)] = key
+                startRow = startRow + 1
+    
+    # 空行追加処理
+    ws = create_blank_line(ws, dataVaridationDict, 10)
+    
+    # 登録が×の列をグレーにする
+    # 明細の数を求める
+    column_num = ws.max_column + 1
+    row_num = ws.max_row - startDetailRow + 1
+    for col_i in range(4, column_num):
+        for row_j in range(row_num):
+            if ws.cell(row=depth + 1, column=col_i).value == '×':
+                # セルの背景色をグレーにする
+                ws.cell(row=startDetailRow + row_j, column=col_i).fill = fill_gr
+    
+    # フッターを作成する
+    ws = create_footer(ws, font_wh, al_lt, al_cc, fill_bl)
+    
+    # フィルタ条件シートを指定して編集
+    # フィルタ条件
+    msg = g.appmsg.get_api_message('MSG-30013')
+    ws_filter = wb[msg]
+    # 出力日時
+    msg = g.appmsg.get_api_message('MSG-30014')
+    ws_filter['A1'] = msg
+    # 廃止
+    msg = g.appmsg.get_api_message('MSG-30006')
+    ws_filter['D1'] = msg
+    ws_filter['A2'] = datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
+    # 廃止含まず
+    msg = g.appmsg.get_api_message('MSG-30016')
+    ws_filter['D2'] = msg
+    
+    wb.save(file_path)  # noqa: E303
+    
+    # 編集してきたエクセルファイルをエンコードする
+    wbEncode = file_encode(file_path)  # noqa: F405 F841
+    # エンコード後wbは削除する
+    os.remove(file_path)
+    
+    return wbEncode
+
 
 # 「マスタ」シートを作成する
-def make_master_sheet(wb, objdbca, lang, retList_t_common_menu_column_link, column_class_master, menu_table_link_list):  # noqa: E302
+def make_master_sheet(wb, objdbca, lang, retList_t_common_menu_column_link, menu_table_link_list, pulldown_list):  # noqa: E302
     # マスタシートを指定して編集
     msg = g.appmsg.get_api_message('MSG-30012')
     ws_master = wb[msg]
@@ -336,27 +327,27 @@ def make_master_sheet(wb, objdbca, lang, retList_t_common_menu_column_link, colu
     name_define_list = []
     for i, dict_menu_column in enumerate(retList_t_common_menu_column_link):
         ws_master.cell(row=startRow_master, column=startClm_master + i, value=dict_menu_column.get('COLUMN_NAME_' + lang.upper()))
-        tmp = dict_menu_column.get('COLUMN_CLASS')
-        if tmp is not None and tmp in column_class_master:
-            name_define = dict_menu_column.get('COLUMN_NAME_REST')
-            ref_table_name = dict_menu_column.get('REF_TABLE_NAME')
-            ref_col_name = dict_menu_column.get('REF_COL_NAME')
-            ref_multi_lang = dict_menu_column.get('REF_MULTI_LANG')
-            if ref_table_name is not None:
-                if ref_multi_lang == '1':
-                    ref_col_name = ref_col_name + '_' + lang.upper()
-                ret = objdbca.table_select(ref_table_name, 'WHERE DISUSE_FLAG = %s', [0])
-                startCell = None
-                for j, recode in enumerate(ret, 1):
-                    if j == 1:
-                        startCell = ws_master.cell(row=startRow_master + j, column=startClm_master + i).coordinate
-                    ws_master.cell(row=startRow_master + j, column=startClm_master + i, value=recode.get(ref_col_name))
-                if startCell is not None:
-                    msg = g.appmsg.get_api_message('MSG-30012')
-                    endCell = ws_master.cell(row=startRow_master + j, column=startClm_master + i).coordinate
-                    new_range = DefinedName(name=name_define, attr_text=msg + '!' + absolute_coordinate(startCell) + ':' + absolute_coordinate(endCell))
-                    wb.defined_names.append(new_range)
-                    name_define_list.append(name_define)
+        column_name_rest = dict_menu_column.get('COLUMN_NAME_REST')
+        if column_name_rest in pulldown_list:
+            # 名前の定義開始、終了位置
+            startCell = None
+            endCell = None
+            for j, value in enumerate(pulldown_list[column_name_rest].values(), 1):
+                last_loop = len(pulldown_list[column_name_rest])
+                ws_master.cell(row=startRow_master + j, column=startClm_master + i, value=value)
+                
+                if j == 1:
+                    startCell = ws_master.cell(row=startRow_master + j, column=startClm_master + i).coordinate
+                
+                # 最後の要素で名前の定義を設定する
+                if j == last_loop:
+                    if startCell is not None:
+                        # マスタ
+                        msg = g.appmsg.get_api_message('MSG-30012')
+                        endCell = ws_master.cell(row=startRow_master + j, column=startClm_master + i).coordinate
+                        new_range = DefinedName(name=column_name_rest, attr_text=msg + '!' + absolute_coordinate(startCell) + ':' + absolute_coordinate(endCell))
+                        wb.defined_names.append(new_range)
+                        name_define_list.append(column_name_rest)
     
     return name_define_list
 
@@ -615,29 +606,39 @@ def create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, 
         ws.insert_rows(1, depth - 1)
     
     excel_header_list = [[] for i in range(depth)]
+    header_order = []
     
     # 表示する項目を二次元配列に構築する
     for i in range(depth):
         for j, dict_menu_column in enumerate(retList_t_common_menu_column_link):
             column_name = dict_menu_column.get('COLUMN_NAME_' + lang.upper())
+            column_name_rest = dict_menu_column.get('COLUMN_NAME_REST')
+            
+            # 廃止フラグ
             msg = g.appmsg.get_api_message('MSG-30015')
             if column_name == msg:
                 excel_header_list[depth - 1 - i].insert(0, column_name)
+                header_order.insert(0, column_name_rest)
                 continue
             if i == 0:
                 excel_header_list[depth - 1 - i].append(column_name)
+                header_order.append(column_name_rest)
             elif i == 1:
                 group_id = dict_menu_column.get('COL_GROUP_ID')
                 if group_id is None:
                     excel_header_list[depth - 1 - i].append(column_name)
+                    header_order.append(column_name_rest)
                 else:
                     excel_header_list[depth - 1 - i].append(dict_column_group_id_name.get(group_id))
+                    header_order.append(column_name_rest)
             else:
                 group_id = recursive_get_pa_col_group_id(i - 1, dict_menu_column.get('COL_GROUP_ID'), dict_column_group_id)
                 if group_id is None:
                     excel_header_list[depth - 1 - i].append(column_name)
+                    header_order.append(column_name_rest)
                 else:
                     excel_header_list[depth - 1 - i].append(dict_column_group_id_name.get(group_id))
+                    header_order.append(column_name_rest)
     
     # 親が一番上にくるようにリストを整える
     for i in range(len(excel_header_list[0])):
@@ -655,7 +656,7 @@ def create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, 
                         excel_header_list[j + cnt][i] = excel_header_list[depth - 1][i]
                     cnt += 1
     
-    return excel_header_list
+    return excel_header_list, header_order
 
 
 # 1行目（項目名）のヘッダーを作成し、結合する
@@ -714,7 +715,7 @@ def create_excel_header_firstline(ws, excel_header_list, depth, startRow, startC
 
 
 # エクセルヘッダー部のカラム情報を作成する
-def create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_column_link):
+def create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_column_link, name_define_list):
     # 文字色
     font_bl = openpyxl.styles.Font(name='メイリオ', size=8, color='000000')
     font_wh = openpyxl.styles.Font(name='メイリオ', size=8, color='FFFFFF')
@@ -735,8 +736,10 @@ def create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_colum
     
     # カラム位置調整用フラグ
     column_flg = False
+    dataVaridationDict = {}
     for i, dict_menu_column in enumerate(retList_t_common_menu_column_link):
         column_name = dict_menu_column.get('COLUMN_NAME_' + lang.upper())
+        column_name_rest = dict_menu_column.get('COLUMN_NAME_REST')
         column_num = 0
         
         # 廃止フラグ
@@ -755,6 +758,7 @@ def create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_colum
         ws.cell(row=startRow + 6, column=column_num).fill = fill_bl
         ws.cell(row=startRow + 6, column=column_num).border = border
         ws.cell(row=startRow + 6, column=column_num, value=column_name)
+        
         # 項目名に合わせて幅の調整をする
         column_len = len(str(column_name))
         adjusted_width = (int(column_len) + 2) * 1.2
@@ -764,6 +768,14 @@ def create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_colum
         msg = g.appmsg.get_api_message('MSG-30017')
         if column_name == msg:
             ws.column_dimensions[get_column_letter(column_num)].width = 15.7
+        
+        # 明細1行目に入力規則を設定する
+        if column_name_rest in name_define_list:
+            dv = DataValidation(type='list', formula1=column_name_rest)
+            dv.add(ws.cell(row=startRow + 7, column=column_num))
+            ws.add_data_validation(dv)
+            if column_name_rest not in dataVaridationDict:
+                dataVaridationDict[get_column_letter(column_num)] = column_name_rest
         
         # 登録
         # 更新
@@ -834,7 +846,7 @@ def create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_colum
     ws.row_dimensions[startRow + 4].height = 13.5
     ws.row_dimensions[startRow + 5].height = 85.5
     
-    return ws
+    return ws, dataVaridationDict
 
 
 # エクセルヘッダー部のカラム情報を作成する(変更履歴ver)
@@ -879,6 +891,7 @@ def create_column_info_trace_history(lang, ws, startRow, startClm, retList_t_com
         ws.cell(row=startRow + 1, column=column_num).fill = fill_bl
         ws.cell(row=startRow + 1, column=column_num).border = border
         ws.cell(row=startRow + 1, column=column_num, value=column_name)
+        
         # 項目名に合わせて幅の調整をする
         column_len = len(str(column_name))
         adjusted_width = (int(column_len) + 2) * 1.2
@@ -948,6 +961,53 @@ def create_footer(ws, font_wh, al_lt, al_cc, fill_bl):
     return ws
 
 
+def detail_first_line_format(ws, startRow, dataVaridationDict):
+    # 背景色
+    fill_wh = PatternFill(fill_type='solid', fgColor='FFFFFF')
+    fill_bl = PatternFill(fill_type='solid', fgColor='00459D')
+    
+    # 文字色
+    font_bl = openpyxl.styles.Font(name='メイリオ', size=8, color='000000')
+    font_wh = openpyxl.styles.Font(name='メイリオ', size=8, color='FFFFFF')
+    
+    # Alignmentの設定
+    al_cc = Alignment(horizontal='center', vertical='center')
+    al_lt = Alignment(horizontal='left', vertical='top')
+    
+    # 罫線の設定
+    side = Side(border_style="thin", color="000000")
+    sideDash = Side(border_style="dashed", color="000000")
+    border = Border(left=side, right=side, top=side, bottom=side)
+    borderDash = Border(left=side, right=side, top=sideDash, bottom=sideDash)
+    
+    ws.cell(row=startRow + 7, column=1).fill = fill_wh
+    ws.cell(row=startRow + 7, column=1, value='')
+    
+    ws.cell(row=startRow + 7, column=2).fill = fill_wh
+    ws.cell(row=startRow + 7, column=2, value='')
+    
+    # 実行処理種別
+    ws.cell(row=startRow + 7, column=3).font = font_bl
+    ws.cell(row=startRow + 7, column=3).alignment = al_cc
+    ws.cell(row=startRow + 7, column=3).border = border
+    ws.cell(row=startRow + 7, column=3, value='-')
+    
+    # 入力規則の設定
+    dv = DataValidation(type='list', formula1='FILTER_ROW_EDIT_BY_FILE')
+    dv.add(ws.cell(row=startRow + 7, column=3))
+    ws.add_data_validation(dv)
+    dataVaridationDict[get_column_letter(3)] = 'FILTER_ROW_EDIT_BY_FILE'
+    
+    column_num = ws.max_column + 1
+    for col_i in range(4, column_num):
+        ws.cell(row=startRow + 7, column=col_i).number_format = openpyxl.styles.numbers.FORMAT_TEXT
+        ws.cell(row=startRow + 7, column=col_i).font = font_bl
+        ws.cell(row=startRow + 7, column=col_i).border = border
+        ws.cell(row=startRow + 7, column=col_i, value='')
+    
+    return ws, dataVaridationDict
+
+
 # 空行を作成する
 def create_blank_line(ws, dataVaridationDict, addline):
     # 空行追加処理
@@ -996,231 +1056,180 @@ def collect_excel_format(objdbca, organization_id, workspace_id, menu, menu_reco
         RETURN:
             Excelをbase64した値
     """
-    try:
-        # 言語設定取得
-        # 変数定義
-        lang = g.LANGUAGE
-        
-        # make storage directory for excel
-        strage_path = os.environ.get('STORAGEPATH')
-        excel_dir = strage_path + "/".join([organization_id, workspace_id]) + "/tmp/excel"
-        if not os.path.isdir(excel_dir):
-            os.makedirs(excel_dir)
-            g.applogger.debug("made excel_dir")
-        
-        # テーブル名
-        t_common_column_class = 'T_COMN_COLUMN_CLASS'
-        t_common_column_group = 'T_COMN_COLUMN_GROUP'
-        t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
-        
-        # メニューのカラム情報を取得
-        objmenu = load_table.loadTable(objdbca, menu)   # noqa: F405
-        mode = 'excel'
-        result_data = objmenu.rest_filter({}, mode)
-        
-        #### result_code,msg未対応
-        result = {
-            "result": "result_code", #result_data[0],
-            "data": result_data, #result_data[1],
-            "message": "msg" #result_data[2]
-        }
-        
-        # 対象メニューを特定するためのIDを取得する
-        menu_id = menu_record[0].get('MENU_ID')
-        menu_name = menu_record[0].get('MENU_NAME_' + lang.upper())
-        file_name = menu_name + '_' + datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.xlsx'
-        file_path = excel_dir + '/' + file_name
-        
-        # 『メニュー-カラム紐付管理』テーブルから対象のデータを取得
-        retList_t_common_menu_column_link = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
-        if not retList_t_common_menu_column_link:
-            log_msg_args = [menu]
-            api_msg_args = [menu]
-            raise AppException("499-00005", log_msg_args, api_msg_args)  # noqa: F405
-        
-        # 『カラムクラスマスタ』テーブルからcolumn_typeの一覧を取得
-        ret = objdbca.table_select(t_common_column_class, 'WHERE COLUMN_CLASS_NAME LIKE %s AND DISUSE_FLAG = %s', ['%IDColumn%', 0])
-        column_class_master = {}
-        for recode in ret:
-            column_class_master[recode.get('COLUMN_CLASS_ID')] = recode.get('COLUMN_CLASS_NAME')
-
-        # 使用するCOL_GROUP_IDだけを配列に確保しておく
-        active_col_group_id = ['']
-        for i, dict_menu_column in enumerate(retList_t_common_menu_column_link):
-            tmp = dict_menu_column.get('COL_GROUP_ID')
-            if tmp is not None and tmp not in active_col_group_id:
-                active_col_group_id.append(tmp)
-        
-        # 登録更新廃止復活フラグを取得する
-        menu_table_link_list = []
-        menu_table_link_list.append(menu_table_link_record[0].get('ROW_INSERT_FLAG'))
-        menu_table_link_list.append(menu_table_link_record[0].get('ROW_UPDATE_FLAG'))
-        menu_table_link_list.append(menu_table_link_record[0].get('ROW_DISUSE_FLAG'))
-        menu_table_link_list.append(menu_table_link_record[0].get('ROW_REUSE_FLAG'))
-        
-        # 色の設定
-        # 背景色
-        fill_wh = PatternFill(fill_type='solid', fgColor='FFFFFF')
-        fill_bl = PatternFill(fill_type='solid', fgColor='00459D')
-        fill_gr = PatternFill(fill_type='solid', fgColor='D9D9D9')
-        
-        # 文字色
-        font_bl = openpyxl.styles.Font(name='メイリオ', size=8, color='000000')
-        font_wh = openpyxl.styles.Font(name='メイリオ', size=8, color='FFFFFF')
-        
-        # Alignmentの設定
-        al_cc = Alignment(horizontal='center', vertical='center')
-        al_lt = Alignment(horizontal='left', vertical='top')
-        
-        # 罫線の設定
-        side = Side(border_style="thin", color="000000")
-        sideDash = Side(border_style="dashed", color="000000")
-        border = Border(left=side, right=side, top=side, bottom=side)
-        borderDash = Border(left=side, right=side, top=sideDash, bottom=sideDash)
-        
-        # ワークブックの新規作成と保存
-        wb = Workbook()
-        
-        # マスタ
-        msg = g.appmsg.get_api_message('MSG-30012')
-        wb.create_sheet(msg)
-        # フィルタ条件
-        msg = g.appmsg.get_api_message('MSG-30013')
-        wb.create_sheet(msg)
-        
-        # 「マスタ」シート作成
-        # 「マスタ」シートの名前の定義をメインのシートの入力規則で使用するため「マスタ」シートから作成する
-        name_define_list = make_master_sheet(wb, objdbca, lang, retList_t_common_menu_column_link, column_class_master, menu_table_link_list)
-        
-        # シートを指定して編集
-        ws = wb.active
-        ws.title = menu_name
-        
-        # ヘッダー部編集
-        startRow = 1
-        startClm = 4
-        
-        # 『カラムグループ管理』テーブルからカラムグループ一覧を取得
-        ret = objdbca.table_select(t_common_column_group, 'WHERE COL_GROUP_ID IN %s AND DISUSE_FLAG = %s', [active_col_group_id, 0])
-        dict_column_group_id = {}
-        dict_column_group_id_name = {}
-        if ret:
-            for recode in ret:
-                dict_column_group_id[recode.get('COL_GROUP_ID')] = recode.get('PA_COL_GROUP_ID')
-                # IDと名前の辞書も作成する
-                dict_column_group_id_name[recode.get('COL_GROUP_ID')] = recode.get('COL_GROUP_NAME_' + lang.upper())
-        
-        # ヘッダーの階層の深さを調べる
-        depth = get_col_group_depth(retList_t_common_menu_column_link, dict_column_group_id)
-        
-        # エクセルに表示するヘッダー項目を二次元配列に構築する
-        excel_header_list = create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, dict_column_group_id_name, dict_column_group_id)
-        
-        # 1行目（項目名）のヘッダーを作成する
-        ws = create_excel_header_firstline(ws, excel_header_list, depth, startRow, startClm, font_wh, al_cc, fill_bl, border)
-        
-        startRow = startRow + depth
-        startDetailRow = startRow + 7
-        
-        # 2行目以降を作成する
-        # 固定部分
-        ws = make_template(ws, startRow, font_bl, fill_gr, borderDash, depth)
-        
-        # エクセルヘッダー部のカラム情報を作成する
-        ws = create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_column_link)
-        
-        # 明細部編集
-        # parameterとfileのリストを取得
-        mylist = result.get("data")[1]
-        param = mylist[0].get('parameter')
-        
-        # ウィンドウ枠の固定
-        ws.freeze_panes = ws.cell(row=startRow + 7, column=4).coordinate
-        
-        # 入力規則記憶用辞書
-        dataVaridationDict = {}
-        # カラム位置調整用フラグ
-        column_flg = False
-        for i, key in enumerate(param.keys()):
-            if i == 0:
-                ws.cell(row=startRow + 7, column=1).fill = fill_wh
-                ws.cell(row=startRow + 7, column=1, value='')
-                
-                ws.cell(row=startRow + 7, column=2).fill = fill_wh
-                ws.cell(row=startRow + 7, column=2, value='')
-                
-                # 実行処理種別
-                ws.cell(row=startRow + 7, column=3).font = font_bl
-                ws.cell(row=startRow + 7, column=3).alignment = al_cc
-                ws.cell(row=startRow + 7, column=3).border = border
-                ws.cell(row=startRow + 7, column=3, value='-')
-                # 入力規則の設定
-                dv = DataValidation(type='list', formula1='FILTER_ROW_EDIT_BY_FILE')
-                dv.add(ws.cell(row=startRow + 7, column=3))
-                ws.add_data_validation(dv)
-                dataVaridationDict[get_column_letter(3)] = 'FILTER_ROW_EDIT_BY_FILE'
-            
-            if key == 'discard':
-                column_num = 4
-                column_flg = True
-            else:
-                column_num = startClm + i + 1
-                if column_flg:
-                    column_num -= 1
-            
-            ws.cell(row=startRow + 7, column=column_num).number_format = openpyxl.styles.numbers.FORMAT_TEXT
-            ws.cell(row=startRow + 7, column=column_num).font = font_bl
-            ws.cell(row=startRow + 7, column=column_num).border = border
-            ws.cell(row=startRow + 7, column=column_num, value='')
-            if key in name_define_list:
-                dv = DataValidation(type='list', formula1=key)
-                dv.add(ws.cell(row=startRow + 7, column=column_num))
-                ws.add_data_validation(dv)
-                if key not in dataVaridationDict:
-                    dataVaridationDict[get_column_letter(column_num)] = key
-        
-        # 空行追加処理
-        ws = create_blank_line(ws, dataVaridationDict, 9)
-        
-        # 登録が×の列をグレーにする
-        # 明細の数を求める
-        column_num = ws.max_column + 1
-        row_num = ws.max_row - startDetailRow + 1
-        for col_i in range(4, column_num):
-            for row_j in range(row_num):
-                if ws.cell(row=depth + 1, column=col_i).value == '×':
-                    # セルの背景色をグレーにする
-                    ws.cell(row=startDetailRow + row_j, column=col_i).fill = fill_gr
-        
-        # フッターを作成する
-        ws = create_footer(ws, font_wh, al_lt, al_cc, fill_bl)
-        
-        # フィルタ条件シートを指定して編集
-        # フィルタ条件
-        msg = g.appmsg.get_api_message('MSG-30013')
-        ws_filter = wb[msg]
-        # 出力日時
-        msg = g.appmsg.get_api_message('MSG-30014')
-        ws_filter['A1'] = msg
-        # 廃止
-        msg = g.appmsg.get_api_message('MSG-30006')
-        ws_filter['D1'] = msg
-        ws_filter['A2'] = datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
-        # 全レコード
-        msg = g.appmsg.get_api_message('MSG-30018')
-        ws_filter['D2'] = msg
-        
-        wb.save(file_path)  # noqa: E303
-        
-        # 編集してきたエクセルファイルをエンコードする
-        wbEncode = file_encode(file_path)  # noqa: F405 F841
-        # エンコード後wbは削除する
-        os.remove(file_path)
-        
-        return wbEncode
+    # 言語設定取得
+    # 変数定義
+    lang = g.LANGUAGE
     
-    except Exception as result:
-        return result
+    # make storage directory for excel
+    strage_path = os.environ.get('STORAGEPATH')
+    excel_dir = strage_path + "/".join([organization_id, workspace_id]) + "/tmp/excel"
+    if not os.path.isdir(excel_dir):
+        os.makedirs(excel_dir)
+        g.applogger.debug("made excel_dir")
+    
+    # テーブル名
+    t_common_column_group = 'T_COMN_COLUMN_GROUP'
+    t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
+    
+    # メニューのカラム情報を取得
+    objmenu = load_table.loadTable(objdbca, menu)   # noqa: F405
+    mode = 'excel'
+    result_data = objmenu.rest_filter({}, mode)
+    
+    #### result_code,msg未対応
+    result = {
+        "result": "result_code", #result_data[0],
+        "data": result_data, #result_data[1],
+        "message": "msg" #result_data[2]
+    }
+    
+    # 対象メニューを特定するためのIDを取得する
+    menu_id = menu_record[0].get('MENU_ID')
+    menu_name = menu_record[0].get('MENU_NAME_' + lang.upper())
+    file_name = menu_name + '_' + datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.xlsx'
+    file_path = excel_dir + '/' + file_name
+    
+    # 『メニュー-カラム紐付管理』テーブルから対象のデータを取得
+    retList_t_common_menu_column_link = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
+    if not retList_t_common_menu_column_link:
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException("499-00005", log_msg_args, api_msg_args)  # noqa: F405
+    
+    # 使用するCOL_GROUP_IDだけを配列に確保しておく
+    active_col_group_id = ['']
+    for i, dict_menu_column in enumerate(retList_t_common_menu_column_link):
+        tmp = dict_menu_column.get('COL_GROUP_ID')
+        if tmp is not None and tmp not in active_col_group_id:
+            active_col_group_id.append(tmp)
+    
+    # IDColumn項目のプルダウン一覧の取得
+    pulldown_list = menu_info.collect_pulldown_list(objdbca, menu, menu_record)
+    
+    # 登録更新廃止復活フラグを取得する
+    menu_table_link_list = []
+    menu_table_link_list.append(menu_table_link_record[0].get('ROW_INSERT_FLAG'))
+    menu_table_link_list.append(menu_table_link_record[0].get('ROW_UPDATE_FLAG'))
+    menu_table_link_list.append(menu_table_link_record[0].get('ROW_DISUSE_FLAG'))
+    menu_table_link_list.append(menu_table_link_record[0].get('ROW_REUSE_FLAG'))
+    
+    # 色の設定
+    # 背景色
+    fill_wh = PatternFill(fill_type='solid', fgColor='FFFFFF')
+    fill_bl = PatternFill(fill_type='solid', fgColor='00459D')
+    fill_gr = PatternFill(fill_type='solid', fgColor='D9D9D9')
+    
+    # 文字色
+    font_bl = openpyxl.styles.Font(name='メイリオ', size=8, color='000000')
+    font_wh = openpyxl.styles.Font(name='メイリオ', size=8, color='FFFFFF')
+    
+    # Alignmentの設定
+    al_cc = Alignment(horizontal='center', vertical='center')
+    al_lt = Alignment(horizontal='left', vertical='top')
+    
+    # 罫線の設定
+    side = Side(border_style="thin", color="000000")
+    sideDash = Side(border_style="dashed", color="000000")
+    border = Border(left=side, right=side, top=side, bottom=side)
+    borderDash = Border(left=side, right=side, top=sideDash, bottom=sideDash)
+    
+    # ワークブックの新規作成と保存
+    wb = Workbook()
+    
+    # マスタ
+    msg = g.appmsg.get_api_message('MSG-30012')
+    wb.create_sheet(msg)
+    # フィルタ条件
+    msg = g.appmsg.get_api_message('MSG-30013')
+    wb.create_sheet(msg)
+    
+    # 「マスタ」シート作成
+    # 「マスタ」シートの名前の定義をメインのシートの入力規則で使用するため「マスタ」シートから作成する
+    name_define_list = make_master_sheet(wb, objdbca, lang, retList_t_common_menu_column_link, menu_table_link_list, pulldown_list)
+    
+    # シートを指定して編集
+    ws = wb.active
+    ws.title = menu_name
+    
+    # ヘッダー部編集
+    startRow = 1
+    startClm = 4
+    
+    # 『カラムグループ管理』テーブルからカラムグループ一覧を取得
+    ret = objdbca.table_select(t_common_column_group, 'WHERE COL_GROUP_ID IN %s AND DISUSE_FLAG = %s', [active_col_group_id, 0])
+    dict_column_group_id = {}
+    dict_column_group_id_name = {}
+    if ret:
+        for recode in ret:
+            dict_column_group_id[recode.get('COL_GROUP_ID')] = recode.get('PA_COL_GROUP_ID')
+            # IDと名前の辞書も作成する
+            dict_column_group_id_name[recode.get('COL_GROUP_ID')] = recode.get('COL_GROUP_NAME_' + lang.upper())
+    
+    # ヘッダーの階層の深さを調べる
+    depth = get_col_group_depth(retList_t_common_menu_column_link, dict_column_group_id)
+    
+    # エクセルに表示するヘッダー項目を二次元配列に構築する
+    excel_header_list, header_order = create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, dict_column_group_id_name, dict_column_group_id)
+    
+    # 1行目（項目名）のヘッダーを作成する
+    ws = create_excel_header_firstline(ws, excel_header_list, depth, startRow, startClm, font_wh, al_cc, fill_bl, border)
+    
+    startRow = startRow + depth
+    startDetailRow = startRow + 7
+    
+    # 2行目以降を作成する
+    # 固定部分
+    ws = make_template(ws, startRow, font_bl, fill_gr, borderDash, depth)
+    
+    # エクセルヘッダー部のカラム情報を作成する
+    ws, dataVaridationDict = create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_column_link, name_define_list)
+    
+    # 明細部編集
+    # 明細1行目編集
+    ws, dataVaridationDict = detail_first_line_format(ws, startRow, dataVaridationDict)
+    
+    # ウィンドウ枠の固定
+    ws.freeze_panes = ws.cell(row=startRow + 7, column=4).coordinate
+    
+    # 空行追加処理
+    ws = create_blank_line(ws, dataVaridationDict, 9)
+    
+    # 登録が×の列をグレーにする
+    # 明細の数を求める
+    column_num = ws.max_column + 1
+    row_num = ws.max_row - startDetailRow + 1
+    for col_i in range(4, column_num):
+        for row_j in range(row_num):
+            if ws.cell(row=depth + 1, column=col_i).value == '×':
+                # セルの背景色をグレーにする
+                ws.cell(row=startDetailRow + row_j, column=col_i).fill = fill_gr
+    
+    # フッターを作成する
+    ws = create_footer(ws, font_wh, al_lt, al_cc, fill_bl)
+    
+    # フィルタ条件シートを指定して編集
+    # フィルタ条件
+    msg = g.appmsg.get_api_message('MSG-30013')
+    ws_filter = wb[msg]
+    # 出力日時
+    msg = g.appmsg.get_api_message('MSG-30014')
+    ws_filter['A1'] = msg
+    # 廃止
+    msg = g.appmsg.get_api_message('MSG-30006')
+    ws_filter['D1'] = msg
+    ws_filter['A2'] = datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
+    # 全レコード
+    msg = g.appmsg.get_api_message('MSG-30018')
+    ws_filter['D2'] = msg
+    
+    wb.save(file_path)  # noqa: E303
+    
+    # 編集してきたエクセルファイルをエンコードする
+    wbEncode = file_encode(file_path)  # noqa: F405 F841
+    # エンコード後wbは削除する
+    os.remove(file_path)
+    
+    return wbEncode
 
 
 def collect_excel_journal(objdbca, organization_id, workspace_id, menu, menu_record, menu_table_link_record):
@@ -1237,207 +1246,202 @@ def collect_excel_journal(objdbca, organization_id, workspace_id, menu, menu_rec
         RETURN:
             Excelをbase64した値
     """
-    try:
-        # 言語設定取得
-        lang = g.LANGUAGE
-        
-        # make storage directory for excel
-        strage_path = os.environ.get('STORAGEPATH')
-        excel_dir = strage_path + "/".join([organization_id, workspace_id]) + "/tmp/excel"
-        if not os.path.isdir(excel_dir):
-            os.makedirs(excel_dir)
-            g.applogger.debug("made excel_dir")
-        
-        # テーブル名
-        t_common_column_class = 'T_COMN_COLUMN_CLASS'
-        t_common_column_group = 'T_COMN_COLUMN_GROUP'
-        t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
-        
-        mode = 'excel_jnl_all'
-        objmenu = load_table.loadTable(objdbca, menu)   # noqa: F405
-        if objmenu.get_objtable() is False:
-            log_msg_args = ["not menu or table"]
-            api_msg_args = ["not menu or table"]
-            raise AppException("401-00001", log_msg_args, api_msg_args)     # noqa: F405
+    # 言語設定取得
+    lang = g.LANGUAGE
+    
+    # make storage directory for excel
+    strage_path = os.environ.get('STORAGEPATH')
+    excel_dir = strage_path + "/".join([organization_id, workspace_id]) + "/tmp/excel"
+    if not os.path.isdir(excel_dir):
+        os.makedirs(excel_dir)
+        g.applogger.debug("made excel_dir")
+    
+    # テーブル名
+    t_common_column_group = 'T_COMN_COLUMN_GROUP'
+    t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
+    
+    mode = 'excel_jnl_all'
+    objmenu = load_table.loadTable(objdbca, menu)   # noqa: F405
+    if objmenu.get_objtable() is False:
+        log_msg_args = ["not menu or table"]
+        api_msg_args = ["not menu or table"]
+        raise AppException("401-00001", log_msg_args, api_msg_args)     # noqa: F405
 
-        status_code, result, msg = objmenu.rest_filter({}, mode)
-        if status_code != '000-00000':
-            log_msg_args = [msg]
-            api_msg_args = [msg]
-            raise AppException(status_code, log_msg_args, api_msg_args)     # noqa: F405
-        
-        # 変更履歴
-        msg = g.appmsg.get_api_message('MSG-30022')
-        # 対象メニューを特定するためのIDを取得する
-        menu_id = menu_record[0].get('MENU_ID')
-        menu_name = menu_record[0].get('MENU_NAME_' + lang.upper())
-        file_name = menu_name + '_' + msg + '_' + datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.xlsx'
-        file_path = excel_dir + '/' + file_name
-        
-        # 『メニュー-カラム紐付管理』テーブルから対象のデータを取得
-        retList_t_common_menu_column_link = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
-        if not retList_t_common_menu_column_link:
-            log_msg_args = [menu]
-            api_msg_args = [menu]
-            raise AppException("499-00005", log_msg_args, api_msg_args)  # noqa: F405
-        
-        # 『カラムクラスマスタ』テーブルからcolumn_typeの一覧を取得
-        ret = objdbca.table_select(t_common_column_class, 'WHERE COLUMN_CLASS_NAME LIKE %s AND DISUSE_FLAG = %s', ['%IDColumn%', 0])
-        column_class_master = {}
+    status_code, result, msg = objmenu.rest_filter({}, mode)
+    if status_code != '000-00000':
+        log_msg_args = [msg]
+        api_msg_args = [msg]
+        raise AppException(status_code, log_msg_args, api_msg_args)     # noqa: F405
+    
+    # 変更履歴
+    msg = g.appmsg.get_api_message('MSG-30022')
+    # 対象メニューを特定するためのIDを取得する
+    menu_id = menu_record[0].get('MENU_ID')
+    menu_name = menu_record[0].get('MENU_NAME_' + lang.upper())
+    file_name = menu_name + '_' + msg + '_' + datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.xlsx'
+    file_path = excel_dir + '/' + file_name
+    
+    # 『メニュー-カラム紐付管理』テーブルから対象のデータを取得
+    retList_t_common_menu_column_link = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
+    if not retList_t_common_menu_column_link:
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException("499-00005", log_msg_args, api_msg_args)  # noqa: F405
+    
+    # 使用するCOL_GROUP_IDだけを配列に確保しておく
+    active_col_group_id = ['']
+    for i, dict_menu_column in enumerate(retList_t_common_menu_column_link):
+        tmp = dict_menu_column.get('COL_GROUP_ID')
+        if tmp is not None and tmp not in active_col_group_id:
+            active_col_group_id.append(tmp)
+    
+    # IDColumn項目のプルダウン一覧の取得
+    pulldown_list = menu_info.collect_pulldown_list(objdbca, menu, menu_record)
+    
+    # 登録更新廃止復活フラグを取得する
+    menu_table_link_list = []
+    menu_table_link_list.append(menu_table_link_record[0].get('ROW_INSERT_FLAG'))
+    menu_table_link_list.append(menu_table_link_record[0].get('ROW_UPDATE_FLAG'))
+    menu_table_link_list.append(menu_table_link_record[0].get('ROW_DISUSE_FLAG'))
+    menu_table_link_list.append(menu_table_link_record[0].get('ROW_REUSE_FLAG'))
+    
+    # 色の設定
+    # 背景色
+    fill_bl = PatternFill(fill_type='solid', fgColor='00459D')
+    fill_gr = PatternFill(fill_type='solid', fgColor='D9D9D9')
+    
+    # 文字色
+    font_bl = openpyxl.styles.Font(name='メイリオ', size=8, color='000000')
+    font_wh = openpyxl.styles.Font(name='メイリオ', size=8, color='FFFFFF')
+    
+    # Alignmentの設定
+    al_cc = Alignment(horizontal='center', vertical='center')
+    
+    # 罫線の設定
+    side = Side(border_style="thin", color="000000")
+    border = Border(left=side, right=side, top=side, bottom=side)
+    
+    # ワークブックの新規作成と保存
+    wb = Workbook()
+    
+    # マスタ
+    msg = g.appmsg.get_api_message('MSG-30012')
+    wb.create_sheet(msg)
+    
+    # 「マスタ」シート作成
+    # 「マスタ」シートの名前の定義をメインのシートの入力規則で使用するためまず「マスタ」シートから作成する
+    name_define_list = make_master_sheet(wb, objdbca, lang, retList_t_common_menu_column_link, menu_table_link_list, pulldown_list)
+    
+    # シートを指定して編集
+    ws = wb.active
+    ws.title = menu_name
+    
+    # ヘッダー部編集
+    startRow = 1
+    startClm = 3
+    
+    # 『カラムグループ管理』テーブルからカラムグループ一覧を取得
+    ret = objdbca.table_select(t_common_column_group, 'WHERE COL_GROUP_ID IN %s AND DISUSE_FLAG = %s', [active_col_group_id, 0])
+    dict_column_group_id = {}
+    dict_column_group_id_name = {}
+    if ret:
         for recode in ret:
-            column_class_master[recode.get('COLUMN_CLASS_ID')] = recode.get('COLUMN_CLASS_NAME')
-
-        # 使用するCOL_GROUP_IDだけを配列に確保しておく
-        active_col_group_id = ['']
-        for i, dict_menu_column in enumerate(retList_t_common_menu_column_link):
-            tmp = dict_menu_column.get('COL_GROUP_ID')
-            if tmp is not None and tmp not in active_col_group_id:
-                active_col_group_id.append(tmp)
-        
-        # 登録更新廃止復活フラグを取得する
-        menu_table_link_list = []
-        menu_table_link_list.append(menu_table_link_record[0].get('ROW_INSERT_FLAG'))
-        menu_table_link_list.append(menu_table_link_record[0].get('ROW_UPDATE_FLAG'))
-        menu_table_link_list.append(menu_table_link_record[0].get('ROW_DISUSE_FLAG'))
-        menu_table_link_list.append(menu_table_link_record[0].get('ROW_REUSE_FLAG'))
-        
-        # 色の設定
-        # 背景色
-        fill_bl = PatternFill(fill_type='solid', fgColor='00459D')
-        fill_gr = PatternFill(fill_type='solid', fgColor='D9D9D9')
-        
-        # 文字色
-        font_bl = openpyxl.styles.Font(name='メイリオ', size=8, color='000000')
-        font_wh = openpyxl.styles.Font(name='メイリオ', size=8, color='FFFFFF')
-        
-        # Alignmentの設定
-        al_cc = Alignment(horizontal='center', vertical='center')
-        
-        # 罫線の設定
-        side = Side(border_style="thin", color="000000")
-        border = Border(left=side, right=side, top=side, bottom=side)
-        
-        # ワークブックの新規作成と保存
-        wb = Workbook()
-        
-        # マスタ
-        msg = g.appmsg.get_api_message('MSG-30012')
-        wb.create_sheet(msg)
-        
-        # 「マスタ」シート作成
-        # 「マスタ」シートの名前の定義をメインのシートの入力規則で使用するためまず「マスタ」シートから作成する
-        name_define_list = make_master_sheet(wb, objdbca, lang, retList_t_common_menu_column_link, column_class_master, menu_table_link_list)
-        
-        # シートを指定して編集
-        ws = wb.active
-        ws.title = menu_name
-        
-        # ヘッダー部編集
-        startRow = 1
-        startClm = 3
-        
-        # 『カラムグループ管理』テーブルからカラムグループ一覧を取得
-        ret = objdbca.table_select(t_common_column_group, 'WHERE COL_GROUP_ID IN %s AND DISUSE_FLAG = %s', [active_col_group_id, 0])
-        dict_column_group_id = {}
-        dict_column_group_id_name = {}
-        if ret:
-            for recode in ret:
-                dict_column_group_id[recode.get('COL_GROUP_ID')] = recode.get('PA_COL_GROUP_ID')
-                # IDと名前の辞書も作成する
-                dict_column_group_id_name[recode.get('COL_GROUP_ID')] = recode.get('COL_GROUP_NAME_' + lang.upper())
-        
-        # ヘッダーの階層の深さを調べる
-        depth = get_col_group_depth(retList_t_common_menu_column_link, dict_column_group_id)
-        
-        # エクセルに表示するヘッダー項目を二次元配列に構築する
-        excel_header_list = create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, dict_column_group_id_name, dict_column_group_id)
-        
-        # 1行目（項目名）のヘッダーを作成する
-        ws = create_excel_header_firstline(ws, excel_header_list, depth, startRow, startClm, font_wh, al_cc, fill_bl, border)
-        
-        startRow = startRow + depth
-        startDetailRow = startRow + 2
-        
-        # 2行目以降を作成する
-        # 固定部分
-        ws = make_template_trace_history(ws, depth)
-        
-        # エクセルヘッダー部のカラム情報を作成する
-        ws, gray_column = create_column_info_trace_history(lang, ws, startRow, startClm, retList_t_common_menu_column_link)
-        
-        # 明細部編集
-        # ウィンドウ枠の固定
-        ws.freeze_panes = ws.cell(row=startDetailRow, column=1).coordinate
-        # 入力規則記憶用辞書
-        dataVaridationDict = {}
-        for param in result:
-            for k, v in param.items():
-                if k == 'parameter':
-                    # カラム位置調整用フラグ
-                    column_flg = False
-                    for i, (key, value) in enumerate(v.items()):
-                        if i == 0:
-                            # 廃止フラグ
-                            ws.cell(row=startDetailRow, column=3).font = font_bl
-                            ws.cell(row=startDetailRow, column=3).alignment = al_cc
-                            ws.cell(row=startDetailRow, column=3).border = border
-                            ws.cell(row=startDetailRow, column=3, value='')
-                            # 入力規則の設定
-                            dv = DataValidation(type='list', formula1='FILTER_ROW_EDIT_BY_FILE')
-                            dv.add(ws.cell(row=startDetailRow, column=3))
-                            ws.add_data_validation(dv)
-                            dataVaridationDict[get_column_letter(3)] = 'FILTER_ROW_EDIT_BY_FILE'
-                        
-                        if key == 'journal_action':
-                            continue
-                        elif key == 'discard':
-                            column_flg = True
-                            if value == '1':
-                                # 廃止
-                                msg = g.appmsg.get_api_message('MSG-30006')
-                                ws.cell(row=startDetailRow, column=3, value=msg)
-                        else:
+            dict_column_group_id[recode.get('COL_GROUP_ID')] = recode.get('PA_COL_GROUP_ID')
+            # IDと名前の辞書も作成する
+            dict_column_group_id_name[recode.get('COL_GROUP_ID')] = recode.get('COL_GROUP_NAME_' + lang.upper())
+    
+    # ヘッダーの階層の深さを調べる
+    depth = get_col_group_depth(retList_t_common_menu_column_link, dict_column_group_id)
+    
+    # エクセルに表示するヘッダー項目を二次元配列に構築する
+    excel_header_list, header_order = create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, dict_column_group_id_name, dict_column_group_id)
+    
+    # 1行目（項目名）のヘッダーを作成する
+    ws = create_excel_header_firstline(ws, excel_header_list, depth, startRow, startClm, font_wh, al_cc, fill_bl, border)
+    
+    startRow = startRow + depth
+    startDetailRow = startRow + 2
+    
+    # 2行目以降を作成する
+    # 固定部分
+    ws = make_template_trace_history(ws, depth)
+    
+    # エクセルヘッダー部のカラム情報を作成する
+    ws, gray_column = create_column_info_trace_history(lang, ws, startRow, startClm, retList_t_common_menu_column_link)
+    
+    # 明細部編集
+    # 明細1行目編集
+    dataVaridationDict = {}
+    ws, dataVaridationDict = detail_first_line_format(ws, startRow, dataVaridationDict)
+    
+    # ウィンドウ枠の固定
+    ws.freeze_panes = ws.cell(row=startDetailRow, column=1).coordinate
+    
+    for param in result:
+        for k, v in param.items():
+            if k == 'parameter':
+                for i, (key, value) in enumerate(v.items()):
+                    if i == 0:
+                        # 廃止フラグ
+                        ws.cell(row=startDetailRow, column=3).font = font_bl
+                        ws.cell(row=startDetailRow, column=3).alignment = al_cc
+                        ws.cell(row=startDetailRow, column=3).border = border
+                        ws.cell(row=startDetailRow, column=3, value='')
+                        # 入力規則の設定
+                        dv = DataValidation(type='list', formula1='FILTER_ROW_EDIT_BY_FILE')
+                        dv.add(ws.cell(row=startDetailRow, column=3))
+                        ws.add_data_validation(dv)
+                        dataVaridationDict[get_column_letter(3)] = 'FILTER_ROW_EDIT_BY_FILE'
+                    
+                    if key == 'journal_action':
+                        continue
+                    elif key == 'discard':
+                        if value == '1':
+                            # 廃止
+                            msg = g.appmsg.get_api_message('MSG-30006')
+                            ws.cell(row=startDetailRow, column=3, value=msg)
+                    else:
+                        if i < 3:
                             column_num = i + 1
-                            if column_flg:
-                                column_num -= 1
-                            ws.cell(row=startDetailRow, column=column_num).number_format = openpyxl.styles.numbers.FORMAT_TEXT
-                            ws.cell(row=startDetailRow, column=column_num).font = font_bl
-                            ws.cell(row=startDetailRow, column=column_num).border = border
-                            ws.cell(row=startDetailRow, column=column_num, value=value)
-                            if key == 'journal_datetime':
-                                ws.cell(row=startDetailRow, column=i + 1).alignment = Alignment(horizontal='fill')
-                            
-                            if key in name_define_list:
-                                dv = DataValidation(type='list', formula1=key)
-                                dv.add(ws.cell(row=startDetailRow, column=column_num))
-                                ws.add_data_validation(dv)
-                                if key not in dataVaridationDict:
-                                    dataVaridationDict[get_column_letter(column_num)] = key
-                    startDetailRow += 1
-        
-        # 空行追加処理
-        ws = create_blank_line(ws, dataVaridationDict, 10)
-        
-        # 登録が×の列をグレーにする
-        # 明細の数を求める
-        column_num = ws.max_column + 1
-        row_num = ws.max_row - (startRow + 1)
-        for col_i in range(3, column_num):
-            for row_j in range(row_num):
-                if get_column_letter(col_i) in gray_column:
-                    # セルの背景色をグレーにする
-                    ws.cell(row=startRow + row_j + 2, column=col_i).fill = fill_gr
-        
-        wb.save(file_path)  # noqa: E303
-        
-        # 編集してきたエクセルファイルをエンコードする
-        wbEncode = file_encode(file_path)  # noqa: F405 F841
-        # エンコード後wbは削除する
-        os.remove(file_path)    # noqa: F405
-        
-        return wbEncode
-    except Exception as result:
-        return result
+                        else:
+                            column_num = header_order.index(key) + 3
+
+                        ws.cell(row=startDetailRow, column=column_num).number_format = openpyxl.styles.numbers.FORMAT_TEXT
+                        ws.cell(row=startDetailRow, column=column_num).font = font_bl
+                        ws.cell(row=startDetailRow, column=column_num).border = border
+                        ws.cell(row=startDetailRow, column=column_num, value=value)
+                        if key == 'journal_datetime':
+                            ws.cell(row=startDetailRow, column=i + 1).alignment = Alignment(horizontal='fill')
+                        
+                        if key in name_define_list:
+                            dv = DataValidation(type='list', formula1=key)
+                            dv.add(ws.cell(row=startDetailRow, column=column_num))
+                            ws.add_data_validation(dv)
+                            if key not in dataVaridationDict:
+                                dataVaridationDict[get_column_letter(column_num)] = key
+                startDetailRow += 1
+    
+    # 空行追加処理
+    ws = create_blank_line(ws, dataVaridationDict, 10)
+    
+    # 登録が×の列をグレーにする
+    # 明細の数を求める
+    column_num = ws.max_column + 1
+    row_num = ws.max_row - (startRow + 1)
+    for col_i in range(3, column_num):
+        for row_j in range(row_num):
+            if get_column_letter(col_i) in gray_column:
+                # セルの背景色をグレーにする
+                ws.cell(row=startRow + row_j + 2, column=col_i).fill = fill_gr
+    
+    wb.save(file_path)  # noqa: E303
+    
+    # 編集してきたエクセルファイルをエンコードする
+    wbEncode = file_encode(file_path)  # noqa: F405 F841
+    # エンコード後wbは削除する
+    os.remove(file_path)    # noqa: F405
+    
+    return wbEncode
 
 
 def collect_excel_filter(objdbca, organization_id, workspace_id, menu, menu_record, menu_table_link_record, filter_parameter):
@@ -1455,252 +1459,244 @@ def collect_excel_filter(objdbca, organization_id, workspace_id, menu, menu_reco
         RETURN:
             Excelをbase64した値
     """
-    try:
-        # 言語設定取得
-        lang = g.LANGUAGE
-        
-        # make storage directory for excel
-        strage_path = os.environ.get('STORAGEPATH')
-        excel_dir = strage_path + "/".join([organization_id, workspace_id]) + "/tmp/excel"
-        if not os.path.isdir(excel_dir):
-            os.makedirs(excel_dir)
-            g.applogger.debug("made excel_dir")
-        
-        # テーブル名
-        t_common_column_class = 'T_COMN_COLUMN_CLASS'
-        t_common_column_group = 'T_COMN_COLUMN_GROUP'
-        t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
-        
-        mode = 'excel'
-        objmenu = load_table.loadTable(objdbca, menu)   # noqa: F405
-        if objmenu.get_objtable() is False:
-            log_msg_args = ["not menu or table"]
-            api_msg_args = ["not menu or table"]
-            raise AppException("401-00001", log_msg_args, api_msg_args) # noqa: F405
-        
-        status_code, result, msg = objmenu.rest_filter(filter_parameter, mode)
-        if status_code != '000-00000':
-            log_msg_args = [msg]
-            api_msg_args = [msg]
-            raise AppException(status_code, log_msg_args, api_msg_args) # noqa: F405
-        
-        # 対象メニューを特定するためのIDを取得する
-        menu_id = menu_record[0].get('MENU_ID')
-        menu_name = menu_record[0].get('MENU_NAME_' + lang.upper())
-        file_name = menu_name + '_' + datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.xlsx'
-        file_path = excel_dir + '/' + file_name
-        
-        # 『メニュー-カラム紐付管理』テーブルから対象のデータを取得
-        retList_t_common_menu_column_link = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
-        if not retList_t_common_menu_column_link:
-            log_msg_args = [menu]
-            api_msg_args = [menu]
-            raise AppException("499-00005", log_msg_args, api_msg_args)  # noqa: F405
-        
-        # 『カラムクラスマスタ』テーブルからcolumn_typeの一覧を取得
-        ret = objdbca.table_select(t_common_column_class, 'WHERE COLUMN_CLASS_NAME LIKE %s AND DISUSE_FLAG = %s', ['%IDColumn%', 0])
-        column_class_master = {}
-        for recode in ret:
-            column_class_master[recode.get('COLUMN_CLASS_ID')] = recode.get('COLUMN_CLASS_NAME')
+    # 言語設定取得
+    lang = g.LANGUAGE
+    
+    # make storage directory for excel
+    strage_path = os.environ.get('STORAGEPATH')
+    excel_dir = strage_path + "/".join([organization_id, workspace_id]) + "/tmp/excel"
+    if not os.path.isdir(excel_dir):
+        os.makedirs(excel_dir)
+        g.applogger.debug("made excel_dir")
+    
+    # テーブル名
+    t_common_column_group = 'T_COMN_COLUMN_GROUP'
+    t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
+    
+    mode = 'excel'
+    objmenu = load_table.loadTable(objdbca, menu)   # noqa: F405
+    if objmenu.get_objtable() is False:
+        log_msg_args = ["not menu or table"]
+        api_msg_args = ["not menu or table"]
+        raise AppException("401-00001", log_msg_args, api_msg_args) # noqa: F405
+    
+    status_code, result, msg = objmenu.rest_filter(filter_parameter, mode)
+    if status_code != '000-00000':
+        log_msg_args = [msg]
+        api_msg_args = [msg]
+        raise AppException(status_code, log_msg_args, api_msg_args) # noqa: F405
+    
+    # 対象メニューを特定するためのIDを取得する
+    menu_id = menu_record[0].get('MENU_ID')
+    menu_name = menu_record[0].get('MENU_NAME_' + lang.upper())
+    file_name = menu_name + '_' + datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.xlsx'
+    file_path = excel_dir + '/' + file_name
+    
+    # 『メニュー-カラム紐付管理』テーブルから対象のデータを取得
+    retList_t_common_menu_column_link = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
+    if not retList_t_common_menu_column_link:
+        log_msg_args = [menu]
+        api_msg_args = [menu]
+        raise AppException("499-00005", log_msg_args, api_msg_args)  # noqa: F405
 
-        # 使用するCOL_GROUP_IDだけを配列に確保しておく
-        active_col_group_id = ['']
-        for i, dict_menu_column in enumerate(retList_t_common_menu_column_link):
-            tmp = dict_menu_column.get('COL_GROUP_ID')
-            if tmp is not None and tmp not in active_col_group_id:
-                active_col_group_id.append(tmp)
-        
-        # 登録更新廃止復活フラグを取得する
-        menu_table_link_list = []
-        menu_table_link_list.append(menu_table_link_record[0].get('ROW_INSERT_FLAG'))
-        menu_table_link_list.append(menu_table_link_record[0].get('ROW_UPDATE_FLAG'))
-        menu_table_link_list.append(menu_table_link_record[0].get('ROW_DISUSE_FLAG'))
-        menu_table_link_list.append(menu_table_link_record[0].get('ROW_REUSE_FLAG'))
-        
-        # 色の設定
-        # 背景色
-        fill_wh = PatternFill(fill_type='solid', fgColor='FFFFFF')
-        fill_bl = PatternFill(fill_type='solid', fgColor='00459D')
-        fill_gr = PatternFill(fill_type='solid', fgColor='D9D9D9')
-        
-        # 文字色
-        font_bl = openpyxl.styles.Font(name='メイリオ', size=8, color='000000')
-        font_wh = openpyxl.styles.Font(name='メイリオ', size=8, color='FFFFFF')
-        
-        # Alignmentの設定
-        al_cc = Alignment(horizontal='center', vertical='center')
-        al_lt = Alignment(horizontal='left', vertical='top')
-        
-        # 罫線の設定
-        side = Side(border_style="thin", color="000000")
-        sideDash = Side(border_style="dashed", color="000000")
-        border = Border(left=side, right=side, top=side, bottom=side)
-        borderDash = Border(left=side, right=side, top=sideDash, bottom=sideDash)
-        
-        # ワークブックの新規作成と保存
-        wb = Workbook()
-        
-        # マスタ
-        msg = g.appmsg.get_api_message('MSG-30012')
-        wb.create_sheet(msg)
-        # フィルタ条件
-        msg = g.appmsg.get_api_message('MSG-30013')
-        wb.create_sheet(msg)
-        
-        # 「マスタ」シート作成
-        # 「マスタ」シートの名前の定義をメインのシートの入力規則で使用するため「マスタ」シートから作成する
-        name_define_list = make_master_sheet(wb, objdbca, lang, retList_t_common_menu_column_link, column_class_master, menu_table_link_list)
-        
-        # シートを指定して編集
-        ws = wb.active
-        ws.title = menu_name
-        
-        # ヘッダー部編集
-        startRow = 1
-        startClm = 4
-        
-        # 『カラムグループ管理』テーブルからカラムグループ一覧を取得
-        ret = objdbca.table_select(t_common_column_group, 'WHERE COL_GROUP_ID IN %s AND DISUSE_FLAG = %s', [active_col_group_id, 0])
-        dict_column_group_id = {}
-        dict_column_group_id_name = {}
-        if ret:
-            for recode in ret:
-                dict_column_group_id[recode.get('COL_GROUP_ID')] = recode.get('PA_COL_GROUP_ID')
-                # IDと名前の辞書も作成する
-                dict_column_group_id_name[recode.get('COL_GROUP_ID')] = recode.get('COL_GROUP_NAME_' + lang.upper())
-        
-        # ヘッダーの階層の深さを調べる
-        depth = get_col_group_depth(retList_t_common_menu_column_link, dict_column_group_id)
-        
-        # エクセルに表示するヘッダー項目を二次元配列に構築する
-        excel_header_list = create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, dict_column_group_id_name, dict_column_group_id)
-        
-        # 1行目（項目名）のヘッダーを作成する
-        ws = create_excel_header_firstline(ws, excel_header_list, depth, startRow, startClm, font_wh, al_cc, fill_bl, border)
-        
-        startRow = startRow + depth
-        startDetailRow = startRow + 7
-        
-        # 2行目以降を作成する
-        # 固定部分
-        ws = make_template(ws, startRow, font_bl, fill_gr, borderDash, depth)
-        
-        # エクセルヘッダー部のカラム情報を作成する
-        ws = create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_column_link)
-        
-        # 明細部編集
-        # ウィンドウ枠の固定
-        ws.freeze_panes = ws.cell(row=startRow + 7, column=4).coordinate
-        # 入力規則記憶用辞書
-        dataVaridationDict = {}
-        for param in result:
-            for k, v in param.items():
-                if k == 'parameter':
-                    # カラム位置調整用フラグ
-                    column_flg = False
-                    for i, (key, value) in enumerate(v.items()):
-                        if i == 0:
-                            ws.cell(row=startRow + 7, column=1).fill = fill_wh
-                            ws.cell(row=startRow + 7, column=1, value='')
-                            
-                            ws.cell(row=startRow + 7, column=2).fill = fill_wh
-                            ws.cell(row=startRow + 7, column=2, value='')
-                            
-                            # 実行処理種別
-                            ws.cell(row=startRow + 7, column=3).font = font_bl
-                            ws.cell(row=startRow + 7, column=3).alignment = al_cc
-                            ws.cell(row=startRow + 7, column=3).border = border
-                            ws.cell(row=startRow + 7, column=3, value='-')
-                            # 入力規則の設定
-                            dv = DataValidation(type='list', formula1='FILTER_ROW_EDIT_BY_FILE')
-                            dv.add(ws.cell(row=startRow + 7, column=3))
-                            ws.add_data_validation(dv)
-                            dataVaridationDict[get_column_letter(3)] = 'FILTER_ROW_EDIT_BY_FILE'
+    # 使用するCOL_GROUP_IDだけを配列に確保しておく
+    active_col_group_id = ['']
+    for i, dict_menu_column in enumerate(retList_t_common_menu_column_link):
+        tmp = dict_menu_column.get('COL_GROUP_ID')
+        if tmp is not None and tmp not in active_col_group_id:
+            active_col_group_id.append(tmp)
+    
+    # IDColumn項目のプルダウン一覧の取得
+    pulldown_list = menu_info.collect_pulldown_list(objdbca, menu, menu_record)
+    
+    # 登録更新廃止復活フラグを取得する
+    menu_table_link_list = []
+    menu_table_link_list.append(menu_table_link_record[0].get('ROW_INSERT_FLAG'))
+    menu_table_link_list.append(menu_table_link_record[0].get('ROW_UPDATE_FLAG'))
+    menu_table_link_list.append(menu_table_link_record[0].get('ROW_DISUSE_FLAG'))
+    menu_table_link_list.append(menu_table_link_record[0].get('ROW_REUSE_FLAG'))
+    
+    # 色の設定
+    # 背景色
+    fill_wh = PatternFill(fill_type='solid', fgColor='FFFFFF')
+    fill_bl = PatternFill(fill_type='solid', fgColor='00459D')
+    fill_gr = PatternFill(fill_type='solid', fgColor='D9D9D9')
+    
+    # 文字色
+    font_bl = openpyxl.styles.Font(name='メイリオ', size=8, color='000000')
+    font_wh = openpyxl.styles.Font(name='メイリオ', size=8, color='FFFFFF')
+    
+    # Alignmentの設定
+    al_cc = Alignment(horizontal='center', vertical='center')
+    al_lt = Alignment(horizontal='left', vertical='top')
+    
+    # 罫線の設定
+    side = Side(border_style="thin", color="000000")
+    sideDash = Side(border_style="dashed", color="000000")
+    border = Border(left=side, right=side, top=side, bottom=side)
+    borderDash = Border(left=side, right=side, top=sideDash, bottom=sideDash)
+    
+    # ワークブックの新規作成と保存
+    wb = Workbook()
+    
+    # マスタ
+    msg = g.appmsg.get_api_message('MSG-30012')
+    wb.create_sheet(msg)
+    # フィルタ条件
+    msg = g.appmsg.get_api_message('MSG-30013')
+    wb.create_sheet(msg)
+    
+    # 「マスタ」シート作成
+    # 「マスタ」シートの名前の定義をメインのシートの入力規則で使用するため「マスタ」シートから作成する
+    name_define_list = make_master_sheet(wb, objdbca, lang, retList_t_common_menu_column_link, menu_table_link_list, pulldown_list)
+    
+    # シートを指定して編集
+    ws = wb.active
+    ws.title = menu_name
+    
+    # ヘッダー部編集
+    startRow = 1
+    startClm = 4
+    
+    # 『カラムグループ管理』テーブルからカラムグループ一覧を取得
+    ret = objdbca.table_select(t_common_column_group, 'WHERE COL_GROUP_ID IN %s AND DISUSE_FLAG = %s', [active_col_group_id, 0])
+    dict_column_group_id = {}
+    dict_column_group_id_name = {}
+    if ret:
+        for recode in ret:
+            dict_column_group_id[recode.get('COL_GROUP_ID')] = recode.get('PA_COL_GROUP_ID')
+            # IDと名前の辞書も作成する
+            dict_column_group_id_name[recode.get('COL_GROUP_ID')] = recode.get('COL_GROUP_NAME_' + lang.upper())
+    
+    # ヘッダーの階層の深さを調べる
+    depth = get_col_group_depth(retList_t_common_menu_column_link, dict_column_group_id)
+    
+    # エクセルに表示するヘッダー項目を二次元配列に構築する
+    excel_header_list, header_order = create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, dict_column_group_id_name, dict_column_group_id)
+    
+    # 1行目（項目名）のヘッダーを作成する
+    ws = create_excel_header_firstline(ws, excel_header_list, depth, startRow, startClm, font_wh, al_cc, fill_bl, border)
+    
+    startRow = startRow + depth
+    startDetailRow = startRow + 7
+    
+    # 2行目以降を作成する
+    # 固定部分
+    ws = make_template(ws, startRow, font_bl, fill_gr, borderDash, depth)
+    
+    # エクセルヘッダー部のカラム情報を作成する
+    ws, dataVaridationDict = create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_column_link, name_define_list)
+    
+    # 明細部編集
+    # 明細1行目編集
+    ws, dataVaridationDict = detail_first_line_format(ws, startRow, dataVaridationDict)
+    
+    # ウィンドウ枠の固定
+    ws.freeze_panes = ws.cell(row=startRow + 7, column=4).coordinate
+    
+    for param in result:
+        for k, v in param.items():
+            if k == 'parameter':
+                # # カラム位置調整用フラグ
+                # column_flg = False
+                for i, (key, value) in enumerate(v.items()):
+                    if i == 0:
+                        ws.cell(row=startRow + 7, column=1).fill = fill_wh
+                        ws.cell(row=startRow + 7, column=1, value='')
                         
-                        if key == 'discard':
-                            column_num = 4
-                            column_flg = True
-                            # 廃止
-                            msg = g.appmsg.get_api_message('MSG-30006')
-                            if value == '1':
-                                value = msg
-                            else:
-                                value = ''
+                        ws.cell(row=startRow + 7, column=2).fill = fill_wh
+                        ws.cell(row=startRow + 7, column=2, value='')
+                        
+                        # 実行処理種別
+                        ws.cell(row=startRow + 7, column=3).font = font_bl
+                        ws.cell(row=startRow + 7, column=3).alignment = al_cc
+                        ws.cell(row=startRow + 7, column=3).border = border
+                        ws.cell(row=startRow + 7, column=3, value='-')
+                        # 入力規則の設定
+                        dv = DataValidation(type='list', formula1='FILTER_ROW_EDIT_BY_FILE')
+                        dv.add(ws.cell(row=startRow + 7, column=3))
+                        ws.add_data_validation(dv)
+                        dataVaridationDict[get_column_letter(3)] = 'FILTER_ROW_EDIT_BY_FILE'
+                    
+                    if key == 'discard':
+                        # 廃止
+                        msg = g.appmsg.get_api_message('MSG-30006')
+                        if value == '1':
+                            value = msg
                         else:
-                            column_num = startClm + i + 1
-                            if column_flg:
-                                column_num -= 1
-                        
-                        ws.cell(row=startRow + 7, column=column_num).number_format = openpyxl.styles.numbers.FORMAT_TEXT
-                        ws.cell(row=startRow + 7, column=column_num).font = font_bl
-                        ws.cell(row=startRow + 7, column=column_num).border = border
-                        ws.cell(row=startRow + 7, column=column_num, value=value)
-                        if key in name_define_list:
-                            dv = DataValidation(type='list', formula1=key)
-                            dv.add(ws.cell(row=startRow + 7, column=column_num))
-                            ws.add_data_validation(dv)
-                            if key not in dataVaridationDict:
-                                dataVaridationDict[get_column_letter(column_num)] = key
-                    startRow = startRow + 1
-        
-        # 空行追加処理
-        ws = create_blank_line(ws, dataVaridationDict, 10)
-        
-        # 登録が×の列をグレーにする
-        # 明細の数を求める
-        column_num = ws.max_column + 1
-        row_num = ws.max_row - startDetailRow + 1
-        for col_i in range(4, column_num):
-            for row_j in range(row_num):
-                if ws.cell(row=depth + 1, column=col_i).value == '×':
-                    # セルの背景色をグレーにする
-                    ws.cell(row=startDetailRow + row_j, column=col_i).fill = fill_gr
-        
-        # フッターを作成する
-        ws = create_footer(ws, font_wh, al_lt, al_cc, fill_bl)
-        
-        # フィルタ条件シートを指定して編集
-        # フィルタ条件
-        msg = g.appmsg.get_api_message('MSG-30013')
-        ws_filter = wb[msg]
-        # 出力日時
-        msg = g.appmsg.get_api_message('MSG-30014')
-        ws_filter['A1'] = msg
-        # 廃止
-        msg = g.appmsg.get_api_message('MSG-30006')
-        ws_filter['D1'] = msg
-        ws_filter['A2'] = datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
-        
-        for i, (key, value) in enumerate(filter_parameter.items()):
-            tmp = list(value.values())[0]
-            ws_filter.cell(row=1, column=4 + i, value=key)
-            if key.lower() == 'discard':
-                if tmp == 0:
-                    # 廃止含まず
-                    msg = g.appmsg.get_api_message('MSG-30016')
-                    ws_filter.cell(row=2, column=4 + i, value=msg)
-                elif tmp == 1:
-                    # 廃止のみ
-                    msg = g.appmsg.get_api_message('MSG-30019')
-                    ws_filter.cell(row=2, column=4 + i, value=msg)
-                else:
-                    # 全レコード
-                    msg = g.appmsg.get_api_message('MSG-30018')
-                    ws_filter.cell(row=2, column=4 + i, value=msg)
+                            value = ''
+                    
+                    column_num = header_order.index(key) + 4
+                    
+                    ws.cell(row=startRow + 7, column=column_num).number_format = openpyxl.styles.numbers.FORMAT_TEXT
+                    ws.cell(row=startRow + 7, column=column_num).font = font_bl
+                    ws.cell(row=startRow + 7, column=column_num).border = border
+                    ws.cell(row=startRow + 7, column=column_num, value=value)
+                    if key in name_define_list:
+                        dv = DataValidation(type='list', formula1=key)
+                        dv.add(ws.cell(row=startRow + 7, column=column_num))
+                        ws.add_data_validation(dv)
+                        if key not in dataVaridationDict:
+                            dataVaridationDict[get_column_letter(column_num)] = key
+                startRow = startRow + 1
+    
+    # 空行追加処理
+    ws = create_blank_line(ws, dataVaridationDict, 10)
+    
+    # 登録が×の列をグレーにする
+    # 明細の数を求める
+    column_num = ws.max_column + 1
+    row_num = ws.max_row - startDetailRow + 1
+    for col_i in range(4, column_num):
+        for row_j in range(row_num):
+            if ws.cell(row=depth + 1, column=col_i).value == '×':
+                # セルの背景色をグレーにする
+                ws.cell(row=startDetailRow + row_j, column=col_i).fill = fill_gr
+    
+    # フッターを作成する
+    ws = create_footer(ws, font_wh, al_lt, al_cc, fill_bl)
+    
+    # フィルタ条件シートを指定して編集
+    # フィルタ条件
+    msg = g.appmsg.get_api_message('MSG-30013')
+    ws_filter = wb[msg]
+    # 出力日時
+    msg = g.appmsg.get_api_message('MSG-30014')
+    ws_filter['A1'] = msg
+    # 廃止
+    msg = g.appmsg.get_api_message('MSG-30006')
+    ws_filter['D1'] = msg
+    ws_filter['A2'] = datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
+    
+    for i, (key, value) in enumerate(filter_parameter.items()):
+        tmp = list(value.values())[0]
+        ws_filter.cell(row=1, column=4 + i, value=key)
+        if key.lower() == 'discard':
+            if tmp == 0:
+                # 廃止含まず
+                msg = g.appmsg.get_api_message('MSG-30016')
+                ws_filter.cell(row=2, column=4 + i, value=msg)
+            elif tmp == 1:
+                # 廃止のみ
+                msg = g.appmsg.get_api_message('MSG-30019')
+                ws_filter.cell(row=2, column=4 + i, value=msg)
             else:
-                ws_filter.cell(row=2, column=4 + i, value=list(value.values())[0])
-        
-        
-        wb.save(file_path)  # noqa: E303
-        
-        # 編集してきたエクセルファイルをエンコードする
-        wbEncode = file_encode(file_path)  # noqa: F405 F841
-        # エンコード後wbは削除する
-        os.remove(file_path)    # noqa: F405
-        
-        return wbEncode
-    except Exception as result:
-        return result,
+                # 全レコード
+                msg = g.appmsg.get_api_message('MSG-30018')
+                ws_filter.cell(row=2, column=4 + i, value=msg)
+        else:
+            ws_filter.cell(row=2, column=4 + i, value=list(value.values())[0])
+    
+    
+    wb.save(file_path)  # noqa: E303
+    
+    # 編集してきたエクセルファイルをエンコードする
+    wbEncode = file_encode(file_path)  # noqa: F405 F841
+    # エンコード後wbは削除する
+    os.remove(file_path)    # noqa: F405
+    
+    return wbEncode
+
 
 def execute_excel_maintenance(objdbca, organization_id, workspace_id, menu, menu_record, excel_data):
     """execute_excel_maintenance
@@ -1742,11 +1738,26 @@ def execute_excel_maintenance(objdbca, organization_id, workspace_id, menu, menu
     with open(file_path, "wb") as f:
         f.write(wbDecode)
     
-    # ファイルを読み込む
-    wb = openpyxl.load_workbook(file_path)
+    try:
+        # ファイルを読み込む
+        wb = openpyxl.load_workbook(file_path)
+    except BadZipfile as e:
+        # 次のファイルタイプのみ許容します。[.xlsx,.xlsm]
+        status_code = '499-00401'
+        raise AppException(status_code)     # noqa: F405
     
     # 対象メニューを特定するためのIDを取得する
     menu_id = menu_record[0].get('MENU_ID')
+    menu_name = menu_record[0].get('MENU_NAME_' + lang.upper())
+    
+    # エラー判定用にシート名を取得
+    sheets_name_list = wb.sheetnames
+    
+    # シート名が想定と違う場合はエラーとする
+    if menu_name not in sheets_name_list:
+        # このメニューの編集用Excelファイルではありません。
+        status_code = '499-00402'
+        raise AppException(status_code)     # noqa: F405
     
     ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
     

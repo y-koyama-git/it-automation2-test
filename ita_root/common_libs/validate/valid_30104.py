@@ -11,7 +11,7 @@ def conductor_class_validate(objdbca, objtable, option):
     retBool = True
     msg = ''
     try:
-        """
+        # """
         # 動確試験用（1系項目削除、変換処理 暫定対応）
         # option = convert_conductor_ver_1(option)
 
@@ -38,7 +38,7 @@ def conductor_class_validate(objdbca, objtable, option):
                 conductor_data = result[1]
                 conductor_data['conductor']['id'] = entry_parameter.get('parameter').get('conductor_class_id')
                 option['entry_parameter']['parameter'][target_rest_name] = json.dumps(conductor_data)
-        """
+        # """
         pass
     except Exception:
         retBool = False

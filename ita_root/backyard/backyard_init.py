@@ -11,12 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# from flask import g
+from flask import g
 from common_libs.ci.util import app_context_start
 from backyard_main import backyard_main
 
 
 def main():
+    g.is_logging = True
     app_context_start(backyard_main)
 
 

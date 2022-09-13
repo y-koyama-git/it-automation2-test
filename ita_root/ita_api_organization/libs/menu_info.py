@@ -13,6 +13,7 @@
 #   limitations under the License.
 
 import textwrap
+import datetime
 from common_libs.common import *  # noqa: F403
 from common_libs.loadtable import *  # noqa: F403
 from common_libs.column import *  # noqa: F403
@@ -158,15 +159,15 @@ def collect_menu_info(objdbca, menu, menu_record={}, menu_table_link_record={}, 
     
     column_info_data = {}
     tmp_column_group = {}
+    tmp_column_group_input = {}
+    tmp_column_group_view = {}
     column_group_parent_of_child = {}  # カラムグループの親子関係があるとき、子の一番大きい親を結びつける
+    column_group_parent_of_child_input = {}  # カラムグループの親子関係があるとき、子の一番大きい親を結びつける
+    column_group_parent_of_child_view = {}  # カラムグループの親子関係があるとき、子の一番大きい親を結びつける
     column_group_info_data = {}
 
     if ret:
         for count, recode in enumerate(ret, 1):
-
-            # VIEW_ITEMが0のレコードはスキップ
-            if recode.get('VIEW_ITEM') == '0':
-                continue
 
             # json形式のレコードは改行を削除
             validate_option = recode.get('VALIDATE_OPTION')
@@ -189,13 +190,46 @@ def collect_menu_info(objdbca, menu, menu_record={}, menu_table_link_record={}, 
                 if target_data:
                     column_group_name = target_data.get('full_column_group_name')
             
+            # カラムクラスIDを取得
+            column_class = recode.get('COLUMN_CLASS')
+            
+            # カラム名(rest)を取得
+            column_name_rest = recode.get('COLUMN_NAME_REST')
+            
+            # 初期値(initial_value)を取得
+            initial_value = recode.get('INITIAL_VALUE')
+            
+            # カラムクラスが「7: IDColumn」かつ初期値が設定されている場合、初期値の値(ID)から表示用の値を取得する
+            if str(column_class) == "7" and initial_value:
+                objmenu = load_table.loadTable(objdbca, menu)
+                objcolumn = objmenu.get_columnclass(column_name_rest)
+                tmp_exec = objcolumn.convert_value_output(initial_value)
+                if tmp_exec[0] is True:
+                    initial_value = tmp_exec[2]
+            
+            # カラムクラスが「5: DateTimeColumn」かつ初期値が設定されている場合、初期値の値(日時)をフォーマット
+            if str(column_class) == "5" and initial_value:
+                try:
+                    initial_value = datetime.datetime.strptime(initial_value, '%Y-%m-%d %H:%M:%S')
+                    initial_value = initial_value.strftime('%Y/%m/%d %H:%M:%S')
+                except Exception:
+                    initial_value = None
+                
+            # カラムクラスが「6: DateTColumn」かつ初期値が設定されている場合、初期値の値(日付)をフォーマット
+            if str(column_class) == "6" and initial_value:
+                try:
+                    initial_value = datetime.datetime.strptime(initial_value, '%Y-%m-%d %H:%M:%S')
+                    initial_value = initial_value.strftime('%Y/%m/%d')
+                except Exception:
+                    initial_value = None
+            
             detail = {
                 'column_id': recode.get('COLUMN_DEFINITION_ID'),
                 'column_name': recode.get('COLUMN_NAME_' + lang.upper()),
-                'column_name_rest': recode.get('COLUMN_NAME_REST'),
+                'column_name_rest': column_name_rest,
                 'column_group_id': column_group_id,
                 'column_group_name': column_group_name,
-                'column_type': column_class_master[recode.get('COLUMN_CLASS')],
+                'column_type': column_class_master[column_class],
                 'column_disp_seq': recode.get('COLUMN_DISP_SEQ'),
                 'description': recode.get('DESCRIPTION_' + lang.upper()),
                 'ref_table_name': recode.get('REF_TABLE_NAME'),
@@ -211,7 +245,7 @@ def collect_menu_info(objdbca, menu, menu_record={}, menu_table_link_record={}, 
                 'view_item': recode.get('VIEW_ITEM'),
                 'unique_item': recode.get('UNIQUE_ITEM'),
                 'required_item': recode.get('REQUIRED_ITEM'),
-                'initial_value': recode.get('INITIAL_VALUE'),
+                'initial_value': initial_value,
                 'validate_option': validate_option,
                 'before_validate_register': before_validate_register,
                 'after_validate_register': after_validate_register
@@ -219,19 +253,43 @@ def collect_menu_info(objdbca, menu, menu_record={}, menu_table_link_record={}, 
             col_num = 'c{}'.format(count)
             column_info_data[col_num] = detail
             
-            # ####メモ：縦メニュー用の考慮がされていないため、最終的な修正が必要。
             # カラムグループ利用があれば、カラムグループ管理用配列に追加
             if column_group_id:
-                tmp_column_group, column_group_parent_of_child = add_tmp_column_group(column_group_list, col_group_recode_count, column_group_id, col_num, tmp_column_group, column_group_parent_of_child)  # noqa: E501
+                tmp_column_group, column_group_parent_of_child = add_tmp_column_group(column_group_list,
+                                                                                      col_group_recode_count,
+                                                                                      column_group_id, col_num,
+                                                                                      tmp_column_group,
+                                                                                      column_group_parent_of_child
+                                                                                      )
+                if recode.get('INPUT_ITEM') in ['0', '1']:
+                    tmp_column_group_input, column_group_parent_of_child_input = add_tmp_column_group(column_group_list,
+                                                                                                      col_group_recode_count,
+                                                                                                      column_group_id,
+                                                                                                      col_num,
+                                                                                                      tmp_column_group_input,
+                                                                                                      column_group_parent_of_child_input
+                                                                                                      )
+                if recode.get('VIEW_ITEM') in ['1']:
+                    tmp_column_group_view, column_group_parent_of_child_view = add_tmp_column_group(column_group_list,
+                                                                                                    col_group_recode_count,
+                                                                                                    column_group_id,
+                                                                                                    col_num,
+                                                                                                    tmp_column_group_view,
+                                                                                                    column_group_parent_of_child_view
+                                                                                                    )
         
         # カラムグループ管理用配列について、カラムグループIDをg1,g2,g3...に変換し、idやnameを格納する。
-        print("添付カラムグループ")
-        print(tmp_column_group)
-        column_group_info_data, key_to_id = collect_column_group_sort_order(column_group_list, tmp_column_group, column_group_info_data)
+        column_group_info_data, key_to_id = collect_column_group_sort_order(column_group_list,
+                                                                            tmp_column_group,
+                                                                            tmp_column_group_input,
+                                                                            tmp_column_group_view
+                                                                            )
         
         # 大元のカラムの並び順を作成し格納
-        # ####メモ：縦メニュー用の考慮がされていないため、最終的な修正が必要。
-        menu_info_data['columns'] = collect_parent_sord_order(column_info_data, column_group_parent_of_child, key_to_id)
+        columns, columns_input, columns_view = collect_parent_sord_order(column_info_data, column_group_parent_of_child, key_to_id)
+        menu_info_data['columns'] = columns
+        menu_info_data['columns_input'] = columns_input
+        menu_info_data['columns_view'] = columns_view
     
     info_data = {
         'menu_info': menu_info_data,
@@ -291,19 +349,24 @@ def add_tmp_column_group(column_group_list, col_group_recode_count, column_group
     return tmp_column_group, column_group_parent_of_child
 
 
-def collect_column_group_sort_order(column_group_list, tmp_column_group, column_group_info_data):
+def collect_column_group_sort_order(column_group_list, tmp_column_group, tmp_column_group_input, tmp_column_group_view):
     """
         カラムグループ管理用配列(tmp_column_group)を元に、カラムグループIDをg1,g2,g3...に変換し、idやnameを格納した配列を返す
         ARGS:
             column_group_list: カラムグループのレコード一覧
             tmp_colmn_group: カラムグループ管理用配列
-            column_group_info_data: カラムグループ情報格納用配列
+            tmp_column_group_input: カラムグループ管理用配列(INPUT_ITEMが0,1)
+            tmp_column_group_view: カラムグループ管理用配列(VIEW_ITEMが0)
+
         RETRUN:
-            column_group_info_data, key_to_id
+            column_group_info_data: カラムグループ情報格納用配列
+            key_to_id: カラムグループIDとg1,g2,g3...の紐付
     """
     # カラムグループIDと対応のg番号配列を作成
     key_to_id = {}
     group_num = 1
+    column_group_info_data = {}
+
     for group_id in tmp_column_group.keys():
         key_to_id[group_id] = 'g' + str(group_num)
         group_num += 1
@@ -317,8 +380,28 @@ def collect_column_group_sort_order(column_group_list, tmp_column_group, column_
                 columns.append(key_to_id[col])
             else:
                 columns.append(col)
+
+        # INPUT_ITEMが0,1のデータ
+        columns_input = []
+        if group_id in tmp_column_group_input.keys():
+            for col in tmp_column_group_input[group_id]:
+                if col in key_to_id:
+                    columns_input.append(key_to_id[col])
+                else:
+                    columns_input.append(col)
+
+        # INPUT_ITEMが1のデータ
+        columns_view = []
+        if group_id in tmp_column_group_view.keys():
+            for col in tmp_column_group_view[group_id]:
+                if col in key_to_id:
+                    columns_view.append(key_to_id[col])
+                else:
+                    columns_view.append(col)
         
         add_data['columns'] = columns
+        add_data['columns_input'] = columns_input
+        add_data['columns_view'] = columns_view
         add_data['column_group_id'] = group_id
         add_data['column_group_name'] = None
         add_data['parent_column_group_id'] = None
@@ -345,13 +428,21 @@ def collect_parent_sord_order(column_info_data, column_group_parent_of_child, ke
             key_to_id: カラムグループIDと対応のg番号配列
         RETRUN:
             columns
+            columns_input
+            columns_view
     """
     columns = []
+    columns_input = []
+    columns_view = []
     for col_num, col_data in column_info_data.items():
         column_group_id = col_data['column_group_id']
         if not column_group_id:
             # カラムグループが無い場合はcol_num(c1, c2, c3...)を格納
             columns.append(col_num)
+            if col_data['input_item'] in ['0', '1']:
+                columns_input.append(col_num)
+            if col_data['view_item'] in ['1']:
+                columns_view.append(col_num)
             continue
         
         if column_group_id in column_group_parent_of_child:
@@ -359,14 +450,22 @@ def collect_parent_sord_order(column_info_data, column_group_parent_of_child, ke
             parent_column_group_id = column_group_parent_of_child.get(column_group_id)
             if key_to_id[parent_column_group_id] not in columns:
                 columns.append(key_to_id[parent_column_group_id])
+                if col_data['input_item'] in ['0', '1']:
+                    columns_input.append(key_to_id[parent_column_group_id])
+                if col_data['view_item'] in ['1']:
+                    columns_view.append(key_to_id[parent_column_group_id])
             continue
         else:
             # カラムグループIDをg番号(g1, g2, g3...)に変換した値を格納
             if key_to_id[column_group_id] not in columns:
                 columns.append(key_to_id[column_group_id])
+                if col_data['input_item'] in ['0', '1']:
+                    columns_input.append(key_to_id[column_group_id])
+                if col_data['view_item'] in ['1']:
+                    columns_view.append(key_to_id[column_group_id])
             continue
 
-    return columns
+    return columns, columns_input, columns_view 
 
 
 def collect_menu_column_list(objdbca, menu, menu_record):
@@ -426,8 +525,8 @@ def collect_pulldown_list(objdbca, menu, menu_record):
     ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
     
     pulldown_list = {}
-    # 7(IDColumn), 11(LinkIDColumn), 18(RoleIDColumn), 22(EnvironmentIDColumn)
-    id_column_list = ["7", "11", "18", "22"]
+    # 7(IDColumn), 11(LinkIDColumn), 18(RoleIDColumn), 21(JsonIDColumn), 22(EnvironmentIDColumn)
+    id_column_list = ["7", "11", "18", "21", "22"]
     for recode in ret:
         column_class_id = str(recode.get('COLUMN_CLASS'))
         
@@ -438,7 +537,6 @@ def collect_pulldown_list(objdbca, menu, menu_record):
 
         objmenu = load_table.loadTable(objdbca, menu)
         objcolumn = objmenu.get_columnclass(column_name_rest)
-        # ####メモ：現状、ソートコンディションを考慮していない。
         column_pulldown_list = objcolumn.get_values_by_key()
         pulldown_list[column_name_rest] = column_pulldown_list
 
@@ -506,8 +604,8 @@ def collect_search_candidates(objdbca, menu, column, menu_record={}, menu_table_
         return []
     
     search_candidates = []
-    # 7(IDColumn), 11(LinkIDColumn), 14(LastUpdateUserColumn), 18(RoleIDColumn), 22(EnvironmentIDColumn)
-    id_column_list = ["7", "11", "14", "18", "22"]
+    # 7(IDColumn), 11(LinkIDColumn), 14(LastUpdateUserColumn), 18(RoleIDColumn), 21(JsonIDColumn), 22(EnvironmentIDColumn)
+    id_column_list = ["7", "11", "14", "18", "21", "22"]
     
     if column_class_id in id_column_list:
         # プルダウンの一覧を取得

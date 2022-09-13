@@ -53,7 +53,12 @@ class YamlParse:
                 retParse = yaml.load(open(yamlfile).read(), Loader=yaml.FullLoader)
             else:
                 retParse = yaml.load(open(yamlfile).read())
-
+            # パーサーが辞書以外のリターンをした場合はyamlフォーマットエラーにする。
+            if isinstance(retParse, dict):
+                pass
+            else:
+                self.SetLastError("not yaml format.")
+                return False
         # パーサーの例外をキャッチするようにする
         except Exception as e:
 

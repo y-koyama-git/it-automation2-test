@@ -2603,8 +2603,14 @@ paths:
                     type: string
                     example: 000-00000
                   data:
-                    type: string
-                    example: "All movement input data zip base64 string"
+                    type: object
+                    properties:
+                      file_name:
+                        type: string
+                        example: "InputData_Conductor_{conductor_instance_id}.zip"
+                      file_data:
+                        type: string
+                        example: "All movement input data zip base64 string"
                   message:
                     type: string
         '401':
@@ -2663,8 +2669,14 @@ paths:
                     type: string
                     example: 000-00000
                   data:
-                    type: string
-                    example: "All movement result data zip base64 string"
+                    type: object
+                    properties:
+                      file_name:
+                        type: string
+                        example: "ResultData_Conductor_{conductor_instance_id}.zip"
+                      file_data:
+                        type: string
+                        example: "All movement result data zip base64 string"
                   message:
                     type: string
         '401':

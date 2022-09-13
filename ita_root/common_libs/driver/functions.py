@@ -27,6 +27,5 @@ def operation_LAST_EXECUTE_TIMESTAMP_update(wsDb, operation_id):
         result = wsDb.table_update('T_COMN_OPERATION', [data], 'OPERATION_ID')
         return True, result
     except AppException as e:
-        result_code, log_msg_args, api_msg_args = e.args
-        log_msg = g.appmsg.get_log_message(result_code, log_msg_args)
-        return False, log_msg
+        wsDb.db_rollback()
+        raise AppException(e)

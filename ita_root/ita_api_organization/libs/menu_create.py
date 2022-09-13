@@ -17,7 +17,6 @@ from common_libs.common import *  # noqa: F403
 from common_libs.loadtable import *  # noqa: F403
 from flask import g
 from libs.organization_common import check_auth_menu  # noqa: F401
-from libs.menu_info import add_tmp_column_group, collect_column_group_sort_order, collect_parent_sord_order
 from common_libs.api import check_request_body_key
 
 
@@ -299,7 +298,8 @@ def _collect_common_menu_create_data(objdbca):
             common_data
     """
     # テーブル/ビュー名
-    # t_common_column_class = 'T_COMN_COLUMN_CLASS'
+    t_comn_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
+    t_comn_column_group = 'T_COMN_COLUMN_GROUP'
     v_menu_column_class = 'V_MENU_COLUMN_CLASS'
     v_menu_sheet_type = 'V_MENU_SHEET_TYPE'
     v_menu_target_menu_group = 'V_MENU_TARGET_MENU_GROUP'
@@ -313,6 +313,9 @@ def _collect_common_menu_create_data(objdbca):
     ret = objdbca.table_select(v_menu_column_class, 'ORDER BY DISP_SEQ ASC')
     for recode in ret:
         column_class_id = recode.get('COLUMN_CLASS_ID')
+        # 「11:パラメータシート参照」は未実装のため除外
+        if str(column_class_id) == "11":
+            continue
         column_class_name = recode.get('COLUMN_CLASS_NAME')
         column_class_disp_name = recode.get('COLUMN_CLASS_DISP_NAME_' + lang.upper())
         column_class_list.append({'column_class_id': column_class_id, 'column_class_name': column_class_name, 'column_class_disp_name': column_class_disp_name})  # noqa: E501
@@ -348,12 +351,33 @@ def _collect_common_menu_create_data(objdbca):
     # ロールの選択肢一覧
     role_list = util.get_workspace_roles()  # noqa: F405
     
+    # カラムグループ一覧を取得
+    column_group_list = {}
+    ret = objdbca.table_select(t_comn_column_group, 'WHERE DISUSE_FLAG = %s', [0])
+    for record in ret:
+        col_group_id = record.get('COL_GROUP_ID')
+        col_group_name = record.get('COL_GROUP_NAME_' + lang.upper())
+        column_group_list[col_group_id] = col_group_name
+    
+    # バリデーションエラー時のkeyと名称を照らし合わせるための一覧
+    name_convert_list = {}
+    ret = objdbca.table_select(t_comn_menu_column_link, 'WHERE MENU_ID in ("50102", "50103", "50104", "50106") AND DISUSE_FLAG = %s', [0])
+    for record in ret:
+        column_name_ret = record.get('COLUMN_NAME_REST')
+        column_name = record.get('COLUMN_NAME_' + lang.upper())
+        col_group_id = record.get('COL_GROUP_ID')
+        if col_group_id:
+            name_convert_list[column_name_ret] = str(column_group_list.get(col_group_id)) + "/" + column_name
+        else:
+            name_convert_list[column_name_ret] = column_name
+    
     common_data = {
         "column_class_list": column_class_list,
         "target_menu_group_list": target_menu_group_list,
         "sheet_type_list": sheet_type_list,
         "pulldown_item_list": pulldown_item_list,
-        "role_list": role_list
+        "role_list": role_list,
+        "name_convert_list": name_convert_list
     }
     
     return common_data
@@ -826,23 +850,43 @@ def _update_t_menu_define(objdbca, current_t_menu_define, menu_data, type_name):
         objmenu = load_table.loadTable(objdbca, 'menu_definition_list')  # noqa: F405
         
         # 更新用パラメータを作成
-        parameters = {
-            "parameter": {
-                "menu_name_ja": menu_name_ja,  # メニュー名称(ja)
-                "menu_name_en": menu_name_en,  # メニュー名称(en)
-                "sheet_type": sheet_type,  # シートタイプ名
-                "display_order": menu_data.get('display_order'),  # 表示順序
-                "description_ja": menu_data.get('description'),  # 説明(ja)
-                "description_en": menu_data.get('description'),  # 説明(en)
-                "remarks": menu_data.get('remarks'),  # 備考
-                "vertical": vertical,  # 縦メニュー利用有無
-                "menu_group_for_input": menu_data.get('menu_group_for_input'),  # 入力用メニューグループ名
-                "menu_group_for_subst": menu_data.get('menu_group_for_subst'),  # 代入値自動登録用メニューグループ名
-                "menu_group_for_ref": menu_data.get('menu_group_for_ref'),  # 参照用メニューグループ名
-                "last_update_date_time": menu_data.get('last_update_date_time')  # 最終更新日時
-            },
-            "type": "Update"
-        }
+        if type_name == "create_new":
+            parameters = {
+                "parameter": {
+                    "menu_name_ja": menu_name_ja,  # メニュー名称(ja)
+                    "menu_name_en": menu_name_en,  # メニュー名称(en)
+                    "menu_name_rest": menu_name_rest,  # メニュー名称(rest)
+                    "sheet_type": sheet_type,  # シートタイプ名
+                    "display_order": menu_data.get('display_order'),  # 表示順序
+                    "description_ja": menu_data.get('description'),  # 説明(ja)
+                    "description_en": menu_data.get('description'),  # 説明(en)
+                    "remarks": menu_data.get('remarks'),  # 備考
+                    "vertical": vertical,  # 縦メニュー利用有無
+                    "menu_group_for_input": menu_data.get('menu_group_for_input'),  # 入力用メニューグループ名
+                    "menu_group_for_subst": menu_data.get('menu_group_for_subst'),  # 代入値自動登録用メニューグループ名
+                    "menu_group_for_ref": menu_data.get('menu_group_for_ref'),  # 参照用メニューグループ名
+                    "last_update_date_time": menu_data.get('last_update_date_time')  # 最終更新日時
+                },
+                "type": "Update"
+            }
+        elif type_name == "initialize" or type_name == "edit":
+            parameters = {
+                "parameter": {
+                    "menu_name_ja": menu_name_ja,  # メニュー名称(ja)
+                    "menu_name_en": menu_name_en,  # メニュー名称(en)
+                    "sheet_type": sheet_type,  # シートタイプ名
+                    "display_order": menu_data.get('display_order'),  # 表示順序
+                    "description_ja": menu_data.get('description'),  # 説明(ja)
+                    "description_en": menu_data.get('description'),  # 説明(en)
+                    "remarks": menu_data.get('remarks'),  # 備考
+                    "vertical": vertical,  # 縦メニュー利用有無
+                    "menu_group_for_input": menu_data.get('menu_group_for_input'),  # 入力用メニューグループ名
+                    "menu_group_for_subst": menu_data.get('menu_group_for_subst'),  # 代入値自動登録用メニューグループ名
+                    "menu_group_for_ref": menu_data.get('menu_group_for_ref'),  # 参照用メニューグループ名
+                    "last_update_date_time": menu_data.get('last_update_date_time')  # 最終更新日時
+                },
+                "type": "Update"
+            }
         
         # 「メニュー定義一覧」のレコードを更新
         exec_result = objmenu.exec_maintenance(parameters, menu_create_id)  # noqa: F405
@@ -999,28 +1043,37 @@ def _insert_t_menu_column(objdbca, menu_data, column_data_list):
                 
                 # カラムクラス「文字列(単一行)」用のパラメータを追加
                 if column_class == "SingleTextColumn":
-                    parameter["single_string_maximum_bytes"] = column_data.get('single_string_maximum_bytes')  # 文字列(単一行) 最大バイト数
+                    single_string_maximum_bytes = None if not column_data.get('single_string_maximum_bytes') else column_data.get('single_string_maximum_bytes')  # noqa: E501
+                    parameter["single_string_maximum_bytes"] = single_string_maximum_bytes  # 文字列(単一行) 最大バイト数
                     parameter["single_string_regular_expression"] = column_data.get('single_string_regular_expression')  # 文字列(単一行) 正規表現
                     parameter["single_string_default_value"] = column_data.get('single_string_default_value')  # 文字列(単一行) 初期値
                 
                 # カラムクラス「文字列(複数行)」用のパラメータを追加
                 if column_class == "MultiTextColumn":
-                    parameter["multi_string_maximum_bytes"] = column_data.get('multi_string_maximum_bytes')  # 文字列(複数行) 最大バイト数
+                    multi_string_maximum_bytes = None if not column_data.get('multi_string_maximum_bytes') else column_data.get('multi_string_maximum_bytes')  # noqa: E501
+                    parameter["multi_string_maximum_bytes"] = multi_string_maximum_bytes  # 文字列(複数行) 最大バイト数
                     parameter["multi_string_regular_expression"] = column_data.get('multi_string_regular_expression')  # 文字列(複数行) 正規表現
                     parameter["multi_string_default_value"] = column_data.get('multi_string_default_value')  # 文字列(複数行) 初期値
                 
                 # カラムクラス「整数」用のパラメータを追加
                 if column_class == "NumColumn":
-                    parameter["integer_maximum_value"] = column_data.get('integer_maximum_value')  # 整数 最大値
-                    parameter["integer_minimum_value"] = column_data.get('integer_minimum_value')  # 整数 最小値
-                    parameter["integer_default_value"] = column_data.get('integer_default_value')  # 整数 初期値
+                    integer_maximum_value = None if not column_data.get('integer_maximum_value') else column_data.get('integer_maximum_value')
+                    integer_minimum_value = None if not column_data.get('integer_minimum_value') else column_data.get('integer_minimum_value')
+                    integer_default_value = None if not column_data.get('integer_default_value') else column_data.get('integer_default_value')
+                    parameter["integer_maximum_value"] = integer_maximum_value  # 整数 最大値
+                    parameter["integer_minimum_value"] = integer_minimum_value  # 整数 最小値
+                    parameter["integer_default_value"] = integer_default_value  # 整数 初期値
                 
                 # カラムクラス「小数」用のパラメータを追加
                 if column_class == "FloatColumn":
-                    parameter["decimal_maximum_value"] = column_data.get('decimal_maximum_value')  # 小数 最大値
-                    parameter["decimal_minimum_value"] = column_data.get('decimal_minimum_value')  # 小数 最小値
-                    parameter["decimal_digit"] = column_data.get('decimal_digit')  # 小数 桁数
-                    parameter["decimal_default_value"] = column_data.get('decimal_default_value')  # 小数 初期値
+                    decimal_maximum_value = None if not column_data.get('decimal_maximum_value') else column_data.get('decimal_maximum_value')
+                    decimal_minimum_value = None if not column_data.get('decimal_minimum_value') else column_data.get('decimal_minimum_value')
+                    decimal_digit = None if not column_data.get('decimal_digit') else column_data.get('decimal_digit')
+                    decimal_default_value = None if not column_data.get('decimal_default_value') else column_data.get('decimal_default_value')
+                    parameter["decimal_maximum_value"] = decimal_maximum_value  # 小数 最大値
+                    parameter["decimal_minimum_value"] = decimal_minimum_value  # 小数 最小値
+                    parameter["decimal_digit"] = decimal_digit  # 小数 桁数
+                    parameter["decimal_default_value"] = decimal_default_value  # 小数 初期値
                 
                 # カラムクラス「日時」用のパラメータを追加
                 if column_class == "DateTimeColumn":
@@ -1038,21 +1091,23 @@ def _insert_t_menu_column(objdbca, menu_data, column_data_list):
                 
                 # カラムクラス「パスワード」用のパラメータを追加
                 if column_class == "PasswordColumn":
-                    parameter["password_maximum_bytes"] = column_data.get('password_maximum_bytes')  # パスワード 最大バイト数
+                    password_maximum_bytes = None if not column_data.get('password_maximum_bytes') else column_data.get('password_maximum_bytes')
+                    parameter["password_maximum_bytes"] = password_maximum_bytes  # パスワード 最大バイト数
                 
                 # カラムクラス「ファイルアップロード」用のパラメータを追加
                 if column_class == "FileUploadColumn":
-                    parameter["file_upload_maximum_bytes"] = column_data.get('file_upload_maximum_bytes')  # ファイルアップロード 最大バイト数
+                    file_upload_maximum_bytes = None if not column_data.get('file_upload_maximum_bytes') else column_data.get('file_upload_maximum_bytes')  # noqa: E501
+                    parameter["file_upload_maximum_bytes"] = file_upload_maximum_bytes  # ファイルアップロード 最大バイト数
                 
                 # カラムクラス「リンク」用のパラメータを追加
                 if column_class == "HostInsideLinkTextColumn":
-                    parameter["link_maximum_bytes"] = column_data.get('link_maximum_bytes')  # リンク 最大バイト数
+                    link_maximum_bytes = None if not column_data.get('link_maximum_bytes') else column_data.get('link_maximum_bytes')
+                    parameter["link_maximum_bytes"] = link_maximum_bytes  # リンク 最大バイト数
                     parameter["link_default_value"] = column_data.get('link_default_value')  # リンク 初期値
                 
                 # カラムクラス「パラメータシート参照」用のパラメータを追加 (未実装)
                 # if column_class == "LinkIDColumn":
                 #     parameter["parameter_sheet_reference"] = column_data.get('parameter_sheet_reference')  # パラメータシート参照
-                
                 parameters = {
                     "parameter": parameter,
                     "type": "Register"
@@ -1172,37 +1227,42 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
                     
                     # カラムクラス「整数」の場合のバリデーションチェック
                     if column_class == "NumColumn":
-                        current_integer_minimum_value = int(target_recode.get('NUM_MIN'))
-                        update_integer_minimum_value = int(column_data.get('integer_minimum_value'))
+                        current_integer_minimum_value = None if not target_recode.get('NUM_MIN') else int(target_recode.get('NUM_MIN'))
+                        update_integer_minimum_value = None if not column_data.get('integer_minimum_value') else int(column_data.get('integer_minimum_value'))  # noqa: E501
                         # 最小値が既存の値よりも上回っている場合エラー判定
-                        if current_integer_minimum_value < update_integer_minimum_value:
-                            raise Exception("499-00708", [item_name, "integer_minimum_value"])  # 「編集」の際は既存項目の対象の値が上回る変更はできません。(項目: {}, 対象: {})
+                        if current_integer_minimum_value and update_integer_minimum_value:
+                            if current_integer_minimum_value < update_integer_minimum_value:
+                                raise Exception("499-00708", [item_name, "integer_minimum_value"])  # 「編集」の際は既存項目の対象の値が上回る変更はできません。(項目: {}, 対象: {})
                         
-                        current_integer_maximum_value = int(target_recode.get('NUM_MAX'))
-                        update_integer_maximum_value = int(column_data.get('integer_maximum_value'))
+                        current_integer_maximum_value = None if not target_recode.get('NUM_MAX') else int(target_recode.get('NUM_MAX'))
+                        update_integer_maximum_value = None if not column_data.get('integer_maximum_value') else int(column_data.get('integer_maximum_value'))  # noqa: E501
                         # 最大値が既存の値よりも下回っている場合エラー判定
-                        if current_integer_maximum_value > update_integer_maximum_value:
-                            raise Exception("499-00707", [item_name, "integer_maximum_value"])  # 「編集」の際は既存項目の対象の値が下回る変更はできません。(項目: {}, 対象: {})
+                        if current_integer_maximum_value and update_integer_maximum_value:
+                            if current_integer_maximum_value > update_integer_maximum_value:
+                                raise Exception("499-00707", [item_name, "integer_maximum_value"])  # 「編集」の際は既存項目の対象の値が下回る変更はできません。(項目: {}, 対象: {})
                     
                     # カラムクラス「小数」の場合のバリデーションチェック
                     if column_class == "FloatColumn":
-                        current_decimal_minimum_value = int(target_recode.get('FLOAT_MIN'))
-                        update_decimal_minimum_value = int(column_data.get('decimal_minimum_value'))
+                        current_decimal_minimum_value = None if not target_recode.get('FLOAT_MIN') else int(target_recode.get('FLOAT_MIN'))
+                        update_decimal_minimum_value = None if not column_data.get('decimal_minimum_value') else int(column_data.get('decimal_minimum_value'))  # noqa: E501
                         # 最小値が既存の値よりも上回っている場合エラー判定
-                        if current_decimal_minimum_value < update_decimal_minimum_value:
-                            raise Exception("499-00708", [item_name, "decimal_minimum_value"])  # 「編集」の際は既存項目の対象の値が上回る変更はできません。(項目: {}, 対象: {})
+                        if current_decimal_minimum_value and update_decimal_minimum_value:
+                            if current_decimal_minimum_value < update_decimal_minimum_value:
+                                raise Exception("499-00708", [item_name, "decimal_minimum_value"])  # 「編集」の際は既存項目の対象の値が上回る変更はできません。(項目: {}, 対象: {})
                         
-                        current_decimal_maximum_value = int(target_recode.get('FLOAT_MAX'))
-                        update_decimal_maximum_value = int(column_data.get('decimal_maximum_value'))
+                        current_decimal_maximum_value = None if not target_recode.get('FLOAT_MAX') else int(target_recode.get('FLOAT_MAX'))
+                        update_decimal_maximum_value = None if not column_data.get('decimal_maximum_value') else int(column_data.get('decimal_maximum_value'))  # noqa: E501
                         # 最大値が既存の値よりも下回っている場合エラー判定
-                        if current_decimal_maximum_value > update_decimal_maximum_value:
-                            raise Exception("499-00707", [item_name, "decimal_maximum_value"])  # 「編集」の際は既存項目の対象の値が下回る変更はできません。(項目: {}, 対象: {})
+                        if current_decimal_maximum_value and update_decimal_maximum_value:
+                            if current_decimal_maximum_value > update_decimal_maximum_value:
+                                raise Exception("499-00707", [item_name, "decimal_maximum_value"])  # 「編集」の際は既存項目の対象の値が下回る変更はできません。(項目: {}, 対象: {})
                         
-                        current_decimal_digit = int(target_recode.get('FLOAT_DIGIT'))
-                        update_decimal_digit = int(column_data.get('decimal_digit'))
+                        current_decimal_digit = None if not target_recode.get('FLOAT_DIGIT') else int(target_recode.get('FLOAT_DIGIT'))
+                        update_decimal_digit = None if not column_data.get('decimal_digit') else int(column_data.get('decimal_digit'))  # noqa: E501
                         # 桁数が既存の値よりも下回っている場合エラー判定
-                        if current_decimal_digit > update_decimal_digit:
-                            raise Exception("499-00707", [item_name, "decimal_digit"])  # 「編集」の際は既存項目の対象の値が下回る変更はできません。(項目: {}, 対象: {})
+                        if current_decimal_digit and update_decimal_digit:
+                            if current_decimal_digit > update_decimal_digit:
+                                raise Exception("499-00707", [item_name, "decimal_digit"])  # 「編集」の際は既存項目の対象の値が下回る変更はできません。(項目: {}, 対象: {})
                     
                     # カラムクラス「プルダウン選択」の場合のバリデーションチェック
                     if column_class == "IDColumn":
@@ -1242,7 +1302,8 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
                         update_link_maximum_bytes = int(column_data.get('link_maximum_bytes'))
                         if current_link_maximum_bytes > update_link_maximum_bytes:
                             raise Exception("499-00707", [item_name, "link_maximum_bytes"])  # 「編集」の際は既存項目の対象の値が下回る変更はできません。(項目: {}, 対象: {})
-                    
+                
+                print("チェック4")
                 # 更新用パラメータを作成
                 parameter = {
                     "item_name_ja": item_name,  # 項目名(ja)
@@ -1301,16 +1362,23 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
                 
                 # カラムクラス「整数」用のパラメータを追加
                 if column_class == "NumColumn":
-                    parameter["integer_maximum_value"] = column_data.get('integer_maximum_value')  # 整数 最大値
-                    parameter["integer_minimum_value"] = column_data.get('integer_minimum_value')  # 整数 最小値
-                    parameter["integer_default_value"] = column_data.get('integer_default_value')  # 整数 初期値
+                    integer_maximum_value = None if not column_data.get('integer_maximum_value') else column_data.get('integer_maximum_value')
+                    integer_minimum_value = None if not column_data.get('integer_minimum_value') else column_data.get('integer_minimum_value')
+                    integer_default_value = None if not column_data.get('integer_default_value') else column_data.get('integer_default_value')
+                    parameter["integer_maximum_value"] = integer_maximum_value  # 整数 最大値
+                    parameter["integer_minimum_value"] = integer_minimum_value  # 整数 最小値
+                    parameter["integer_default_value"] = integer_default_value  # 整数 初期値
                 
                 # カラムクラス「小数」用のパラメータを追加
                 if column_class == "FloatColumn":
-                    parameter["decimal_maximum_value"] = column_data.get('decimal_maximum_value')  # 小数 最大値
-                    parameter["decimal_minimum_value"] = column_data.get('decimal_minimum_value')  # 小数 最小値
-                    parameter["decimal_digit"] = column_data.get('decimal_digit')  # 小数 桁数
-                    parameter["decimal_default_value"] = column_data.get('decimal_default_value')  # 小数 初期値
+                    decimal_maximum_value = None if not column_data.get('decimal_maximum_value') else column_data.get('decimal_maximum_value')
+                    decimal_minimum_value = None if not column_data.get('decimal_minimum_value') else column_data.get('decimal_minimum_value')
+                    decimal_digit = None if not column_data.get('decimal_digit') else column_data.get('decimal_digit')
+                    decimal_default_value = None if not column_data.get('decimal_default_value') else column_data.get('decimal_default_value')
+                    parameter["decimal_maximum_value"] = decimal_maximum_value  # 小数 最大値
+                    parameter["decimal_minimum_value"] = decimal_minimum_value  # 小数 最小値
+                    parameter["decimal_digit"] = decimal_digit  # 小数 桁数
+                    parameter["decimal_default_value"] = decimal_default_value  # 小数 初期値
                 
                 # カラムクラス「日時」用のパラメータを追加
                 if column_class == "DateTimeColumn":
@@ -1727,3 +1795,130 @@ def _format_loadtable_msg(loadtable_msg):
         result_msg[key] = msg_list
         
     return result_msg
+
+
+def add_tmp_column_group(column_group_list, col_group_recode_count, column_group_id, col_num, tmp_column_group, column_group_parent_of_child):
+    """
+        カラムグループ管理用配列にカラムグループの親子関係の情報を格納する
+        ARGS:
+            column_group_list: カラムグループのレコード一覧
+            col_group_recode_count: カラムグループのレコード数
+            column_group_id: 対象のカラムグループID
+            col_num: カラムの並び順をc1, c2, c3...という名称に変換した値
+            tmp_colmn_group: カラムグループ管理用配列
+            column_group_parent_of_child: カラムグループの親子関係があるとき、子の一番大きい親を結びつけるための配列
+        RETRUN:
+            tmp_colmn_group, column_group_parent_of_child
+    """
+    if column_group_id not in tmp_column_group:
+        tmp_column_group[column_group_id] = []
+    
+    tmp_column_group[column_group_id].append(col_num)
+    
+    # カラムグループの親をたどり格納
+    end_flag = False
+    target_column_group_id = column_group_id
+    first_column_group_id = column_group_id
+    loop_count = 0
+    max_loop = int(col_group_recode_count) ** 2  # 「カラムグループ作成情報」のレコード数の二乗がループ回数の上限
+    while not end_flag:
+        for target in column_group_list.values():
+            if target.get('column_group_id') == target_column_group_id:
+                parent_column_group_id = target.get('parent_column_group_id')
+                if not parent_column_group_id:
+                    end_flag = True
+                    break
+                
+                if parent_column_group_id not in tmp_column_group:
+                    tmp_column_group[parent_column_group_id] = []
+                
+                if target_column_group_id not in tmp_column_group[parent_column_group_id]:
+                    tmp_column_group[parent_column_group_id].append(target_column_group_id)
+                
+                target_column_group_id = parent_column_group_id
+                column_group_parent_of_child[first_column_group_id] = parent_column_group_id
+        
+        # ループ数がmax_loopを超えたら無限ループの可能性が高いため強制終了
+        loop_count += 1
+        if loop_count > max_loop:
+            end_flag = True
+    
+    return tmp_column_group, column_group_parent_of_child
+
+
+def collect_column_group_sort_order(column_group_list, tmp_column_group, column_group_info_data):
+    """
+        カラムグループ管理用配列(tmp_column_group)を元に、カラムグループIDをg1,g2,g3...に変換し、idやnameを格納した配列を返す
+        ARGS:
+            column_group_list: カラムグループのレコード一覧
+            tmp_colmn_group: カラムグループ管理用配列
+            column_group_info_data: カラムグループ情報格納用配列
+        RETRUN:
+            column_group_info_data, key_to_id
+    """
+    # カラムグループIDと対応のg番号配列を作成
+    key_to_id = {}
+    group_num = 1
+    for group_id in tmp_column_group.keys():
+        key_to_id[group_id] = 'g' + str(group_num)
+        group_num += 1
+    
+    # カラムグループ管理用配列について、カラムグループIDをg1,g2,g3...に変換し、idやnameを格納する。
+    for group_id, value_list in tmp_column_group.items():
+        add_data = {}
+        columns = []
+        for col in value_list:
+            if col in key_to_id:
+                columns.append(key_to_id[col])
+            else:
+                columns.append(col)
+        
+        add_data['columns'] = columns
+        add_data['column_group_id'] = group_id
+        add_data['column_group_name'] = None
+        add_data['parent_column_group_id'] = None
+        add_data['parent_column_group_name'] = None
+        target_data = column_group_list.get(group_id)
+        if target_data:
+            add_data['column_group_name'] = target_data.get('column_group_name')
+            parent_id = target_data.get('parent_column_group_id')
+            if parent_id:
+                add_data['parent_column_group_id'] = parent_id
+                add_data['parent_column_group_name'] = column_group_list.get(parent_id).get('column_group_name')
+        
+        column_group_info_data[key_to_id[group_id]] = add_data
+    
+    return column_group_info_data, key_to_id
+
+
+def collect_parent_sord_order(column_info_data, column_group_parent_of_child, key_to_id):
+    """
+        大元のカラムの並び順を作成
+        ARGS:
+            column_info_data: 対象のカラム情報
+            column_group_parent_of_child: カラムグループの親子関係があるとき、子の一番大きい親を結びつけるための配列
+            key_to_id: カラムグループIDと対応のg番号配列
+        RETRUN:
+            columns
+    """
+    columns = []
+    for col_num, col_data in column_info_data.items():
+        column_group_id = col_data['column_group_id']
+        if not column_group_id:
+            # カラムグループが無い場合はcol_num(c1, c2, c3...)を格納
+            columns.append(col_num)
+            continue
+        
+        if column_group_id in column_group_parent_of_child:
+            # 大親のカラムグループIDをg番号(g1, g2, g3...)に変換した値を格納
+            parent_column_group_id = column_group_parent_of_child.get(column_group_id)
+            if key_to_id[parent_column_group_id] not in columns:
+                columns.append(key_to_id[parent_column_group_id])
+            continue
+        else:
+            # カラムグループIDをg番号(g1, g2, g3...)に変換した値を格納
+            if key_to_id[column_group_id] not in columns:
+                columns.append(key_to_id[column_group_id])
+            continue
+
+    return columns

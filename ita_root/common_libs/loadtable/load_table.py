@@ -1270,7 +1270,7 @@ class loadTable():
         return status_code, result, msg,
 
     # [maintenance]:メニューのレコード操作
-    def exec_maintenance(self, parameters, target_uuid='', cmd_type='', pk_use_flg=False):
+    def exec_maintenance(self, parameters, target_uuid='', cmd_type='', pk_use_flg=False, auth_check=True):
         """
             RESTAPI[filter]:メニューのレコード操作
             ARGS:
@@ -1343,9 +1343,10 @@ class loadTable():
                     target_jnls = self.get_target_jnl_uuids(target_uuid)
 
             # 処理種別の権限確認(メッセージ集約せずに、400系エラーを返却)
-            exec_authority = self.check_authority_cmd(cmd_type)
-            if exec_authority[0] is not True:
-                return exec_authority
+            if auth_check == True:
+                exec_authority = self.check_authority_cmd(cmd_type)
+                if exec_authority[0] is not True:
+                    return exec_authority
             # 不要パラメータの除外
             entry_parameter = self.exclusion_parameter(cmd_type, entry_parameter)
             # 必須項目チェック
@@ -1700,40 +1701,39 @@ class loadTable():
                             rest_file.setdefault(jsonkey, file_data)
             else:
                 rest_key = self.get_rest_key(col_name)
-                view_item = self.get_objcol(rest_key)
-
-                if view_item is not None:
-                    view_item = view_item.get(COLNAME_VIEW_ITEM)
-                else:
-                    view_item = "1"
-    
-                auto_input_item = self.get_objcol(rest_key)
-                if auto_input_item is not None:
-                    auto_input_item = auto_input_item.get(COLNAME_AUTO_INPUT)
-                else:
-                    auto_input_item = "0"
-
                 if len(rest_key) > 0:
+
+                    objcol = self.get_objcol(rest_key)
+                    if objcol is None:
+                        input_item = '0'
+                        view_item = '2'
+                        auto_input_item = '0'
+                    else:
+                        input_item = objcol.get(COLNAME_INPUT_ITEM)
+                        view_item = objcol.get(COLNAME_VIEW_ITEM)
+                        auto_input_item = objcol.get(COLNAME_AUTO_INPUT)
 
                     if isinstance(col_val, datetime.datetime):
                         col_val = '{}'.format(col_val.strftime('%Y/%m/%d %H:%M:%S.%f'))
                     objcolumn = self.get_columnclass(rest_key)
 
                     # ID → VALUE 変換処理不要ならVALUE変更無し
-                    tmp_exec = objcolumn.convert_value_output(col_val)
-                    if tmp_exec[0] is True:
-                        col_val = tmp_exec[2]
-
-                    # 内部処理用
-                    if mode in ['input']:
-                        if self.get_col_class_name(rest_key) in ['PasswordColumn', 'SensitiveSingleTextColumn', 'SensitiveMultiTextColumn']:
-                            objcolumn = self.get_columnclass(rest_key)
-                            col_val = util.ky_decrypt(col_val)    # noqa: F405
+                    if self.get_col_class_name(rest_key) not in ['PasswordColumn', 'SensitiveSingleTextColumn', 'SensitiveMultiTextColumn']:
+                        tmp_exec = objcolumn.convert_value_output(col_val)
+                        if tmp_exec[0] is True:
+                            col_val = tmp_exec[2]
+                    else:
+                        # 内部処理用
+                        if mode in ['input']:
+                            if col_val is not None:
+                                objcolumn = self.get_columnclass(rest_key)
+                                col_val = util.ky_decrypt(col_val)    # noqa: F405
 
                     if mode in ['input']:
                         rest_parameter.setdefault(rest_key, col_val)
                     else:
-                        if view_item == '1' or auto_input_item == '1':
+                        # if view_item == '1' or auto_input_item == '1':
+                        if (auto_input_item == '1' or not (input_item == '2' and view_item == '0')):
                             rest_parameter.setdefault(rest_key, col_val)
 
                     if mode not in ['excel', 'excel_jnl']:
@@ -1774,9 +1774,12 @@ class loadTable():
                     # カラム名,rest_name_keyか判定
                     if tmp_constraint_key in column_list:
                         tmp_where_str = " `{}` = %s ".format(tmp_constraint_key)
-                        where_str = where_str + ' {} {}'.format(conjunction, tmp_where_str)
                         val = parameter.get(self.get_rest_key(tmp_constraint_key))
-                        bind_value_list.append(val)
+                        if val:
+                            bind_value_list.append(val)
+                        else:
+                            tmp_where_str = " (`{}` is NULL or '{}' = '')".format(tmp_constraint_key, tmp_constraint_key)
+                        where_str = where_str + ' {} {}'.format(conjunction, tmp_where_str)
                         objcolumn = self.get_columnclass(self.get_rest_key(tmp_constraint_key))
                         tmp_bool, tmp_msg, output_val = objcolumn.convert_value_output(val)
                         dict_bind_kv.setdefault(self.get_rest_key(tmp_constraint_key), output_val)
@@ -1797,9 +1800,12 @@ class loadTable():
                             else:
                                 tmp_constraint_col_name = self.get_col_name(tmp_constraint_key)
                                 tmp_where_str = " `{}` = %s ".format(tmp_constraint_col_name)
-                                where_str = where_str + ' {} {}'.format(conjunction, tmp_where_str)
                                 val = parameter.get(tmp_constraint_key)
-                                bind_value_list.append(val)
+                                if val:
+                                    bind_value_list.append(val)
+                                else:
+                                    tmp_where_str = " (`{}` is NULL or '{}' = '')".format(tmp_constraint_col_name, tmp_constraint_col_name)
+                                where_str = where_str + ' {} {}'.format(conjunction, tmp_where_str)
                                 objcolumn = self.get_columnclass(tmp_constraint_key)
                                 tmp_bool, tmp_msg, output_val = objcolumn.convert_value_output(val)
                                 dict_bind_kv.setdefault(tmp_constraint_key, output_val)

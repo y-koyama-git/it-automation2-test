@@ -4083,13 +4083,14 @@ components:
           type: string
           example: 000-00000
         data:
-          type: string
-          example: All movement input data zip base64 string
+          $ref: '#/components/schemas/inline_response_200_16_data'
         message:
           type: string
       example:
         result: 000-00000
-        data: All movement input data zip base64 string
+        data:
+          file_name: "InputData_Conductor_{conductor_instance_id}.zip"
+          file_data: All movement input data zip base64 string
         message: message
     inline_response_200_17:
       type: object
@@ -4098,13 +4099,14 @@ components:
           type: string
           example: 000-00000
         data:
-          type: string
-          example: All movement result data zip base64 string
+          $ref: '#/components/schemas/inline_response_200_17_data'
         message:
           type: string
       example:
         result: 000-00000
-        data: All movement result data zip base64 string
+        data:
+          file_name: "ResultData_Conductor_{conductor_instance_id}.zip"
+          file_data: All movement result data zip base64 string
         message: message
     driver_execute_body:
       type: object
@@ -4704,6 +4706,30 @@ components:
           remarks: 備考
           conductor_instance_id: ConductorインスタンスID
         conductor_class: {}
+    inline_response_200_16_data:
+      type: object
+      properties:
+        file_name:
+          type: string
+          example: "InputData_Conductor_{conductor_instance_id}.zip"
+        file_data:
+          type: string
+          example: All movement input data zip base64 string
+      example:
+        file_name: "InputData_Conductor_{conductor_instance_id}.zip"
+        file_data: All movement input data zip base64 string
+    inline_response_200_17_data:
+      type: object
+      properties:
+        file_name:
+          type: string
+          example: "ResultData_Conductor_{conductor_instance_id}.zip"
+        file_data:
+          type: string
+          example: All movement result data zip base64 string
+      example:
+        file_name: "ResultData_Conductor_{conductor_instance_id}.zip"
+        file_data: All movement result data zip base64 string
     inline_response_200_19_data:
       type: object
       properties:

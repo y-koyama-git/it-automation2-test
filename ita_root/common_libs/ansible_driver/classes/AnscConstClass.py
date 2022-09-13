@@ -102,11 +102,6 @@ class AnscConst:
     DF_LOGIN_AUTH_TYPE_KEY_EXCH = '3'    # 認証方式:鍵認証(鍵交換済み)
     DF_LOGIN_AUTH_TYPE_KEY_PP_USE = '4'  # 認証方式:鍵認証(パスフレーズあり)
     DF_LOGIN_AUTH_TYPE_PW_WINRM = '5'    # 認証方式:パスワード認証(winrm)
-
-    # 変数タイプ
-    DF_VARS_ATTR_STD = '1'       # 一般変数
-    DF_VARS_ATTR_LIST = '2'      # 複数具体値
-    DF_VARS_ATTR_STRUCT = '3'    # 多段変数
     
     # カラムタイプ
     DF_COL_TYPE_VAL = '1'    # Value型

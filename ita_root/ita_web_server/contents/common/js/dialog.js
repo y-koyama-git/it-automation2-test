@@ -93,10 +93,14 @@ close() {
     return new Promise(function( resolve ){
         d.$.dialog.remove();
 
-        if ( d.$.modalContainer.find('.modalOverlay').length ) {
-            d.$.modalContainer.find('.modalOverlay.showDialog:last').addClass('active');
+        if ( d.$.modalContainer.find('.showDialog').length ) {
+            d.$.modalContainer.find('.showDialog:last').addClass('active');
         } else {
-            d.$.modalContainer.remove();
+            if ( d.$.modalContainer.find('.modalOverlay').length ) {
+                d.$.modalContainer.hide();
+            } else {
+                d.$.modalContainer.remove();
+            }
             d.$.modalFocus.remove();
             d.$.body.removeClass('modalOpen');
             d.offFocusEvent();
@@ -212,6 +216,7 @@ dialog() {
           html = [];
     
     if ( d.config.width ) style.push(`width:${d.config.width};`);
+    if ( d.config.minWidth ) style.push(`min-width:${d.config.minWidth};`);
     if ( d.config.position ) style.push(`justify-content:${d.config.position};`);
     
     if ( d.config.height ) mainStyle.push(`height:${d.config.height};`);

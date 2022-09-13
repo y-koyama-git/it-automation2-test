@@ -65,13 +65,14 @@ setUi() {
         '/user/menus/',
         '/user/menus/panels/'
     ];
-    // /api/{organization_id}/workspaces/{workspace_id}/ita/menu/{menu}/info/
     if ( ui.params.menuNameRest && ui.params.menuNameRest !== ui.debugModeName ) {
         restApiUrls.push(`/menu/${ui.params.menuNameRest}/info/`);
     }
     
     fn.fetch( restApiUrls ).then(function( result ){
         if ( result ) {
+            ui.$.container.addClass('ready');
+            
             ui.rest = {};
             ui.rest.user = result[0],
             ui.rest.menuGroups = result[1].menu_groups,
@@ -94,8 +95,12 @@ setUi() {
                     case '0': case '1': case '2': case '3': case '4':
                         ui.defaultMenu();
                     break;
+                    // 5 - 6 : 別フィルターメニュー
+                    case '5': case '6':
+                    break;
                     // 11 : 作業実行
                     case '11':
+                        ui.executeMenu();
                     break;
                     // 12 : 作業状態確認
                     case '12':
@@ -108,16 +113,11 @@ setUi() {
                     case '14':
                         ui.condcutor('edit');
                     break;
-                    // 15 : Conductor作業実行
-                    case '15':
-                        ui.condcutor('execute');
-                    break;
                     // 16 : Conductor作業確認
                     case '16':
-                        ui.condcutor('');
+                        ui.condcutor('confirmation');
                     break;
                     // 17 : 比較実行
-                    // 18 : バージョン確認
                     // 19 : メニュー作成実行
                     default:
                     // メインメニュー
@@ -134,10 +134,11 @@ setUi() {
             }
         }
     }).catch(function( e ){
-        console.log('Error!')
-        alert(e.message);
-        window.console.error( e.message );
-        //location.replace(ui.params.path + 'system_error/');
+        if ( e.message !== 'Failed to fetch') {
+            fn.gotoErrPage( e.message );
+        } else {
+            window.console.error( e.message );
+        }
     });
 }
 
@@ -332,7 +333,7 @@ checkVersion( version ) {
         driverList.push(`<li class="driverItem">${fn.html.icon('plus')} ${item}</li>`);
     }
     
-    const versionHtml = `<div class="varsionContainer">
+    const versionHtml = `<div class="versionContainer">
         <div class="versionLogo"><img class="versionLogoImg" src="/_/ita/imgs/logo.svg" alt="Exastro IT Automation"></div>
         <div class="versionNumber"><span class="versionNumberWrap">Version: ${version.version}</span></div>
         <div class="installedDriver">
@@ -878,18 +879,31 @@ defaultMenu() {
             $button.prop('disabled', true );
             
             fn.fetch( url ).then(function( result ){
-                fn.download( type, result, fileName );
-                fn.disabledTimer( $button, false, 1000 );
+                fn.download( type, result, fileName );                
             }).catch(function( error ){
-                alert( error.message );
-                location.replace('system_error/');
+                fn.gotoErrPage( error.message );
+            }).then(function(){
+                fn.disabledTimer( $button, false, 1000 );
             });
         };
         
         switch ( type ) {
-            case 'allDwonloadExcel':
-                downloadFile('excel', `/menu/${ui.params.menuNameRest}/excel/`, ui.currentPage.title + '_all');
-            break;
+            case 'allDwonloadExcel': {
+                $button.prop('disabled', true );
+                
+                fn.fetch(`/menu/${ui.params.menuNameRest}/filter/count/`).then(function( result ){
+                    const limit = ui.rest.info.menu_info.xls_print_limit;
+                    if ( limit && ui.rest.info.menu_info.xls_print_limit < result ) {
+                        alert(`Excel出力行数：${result}行\n\nExcel出力最大行数（${limit}行）を超過しているためダウンロードを中止します。`);
+                    } else {
+                        downloadFile('excel', `/menu/${ui.params.menuNameRest}/excel/`, ui.currentPage.title + '_all');
+                    }
+                }).catch(function( error ){
+                    fn.gotoErrPage( error.message );
+                }).then(function(){
+                    fn.disabledTimer( $button, false, 1000 );
+                });
+            } break;
             case 'allDwonloadJson':
                 downloadFile('json', `/menu/${ui.params.menuNameRest}/filter/`, ui.currentPage.title + '_all');
             break;
@@ -912,7 +926,7 @@ defaultMenu() {
 }
 /*
 ##################################################
-   全件ダウンロード・ファイル一括登録
+   タブ：全件ダウンロード・ファイル一括登録
 ##################################################
 */
 dataDownload() {
@@ -1016,6 +1030,43 @@ fileRegister( $button, type ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+//   作業実行メニュー
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+executeMenu() {
+    const ui = this;
+    
+    const title = ui.currentPage.title,
+          menuInfo = fn.cv( ui.rest.info.menu_info.menu_info, '');
+    
+    const initSetFilter = fn.getParams().filter,
+          option = {};
+    if ( initSetFilter !== undefined ) option.initSetFilter = initSetFilter;  
+    
+    fn.fetch(`/menu/${ui.params.menuNameRest}/driver/execute/info/`).then(function( result ){
+        console.log(result)
+    }).catch(function( error ){
+        fn.gotoErrPage( error.message );
+    });
+    
+    
+    /*
+    ui.params.subKey = 'movement_list';
+    ui.params.restFilter = `/menu/${ui.params.menuNameRest}/driver/execute/info`;
+    ui.params.restFilterPulldown = `/menu/${ui.params.menuNameRest}/driver/execute/filter/${ui.params.subKey}/search/candidates/`
+    
+    
+    ui.mainTable = new DataTable('MT', 'execute', ui.rest.info, ui.params, option );
+    
+    ui.$.content.html( ui.commonContainer( title, menuInfo, '') );    
+    ui.$.content.find('.contentBody').html( ui.mainTable.setup() );*/
+    
+    ui.setCommonEvents();
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
 //   Create menu
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1069,7 +1120,7 @@ setCommonEvents() {
     
     const buttons = {
         cancel: { text: '閉じる', action: 'normal'},
-        ok: { text: 'メニュー情報詳細確認', action: 'positive'}
+        //ok: { text: 'メニュー情報詳細確認', action: 'positive'}
     }
     
     ui.$.content.find('.contentHeader').find('.contentMenuInfoButton').on('click', function(){
@@ -1079,10 +1130,12 @@ setCommonEvents() {
             + `<div class="menuInfoDescription">${fn.escape( menuInfo.menu_info, true )}</div>`;
         + `</div>`;
         fn.alert('メニュー情報', menuInfoHTml, 'confirm', buttons ).then(function( result ){
+            /*
             if ( result ) {
                 const filter = encodeURIComponent( JSON.stringify( {'menu_id':{NORMAL:menuInfo.menu_id}} ) );
                 window.location.href = `?menu=menu_list&filter=${filter}`;
             }
+            */
         });
     });
 }

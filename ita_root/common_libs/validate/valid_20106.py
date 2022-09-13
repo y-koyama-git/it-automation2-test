@@ -97,7 +97,6 @@ def external_valid_menu_after(objdbca, objtable, option):
             table_name = "T_ANSC_TEMPLATE_FILE"
             where_str = "WHERE DISUSE_FLAG = '0'"
             bind_value_list = []
-            
             ret = objdbca.table_select(table_name, where_str, bind_value_list)
             if len(ret) != 0:
                 for row in ret:
@@ -139,20 +138,19 @@ def external_valid_menu_after(objdbca, objtable, option):
                         chkObj = DefaultVarsFileAnalysis(None)
 
                         err_vars_list = {}
-                        
                         # 変数構造が一致していない変数があるか確認
                         ret = chkObj.chkallVarsStruct(cmp_Vars_list, cmp_Array_vars_list, err_vars_list)
                         if ret[0] is False:
-
                             err_vars_list = ret[1]
                             for err_var_name, dummy in err_vars_list.items():
-                                # if len(msg) != 0:
-                                #     msg += "\n"
-                                # msg += g.appmsg.get_api_message("MSG-10595", err_var_name, dummy)
+                                if len(msg) != 0:
+                                    msg += "\n"
+                                msg += g.appmsg.get_api_message("MSG-10595", [err_var_name, list(dummy.keys())])
                                 retBool = False
                                 boolExecuteContinue = False
                         del chkObj
     # 各テンプレート変数の定義変数で変数の構造に差異がないか確認
+
     if retBool is True:
         if option["cmd_type"] == "Register" or option["cmd_type"] == "Update" or option["cmd_type"] == "Restore":
             global_vars_master_list = {}
@@ -160,7 +158,6 @@ def external_valid_menu_after(objdbca, objtable, option):
             table_name = "T_ANSC_TEMPLATE_FILE"
             where_str = "WHERE DISUSE_FLAG = '0'"
             bind_value_list = []
-            
             ret = objdbca.table_select(table_name, where_str, bind_value_list)
             # RolePackageAnalysisは変数構造の取得のみ
             obj = VarStructAnalysisFileAccess(None, objdbca, global_vars_master_list, template_master_list, '', False, True)
@@ -169,7 +166,7 @@ def external_valid_menu_after(objdbca, objtable, option):
             def_vars_list["__ITA_DUMMY_ROLE_NAME__"] = Vars_list
             def_array_vars_list = {}
             def_array_vars_list["__ITA_DUMMY_ROLE_NAME__"] = Array_vars_list
-            ret = obj.AllRolePackageAnalysis(-1, "__ITA_DUMMY_ROLE_PACKAGE_NAME__", def_vars_list, def_array_vars_list, "MSG-'10611")
+            ret = obj.AllRolePackageAnalysis(-1, "__ITA_DUMMY_ROLE_PACKAGE_NAME__", def_vars_list, def_array_vars_list, "MSG-10611")
 
             if ret is False:
                 retBool = False

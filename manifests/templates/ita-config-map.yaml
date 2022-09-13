@@ -19,8 +19,6 @@ metadata:
 data:
   DEFAULT_LANGUAGE: "ja"
   STORAGEPATH: "/storage/"
-  GITLAB_PROTOCOL: "{{ param01 }}"
-  GITLAB_HOST: "{{ param02 }}"
-  GITLAB_PORT: "{{ param03 }}"
-  GITLAB_ROOT_TOKEN: "{{ param04 }}"
-
+  GITLAB_PROTOCOL: "{{ param01 }}"  # CHANGEME gitlab access http,https
+  GITLAB_HOST: "{{ param02 }}"  # CHANGEME gitlab access host
+  GITLAB_PORT: "{{ param03 }}"  # CHANGEME gitlab access port
