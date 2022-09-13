@@ -24,6 +24,7 @@ from common_libs.common.exception import AppException
 from common_libs.ansible_driver.classes.AnscConstClass import AnscConst
 from common_libs.ansible_driver.classes.ansible_execute import AnsibleExecute
 from common_libs.common.util import file_encode, get_exastro_platform_users
+from common_libs.ansible_driver.functions.util import *
 from common_libs.ansible_driver.functions.util import getMovementAnsibleCnfUploadDirPath
 from common_libs.ansible_driver.classes.ansibletowerlibs.RestApiCaller import RestApiCaller
 from common_libs.ansible_driver.classes.ansibletowerlibs.restapi_command.AnsibleTowerRestApiWorkflowJobs import AnsibleTowerRestApiWorkflowJobs
@@ -456,3 +457,173 @@ def search_user_list(objdbca):
         users_list.update(pf_users)
         
     return users_list
+
+def get_execution_info(objdbca, execution_no):
+    """
+        作業実行の状態取得
+        ARGS:
+            execution_no: 作業実行No
+        RETRUN:
+            data
+    """
+    
+    # 該当の作業実行取得
+    where = "WHERE EXECUTION_NO = " + execution_no
+    data_list = objdbca.table_select("T_ANSR_EXEC_STS_INST", where)
+    
+    # 該当する作業実行が存在しない
+    if len(data_list) is None or len(data_list) == 0:
+        log_msg_args = [execution_no]
+        api_msg_args = [execution_no]
+        raise AppException("499-00903", log_msg_args, api_msg_args)
+
+    execution_info = {}
+    for row in data_list:
+        # 実行種別取得
+        where = "WHERE ID = " + row['RUN_MODE']
+        tmp_data_list = objdbca.table_select("T_ANSC_EXEC_ENGINE", where)
+        for tmp_row in tmp_data_list:
+            execution_type = tmp_row['NAME']
+
+        # ステータス取得
+        where = "WHERE EXEC_STATUS_ID = " + row['STATUS_ID']
+        tmp_data_list = objdbca.table_select("T_ANSC_EXEC_STATUS", where)
+        for tmp_row in tmp_data_list:
+            if g.LANGUAGE == 'ja':
+                status = tmp_row['EXEC_STATUS_NAME_JA']
+            else:
+                status = tmp_row['EXEC_STATUS_NAME_EN']
+
+        # 実行エンジン取得
+        where = "WHERE EXEC_MODE_ID  = " + row['EXEC_MODE']
+        tmp_data_list = objdbca.table_select("T_ANSC_EXEC_MODE", where)
+        for tmp_row in tmp_data_list:
+            if g.LANGUAGE == 'ja':
+                execution_engine = tmp_row['EXEC_MODE_NAME_JA']
+            else:
+                execution_engine = tmp_row['EXEC_MODE_NAME_EN']
+
+        # ホスト指定形式
+        where = "WHERE HOST_DESIGNATE_TYPE_ID  = " + row['I_ANS_HOST_DESIGNATE_TYPE_ID']
+        tmp_data_list = objdbca.table_select("T_COMN_HOST_DESIGNATE_TYPE", where)
+        for tmp_row in tmp_data_list:
+            if g.LANGUAGE == 'ja':
+                host_specify_format = tmp_row['HOST_DESIGNATE_TYPE_NAME_JA']
+            else:
+                host_specify_format = tmp_row['HOST_DESIGNATE_TYPE_NAME_EN']
+
+        # WinRM接続取得
+        where = "WHERE FLAG_ID  = " + row['I_ANS_WINRM_ID']
+        tmp_data_list = objdbca.table_select("T_COMN_BOOLEAN_FLAG", where)
+        for tmp_row in tmp_data_list:
+            win_rm_connect = tmp_row['FLAG_NAME']
+
+        # 投入・結果データエンコード
+        input_data = getLegayRoleExecutPopulatedDataUploadDirPath()
+        encord_input_data = ky_encrypt(input_data)
+        result_data = getLegayRoleExecutResultDataUploadDirPath()
+        encord_result_data = ky_encrypt(result_data)
+
+        execution_info['target_execution'] = {'execution_no': execution_no,
+                                            'execution_type': execution_type,
+                                            'status': status,
+                                            'execution_engine': execution_engine,
+                                            'conductor_caller': row['CONDUCTOR_NAME'],
+                                            'execution_user': row['EXECUTION_USER'],
+                                            'movement': {},
+                                            'operation': {},
+                                            'input_data': encord_input_data,
+                                            'result_data': encord_result_data,
+                                            'execution_situation': {}}
+        execution_info['target_execution']['movement'] = {'id': row['MOVEMENT_ID'],
+                                                        'name': row['I_MOVEMENT_NAME'],
+                                                        'delay_time': row['I_TIME_LIMIT'],
+                                                        'ansible_use_infomation': {},
+                                                        'ansible_core_use_infomation': {},
+                                                        'ansible_automation_controller_use_infomation': {},
+                                                        'ansible_cfg': row['I_ANSIBLE_CONFIG_FILE']}
+        execution_info['target_execution']['movement']['ansible_use_infomation'] = {'host_specify_format': host_specify_format,'win_rm_connect': win_rm_connect}
+        execution_info['target_execution']['movement']['ansible_core_use_infomation'] = {'virtual_env': row['I_ENGINE_VIRTUALENV_NAME']}
+        execution_info['target_execution']['movement']['ansible_automation_controller_use_infomation'] = {'execution_environment': row['I_EXECUTION_ENVIRONMENT_NAME']}
+        execution_info['target_execution']['operation'] = {'id': row['OPERATION_ID'], 'name': row['I_OPERATION_NAME']}
+        execution_info['target_execution']['execution_situation'] = {'reserve_date': row['TIME_BOOK'],
+                                                                    'start_date': row['TIME_START'],
+                                                                    'end_date': row['TIME_END']}
+        # ログ情報
+        execution_info['progress'] = {}
+        execution_info['progress']['execution_log'] = {}
+        path = getAnsibleExecutDirPath(AnscConst.DF_LEGACY_ROLE_DRIVER_ID, execution_no)
+        if row['MULTIPLELOG_MODE'] == '1':
+            list_log = row['LOGFILELIST_JSON'].split(',') 
+            for log in list_log:
+                log_file_path = path + '/out/' + log
+                ret = ky_file_encrypt(log_file_path, path + '/tmp')
+                if ret == 1:
+                    lcstr = Path(path + '/tmp').read_text(encoding="utf-8")
+                    execution_info['progress']['execution_log'][log] = lcstr
+        else:
+            log_file_path = path + '/out/exec_log'
+            ret = ky_file_encrypt(log_file_path, path + '/tmp')
+            if ret == 1:
+                lcstr = Path(path + '/tmp').read_text(encoding="utf-8")
+                execution_info['progress']['execution_log']['exec_log'] = lcstr
+        
+        log_file_path = path + '/out/error_log'
+        ret = ky_file_encrypt(log_file_path, path + '/tmp')
+        if ret == 1:
+            lcstr = Path(path + '/tmp').read_text(encoding="utf-8")
+            execution_info['progress']['execution_log']['error_log'] = lcstr
+        
+        # 状態監視周期・進行状態表示件数
+        where = ""
+        tmp_data_list = objdbca.table_select("T_ANSC_IF_INFO", where)
+        for tmp_row in tmp_data_list:
+            execution_info['status_monitoring_cycle'] = tmp_row['ANSIBLE_REFRESH_INTERVAL']
+            execution_info['number_of_rows_to_display_progress_status'] = tmp_row['ANSIBLE_TAILLOG_LINES']
+
+    return execution_info
+    
+def reserve_cancel(objdbca, execution_no):
+    """
+        予約取消
+        ARGS:
+            objdbca:DB接クラス  DBConnectWs()
+            execution_no: 作業実行No
+        RETRUN:
+            status: SUCCEED
+            execution_no: 作業No
+    """
+    
+    # 該当の作業実行のステータス取得
+    where = "WHERE EXECUTION_NO = " + execution_no
+    objdbca.table_lock(["T_ANSR_EXEC_STS_INST"])
+    data_list = objdbca.table_select("T_ANSR_EXEC_STS_INST", where)
+    
+    # 該当する作業実行が存在しない
+    if len(data_list) is None or len(data_list) == 0:
+        log_msg_args = [execution_no]
+        api_msg_args = [execution_no]
+        raise AppException("499-00903", log_msg_args, api_msg_args)
+    
+    for row in data_list:
+        # ステータスが未実行(予約)でない
+        if not row['STATUS_ID'] == AnscConst.RESERVE:
+            # ステータス取得
+            where = "WHERE EXEC_STATUS_ID = " + row['STATUS_ID']
+            tmp_data_list = objdbca.table_select("T_ANSC_EXEC_STATUS", where)
+            for tmp_row in tmp_data_list:
+                if g.LANGUAGE == 'ja':
+                    status = tmp_row['EXEC_STATUS_NAME_JA']
+                else:
+                    status = tmp_row['EXEC_STATUS_NAME_EN']
+                
+            log_msg_args = [status]
+            api_msg_args = [status]
+            raise AppException("499-00910", log_msg_args, api_msg_args)
+        
+        # ステータスを予約取消に変更
+        update_list = {'EXECUTION_NO': execution_no, 'STATUS_ID': AnscConst.RESERVE_CANCEL}
+        ret = objdbca.table_update('T_ANSR_EXEC_STS_INST', update_list, 'EXECUTION_NO', True)
+        objdbca.db_commit()
+        
+    return {"status": "SUCCEED", "execution_no": execution_no}
