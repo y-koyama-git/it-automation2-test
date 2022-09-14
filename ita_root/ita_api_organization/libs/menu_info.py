@@ -169,6 +169,9 @@ def collect_menu_info(objdbca, menu, menu_record={}, menu_table_link_record={}, 
     if ret:
         for count, recode in enumerate(ret, 1):
 
+            if recode.get('INPUT_ITEM') in ['2'] and recode.get('VIEW_ITEM') in ['0']:
+                continue
+
             # json形式のレコードは改行を削除
             validate_option = recode.get('VALIDATE_OPTION')
             if type(validate_option) is str:
