@@ -231,9 +231,10 @@ class AnsibleExecute():
 
         result = ansibleAg.container_start_up(execute_no, conductor_instance_no, str_shell_command)
         if result[0] is True:
-            return True, ""
+            return True
         else:
-            return False, result[1]
+            self.setLastError(result[1])
+            return False
 
     def execute_statuscheck(self, driver_id, execute_no):
         """
@@ -354,11 +355,6 @@ class AnsibleExecute():
             log_data = ""
         with open(strSTDOUTFileName, "w") as fd:
             fd.write(log_data)
-
-        # エラーメッセージをログに残す
-        strSTDERRFileName = "{}/{}/{}".format(execute_path, self.strOutFolderName, self.STDERRLogfile)
-        with open(strSTDERRFileName, "a") as fd:
-            fd.write(self.getLastErrormsg)
 
         return retStatus
     

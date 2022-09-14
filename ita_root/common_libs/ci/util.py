@@ -14,40 +14,12 @@
 """
 common_libs api common function module
 """
-from flask import Flask, g
-from dotenv import load_dotenv  # python-dotenv
+from flask import g
 import traceback
-import os
 
 from common_libs.common.dbconnect import *  # noqa: F403
-from common_libs.common.logger import AppLog
-from common_libs.common.message_class import MessageTemplate
 from common_libs.common.exception import AppException
 from common_libs.common.util import arrange_stacktrace_format
-
-
-def app_context_start(main_logic, is_logging=True, organization_id=None, workspace_id=None):
-    # load environ variables
-    load_dotenv(override=True)
-
-    flask_app = Flask(__name__)
-
-    with flask_app.app_context():
-        try:
-            g.is_logging = is_logging
-            g.USER_ID = os.environ.get("USER_ID")
-            g.LANGUAGE = os.environ.get("LANGUAGE")
-            # create app log instance and message class instance
-            g.applogger = AppLog()
-            g.appmsg = MessageTemplate(g.LANGUAGE)
-
-            wrapper_job(main_logic, organization_id, workspace_id)
-        except AppException as e:
-            # catch - raise AppException("xxx-xxxxx", log_format)
-            app_exception(e)
-        except Exception as e:
-            # catch - other all error
-            exception(e)
 
 
 def wrapper_job(main_logic, organization_id=None, workspace_id=None):

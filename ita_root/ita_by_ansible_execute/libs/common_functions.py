@@ -62,4 +62,3 @@ def update_execution_record(wsDb, data):
     except AppException as e:
         wsDb.db_rollback()
         raise AppException(e)
-
