@@ -952,7 +952,7 @@ CREATE TABLE T_ANSC_HARDAWRE_TYPE
 -- AACインスタンスグループ管理
 CREATE TABLE T_ANSC_TWR_INSTANCE_GROUP
 (
-    INSTANCE_GROUP_ITA_MANAGED_ID   VARCHAR(2),                                 -- UUID
+    INSTANCE_GROUP_ITA_MANAGED_ID   VARCHAR(40),                                -- UUID
     INSTANCE_GROUP_NAME             VARCHAR(256),                               -- インスタンスグループ名
     INSTANCE_GROUP_ID               INT,                                        -- インスタンスグループID
     NOTE                            VARCHAR(4000),                              -- 備考
