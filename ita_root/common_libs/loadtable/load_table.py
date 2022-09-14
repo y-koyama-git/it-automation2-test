@@ -1869,18 +1869,21 @@ class loadTable():
         exec_config = self.get_menu_before_validate_register()
         # parameter = target_option.get('parameter')
         # file = target_option.get('file')
-        external_validate_path = 'common_libs.validate.valid_{}'.format(self.get_menu_id())
         if exec_config is not None:
-            if exec_config is not None:
-                exec_func = importlib.import_module(external_validate_path)  # noqa: F841
-                eval_str = 'exec_func.{}(self.objdbca, self.objtable, target_option)'.format(exec_config)
-                tmp_exec = eval(eval_str)
-                
-                if tmp_exec[0] is not True:
-                    retBool = False
-                    msg = tmp_exec[1]
-                else:
-                    target_option = tmp_exec[2]
+            if str(self.get_sheet_type()) in ["1", "2", "3", "4"]:
+                # メニュー作成機能で作成したメニュー用のファイルを指定
+                external_validate_path = 'common_libs.validate.valid_cmdb_menu'
+            else:
+                external_validate_path = 'common_libs.validate.valid_{}'.format(self.get_menu_id())
+            exec_func = importlib.import_module(external_validate_path)  # noqa: F841
+            eval_str = 'exec_func.{}(self.objdbca, self.objtable, target_option)'.format(exec_config)
+            tmp_exec = eval(eval_str)
+            
+            if tmp_exec[0] is not True:
+                retBool = False
+                msg = tmp_exec[1]
+            else:
+                target_option = tmp_exec[2]
 
         return retBool, msg, target_option,
 
@@ -1898,17 +1901,20 @@ class loadTable():
         exec_config = self.get_menu_after_validate_register()
         # parameter = target_option.get('parameter')
         # file = target_option.get('file')
-        external_validate_path = 'common_libs.validate.valid_{}'.format(self.get_menu_id())
         if exec_config is not None:
-            if exec_config is not None:
-                exec_func = importlib.import_module(external_validate_path)  # noqa: F841
-                eval_str = 'exec_func.{}(self.objdbca, self.objtable, target_option)'.format(exec_config)
-                tmp_exec = eval(eval_str)
-                if tmp_exec[0] is not True:
-                    retBool = False
-                    msg = tmp_exec[1]
-                else:
-                    target_option = tmp_exec[2]
+            if str(self.get_sheet_type()) in ["1", "2", "3", "4"]:
+                # メニュー作成機能で作成したメニュー用のファイルを指定
+                external_validate_path = 'common_libs.validate.valid_cmdb_menu'
+            else:
+                external_validate_path = 'common_libs.validate.valid_{}'.format(self.get_menu_id())
+            exec_func = importlib.import_module(external_validate_path)  # noqa: F841
+            eval_str = 'exec_func.{}(self.objdbca, self.objtable, target_option)'.format(exec_config)
+            tmp_exec = eval(eval_str)
+            if tmp_exec[0] is not True:
+                retBool = False
+                msg = tmp_exec[1]
+            else:
+                target_option = tmp_exec[2]
 
         return retBool, msg, target_option,
 
