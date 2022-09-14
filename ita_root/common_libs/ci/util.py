@@ -26,7 +26,7 @@ from common_libs.common.exception import AppException
 from common_libs.common.util import arrange_stacktrace_format
 
 
-def app_context_start(main_logic, organization_id=None, workspace_id=None):
+def app_context_start(main_logic, is_logging=True, organization_id=None, workspace_id=None):
     # load environ variables
     load_dotenv(override=True)
 
@@ -34,6 +34,7 @@ def app_context_start(main_logic, organization_id=None, workspace_id=None):
 
     with flask_app.app_context():
         try:
+            g.is_logging = is_logging
             g.USER_ID = os.environ.get("USER_ID")
             g.LANGUAGE = os.environ.get("LANGUAGE")
             # create app log instance and message class instance

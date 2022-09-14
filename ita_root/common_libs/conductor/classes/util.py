@@ -175,9 +175,9 @@ class ConductorCommonLibs():
             return False, err_code, res_chk[1]
 
         # check node call loop
-        # res_chk = self.chk_call_loop_base_1(tmp_c_all_data.get('conductor').get('id'), tmp_c_all_data)
-        # if res_chk[0] is False:
-        #     return False, err_code, res_chk[1]
+        res_chk = self.chk_call_loop_base_1(tmp_c_all_data.get('conductor').get('id'), tmp_c_all_data)
+        if res_chk[0] is False:
+            return False, err_code, res_chk[1]
 
         return True,
 
@@ -498,9 +498,9 @@ class ConductorCommonLibs():
                 # err_msg_args.append('movement_id is not available')
                 err_msg_args.append(g.appmsg.get_api_message('MSG-40014', [node_blcok.get('movement_id'), node_blcok.get('movement_name')]))
                 
-            if 'movement_name' not in node_blcok:
-                # err_msg_args.append('movement_name')
-                err_msg_args.append(g.appmsg.get_api_message('MSG-40014', [node_blcok.get('movement_id'), node_blcok.get('movement_name')]))
+            #if 'movement_name' not in node_blcok:
+            #    # err_msg_args.append('movement_name')
+            #    err_msg_args.append(g.appmsg.get_api_message('MSG-40014', [node_blcok.get('movement_id'), node_blcok.get('movement_name')]))
 
         if 'skip_flag' not in node_blcok:
             # err_msg_args.append('skip_flag')
@@ -515,9 +515,9 @@ class ConductorCommonLibs():
                 # err_msg_args.append('operation_id is not available')
                 err_msg_args.append(g.appmsg.get_api_message('MSG-40016', [node_blcok.get('operation_id'), node_blcok.get('operation_name')]))
 
-            if 'operation_name' not in node_blcok:
-                # err_msg_args.append('operation_name')
-                err_msg_args.append(g.appmsg.get_api_message('MSG-40016', [node_blcok.get('operation_id'), node_blcok.get('operation_name')]))
+            #if 'operation_name' not in node_blcok:
+            #    # err_msg_args.append('operation_name')
+            #    err_msg_args.append(g.appmsg.get_api_message('MSG-40016', [node_blcok.get('operation_id'), node_blcok.get('operation_name')]))
 
         if 'orchestra_id' not in node_blcok or node_blcok['orchestra_id'] not in self._orchestra_id_list:
             # err_msg_args.append('orchestra_id')
@@ -551,9 +551,10 @@ class ConductorCommonLibs():
                 tmp_msg = g.appmsg.get_api_message('MSG-40018', [node_blcok.get('call_conductor_id'), node_blcok.get('call_conductor_name')])
                 err_msg_args.append(tmp_msg)
             if 'call_conductor_name' not in node_blcok:
+                pass
                 # err_msg_args.append('call_conductor_name')
-                tmp_msg = g.appmsg.get_api_message('MSG-40018', [node_blcok.get('call_conductor_id'), node_blcok.get('call_conductor_name')])
-                err_msg_args.append(tmp_msg)
+                # tmp_msg = g.appmsg.get_api_message('MSG-40018', [node_blcok.get('call_conductor_id'), node_blcok.get('call_conductor_name')])
+                # err_msg_args.append(tmp_msg)
 
         if 'skip_flag' not in node_blcok:
             # err_msg_args.append('skip_flag')
@@ -568,8 +569,9 @@ class ConductorCommonLibs():
                 # err_msg_args.append('operation_id is not available')
                 err_msg_args.append(g.appmsg.get_api_message('MSG-40016', [node_blcok.get('operation_id'), node_blcok.get('operation_name')]))
             if 'operation_name' not in node_blcok:
+                pass
                 # err_msg_args.append('operation_name')
-                err_msg_args.append(g.appmsg.get_api_message('MSG-40016', [node_blcok.get('operation_id'), node_blcok.get('operation_name')]))
+                # err_msg_args.append(g.appmsg.get_api_message('MSG-40016', [node_blcok.get('operation_id'), node_blcok.get('operation_name')]))
                 
         if len(err_msg_args) != 0:
             return False, '\n'.join(err_msg_args)
@@ -1169,31 +1171,29 @@ class ConductorCommonLibs():
                     node_type = val2.get('type')
                     if node_type == 'call':
                         call_canductor_id = val2.get('call_conductor_id')
+                        if isinstance(call_canductor_id, list):
+                            call_canductor_id = val2.get('call_conductor_id')[0]
                         arrCallLists.setdefault(call_canductor_id, call_canductor_id)
             # loop chk
-            for key, val in arrCallLists.items():
-                if chk_conductor_id is not None:
-                    call_conductor_id_List.setdefault(chk_conductor_id, {val: val})
-                retArray2 = self.__db.table_select(table_name, where_str, [val])
-                tmpNodeLists2 = retArray2[0]
-                arrCallLists2 = {}
-                # 重複排除
-                c_conductor_data = json.loads(tmpNodeLists2.get('SETTING'))
-                for c_key, c_val in c_conductor_data.items():
-                    if 'node-' in c_key:
-                        c_node_type = c_val.get('type')
-                        if c_node_type == 'call':
-                            c_call_canductor_id = c_val.get('call_conductor_id')
-                            arrCallLists2.setdefault(c_call_canductor_id, c_call_canductor_id)
-                for c_key, c_val in arrCallLists2.items():
-                    if chk_conductor_id not in list(call_conductor_id_List.keys()):
-                        call_conductor_id_List[chk_conductor_id].setdefault(c_val, c_val)
-                        call_conductor_id_List = self.chk_loop_base_1(c_val, {}, call_conductor_id_List)
-                    elif c_val not in list(call_conductor_id_List[chk_conductor_id].keys()):
-                        call_conductor_id_List[chk_conductor_id].setdefault(c_val, c_val)
-                        call_conductor_id_List = self.chk_loop_base_1(c_val, {}, call_conductor_id_List)
-                    else:
-                        return False
+            if len(arrCallLists) != 0:
+                for call_conductor_id in arrCallLists:
+                    if chk_conductor_id is not None:
+                        call_conductor_id_List.setdefault(chk_conductor_id, {call_conductor_id: call_conductor_id})
+                        call_conductor_id_List[chk_conductor_id].setdefault(call_conductor_id, call_conductor_id)
+                        call_conductor_id_List = self.chk_loop_base_1(call_conductor_id, {}, call_conductor_id_List)
+                        if call_conductor_id_List is False:
+                            raise Exception()
+                        if chk_conductor_id in list(call_conductor_id_List.keys()):
+                            if chk_conductor_id in list(call_conductor_id_List[chk_conductor_id].keys()):
+                                # chk_conductor_idでcall(chk_conductor_id)
+                                raise Exception()
+                            elif call_conductor_id in list(call_conductor_id_List.keys()):
+                                if chk_conductor_id in list(call_conductor_id_List[call_conductor_id].keys()):
+                                    # call(call_conductor_id)内でchk_conductor_id
+                                    raise Exception()
+                        else:
+                            raise Exception()
+
         except Exception:
             return False
         return call_conductor_id_List

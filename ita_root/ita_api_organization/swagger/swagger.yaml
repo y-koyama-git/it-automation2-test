@@ -4022,9 +4022,9 @@ components:
     conductor_execute_body:
       type: object
       properties:
-        conductor_class_id:
+        conductor_class_name:
           type: string
-        operation_id:
+        operation_name:
           type: string
         schedule_date:
           type: string
@@ -4111,9 +4111,9 @@ components:
     driver_execute_body:
       type: object
       properties:
-        movement_id:
+        movement_name:
           type: string
-        operation_id:
+        operation_name:
           type: string
         schedule_date:
           type: string
@@ -4139,9 +4139,9 @@ components:
     driver_execute_dry_run_body:
       type: object
       properties:
-        movement_id:
+        movement_name:
           type: string
-        operation_id:
+        operation_name:
           type: string
         schedule_date:
           type: string
@@ -4150,9 +4150,9 @@ components:
     driver_execute_check_parameter_body:
       type: object
       properties:
-        movement_id:
+        movement_name:
           type: string
-        operation_id:
+        operation_name:
           type: string
         schedule_date:
           type: string

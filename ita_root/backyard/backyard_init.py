@@ -17,8 +17,7 @@ from backyard_main import backyard_main
 
 
 def main():
-    g.is_logging = True
-    app_context_start(backyard_main)
+    app_context_start(backyard_main, True)
 
 
 if __name__ == '__main__':

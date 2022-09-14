@@ -2195,9 +2195,9 @@ paths:
               description: 作業実行するConductorの構成情報
               type: object
               properties:
-                conductor_class_id: 
+                conductor_class_name: 
                   type: string
-                operation_id: 
+                operation_name: 
                   type: string
                 schedule_date: 
                   type: string
@@ -2725,9 +2725,9 @@ paths:
               description: 作業実行するDriverの構成情報
               type: object
               properties:
-                movement_id: 
+                movement_name: 
                   type: string
-                operation_id: 
+                operation_name: 
                   type: string
                 schedule_date: 
                   type: string
@@ -2795,9 +2795,9 @@ paths:
               description: 作業実行するDriverの構成情報
               type: object
               properties:
-                movement_id: 
+                movement_name: 
                   type: string
-                operation_id: 
+                operation_name: 
                   type: string
                 schedule_date: 
                   type: string
@@ -2863,9 +2863,9 @@ paths:
               description: 作業実行するDriverの構成情報
               type: object
               properties:
-                movement_id: 
+                movement_name: 
                   type: string
-                operation_id: 
+                operation_name: 
                   type: string
                 schedule_date: 
                   type: string
