@@ -50,13 +50,12 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: params-ita-maria
+  name: params-ita-mariadb
   namespace: exastro-it-automation
 data:
-  DB_HOST: "ita-mariadb"
+  DB_HOST: "ita-mariadb.exastro-it-automation.svc"
   DB_PORT: "3306"
   DB_DATADBASE: "ITA_DB"
-  DB_USER: "ITA_USER"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -86,22 +85,22 @@ spec:
             - name: MARIADB_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: secret-ita-maria
+                  name: secret-ita-mariadb
                   key: DB_ROOT_PASSWORD
             - name: MARIADB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: secret-ita-maria
+                  name: secret-ita-mariadb
                   key: DB_PASSWORD
             - name: MARIADB_USER
               valueFrom:
-                configMapKeyRef:
-                  name: params-ita-maria
+                secretKeyRef:
+                  name: secret-ita-mariadb
                   key: DB_USER
             - name: MARIADB_DATABASE
               valueFrom:
                 configMapKeyRef:
-                  name: params-ita-maria
+                  name: params-ita-mariadb
                   key: DB_DATADBASE
           securityContext:
             allowPrivilegeEscalation: true

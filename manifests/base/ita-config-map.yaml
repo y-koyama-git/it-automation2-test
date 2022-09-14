@@ -17,8 +17,15 @@ metadata:
   name: params-ita-common
   namespace: exastro-it-automation
 data:
-  DEFAULT_LANGUAGE: "ja"
-  STORAGEPATH: "/storage/"
+  DEFAULT_LANGUAGE: "en"
+  CONTAINER_BASE: "kubernetes"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: params-ita-gitlab
+  namespace: exastro-it-automation
+data:
   # CHANGEME If using external gitlab
   GITLAB_PROTOCOL: "http"
   GITLAB_HOST: "gitlab.exastro-it-automation.svc"
