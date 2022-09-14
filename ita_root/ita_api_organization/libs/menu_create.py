@@ -245,7 +245,6 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
                 # unique_constraint_current = json.loads(str_unique_constraint)
                 # menu['unique_constraint_current'] = json.loads(unique_constraint_current)
             
-            
             # カラムクラス「パスワード」用のパラメータを追加
             if column_class_name == "PasswordColumn":
                 col_detail["password_maximum_bytes"] = recode.get('PASSWORD_MAX_LENGTH')  # パスワード 最大バイト数
@@ -750,6 +749,11 @@ def _insert_t_menu_define(objdbca, menu_data):
         # loadTableの呼び出し
         objmenu = load_table.loadTable(objdbca, 'menu_definition_list')  # noqa: F405
         
+        # 縦メニュー利用有無のkeyが無い場合はFalseを指定
+        vertical = menu_data.get('vertical')
+        if not vertical:
+            vertical = "False"
+        
         # 登録用パラメータを作成
         parameters = {
             "parameter": {
@@ -761,7 +765,7 @@ def _insert_t_menu_define(objdbca, menu_data):
                 "description_ja": menu_data.get('description'),  # 説明(ja)
                 "description_en": menu_data.get('description'),  # 説明(en)
                 "remarks": menu_data.get('remarks'),  # 備考
-                "vertical": menu_data.get('vertical'),  # 縦メニュー利用有無
+                "vertical": vertical,  # 縦メニュー利用有無
                 "menu_group_for_input": menu_data.get('menu_group_for_input'),  # 入力用メニューグループ名
                 "menu_group_for_subst": menu_data.get('menu_group_for_subst'),  # 代入値自動登録用メニューグループ名
                 "menu_group_for_ref": menu_data.get('menu_group_for_ref')  # 参照用メニューグループ名
@@ -822,7 +826,11 @@ def _update_t_menu_define(objdbca, current_t_menu_define, menu_data, type_name):
         
         # 「シートタイプ」「縦メニュー利用」を取得
         sheet_type = str(menu_data.get('sheet_type'))
-        vertical = str(menu_data.get('vertical'))
+        vertical = menu_data.get('vertical')
+        
+        # 縦メニュー利用有無のkeyが無い場合はFalseを指定
+        if not vertical:
+            vertical = "False"
         
         # 「初期化」「編集」の場合のみチェックするバリデーション
         if type_name == 'initialize' or type_name == 'edit':
