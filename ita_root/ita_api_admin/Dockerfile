@@ -19,6 +19,9 @@ FROM    registry.access.redhat.com/ubi8/ubi-init as common_build
 ARG USERNAME
 ARG GROUPNAME
 ARG APP_PATH
+ENV PYTHONPATH=/exastro/
+ENV DEFAULT_LANGUAGE=ja
+ENV STORAGEPATH=/storage/
 
 RUN dnf install -y \
     gcc \
