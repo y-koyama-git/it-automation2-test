@@ -1143,7 +1143,7 @@ class ConductorCommonLibs():
         try:
             tmp_result = self.chk_loop_base_1(chk_conductor_id, c_data, call_conductor_id_List)
             if tmp_result is False:
-                retBool = False
+                raise Exception()
         except Exception:
             retBool = False
             msg = json.dumps([json.dumps({"Usecase": g.appmsg.get_api_message('MSG-40012')}, ensure_ascii=False)], ensure_ascii=False)
