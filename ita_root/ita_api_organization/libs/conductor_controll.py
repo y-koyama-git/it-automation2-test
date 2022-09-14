@@ -20,7 +20,7 @@ from common_libs.loadtable import *  # noqa: F403
 
 
 from common_libs.conductor.classes.util import ConductorCommonLibs  # noqa: F401
-from common_libs.conductor.classes.exec_util import ConductorExecuteLibs  # noqa: F401
+from common_libs.conductor.classes.exec_util import *  # noqa: F401
 
 import uuid  # noqa: F401
 
@@ -666,19 +666,33 @@ def create_movement_zip(objdbca, menu, data_type, conductor_instance_id):
             "objconductor": objconductor,
             "objnode": objnode,
         }
+        local_env = {
+            'language': g.LANGUAGE,
+            'user': g.USER_ID,
+            'organization_id': g.ORGANIZATION_ID,
+            'workspace_id': g.WORKSPACE_ID,
+            'conductor_storage_path_ita': None,
+            'base_storage_path_ita': None
+        }
 
-        objCexec = ConductorExecuteLibs(objdbca, '', objmenus)
-        result = objCexec.create_movement_zip(data_type,conductor_instance_id)
-    
+        objCexec = ConductorExecuteBkyLibs(objdbca, local_env)  # noqa: F405
+
+        tmp_result = objCexec.is_conductor_instance_id(conductor_instance_id)
+        if tmp_result is False:
+            raise Exception()
+
+        tmp_result = objCexec.create_movement_zip(conductor_instance_id, data_type)
+        result = tmp_result[1]
     except Exception:
-        status_code = "499-00806"
+        status_code = "499-00815"
         log_msg_args = [conductor_instance_id]
         api_msg_args = [conductor_instance_id]
         raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
 
-    try:
-        pass
-    except Exception:
-        raise Exception()
-    
+    if len(result) == 0:
+        status_code = "499-00815"
+        log_msg_args = [conductor_instance_id]
+        api_msg_args = [conductor_instance_id]
+        raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
+
     return result
