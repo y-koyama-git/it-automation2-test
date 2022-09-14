@@ -519,7 +519,7 @@ cursor: no-drop!important;
 .input:disabled {
 color: var(--rowDiscardTextColor)!important;
 }
-.input[data-key="remarks"] {
+.tBodyTrDiscard .input[data-key="remarks"] {
 background-color: var(--white100);
 }
 .button:disabled > .inner {
@@ -1232,7 +1232,7 @@ min-width: 0;
 */
 #content {
 width: 100%; height: 100%;
-background-color: var(--baseColor100);
+background-color: #F2F2F2;
 }
 .contentHeader {
 overflow: hidden;
@@ -1240,7 +1240,10 @@ display: flex;
 gap: 16px;
 height: 48px;
 background-image: linear-gradient(rgba(255,255,255,1), rgba(255,255,255,0) 40% );
-border-bottom: 1px solid var(--mainColor40);
+border-bottom: 1px solid transparent;
+}
+.tabContent .contentHeader {
+border-bottom-color: var(--mainColor40);
 }
 .contentTitle {
 flex: 0 0 auto;
@@ -1306,8 +1309,11 @@ transform: scale(.8);
 }
 .contentBody {
 height: calc( 100% - 48px );
+background-color: #F2F2F2;
+background-image: linear-gradient( rgba(0,0,0,.075), rgba(0,0,0,0) 8px );
+}
+.tabContent .contentBody {
 background-color: var(--mainColor30);
-background-image: linear-gradient( rgba(0,0,0,.05), rgba(0,0,0,0) 8px );
 }
 .contentMenuList {
 flex: 0 0 auto;
@@ -1375,10 +1381,14 @@ opacity: 1;
 background-color: var(--mainColor100);
 }
 .section {
-display: none;
+display: flex;
 flex-direction: column;
-height: calc( 100% - 48px );
+height: 100%;
 padding: 8px;
+}
+.tabContent .section {
+display: none;
+height: calc( 100% - 48px );
 background-color: var(--baseColor100);
 border-top: 1px solid var(--black40);
 box-shadow: 0 0 16px rgba(0,0,0,.05);

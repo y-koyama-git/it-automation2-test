@@ -253,7 +253,8 @@ setup() {
     tb.select = {
         view: [],
         edit: [],
-        select: []
+        select: [],
+        execute: []
     };
     
     // 編集データ
@@ -284,7 +285,7 @@ setup() {
         case 'view': case 'edit':
             tb.workStart('table', 0 );
         break;
-        case 'select':
+        case 'select': case 'execute':
             tb.flag.initFilter = true;
             tb.flag.countSkip = true;
         break;
@@ -351,8 +352,9 @@ setTable( mode ) {
                 tableHeaderMenuList.Main.push({ name: 'tableCancel', icon: 'cross', title: 'キャンセル', action: 'negative', width: '160px'});
             }
             if ( tb.mode === 'execute') {
-                tableHeaderMenuList.Main.push({ name: 'tableDryrun', icon: 'check', title: 'ドライラン', action: 'default', width: '160px'});
                 tableHeaderMenuList.Main.push({ name: 'tableRun', icon: 'check', title: '実行', action: 'positive', width: '160px'});
+                tableHeaderMenuList.Main.push({ name: 'tableDryrun', icon: 'check', title: 'ドライラン', action: 'default', width: '160px'});
+                tableHeaderMenuList.Main.push({ name: 'tableParameter', icon: 'check', title: 'パラメータ確認', action: 'default', width: '160px'});
             }
             if ( tb.mode === 'view') {
                 // 権限チェック
@@ -381,9 +383,21 @@ setTable( mode ) {
                         case 'tableEdit':
                             tb.changeEdtiMode.call( tb );
                         break;
-                        // 編集モード（登録）
+                        // 編集モード（新規登録）
                         case 'tableNew':
                             tb.changeEdtiMode.call( tb, 'changeEditRegi');
+                        break;
+                        // ドライラン
+                        case 'tableDryrun':
+                            tb.execute('dryrun');
+                        break;
+                        // 作業実行
+                        case 'tableRun':
+                            tb.execute('run');
+                        break;
+                        // パラメータ確認
+                        case 'tableParameter':
+                            tb.execute('parameter');
                         break;
                     }
                 }
@@ -1410,9 +1424,14 @@ setTableEvents() {
             if ( !tb.checkWork ) {
                 const $radio = $( this ),
                       checked = $radio.prop('checked'),
-                      id = $radio.val();
-
-                tb.select.select[0] = id;
+                      id = $radio.val(),
+                      name = $radio.attr('data-selectname');
+                
+                tb.select[tb.mode][0] = {
+                    id: id,
+                    name: name
+                };
+                console.log(tb.select[tb.mode])
             }
         });
     }
@@ -1795,7 +1814,7 @@ getFilterParameter() {
         const $input = $( this ),
               value = $input.val(),
               rest = $input.attr('data-rest'),
-              type = $input.attr('data-type');
+              type = $input.attr('data-type');console.log(  value)
 
         if ( ( fn.typeof( value ) === 'string' && value ) || ( fn.typeof( value ) === 'array' && value.length ) ) {
             if ( !filterParams[ rest ] ) filterParams[ rest ] = {};
@@ -2149,6 +2168,10 @@ tbodyHtml() {
             if ( tb.select[ tb.mode ].indexOf( rowId ) !== -1 ) {
                 attrs['checked'] = 'checked';
             }
+            // selectモード
+            if ( tb.mode === 'select' || tb.mode === 'execute') {
+                attrs.selectname = fn.cv( rowParameter[ tb.params.selectNameKey ], '', true );
+            }
             const idName = ( type === 'check')? `${tb.id}__ROWCHECK`: `${tb.id}__ROWRADIO`,
                   className = ( type === 'check')? 'tBodyRowCheck': 'tBodyRowRadio',
                   rowClassName = ( type === 'check')? 'tBodyRowSelect': 'tBodyRowRadioSelect';
@@ -2245,7 +2268,7 @@ cellHtml( parameter, columnKey, journal ) {
                 className.push('tBodyTdButton');
             }
             return fn.html.cell( tb.viewCellHtml( parameter, columnKey ), className, cellType );
-        case 'select':
+        case 'select': case 'execute':
             return fn.html.cell( tb.viewCellHtml( parameter, columnKey ), className, cellType );
         break;
         case 'history':
@@ -3080,6 +3103,61 @@ editOk() {
                 //バリデーションエラー
                 alert(WD.TABLE.invalid);
             });
+    });
+}
+/*
+##################################################
+   作業実行
+##################################################
+*/
+execute( type ) {
+    const tb = this;
+    
+    const setConfig = function() {
+        switch ( type ) {
+            case 'run':
+                return {
+                    title: '作業実行',
+                    rest: `/menu/${tb.params.menuNameRest}/driver/execute/`
+                };
+            break;
+            case 'dryrun':
+                return {
+                    title: 'ドライラン',
+                    rest: `/menu/${tb.params.menuNameRest}/driver/execute_dry_run/`
+                };
+            break;
+            case 'parameter':
+                return {
+                    title: 'パラメータ確認',
+                    rest: `/menu/${tb.params.menuNameRest}/driver/execute_check_parameter/`
+                };
+            break;
+        }
+    };
+    
+    const executeConfig = setConfig();
+    executeConfig.operation = tb.params.operation;
+    
+    tb.workStart( type );
+    fn.executeModalOpen( tb.id + '_' + type, tb.params.menuNameRest, executeConfig ).then(function( result ){console.log(tb.select.execute)
+        if ( result !== 'cancel') {
+            const postData = {
+              movement_name: tb.select.execute[0].name,
+              operation_name: result.name,
+              schedule_date: result.schedule
+            };
+            // 作業実行開始
+            fn.fetch( executeConfig.rest, null, 'POST', postData ).then(function( result ){
+                console.log(result);
+            }).catch(function( error ){
+                fn.gotoErrPage( error.message );
+            }).then(function(){
+                tb.workEnd();
+            });
+        } else {
+            tb.workEnd();
+        }
     });
 }
 /*

@@ -93,13 +93,17 @@ setUi() {
                     break;
                     // 0 - 4 : 標準メニュー
                     case '0': case '1': case '2': case '3': case '4':
-                        ui.defaultMenu();
+                        ui.$.content.addClass('tabContent');
+                        ui.defaultMenu('standard');
                     break;
-                    // 5 - 6 : 別フィルターメニュー
+                    // 5 - 6 : 参照用メニュー
                     case '5': case '6':
+                        ui.$.content.addClass('tabContent');
+                        ui.defaultMenu('reference');
                     break;
                     // 11 : 作業実行
                     case '11':
+                        ui.$.content.addClass('defaultContent');
                         ui.executeMenu();
                     break;
                     // 12 : 作業状態確認
@@ -732,7 +736,7 @@ contentTab( list ) {
         tab.push(`<li class="contentMenuItem"><a class="contentMenuLink" href="#${item.name}"><span class="inner">${item.title}</span></a></li>`);
         
         const sectionBody = ( item.type !== 'blank' )? ui[item.name](): '';
-        section.push(`<section class="section" id="${item.name}"><div class="sectionBody">${sectionBody}</div></section>`);
+        section.push( ui.contentSection( sectionBody, item.name ) );
     }
     
     return `
@@ -742,6 +746,14 @@ contentTab( list ) {
         </ul>
     </div>
     ${section.join('')}`;
+}
+/*
+##################################################
+   Content section
+##################################################
+*/
+contentSection( body, id ) {
+    return `<section class="section"${( id )?` id="${id}"`: ``}><div class="sectionBody">${body}</div></section>`;
 }
 /*
 ##################################################
@@ -825,7 +837,7 @@ debugMenu() {
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-defaultMenu() {
+defaultMenu( mode ) {
     const ui = this;
     
     const contentTab = [{ name: 'dataList', title: WD.UI.List, type: 'blank' }];
@@ -844,7 +856,7 @@ defaultMenu() {
     // 一覧
     const $dataList = ui.$.content.find('#dataList'),
           initSetFilter = fn.getParams().filter,
-          option = {};
+          option = { tableMode: mode };
     if ( initSetFilter !== undefined ) option.initSetFilter = initSetFilter;
     ui.mainTable = new DataTable('MT', 'view', ui.rest.info, ui.params, option );
     $dataList.find('.sectionBody').html( ui.mainTable.setup() );
@@ -1044,25 +1056,29 @@ executeMenu() {
           option = {};
     if ( initSetFilter !== undefined ) option.initSetFilter = initSetFilter;  
     
+    ui.$.content.html( ui.commonContainer( title, menuInfo, ui.contentSection() ) );  
+    ui.setCommonEvents();
+    
     fn.fetch(`/menu/${ui.params.menuNameRest}/driver/execute/info/`).then(function( result ){
-        console.log(result)
+        // 実行時に渡す名前のKey
+        ui.params.selectNameKey = 'movement_name';
+        // Main REST URL
+        ui.params.restFilter = `/menu/${ui.params.menuNameRest}/driver/execute/filter/movement_list_ansible_role/`;
+        ui.params.restFilterPulldown = `/menu/${ui.params.menuNameRest}/driver/execute/filter/movement_list_ansible_role/search/candidates/`;
+        
+        // Operation
+        ui.params.operation = {
+            selectNameKey: 'operation_name',
+            infoData: result.operation_list,
+            filter: `/menu/${ui.params.menuNameRest}/driver/execute/filter/operation_list/`,
+            filterPulldown: `/menu/${ui.params.menuNameRest}/driver/execute/filter/operation_list/search/candidates/`
+        };
+
+        ui.mainTable = new DataTable('MT', 'execute', result.movement_list_ansible_role, ui.params, option );
+        ui.$.content.find('.sectionBody').html( ui.mainTable.setup() ).show();        
     }).catch(function( error ){
         fn.gotoErrPage( error.message );
-    });
-    
-    
-    /*
-    ui.params.subKey = 'movement_list';
-    ui.params.restFilter = `/menu/${ui.params.menuNameRest}/driver/execute/info`;
-    ui.params.restFilterPulldown = `/menu/${ui.params.menuNameRest}/driver/execute/filter/${ui.params.subKey}/search/candidates/`
-    
-    
-    ui.mainTable = new DataTable('MT', 'execute', ui.rest.info, ui.params, option );
-    
-    ui.$.content.html( ui.commonContainer( title, menuInfo, '') );    
-    ui.$.content.find('.contentBody').html( ui.mainTable.setup() );*/
-    
-    ui.setCommonEvents();
+    });  
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1081,7 +1097,7 @@ createMenu( mode ) {
     ];
     
     fn.loadAssets( assets ).then(function(){
-        const createMenu = new CreateMenu('#content');
+        const createMenu = new CreateMenu('#content', ui.rest.user);
         createMenu.setup();
     });
 }
