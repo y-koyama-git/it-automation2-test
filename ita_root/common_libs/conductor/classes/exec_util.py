@@ -1232,6 +1232,27 @@ class ConductorExecuteLibs():
 
         return retBool, status_code, msg_args,
 
+    def is_conductor_instance_id(self, conductor_instance_id):
+        """
+            作業対象のConductorの確認
+            ARGS:
+                conductor_instance_id: conductor_instance_id
+            RETRUN:
+                retBool
+        """
+        retBool = True
+        result = {}
+        try:
+            retBool, result = self.get_filter_conductor(conductor_instance_id)
+        except Exception as e:
+            g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
+            type_, value, traceback_ = sys.exc_info()
+            msg = traceback.format_exception(type_, value, traceback_)
+            g.applogger.error(msg)
+            retBool = False
+        return retBool
+
+
     def get_filter_conductor(self, conductor_instance_id):
         """
             作業対象のConductorを取得(FILTER)
@@ -2181,15 +2202,25 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
         result.setdefault('status_file_path', None)
 
         try:
-            try:
-                orchestra_path = self.get_orchestra_info().get('name').get(orchestra_id).get('path')
-            except Exception:
-                orchestra_path = None
+            orchestra_path = None
+            if orchestra_path is None:
+                try:
+                    orchestra_path = self.get_orchestra_info().get('name').get(orchestra_id).get('path')
+                except Exception:
+                    pass
+            if orchestra_path is None:
+                try:
+                    orchestra_path = self.get_orchestra_info().get('id').get(orchestra_id).get('path')
+                except Exception:
+                    pass
 
             if orchestra_path is None or execution_id is None:
                 retBool = False
                 return retBool, result,
             
+            if self.get_base_storage_path() is None:
+                self.set_storage_path()
+
             movement_stprage_path = '{}/driver/{}/{}/'.format(
                 self.get_base_storage_path(),
                 orchestra_path,
@@ -2490,15 +2521,11 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
         try:
             # data_typeから取得対象判別
             if data_type == 'input':
-                target_datatype = {'input': {"prefix": "InputData"}}
-            elif data_type == 'output':
-                target_datatype = {'output': {"prefix": "ResultData"}}
+                target_datatype = {'input': {"prefix": "InputData", "target_dir": "in"}}
+            elif data_type == 'result':
+                target_datatype = {'result': {"prefix": "ResultData", "target_dir": "out"}}
             else:
                 raise Exception()
-                target_datatype = {
-                    'input': {"prefix": "InputData"},
-                    'output': {"prefix": "ResultData"}
-                }
 
             # 一時作業ディレクトリ指定
             tmp_work_dir = uuid.uuid4()
@@ -2513,9 +2540,9 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             for tmp_data_type, tmp_data_info in target_datatype.items():
                 # prefix
                 tmp_data_prefix = tmp_data_info.get('prefix')
-                
+                tmp_target_dir = tmp_data_info.get('target_dir')
                 # ZIP対象ディレクトリ
-                tmp_work_path = "{}/{}".format(
+                tmp_work_path = "{}/{}/".format(
                     tmp_work_dir_path,
                     tmp_data_type
                 ).replace('//', '/')
@@ -2529,7 +2556,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                 
                 # 出力ファイルパス path_prefix_Conductor_id
                 tmp_work_path_filename = "{}/{}".format(
-                    tmp_work_path,
+                    tmp_work_dir_path,
                     tmp_file_name
                 ).replace('//', '/')
                 
@@ -2548,12 +2575,15 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                 # 対象MVの作業関連ファイルを一時作業ディレクトリへCP
                 for execution_id, execution_info in execution_data.items():
                     orchestra_id = execution_info.get('orchestra_id')
-                    movement_path = self.get_movement_path(orchestra_id, orchestra_id)
-                    target_mv_zip = "{}/{}_{}.zip".format(movement_path, tmp_data_prefix, orchestra_id)
+                    movement_path = self.get_movement_path(orchestra_id, execution_id)
+                    target_movement_path = movement_path[1].get(tmp_target_dir)
+                    target_mv_zip = "{}/{}_{}.zip".format(target_movement_path, tmp_data_prefix, execution_id)
                     if os.path.isfile(target_mv_zip) is True:  # noqa: F405
                         shutil.copy2(target_mv_zip, tmp_work_path + '/')
+
                 # 全MVをzip化,base64
                 tmp_result = shutil.make_archive(tmp_work_path_filename, ext, root_dir=tmp_work_path)
+
                 with open(tmp_result, "rb") as f:
                     zip_base64_str = base64.b64encode(f.read()).decode('utf-8')  # noqa: F405
 
@@ -2586,14 +2616,16 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
         """
         retBool = True
         result = {}
-
         try:
             # 対象MV取得
             tmp_result = self.get_execute_mv_node_list(conductor_instance_id)
+            print(tmp_result)
             if tmp_result[0] is not True:
                 raise Exception()
             
             execution_data = tmp_result[1]
+            if len(execution_data) == 0:
+                raise Exception()
             
             # ZIPファイル生成＋base64化
             tmp_result = self.create_zip_data(conductor_instance_id, data_type, execution_data)
