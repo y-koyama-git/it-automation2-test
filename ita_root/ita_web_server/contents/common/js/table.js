@@ -128,7 +128,7 @@ get checkWork() {
    > ヘッダー階層データと列データをセット
 ##################################################
 */
-setHeaderHierarchy( mode ) {
+setHeaderHierarchy() {
     const tb = this;
     
     // 特殊列
@@ -149,7 +149,7 @@ setHeaderHierarchy( mode ) {
             const type = columnKey.slice( 0, 1 );
             if ( type === 'g') {
                 tb.data.hierarchy[ row ].push( columnKey );
-                hierarchy( tb.info.column_group_info[ columnKey ][`columns_${mode}`], row + 1, col );
+                hierarchy( tb.info.column_group_info[ columnKey ][`columns_${tb.tableMode}`], row + 1, col );
             } else if ( type === 'c') {
                 const culumnRest =  tb.info.column_info[ columnKey ].column_name_rest;
                 tb.data.restNames[ culumnRest ] = tb.info.column_info[ columnKey ].column_name;                
@@ -166,7 +166,7 @@ setHeaderHierarchy( mode ) {
             }
         }
     };
-    hierarchy( tb.info.menu_info[`columns_${mode}`], 0, 0 );
+    hierarchy( tb.info.menu_info[`columns_${tb.tableMode}`], 0, 0 );
     
     // 固定列用情報
     tb.data.sticky = {};
@@ -231,8 +231,17 @@ setup() {
     tb.data = {};
     tb.data.count = 0;
     
+    // テーブル表示モード "input" or "view"
+    // カラム（column_input or colum_view）
+    const tableViewModeList = ['view', 'select', 'execute', 'history'];
+    if ( tableViewModeList.indexOf( tb.mode ) !== -1 ) {
+        tb.tableMode = 'view';
+    } else {
+        tb.tableMode = 'input';
+    }    
+    
     // tHead階層
-    tb.setHeaderHierarchy('view');
+    tb.setHeaderHierarchy();
     
     // Worker
     tb.worker = new Worker(`${tb.params.dir}/js/table_worker.js`);
@@ -330,7 +339,9 @@ setTable( mode ) {
     const tb = this;
     tb.mode = mode;
     
-    tb.$.table.html( tb.tableHtml() );    
+    tb.$.table.html( tb.tableHtml() );
+    tb.$.table.attr('table-mode', tb.tableMode );
+    
     tb.$.thead = tb.$.container.find('.thead');
     tb.$.tbody = tb.$.container.find('.tbody');
     tb.setInitSort();    
@@ -633,7 +644,7 @@ tableHtml() {
     const info = tb.info,
           groupInfo = info.column_group_info,
           columnInfo = info.column_info,
-          hierarchy = tb.data.hierarchy;
+          hierarchy = tb.data.hierarchy;console.log(tb.data.hierarchy)
     
     const html = [['']],
           groupColspan = {};
@@ -697,7 +708,7 @@ tableHtml() {
                       name = fn.cv( group.column_group_name, '', true ),
                       gCount = fn.cv( groupColspan[ columnKey ].group_count, 0 ),
                       gColspan = fn.cv( groupColspan[ columnKey ].group_colspan, 0 ),
-                      colspan = group.columns.length + gColspan - gCount;
+                      colspan = group[`columns_${tb.tableMode}`].length + gColspan - gCount;
                 
                 // 親グループにcolspanを追加する
                 if ( group.parent_column_group_id !== null ) {
@@ -2820,8 +2831,11 @@ setPagingEvent() {
 changeEdtiMode( changeMode ) {
     const tb = this;
     
+    // テーブルモードの変更
+    tb.tableMode = 'input';
+    
     // テーブル構造を再セット
-    tb.setHeaderHierarchy('input');
+    tb.setHeaderHierarchy();
     
     const info = tb.info.column_info;
     
@@ -2906,8 +2920,11 @@ changeEdtiMode( changeMode ) {
 changeViewMode() {
     const tb = this;
     
+    // テーブルモードの変更
+    tb.tableMode = 'view';
+    
     // テーブル構造を再セット
-    tb.setHeaderHierarchy('view');
+    tb.setHeaderHierarchy();
     
     tb.$.window.off('beforeunload');
     tb.$.container.removeClass('tableError');
