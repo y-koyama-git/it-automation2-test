@@ -43,6 +43,7 @@ def external_valid_menu_before(objdbca, objtable, option):
     ret = obj.Parse(tmpFile)
     os.remove(tmpFile)
     if ret is False:
+        retBool = False
         error_detail = obj.GetLastError()
         if len(msg) != 0:
             msg += "\n"

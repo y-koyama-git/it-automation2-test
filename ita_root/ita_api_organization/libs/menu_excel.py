@@ -1744,10 +1744,20 @@ def execute_excel_maintenance(objdbca, organization_id, workspace_id, menu, menu
     except BadZipfile as e:
         # 次のファイルタイプのみ許容します。[.xlsx,.xlsm]
         status_code = '499-00401'
-        raise AppException(status_code)
+        raise AppException(status_code)     # noqa: F405
     
     # 対象メニューを特定するためのIDを取得する
     menu_id = menu_record[0].get('MENU_ID')
+    menu_name = menu_record[0].get('MENU_NAME_' + lang.upper())
+    
+    # エラー判定用にシート名を取得
+    sheets_name_list = wb.sheetnames
+    
+    # シート名が想定と違う場合はエラーとする
+    if menu_name not in sheets_name_list:
+        # このメニューの編集用Excelファイルではありません。
+        status_code = '499-00402'
+        raise AppException(status_code)     # noqa: F405
     
     ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
     

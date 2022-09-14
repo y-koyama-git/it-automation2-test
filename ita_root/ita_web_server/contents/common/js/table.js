@@ -128,7 +128,7 @@ get checkWork() {
    > ヘッダー階層データと列データをセット
 ##################################################
 */
-setHeaderHierarchy( mode ) {
+setHeaderHierarchy() {
     const tb = this;
     
     // 特殊列
@@ -149,7 +149,7 @@ setHeaderHierarchy( mode ) {
             const type = columnKey.slice( 0, 1 );
             if ( type === 'g') {
                 tb.data.hierarchy[ row ].push( columnKey );
-                hierarchy( tb.info.column_group_info[ columnKey ][`columns_${mode}`], row + 1, col );
+                hierarchy( tb.info.column_group_info[ columnKey ][`columns_${tb.tableMode}`], row + 1, col );
             } else if ( type === 'c') {
                 const culumnRest =  tb.info.column_info[ columnKey ].column_name_rest;
                 tb.data.restNames[ culumnRest ] = tb.info.column_info[ columnKey ].column_name;                
@@ -166,7 +166,7 @@ setHeaderHierarchy( mode ) {
             }
         }
     };
-    hierarchy( tb.info.menu_info[`columns_${mode}`], 0, 0 );
+    hierarchy( tb.info.menu_info[`columns_${tb.tableMode}`], 0, 0 );
     
     // 固定列用情報
     tb.data.sticky = {};
@@ -231,8 +231,17 @@ setup() {
     tb.data = {};
     tb.data.count = 0;
     
+    // テーブル表示モード "input" or "view"
+    // カラム（column_input or colum_view）
+    const tableViewModeList = ['view', 'select', 'execute', 'history'];
+    if ( tableViewModeList.indexOf( tb.mode ) !== -1 ) {
+        tb.tableMode = 'view';
+    } else {
+        tb.tableMode = 'input';
+    }    
+    
     // tHead階層
-    tb.setHeaderHierarchy('view');
+    tb.setHeaderHierarchy();
     
     // Worker
     tb.worker = new Worker(`${tb.params.dir}/js/table_worker.js`);
@@ -253,7 +262,8 @@ setup() {
     tb.select = {
         view: [],
         edit: [],
-        select: []
+        select: [],
+        execute: []
     };
     
     // 編集データ
@@ -284,7 +294,7 @@ setup() {
         case 'view': case 'edit':
             tb.workStart('table', 0 );
         break;
-        case 'select':
+        case 'select': case 'execute':
             tb.flag.initFilter = true;
             tb.flag.countSkip = true;
         break;
@@ -329,7 +339,9 @@ setTable( mode ) {
     const tb = this;
     tb.mode = mode;
     
-    tb.$.table.html( tb.tableHtml() );    
+    tb.$.table.html( tb.tableHtml() );
+    tb.$.table.attr('table-mode', tb.tableMode );
+    
     tb.$.thead = tb.$.container.find('.thead');
     tb.$.tbody = tb.$.container.find('.tbody');
     tb.setInitSort();    
@@ -351,8 +363,9 @@ setTable( mode ) {
                 tableHeaderMenuList.Main.push({ name: 'tableCancel', icon: 'cross', title: 'キャンセル', action: 'negative', width: '160px'});
             }
             if ( tb.mode === 'execute') {
-                tableHeaderMenuList.Main.push({ name: 'tableDryrun', icon: 'check', title: 'ドライラン', action: 'default', width: '160px'});
                 tableHeaderMenuList.Main.push({ name: 'tableRun', icon: 'check', title: '実行', action: 'positive', width: '160px'});
+                tableHeaderMenuList.Main.push({ name: 'tableDryrun', icon: 'check', title: 'ドライラン', action: 'default', width: '160px'});
+                tableHeaderMenuList.Main.push({ name: 'tableParameter', icon: 'check', title: 'パラメータ確認', action: 'default', width: '160px'});
             }
             if ( tb.mode === 'view') {
                 // 権限チェック
@@ -381,9 +394,21 @@ setTable( mode ) {
                         case 'tableEdit':
                             tb.changeEdtiMode.call( tb );
                         break;
-                        // 編集モード（登録）
+                        // 編集モード（新規登録）
                         case 'tableNew':
                             tb.changeEdtiMode.call( tb, 'changeEditRegi');
+                        break;
+                        // ドライラン
+                        case 'tableDryrun':
+                            tb.execute('dryrun');
+                        break;
+                        // 作業実行
+                        case 'tableRun':
+                            tb.execute('run');
+                        break;
+                        // パラメータ確認
+                        case 'tableParameter':
+                            tb.execute('parameter');
                         break;
                     }
                 }
@@ -619,7 +644,7 @@ tableHtml() {
     const info = tb.info,
           groupInfo = info.column_group_info,
           columnInfo = info.column_info,
-          hierarchy = tb.data.hierarchy;
+          hierarchy = tb.data.hierarchy;console.log(tb.data.hierarchy)
     
     const html = [['']],
           groupColspan = {};
@@ -683,7 +708,7 @@ tableHtml() {
                       name = fn.cv( group.column_group_name, '', true ),
                       gCount = fn.cv( groupColspan[ columnKey ].group_count, 0 ),
                       gColspan = fn.cv( groupColspan[ columnKey ].group_colspan, 0 ),
-                      colspan = group.columns.length + gColspan - gCount;
+                      colspan = group[`columns_${tb.tableMode}`].length + gColspan - gCount;
                 
                 // 親グループにcolspanを追加する
                 if ( group.parent_column_group_id !== null ) {
@@ -1410,9 +1435,14 @@ setTableEvents() {
             if ( !tb.checkWork ) {
                 const $radio = $( this ),
                       checked = $radio.prop('checked'),
-                      id = $radio.val();
-
-                tb.select.select[0] = id;
+                      id = $radio.val(),
+                      name = $radio.attr('data-selectname');
+                
+                tb.select[tb.mode][0] = {
+                    id: id,
+                    name: name
+                };
+                console.log(tb.select[tb.mode])
             }
         });
     }
@@ -1795,7 +1825,7 @@ getFilterParameter() {
         const $input = $( this ),
               value = $input.val(),
               rest = $input.attr('data-rest'),
-              type = $input.attr('data-type');
+              type = $input.attr('data-type');console.log(  value)
 
         if ( ( fn.typeof( value ) === 'string' && value ) || ( fn.typeof( value ) === 'array' && value.length ) ) {
             if ( !filterParams[ rest ] ) filterParams[ rest ] = {};
@@ -2149,6 +2179,10 @@ tbodyHtml() {
             if ( tb.select[ tb.mode ].indexOf( rowId ) !== -1 ) {
                 attrs['checked'] = 'checked';
             }
+            // selectモード
+            if ( tb.mode === 'select' || tb.mode === 'execute') {
+                attrs.selectname = fn.cv( rowParameter[ tb.params.selectNameKey ], '', true );
+            }
             const idName = ( type === 'check')? `${tb.id}__ROWCHECK`: `${tb.id}__ROWRADIO`,
                   className = ( type === 'check')? 'tBodyRowCheck': 'tBodyRowRadio',
                   rowClassName = ( type === 'check')? 'tBodyRowSelect': 'tBodyRowRadioSelect';
@@ -2245,7 +2279,7 @@ cellHtml( parameter, columnKey, journal ) {
                 className.push('tBodyTdButton');
             }
             return fn.html.cell( tb.viewCellHtml( parameter, columnKey ), className, cellType );
-        case 'select':
+        case 'select': case 'execute':
             return fn.html.cell( tb.viewCellHtml( parameter, columnKey ), className, cellType );
         break;
         case 'history':
@@ -2797,8 +2831,11 @@ setPagingEvent() {
 changeEdtiMode( changeMode ) {
     const tb = this;
     
+    // テーブルモードの変更
+    tb.tableMode = 'input';
+    
     // テーブル構造を再セット
-    tb.setHeaderHierarchy('input');
+    tb.setHeaderHierarchy();
     
     const info = tb.info.column_info;
     
@@ -2883,8 +2920,11 @@ changeEdtiMode( changeMode ) {
 changeViewMode() {
     const tb = this;
     
+    // テーブルモードの変更
+    tb.tableMode = 'view';
+    
     // テーブル構造を再セット
-    tb.setHeaderHierarchy('view');
+    tb.setHeaderHierarchy();
     
     tb.$.window.off('beforeunload');
     tb.$.container.removeClass('tableError');
@@ -3080,6 +3120,61 @@ editOk() {
                 //バリデーションエラー
                 alert(WD.TABLE.invalid);
             });
+    });
+}
+/*
+##################################################
+   作業実行
+##################################################
+*/
+execute( type ) {
+    const tb = this;
+    
+    const setConfig = function() {
+        switch ( type ) {
+            case 'run':
+                return {
+                    title: '作業実行',
+                    rest: `/menu/${tb.params.menuNameRest}/driver/execute/`
+                };
+            break;
+            case 'dryrun':
+                return {
+                    title: 'ドライラン',
+                    rest: `/menu/${tb.params.menuNameRest}/driver/execute_dry_run/`
+                };
+            break;
+            case 'parameter':
+                return {
+                    title: 'パラメータ確認',
+                    rest: `/menu/${tb.params.menuNameRest}/driver/execute_check_parameter/`
+                };
+            break;
+        }
+    };
+    
+    const executeConfig = setConfig();
+    executeConfig.operation = tb.params.operation;
+    
+    tb.workStart( type );
+    fn.executeModalOpen( tb.id + '_' + type, tb.params.menuNameRest, executeConfig ).then(function( result ){console.log(tb.select.execute)
+        if ( result !== 'cancel') {
+            const postData = {
+              movement_name: tb.select.execute[0].name,
+              operation_name: result.name,
+              schedule_date: result.schedule
+            };
+            // 作業実行開始
+            fn.fetch( executeConfig.rest, null, 'POST', postData ).then(function( result ){
+                console.log(result);
+            }).catch(function( error ){
+                fn.gotoErrPage( error.message );
+            }).then(function(){
+                tb.workEnd();
+            });
+        } else {
+            tb.workEnd();
+        }
     });
 }
 /*

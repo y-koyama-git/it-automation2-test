@@ -18,7 +18,8 @@ from common_libs.common import *  # noqa: F403
 from common_libs.api import api_filter
 from libs.organization_common import check_menu_info, check_auth_menu, check_sheet_type
 from libs import driver_controll, menu_info, menu_filter
-
+from common_libs.ansible_driver.classes.AnscConstClass import AnscConst
+from common_libs.ansible_driver.functions.rest_libs import insert_execution_list, execution_scram
 
 @api_filter
 def get_driver_execute_data(organization_id, workspace_id, menu, execution_no):  # noqa: E501
@@ -51,7 +52,9 @@ def get_driver_execute_data(organization_id, workspace_id, menu, execution_no): 
     # メニューに対するロール権限をチェック
     check_auth_menu(menu, objdbca)
     
-    return 'do some magic!',
+    result = driver_controll.get_execution_info(objdbca, execution_no)
+
+    return result,
 
 
 @api_filter
@@ -160,7 +163,6 @@ def post_driver_cancel(organization_id, workspace_id, menu, execution_no):  # no
 
     :rtype: InlineResponse20011
     """
-
     # DB接続
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
     
@@ -174,8 +176,9 @@ def post_driver_cancel(organization_id, workspace_id, menu, execution_no):  # no
     # メニューに対するロール権限をチェック
     check_auth_menu(menu, objdbca)
     
-    return 'do some magic!',
+    result = driver_controll.reserve_cancel(objdbca, execution_no)
 
+    return result,
 
 @api_filter
 def post_driver_excecute(organization_id, workspace_id, menu, body=None):  # noqa: E501
@@ -189,7 +192,7 @@ def post_driver_excecute(organization_id, workspace_id, menu, body=None):  # noq
     :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
-    :param body:
+    :param body: リクエストボディ
     :type body: dict | bytes
 
     :rtype: InlineResponse20017
@@ -213,9 +216,30 @@ def post_driver_excecute(organization_id, workspace_id, menu, body=None):  # noq
         body = dict(connexion.request.get_json())
         parameter = body
 
-    # 作業管理に登録
-    result = driver_controll.insert_execution_list(objdbca, menu, parameter, 'execute')
+    useed = True
+    # 予約日時のフォーマットチェック
+    # yyyy/mm/dd hh:mmをyyyy/mm/dd hh:mm:ssにしている
+    schedule_date = driver_controll.scheduled_format_check(parameter, useed)
 
+    Required = True
+    # Movementチェック
+    movement_row = driver_controll.movement_registr_check(objdbca, parameter, Required)
+
+    # オペレーションチェック
+    operation_row = driver_controll.operation_registr_check(objdbca, parameter, Required)
+
+    # トランザクション開始
+    objdbca.db_transaction_start()
+
+    # 作業管理に登録
+    objAnsc = AnscConst()
+    conductor_id = None
+    conductor_name = None
+    run_mode = "1"
+    result = insert_execution_list(objdbca, run_mode, objAnsc.DF_LEGACY_ROLE_DRIVER_ID, operation_row, movement_row, schedule_date, conductor_id, conductor_name)
+    # コミット・トランザクション終了
+    objdbca.db_transaction_end(True)
+ 
     return result,
 
 
@@ -255,8 +279,29 @@ def post_driver_execute_check_parameter(organization_id, workspace_id, menu, bod
         body = dict(connexion.request.get_json())
         parameter = body
 
+    useed = True
+    # 予約日時のフォーマットチェック
+    # yyyy/mm/dd hh:mmをyyyy/mm/dd hh:mm:ssにしている
+    schedule_date = driver_controll.scheduled_format_check(parameter, useed)
+
+    Required = True
+    # Movementチェック
+    movement_row = driver_controll.movement_registr_check(objdbca, parameter, Required)
+
+    # オペレーションチェック
+    operation_row = driver_controll.operation_registr_check(objdbca, parameter, Required)
+
+    # トランザクション開始
+    objdbca.db_transaction_start()
+
     # 作業管理に登録
-    result = driver_controll.insert_execution_list(objdbca, menu, parameter, 'check_parameter')
+    objAnsc = AnscConst()
+    conductor_id = None
+    conductor_name = None
+    run_mode = "3"
+    result = insert_execution_list(objdbca, run_mode, objAnsc.DF_LEGACY_ROLE_DRIVER_ID, operation_row, movement_row, schedule_date, conductor_id, conductor_name)
+    # コミット・トランザクション終了
+    objdbca.db_transaction_end(True)
 
     return result,
 
@@ -273,7 +318,7 @@ def post_driver_execute_dry_run(organization_id, workspace_id, menu, body=None):
     :type workspace_id: str
     :param menu: メニュー名
     :type menu: str
-    :param body:
+    :param body: 
     :type body: dict | bytes
 
     :rtype: InlineResponse20017
@@ -297,8 +342,30 @@ def post_driver_execute_dry_run(organization_id, workspace_id, menu, body=None):
         body = dict(connexion.request.get_json())
         parameter = body
 
+    useed = True
+    # 予約日時のフォーマットチェック
+    # yyyy/mm/dd hh:mmをyyyy/mm/dd hh:mm:ssにしている
+    schedule_date = driver_controll.scheduled_format_check(parameter, useed)
+
+    Required = True
+    # Movementチェック
+    movement_row = driver_controll.movement_registr_check(objdbca, parameter, Required)
+
+    # オペレーションチェック
+    operation_row =driver_controll.operation_registr_check(objdbca, parameter, Required)
+
+    # トランザクション開始
+    objdbca.db_transaction_start()
+
     # 作業管理に登録
-    result = driver_controll.insert_execution_list(objdbca, menu, parameter, 'dry_run')
+    objAnsc = AnscConst()
+    conductor_id = None
+    conductor_name = None
+    run_mode = "2"
+    result = insert_execution_list(objdbca, run_mode, objAnsc.DF_LEGACY_ROLE_DRIVER_ID, operation_row, movement_row, schedule_date, conductor_id, conductor_name)
+
+    # コミット・トランザクション終了
+    objdbca.db_transaction_end(True)
 
     return result,
 
@@ -317,7 +384,7 @@ def post_driver_execute_filter(organization_id, workspace_id, menu, target, body
     :type menu: str
     :param target: movement_list or operation_list
     :type target: str
-    :param body:
+    :param body: 
     :type body: dict | bytes
 
     :rtype: InlineResponse2005
@@ -357,7 +424,7 @@ def post_driver_execute_filter(organization_id, workspace_id, menu, target, body
 
 
 @api_filter
-def post_driver_scram(organization_id, workspace_id, menu, execution_no):  # noqa: E501
+def post_driver_scram(organization_id, workspace_id, menu, execution_no, body=None):  # noqa: E501
     """post_driver_scram
 
     Driver作業実行の緊急停止 # noqa: E501
@@ -386,5 +453,16 @@ def post_driver_scram(organization_id, workspace_id, menu, execution_no):  # noq
 
     # メニューに対するロール権限をチェック
     check_auth_menu(menu, objdbca)
+
+    objdbca.db_transaction_start()
+
+    objAnsc = AnscConst()
+
+    result = execution_scram(objdbca, objAnsc.DF_LEGACY_ROLE_DRIVER_ID, execution_no)
     
-    return 'do some magic!',
+    objdbca.db_transaction_end(False)  # roleback
+    
+    # 緊急停止しました。
+    result_msg = g.appmsg.get_api_message("MSG-10891", [execution_no])
+
+    return result_msg,

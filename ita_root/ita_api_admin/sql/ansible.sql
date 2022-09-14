@@ -494,12 +494,9 @@ CREATE TABLE T_ANSR_VALUE_AUTOREG
     COLUMN_ASSIGN_SEQ               INT,                                        -- 代入順序
     COL_TYPE                        VARCHAR(2),                                 -- 登録方式
     MOVEMENT_ID                     VARCHAR(40),                                -- Movement
-    VAL_MVMT_VAR_LINK_ID            VARCHAR(40),                                -- 変数名
-    VAL_COL_SEQ_COMBINATION_ID      VARCHAR(40),                                -- メンバー変数
-    VAL_ASSIGN_SEQ                  INT,                                        -- 代入順序
-    KEY_MVMT_VAR_LINK_ID            VARCHAR(40),                                -- 変数名
-    KEY_COL_SEQ_COMBINATION_ID      VARCHAR(40),                                -- メンバー変数
-    KEY_ASSIGN_SEQ                  INT,                                        -- 代入順序
+    MVMT_VAR_LINK_ID                VARCHAR(40),                                -- 変数名
+    COL_SEQ_COMBINATION_ID          VARCHAR(40),                                -- メンバー変数
+    ASSIGN_SEQ                      INT,                                        -- 代入順序
     NULL_DATA_HANDLING_FLG          VARCHAR(2),                                 -- NULL連携
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1),                                 -- 廃止フラグ
@@ -519,12 +516,9 @@ CREATE TABLE T_ANSR_VALUE_AUTOREG_JNL
     COLUMN_ASSIGN_SEQ               INT,                                        -- 代入順序
     COL_TYPE                        VARCHAR(2),                                 -- 登録方式
     MOVEMENT_ID                     VARCHAR(40),                                -- Movement
-    VAL_MVMT_VAR_LINK_ID            VARCHAR(40),                                -- 変数名
-    VAL_COL_SEQ_COMBINATION_ID      VARCHAR(40),                                -- メンバー変数
-    VAL_ASSIGN_SEQ                  INT,                                        -- 代入順序
-    KEY_MVMT_VAR_LINK_ID            VARCHAR(40),                                -- 変数名
-    KEY_COL_SEQ_COMBINATION_ID      VARCHAR(40),                                -- メンバー変数
-    KEY_ASSIGN_SEQ                  INT,                                        -- 代入順序
+    MVMT_VAR_LINK_ID                VARCHAR(40),                                -- 変数名
+    COL_SEQ_COMBINATION_ID          VARCHAR(40),                                -- メンバー変数
+    ASSIGN_SEQ                      INT,                                        -- 代入順序
     NULL_DATA_HANDLING_FLG          VARCHAR(2),                                 -- NULL連携
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1),                                 -- 廃止フラグ

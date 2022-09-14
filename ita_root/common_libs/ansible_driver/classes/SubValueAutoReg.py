@@ -98,15 +98,6 @@ class SubValueAutoReg():
         global warning_flag
         global error_flag
         
-        # 環境情報設定
-        # 言語情報
-        if 'LANGUAGE' not in g:
-            g.LANGUAGE = 'ja'
-        if 'USER_ID' not in g:
-            g.USER_ID = '20101'
-        if 'ROLES' not in g:
-            g.ROLES = 'JyIkPVx7Wy8KYWJjMTIz'
-        
         # 処理区分が変数抜出処理
         if exec_type == '2':
             template_list = self.getTemplateVarList(WS_DB)

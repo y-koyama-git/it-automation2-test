@@ -169,6 +169,9 @@ def collect_menu_info(objdbca, menu, menu_record={}, menu_table_link_record={}, 
     if ret:
         for count, recode in enumerate(ret, 1):
 
+            if recode.get('INPUT_ITEM') in ['2'] and recode.get('VIEW_ITEM') in ['0']:
+                continue
+
             # json形式のレコードは改行を削除
             validate_option = recode.get('VALIDATE_OPTION')
             if type(validate_option) is str:
@@ -459,8 +462,10 @@ def collect_parent_sord_order(column_info_data, column_group_parent_of_child, ke
             # カラムグループIDをg番号(g1, g2, g3...)に変換した値を格納
             if key_to_id[column_group_id] not in columns:
                 columns.append(key_to_id[column_group_id])
+            if key_to_id[column_group_id] not in columns_input:
                 if col_data['input_item'] in ['0', '1']:
                     columns_input.append(key_to_id[column_group_id])
+            if key_to_id[column_group_id] not in columns_view:
                 if col_data['view_item'] in ['1']:
                     columns_view.append(key_to_id[column_group_id])
             continue

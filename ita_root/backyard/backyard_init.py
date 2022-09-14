@@ -11,13 +11,40 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# from flask import g
-from common_libs.ci.util import app_context_start
-from backyard_main import backyard_main
+from flask import Flask, g
+from dotenv import load_dotenv  # python-dotenv
+import os
+
+from common_libs.common.exception import AppException
+from common_libs.common.logger import AppLog
+from common_libs.common.message_class import MessageTemplate
+from common_libs.ci.util import wrapper_job, app_exception, exception
+from backyard_main import backyard_main as main_logic
 
 
 def main():
-    app_context_start(backyard_main)
+    # load environ variables
+    load_dotenv(override=True)
+
+    flask_app = Flask(__name__)
+
+    with flask_app.app_context():
+        try:
+            g.is_logging = True
+
+            g.USER_ID = os.environ.get("USER_ID")
+            g.LANGUAGE = os.environ.get("LANGUAGE")
+            # create app log instance and message class instance
+            g.applogger = AppLog()
+            g.appmsg = MessageTemplate(g.LANGUAGE)
+
+            wrapper_job(main_logic)
+        except AppException as e:
+            # catch - raise AppException("xxx-xxxxx", log_format)
+            app_exception(e)
+        except Exception as e:
+            # catch - other all error
+            exception(e)
 
 
 if __name__ == '__main__':

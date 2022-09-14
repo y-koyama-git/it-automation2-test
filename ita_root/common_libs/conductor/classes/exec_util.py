@@ -21,6 +21,8 @@ from common_libs.column import *  # noqa: F403
 
 from common_libs.conductor.classes.util import ConductorCommonLibs  # noqa: F401
 
+from common_libs.ansible_driver.functions.rest_libs import *  # noqa: F403
+
 import json
 import uuid
 import copy
@@ -187,6 +189,8 @@ class ConductorExecuteLibs():
                     for row in rows:
                         id = row.get(pk_col)
                         result[target_key].setdefault(id, row)
+                        name = row.get(name_col)
+                        result[target_key].setdefault(name, row)
         except Exception as e:
             g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
             type_, value, traceback_ = sys.exc_info()
@@ -202,49 +206,99 @@ class ConductorExecuteLibs():
 
     def chk_execute_parameter_format(self, parameter):
         """
-            Conductor 作業実行前のフォーマットチェック
+            Conductor 作業実行前のフォーマットチェック, (補完)
             ARGS:
                 parameter: {'conductor_class_id':'', 'operation_id':'', schedule_date:'', 'conductor_data':{}}
             RETRUN:
-                retBool, result
+                retBool, result, parameter
         """
         retBool = True
         result = None
         msg_ags = []
         try:
-            conductor_class_id = parameter.get('conductor_class_id')
-            operation_id = parameter.get('operation_id')
-            schedule_date = parameter.get('schedule_date')
-            conductor_data = parameter.get('conductor_data')
-            # conductor_class_id
-            if conductor_class_id is not None:
-                table_name = 'T_COMN_CONDUCTOR_CLASS'
-                where_str = "where `CONDUCTOR_CLASS_ID` in (%s) "
-                bind_value_list = [parameter.get('conductor_class_id')]
-                tmp_result = self.objdbca.table_select(table_name, where_str, bind_value_list)
-                if len(tmp_result) != 1:
+            # 優先順位 [conductor_class_name and operation_name] > [conductor_class_id and operation_id]
+            # id and name は不正
+            if 'conductor_class_name' in parameter and 'operation_name' in parameter:
+                conductor_class_name = parameter.get('conductor_class_name')
+                operation_name = parameter.get('operation_name')
+                schedule_date = parameter.get('schedule_date')
+                conductor_data = parameter.get('conductor_data')
+                # conductor_class_name
+                if conductor_class_name is not None:
+                    table_name = 'T_COMN_CONDUCTOR_CLASS'
+                    where_str = "where `CONDUCTOR_NAME` in (%s) "
+                    bind_value_list = [conductor_class_name]
+                    tmp_result = self.objdbca.table_select(table_name, where_str, bind_value_list)
+                    if len(tmp_result) != 1:
+                        retBool = False
+                        tmp_msg_ags = '{}:{}'.format('conductor_class_name', conductor_class_name)
+                        msg_ags.append(tmp_msg_ags)
+                    else:
+                        parameter['conductor_class_id'] = tmp_result[0].get('CONDUCTOR_CLASS_ID')
+                else:
+                    retBool = False
+                    tmp_msg_ags = '{}:{}'.format('conductor_class_name', conductor_class_name)
+                    msg_ags.append(tmp_msg_ags)
+
+                # operation_name
+                if operation_name is not None:
+                    table_name = 'T_COMN_OPERATION'
+                    where_str = "where `OPERATION_NAME` in (%s) "
+                    bind_value_list = [operation_name]
+                    tmp_result = self.objdbca.table_select(table_name, where_str, bind_value_list)
+                    if len(tmp_result) != 1:
+                        retBool = False
+                        tmp_msg_ags = '{}:{}'.format('operation_name', operation_name)
+                        msg_ags.append(tmp_msg_ags)
+                    else:
+                        parameter['operation_id'] = tmp_result[0].get('OPERATION_ID')
+                else:
+                    tmp_msg_ags = '{}:{}'.format('operation_name', operation_name)
+                    msg_ags.append(tmp_msg_ags)
+
+            elif 'conductor_class_id' in parameter and 'operation_id' in parameter:
+                conductor_class_id = parameter.get('conductor_class_id')
+                operation_id = parameter.get('operation_id')
+                schedule_date = parameter.get('schedule_date')
+                conductor_data = parameter.get('conductor_data')
+
+                # conductor_class_id
+                if conductor_class_id is not None:
+                    table_name = 'T_COMN_CONDUCTOR_CLASS'
+                    where_str = "where `CONDUCTOR_CLASS_ID` in (%s) "
+                    bind_value_list = [parameter.get('conductor_class_id')]
+                    tmp_result = self.objdbca.table_select(table_name, where_str, bind_value_list)
+                    if len(tmp_result) != 1:
+                        retBool = False
+                        tmp_msg_ags = '{}:{}'.format('conductor_class_id', conductor_class_id)
+                        msg_ags.append(tmp_msg_ags)
+                    else:
+                        parameter['conductor_class_name'] = tmp_result[0].get('CONDUCTOR_NAME')
+                else:
                     retBool = False
                     tmp_msg_ags = '{}:{}'.format('conductor_class_id', conductor_class_id)
                     msg_ags.append(tmp_msg_ags)
-            else:
-                retBool = False
-                tmp_msg_ags = '{}:{}'.format('conductor_class_id', conductor_class_id)
-                msg_ags.append(tmp_msg_ags)
-                
-            # operation_id
-            if operation_id is not None:
-                table_name = 'T_COMN_OPERATION'
-                where_str = "where `OPERATION_ID` in (%s) "
-                bind_value_list = [parameter.get('operation_id')]
-                tmp_result = self.objdbca.table_select(table_name, where_str, bind_value_list)
-                if len(tmp_result) != 1:
-                    retBool = False
+
+                # operation_id
+                if operation_id is not None:
+                    table_name = 'T_COMN_OPERATION'
+                    where_str = "where `OPERATION_ID` in (%s) "
+                    bind_value_list = [parameter.get('operation_id')]
+                    tmp_result = self.objdbca.table_select(table_name, where_str, bind_value_list)
+                    if len(tmp_result) != 1:
+                        retBool = False
+                        tmp_msg_ags = '{}:{}'.format('operation_id', operation_id)
+                        msg_ags.append(tmp_msg_ags)
+                    else:
+                        parameter['operation_name'] = tmp_result[0].get('OPERATION_NAME')
+                else:
                     tmp_msg_ags = '{}:{}'.format('operation_id', operation_id)
                     msg_ags.append(tmp_msg_ags)
             else:
-                tmp_msg_ags = '{}:{}'.format('operation_id', operation_id)
+                tmp_msg_ags = '{}'.format(parameter)
                 msg_ags.append(tmp_msg_ags)
-            
+                raise Exception()
+
             # schedule_date
             if schedule_date is not None:
                 if len(schedule_date) != 0:
@@ -273,7 +327,7 @@ class ConductorExecuteLibs():
         finally:
             result = [', '.join(msg_ags)]
 
-        return retBool, result
+        return retBool, result, parameter,
 
     def create_execute_register_parameter(self, parameter, parent_conductor_instance_id=None):
         """
@@ -319,6 +373,8 @@ class ConductorExecuteLibs():
             # parameterから取得
             conductor_class_id = parameter.get('conductor_class_id')
             operation_id = parameter.get('operation_id')
+            conductor_class_name = parameter.get('conductor_class_name')
+            operation_name = parameter.get('operation_name')
             schedule_date = parameter.get('schedule_date')
             conductor_data = parameter.get('conductor_data')
             
@@ -510,7 +566,10 @@ class ConductorExecuteLibs():
                         n_parameter["instance_source_movement_info"] = movement_class_json
                     # Call項目
                     if node_type in ["call"]:
-                        n_conductor_class_id = node_info.get('call_conductor_id')
+                        if isinstance(node_info.get('call_conductor_id'), list):
+                            n_conductor_class_id = node_info.get('call_conductor_id')[0]
+                        else:
+                            n_conductor_class_id = node_info.get('call_conductor_id')
                         n_conductor_class_name = get_list_data.get('conductor').get(n_conductor_class_id).get('CONDUCTOR_NAME')
                         filter_parameter = {"conductor_class_id": {"LIST": [n_conductor_class_id]}}
                         tmp_conductor = objcclass.rest_filter(filter_parameter)
@@ -528,8 +587,12 @@ class ConductorExecuteLibs():
                         if skip_flag is not None:
                             if skip_flag in [1, '1']:
                                 n_parameter["skip"] = bool_master_true
-                            
+                        
                         node_operation_id = node_info.get('operation_id')
+                        if isinstance(node_info.get('operation_id'), list):
+                            node_operation_id = node_info.get('operation_id')[0]
+                        else:
+                            node_operation_id = node_info.get('operation_id')
                         if node_operation_id is not None:
                             if node_operation_id in get_list_data.get('operation'):
                                 node_operation_name = get_list_data.get('operation').get(node_operation_id).get('OPERATION_NAME')
@@ -627,7 +690,7 @@ class ConductorExecuteLibs():
                 tmp_msg_json = json.loads(msg)
                 for eno, errinfo in tmp_msg_json.items():
                     for ekey, einfo in errinfo.items():
-                        if ekey != '__line__':
+                        if ekey != g.appmsg.get_api_message("MSG-00004", []):
                             msg_json.setdefault(ekey, einfo)
                         else:
                             for node_err in einfo:
@@ -637,7 +700,7 @@ class ConductorExecuteLibs():
                                     for node_name, node_msg in tmp_node_err_json.items():
                                         msg_json.setdefault(node_name, node_msg.splitlines())
                 result = json.dumps(msg_json, ensure_ascii=False)
-            except Exception as e:
+            except Exception:
                 result = msg
         except Exception as e:
             g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
@@ -808,7 +871,8 @@ class ConductorExecuteLibs():
                     for row in rows:
                         id = row.get(pk_col)
                         result[target_key].setdefault(id, row)
-
+                        name = row.get(name_col)
+                        result[target_key].setdefault(name, row)
             # 作業に関連する、Conductor、Movement、Operationのリスト
             objconductor = self.objmenus.get('objconductor')
             objnode = self.objmenus.get('objnode')
@@ -1354,27 +1418,27 @@ class ConductorExecuteLibs():
                 "1": {
                     'menu': 'execution_list_ansible_legacy',
                     'path': 'ansible/legacy',
-                    'execute': '',
+                    'execute': 'T_COMN_MOVEMENT',
                     'abort': '',
                     'status': ''
                 },
                 "2": {
                     'menu': 'execution_list_ansible_pioneer',
                     'path': 'ansible/pioneer',
-                    'execute': '',
+                    'execute': 'T_COMN_MOVEMENT',
                     'post_abort': '',
                     'status': ''
                 },
                 "3": {
                     'menu': 'execution_list_ansible_role',
                     'path': 'ansible/legacy_role',
-                    'execute': '',
+                    'execute': 'T_COMN_MOVEMENT',
                     'abort': '',
                     'status': 'T_ANSR_EXEC_STS_INST'
                 },
                 "4": {
                     'menu': '',
-                    'execute': '',
+                    'execute': 'T_COMN_MOVEMENT',
                     'abort': '',
                     'status': ''
                 }
@@ -2486,7 +2550,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                     orchestra_id = execution_info.get('orchestra_id')
                     movement_path = self.get_movement_path(orchestra_id, orchestra_id)
                     target_mv_zip = "{}/{}_{}.zip".format(movement_path, tmp_data_prefix, orchestra_id)
-                    if os.path.isfile(target_mv_zip) is True:
+                    if os.path.isfile(target_mv_zip) is True:  # noqa: F405
                         shutil.copy2(target_mv_zip, tmp_work_path + '/')
                 # 全MVをzip化,base64
                 tmp_result = shutil.make_archive(tmp_work_path_filename, ext, root_dir=tmp_work_path)
@@ -2565,19 +2629,35 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             orchestra_info = self.get_orchestra_info()
             action_config = orchestra_info.get('name').get(orchestra_id).get(action_type)
             if action_type == 'execute':
+                # operation_id = action_options.get('operation_id')
+                operation_name = action_options.get('operation_name')
                 movement_id = action_options.get('movement_id')
+                # movement_name = action_options.get('movement_name')
+                conductor_id = action_options.get('conductor_id')
+                conductor_name = action_options.get('conductor_name')
+                movement_row = {}
+                where_str = textwrap.dedent("""
+                    WHERE `DISUSE_FLAG` = 0 AND `MOVEMENT_ID` = %s
+                """).format().strip()
+                table_name = action_config
+                rows = self.objdbca.table_select(table_name, where_str, [movement_id])
+                for row in rows:
+                    movement_row = row
                 # 作業実行
-                ########
-                ### tmp_execute = execute(movement_id)
-                # if tmp_execute is not False:
-                #    # tmp_result = tmp_execute
-                tmp_result = "1" 
+                try:
+                    tmp_execute = insert_execution_list(self.objdbca, "1", orchestra_id, operation_name, movement_row, None, conductor_id, conductor_name)  # noqa: F405 E501
+                    tmp_result = tmp_execute.get('execution_no')
+                except Exception:
+                    pass
+
             elif action_type == 'abort':
                 execution_id = action_options.get('execution_id')
                 # 緊急停止
-                ########
-                ### tmp_result = abort(movement_id)
-                tmp_result = True
+                try:
+                    tmp_result = execution_scram(self.objdbca, orchestra_id, execution_id)  # noqa: F405
+                except Exception:
+                    pass
+
             elif action_type == 'status':
                 # ステータス取得
                 execution_id = action_options.get('execution_id')
@@ -3108,13 +3188,34 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             # Conductor実行中
             c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('3')
 
-            # movement_id
+            # movement
             movement_id = node_filter_data.get('parameter').get('instance_source_movement_id')
+            movement_name = node_filter_data.get('parameter').get('instance_source_movement_name')
             
-            # movement class / instance id 
+            # conductor
+            conductor_id = node_options.get('instance_data').get('conductor').get('conductor_id')
+            conductor_name = node_options.get('instance_data').get('conductor').get('conductor_name')
+            
+            # operation
+            operation_id = node_options.get('instance_data').get('conductor').get('operation_id')
+            operation_name = node_options.get('instance_data').get('conductor').get('operation_name')
+            tmp_operation_id = node_filter_data.get('parameter').get('operation_id')
+            tmp_operation_name = node_filter_data.get('parameter').get('operation_name')
+            # operation 個別
+            if tmp_operation_id is not None:
+                operation_id = tmp_operation_id
+                operation_name = tmp_operation_name
+
+            # execution_id / movement / operation / conductor instance
             action_options = {}
-            action_options.setdefault("movement_id", movement_id)
             action_options.setdefault("execution_id", execution_id)
+            action_options.setdefault("movement_id", movement_id)
+            action_options.setdefault("movement_name", movement_name)
+            action_options.setdefault("operation_id", operation_id)
+            action_options.setdefault("operation_name", operation_name)
+            action_options.setdefault("conductor_id", conductor_id)
+            action_options.setdefault("conductor_name", conductor_name)
+
             execute_flg = False
             # ##################### 強制SKIP対応 #####################
             skip = '1'
@@ -3144,9 +3245,10 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                             if execution_id is not None:
                                 execute_flg = True
                                 node_filter_data['parameter']['execution_id'] = execution_id
+
                         except Exception:
-                            err_msg = 'msg'
-                            node_filter_data = self.add_execution_log(node_filter_data, err_msg)
+                            # err_msg = 'msg'
+                            # node_filter_data = self.add_execution_log(node_filter_data, err_msg)
                             n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('6')
                             c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('7')
                 else:

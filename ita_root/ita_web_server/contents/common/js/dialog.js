@@ -34,24 +34,22 @@ constructor( config, btnFn ) {
 open( body ) {
     const d = this;
     if ( d.$.dialog === undefined ) {
-        d.init();        
+        d.openInit();        
         
         d.$.originTarget = $(':focus');
-        d.$.modalContainer = $('#modalContainer');
-        d.$.modalFocus = $('.modalContainerFocus');
         d.$.modalContainer.find('.active').removeClass('active');
 
         // Dialog
         d.$.dialog = $( d.dialog() );
         d.$.header = d.$.dialog .find('.dialogHeader');
-        d.$.body = d.$.dialog.find('.dialogBody');
+        d.$.dbody = d.$.dialog.find('.dialogBody');
         d.$.footer = d.$.dialog .find('.dialogFooter');
         
         if ( body ) {
             d.setBody( body );
         } else {
             d.$.dialog.addClass('dialogProcessing');
-            d.$.body.html(`<div class="processingContainer"></div>`);
+            d.$.dbody.html(`<div class="processingContainer"></div>`);
         }
 
         // z-index
@@ -101,7 +99,7 @@ close() {
             } else {
                 d.$.modalContainer.remove();
             }
-            d.$.modalFocus.remove();
+            $('.modalContainerFocus').remove();
             d.$.body.removeClass('modalOpen');
             d.offFocusEvent();
         }
@@ -119,14 +117,14 @@ close() {
 hide() {
     const d = this;
     
-    d.$.dialog.removeClass('showDialog').css('z-index', -1 );
+    d.$.dialog.removeClass('showDialog active').css('z-index', -1 );
     d.$.dialog.hide();
     
     if ( d.$.modalContainer.find('.showDialog').length ) {
         d.$.modalContainer.find('.showDialog:last').addClass('active');
     } else {
         d.$.modalContainer.hide();
-        d.$.modalFocus.remove();
+        $('.modalContainerFocus').remove();
         d.$.body.removeClass('modalOpen');
         d.offFocusEvent();
     }
@@ -138,34 +136,37 @@ hide() {
 */
 show() {
     const d = this;
-    
-    const zIndex = d.$.modalContainer.find('.showDialog').length + 1;
-    d.$.dialog.addClass('showDialog').css('z-index', zIndex );
-    d.$.dialog.show();
-
-    if ( zIndex === 1 ) {
-        d.$.modalContainer.show();
-        d.onFocusEvent();
-        d.$.body.addClass('modalOpen')
-            .prepend('<div class="modalContainerFocusFirst modalContainerFocus" tabindex="0"></div>')
-            .append('<div class="modalContainerFocusLast modalContainerFocus" tabindex="0"></div>');
+    if ( d.$.dialog !== undefined ) {
+        d.openInit();
+        
+        const zIndex = d.$.modalContainer.find('.showDialog').length + 1;
+        d.$.dialog.show().addClass('showDialog active').css('z-index', zIndex );
     }
 }
 /*
 --------------------------------------------------
-   Init
+   open, show 表示初期設定
 --------------------------------------------------
 */
-init() {
+openInit() {
     const d = this;
-    // Container
+    
+    // Container確認
     if ( !fn.exists('#modalContainer') ) {
-        d.onFocusEvent();
-        d.$.body.addClass('modalOpen')
+         d.$.body.addClass('modalOpen')
             .prepend('<div class="modalContainerFocusFirst modalContainerFocus" tabindex="0"></div>')
             .append('<div id="modalContainer"></div><div class="modalContainerFocusLast modalContainerFocus" tabindex="0"></div>');
+        d.$.modalContainer = $('#modalContainer');
+        d.onFocusEvent()
+    } else if ( $('#modalContainer').is(':hidden') ) {
+        if ( !d.$.modalContainer ) d.$.modalContainer = $('#modalContainer');
+        d.$.body.addClass('modalOpen')
+                .prepend('<div class="modalContainerFocusFirst modalContainerFocus" tabindex="0"></div>')
+                .append('<div class="modalContainerFocusLast modalContainerFocus" tabindex="0"></div>');
+        d.$.modalContainer.show();
+        d.onFocusEvent();
     } else {
-        $('#modalContainer').show();
+        if ( !d.$.modalContainer ) d.$.modalContainer = $('#modalContainer');
     }
 }
 /*
@@ -176,7 +177,7 @@ init() {
 */
 onFocusEvent() {
     const d = this;
-    
+    console.log('!')
     d.$.body.on('focusin.modal', d.focusElements, function(){
         const $f = $( this ),
               $t = d.$.modalContainer.find('.modalOverlay.active .dialog').find( d.focusElements );
@@ -198,7 +199,6 @@ onFocusEvent() {
 offFocusEvent() {
     const d = this;
     d.$.body.off('focusin.modal focusout.modal');
-    d.$.body.find('.modalFocus').remove();
 }
 /*
 --------------------------------------------------
@@ -270,7 +270,7 @@ setBody( elements ) {
     const d = this;
     d.$.dialog.removeClass('dialogProcessing');
     d.buttonEnabled();
-    d.$.body.html( elements );
+    d.$.dbody.html( elements );
 }
 /*
 --------------------------------------------------

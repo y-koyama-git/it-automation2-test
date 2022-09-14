@@ -169,6 +169,18 @@ class Column():
         menu_id = self.get_objtable().get('MENUINFO').get('MENU_ID')
         return menu_id
 
+    def get_sheet_type(self):
+        """
+            シートタイプを取得
+            RETRUN:
+                {} or [] ?
+        """
+        try:
+            result = self.get_objtable().get('MENUINFO').get('SHEET_TYPE')
+        except Exception:
+            result = 0
+        return result
+
     def set_encrypt_name(self, encrypt_name):
         """
             encrypt_nameを設定
@@ -500,18 +512,20 @@ class Column():
         retBool = True
         msg = ''
         exec_config = self.get_call_before_valid_info()
-
-        external_validate_path = 'common_libs.validate.valid_{}'.format(self.get_menu())
         if exec_config is not None:
-            if exec_config is not None:
-                exec_func = importlib.import_module(external_validate_path)
-                eval_str = 'exec_func.{}(self.objdbca, self.objtable, option)'.format(exec_config)
-                tmp_exec = eval(eval_str)
-                if tmp_exec[0] is not True:
-                    retBool = False
-                    msg = tmp_exec[1]
-                else:
-                    option = tmp_exec[2]
+            if str(self.get_sheet_type()) in ["1", "2", "3", "4"]:
+                # メニュー作成機能で作成したメニュー用のファイルを指定
+                external_validate_path = 'common_libs.validate.valid_cmdb_menu'
+            else:
+                external_validate_path = 'common_libs.validate.valid_{}'.format(self.get_menu())
+            exec_func = importlib.import_module(external_validate_path)
+            eval_str = 'exec_func.{}(self.objdbca, self.objtable, option)'.format(exec_config)
+            tmp_exec = eval(eval_str)
+            if tmp_exec[0] is not True:
+                retBool = False
+                msg = tmp_exec[1]
+            else:
+                option = tmp_exec[2]
         return retBool, msg, option,
 
     # [maintenance] カラムクラスの個別処理 レコード操作後
@@ -543,18 +557,20 @@ class Column():
         retBool = True
         msg = ''
         exec_config = self.get_call_after_valid_info()
-        external_validate_path = 'common_libs.validate.valid_{}'.format(self.get_menu())
-
         if exec_config is not None:
-            if exec_config is not None:
-                exec_func = importlib.import_module(external_validate_path)  # noqa: F841
-                eval_str = 'exec_func.{}(self.objdbca, self.objtable, option)'.format(exec_config)
-                tmp_exec = eval(eval_str)
-                if tmp_exec[0] is not True:
-                    retBool = False
-                    msg = tmp_exec[1]
-                else:
-                    option = tmp_exec[2]
+            if str(self.get_sheet_type()) in ["1", "2", "3", "4"]:
+                # メニュー作成機能で作成したメニュー用のファイルを指定
+                external_validate_path = 'common_libs.validate.valid_cmdb_menu'
+            else:
+                external_validate_path = 'common_libs.validate.valid_{}'.format(self.get_menu())
+            exec_func = importlib.import_module(external_validate_path)  # noqa: F841
+            eval_str = 'exec_func.{}(self.objdbca, self.objtable, option)'.format(exec_config)
+            tmp_exec = eval(eval_str)
+            if tmp_exec[0] is not True:
+                retBool = False
+                msg = tmp_exec[1]
+            else:
+                option = tmp_exec[2]
                     
         return retBool, msg, option,
     

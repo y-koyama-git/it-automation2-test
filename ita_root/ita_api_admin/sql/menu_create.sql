@@ -424,20 +424,18 @@ CREATE TABLE T_MENU_REFERENCE_ITEM
 (
     REFERENCE_ID                    VARCHAR(40),                                -- 項番
     LINK_ID                         VARCHAR(40),                                -- 他メニュー連携のID
-    MENU_ID                         VARCHAR(40),                                -- メニュー一覧のID
     DISP_SEQ                        INT,                                        -- 表示順序
-    TABLE_NAME                      VARCHAR(255),                               -- テーブル名
-    KEY_COL_NAME                    VARCHAR(255),                               -- プライマリキーカラム名
-    COL_NAME                        VARCHAR(255),                               -- カラム名
-    COL_GROUP_ID                    VARCHAR(40),                                -- カラムグループ
+    COLUMN_CLASS                    VARCHAR(2),                                 -- カラムクラス
     COLUMN_NAME_JA                  VARCHAR(255),                               -- 項目名(ja)
     COLUMN_NAME_EN                  VARCHAR(255),                               -- 項目名(en)
     COLUMN_NAME_REST                VARCHAR(255),                               -- 項目名(REST）
+    COL_GROUP_ID                    VARCHAR(40),                                -- カラムグループ
+    REF_COL_NAME                    VARCHAR(64),                                -- ID連携項目名
+    REF_SORT_CONDITIONS             TEXT,                                       -- ID連携ソート条件
+    REF_MULTI_LANG                  VARCHAR(2),                                 -- ID連携多言語対応有無
+    SENSITIVE_FLAG                  VARCHAR(2) ,                                -- SENSITIVE設定
     DESCRIPTION_JA                  TEXT,                                       -- 説明(ja)
     DESCRIPTION_EN                  TEXT,                                       -- 説明(en)
-    COLUMN_CLASS                    VARCHAR(2),                                 -- カラムクラス
-    SENSITIVE_FLAG                  VARCHAR(2) ,                                -- SENSITIVE設定
-    ORIGINAL_MENU_FLAG              VARCHAR(2) ,                                -- 既存メニューフラグ
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1)   ,                              -- 廃止フラグ
     LAST_UPDATE_TIMESTAMP           DATETIME(6)  ,                              -- 最終更新日時
@@ -452,26 +450,95 @@ CREATE TABLE T_MENU_REFERENCE_ITEM_JNL
     JOURNAL_ACTION_CLASS            VARCHAR (8),                                -- 履歴用変更種別
     REFERENCE_ID                    VARCHAR(40),                                -- 項番
     LINK_ID                         VARCHAR(40),                                -- 他メニュー連携のID
-    MENU_ID                         VARCHAR(40),                                -- メニュー一覧のID
     DISP_SEQ                        INT,                                        -- 表示順序
-    TABLE_NAME                      VARCHAR(255),                               -- テーブル名
-    KEY_COL_NAME                    VARCHAR(255),                               -- プライマリキーカラム名
-    COL_NAME                        VARCHAR(255),                               -- カラム名
-    COL_GROUP_ID                    VARCHAR(40),                                -- カラムグループ
+    COLUMN_CLASS                    VARCHAR(2),                                 -- カラムクラス
     COLUMN_NAME_JA                  VARCHAR(255),                               -- 項目名(ja)
     COLUMN_NAME_EN                  VARCHAR(255),                               -- 項目名(en)
     COLUMN_NAME_REST                VARCHAR(255),                               -- 項目名(REST）
+    COL_GROUP_ID                    VARCHAR(40),                                -- カラムグループ
+    REF_COL_NAME                    VARCHAR(64),                                -- ID連携項目名
+    REF_SORT_CONDITIONS             TEXT,                                       -- ID連携ソート条件
+    REF_MULTI_LANG                  VARCHAR(2),                                 -- ID連携多言語対応有無
+    SENSITIVE_FLAG                  VARCHAR(2) ,                                -- SENSITIVE設定
     DESCRIPTION_JA                  TEXT,                                       -- 説明(ja)
     DESCRIPTION_EN                  TEXT,                                       -- 説明(en)
-    COLUMN_CLASS                    VARCHAR(2),                                 -- カラムクラス
-    SENSITIVE_FLAG                  VARCHAR(2) ,                                -- SENSITIVE設定
-    ORIGINAL_MENU_FLAG              VARCHAR(2) ,                                -- 既存メニューフラグ
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1)   ,                              -- 廃止フラグ
     LAST_UPDATE_TIMESTAMP           DATETIME(6)  ,                              -- 最終更新日時
     LAST_UPDATE_USER                VARCHAR(40),                                -- 最終更新者
     PRIMARY KEY(JOURNAL_SEQ_NO)
 )ENGINE = InnoDB, CHARSET = utf8mb4, COLLATE = utf8mb4_bin, ROW_FORMAT=COMPRESSED ,KEY_BLOCK_SIZE=8;
+
+
+
+-- 参照項目情報ビュー
+CREATE OR REPLACE VIEW V_MENU_REFERENCE_ITEM AS 
+SELECT DISTINCT TAB_A.REFERENCE_ID         ,
+       TAB_A.LINK_ID                       ,
+       TAB_B.MENU_GROUP_ID                 ,
+       TAB_B.MENU_ID                       ,
+       TAB_B.MENU_ID MENU_ID_CLONE         ,
+       TAB_B.MENU_NAME_JA                  ,
+       TAB_B.MENU_NAME_EN                  ,
+       TAB_B.MENU_NAME_REST                ,
+       TAB_A.DISP_SEQ                      ,
+       TAB_A.COLUMN_CLASS                  ,
+       TAB_A.COLUMN_NAME_JA                ,
+       TAB_A.COLUMN_NAME_EN                ,
+       TAB_A.COLUMN_NAME_REST              ,
+       TAB_A.COL_GROUP_ID                  ,
+       TAB_B.REF_TABLE_NAME                ,
+       TAB_B.REF_PKEY_NAME                 ,
+       TAB_A.REF_COL_NAME                  ,
+       TAB_A.REF_SORT_CONDITIONS           ,
+       TAB_A.REF_MULTI_LANG                ,
+       TAB_A.SENSITIVE_FLAG                ,
+       TAB_A.DESCRIPTION_JA                ,
+       TAB_A.DESCRIPTION_EN                ,
+       TAB_B.MENU_CREATE_FLAG              ,
+       TAB_A.NOTE                          ,
+       TAB_A.DISUSE_FLAG                   ,
+       TAB_A.LAST_UPDATE_TIMESTAMP         ,
+       TAB_A.LAST_UPDATE_USER
+FROM T_MENU_REFERENCE_ITEM TAB_A
+LEFT JOIN V_MENU_OTHER_LINK TAB_B ON (TAB_A.LINK_ID = TAB_B.LINK_ID)
+WHERE TAB_B.DISUSE_FLAG='0'
+;
+CREATE OR REPLACE VIEW V_MENU_REFERENCE_ITEM_JNL AS 
+SELECT DISTINCT TAB_A.JOURNAL_SEQ_NO       ,
+       TAB_A.JOURNAL_REG_DATETIME          ,
+       TAB_A.JOURNAL_ACTION_CLASS          ,
+       TAB_A.REFERENCE_ID                  ,
+       TAB_A.LINK_ID                       ,
+       TAB_B.MENU_GROUP_ID                 ,
+       TAB_B.MENU_ID                       ,
+       TAB_B.MENU_ID MENU_ID_CLONE         ,
+       TAB_B.MENU_NAME_JA                  ,
+       TAB_B.MENU_NAME_EN                  ,
+       TAB_B.MENU_NAME_REST                ,
+       TAB_A.DISP_SEQ                      ,
+       TAB_A.COLUMN_CLASS                  ,
+       TAB_A.COLUMN_NAME_JA                ,
+       TAB_A.COLUMN_NAME_EN                ,
+       TAB_A.COLUMN_NAME_REST              ,
+       TAB_A.COL_GROUP_ID                  ,
+       TAB_B.REF_TABLE_NAME                ,
+       TAB_B.REF_PKEY_NAME                 ,
+       TAB_A.REF_COL_NAME                  ,
+       TAB_A.REF_SORT_CONDITIONS           ,
+       TAB_A.REF_MULTI_LANG                ,
+       TAB_A.SENSITIVE_FLAG                ,
+       TAB_A.DESCRIPTION_JA                ,
+       TAB_A.DESCRIPTION_EN                ,
+       TAB_B.MENU_CREATE_FLAG              ,
+       TAB_A.NOTE                          ,
+       TAB_A.DISUSE_FLAG                   ,
+       TAB_A.LAST_UPDATE_TIMESTAMP         ,
+       TAB_A.LAST_UPDATE_USER
+FROM T_MENU_REFERENCE_ITEM_JNL TAB_A
+LEFT JOIN V_MENU_OTHER_LINK_JNL TAB_B ON (TAB_A.LINK_ID = TAB_B.LINK_ID)
+WHERE TAB_B.DISUSE_FLAG='0'
+;
 
 
 

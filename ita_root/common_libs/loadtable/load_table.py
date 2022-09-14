@@ -190,12 +190,15 @@ class loadTable():
         }
             
     # message設定
-    def set_message(self, message, target='__line__', level='', status_code=''):
+    def set_message(self, message, target, level='', status_code=''):
         """
             エラーレベルでメッセージを設定
             ARGS:
                 self.message
         """
+        if len(target) == 0:
+            target = g.appmsg.get_api_message("MSG-00004", [])
+
         if level in self.message:
             self.message[level].setdefault(target, [])
             self.message[level][target].append(message)
@@ -1329,7 +1332,7 @@ class loadTable():
                         'msg_args': msg_args,
                         'msg': msg,
                     }
-                    self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR)
+                    self.set_message(dict_msg, g.appmsg.get_api_message("MSG-00004", []), MSG_LEVEL_ERROR)
                 else:
                     current_row = tmp_rows[0]
                     target_uuid = current_row.get(primary_key)
@@ -1457,7 +1460,7 @@ class loadTable():
                     'msg_args': '',
                     'msg': tmp_exec[1],
                 }
-                self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR)
+                self.set_message(dict_msg, g.appmsg.get_api_message("MSG-00004", []), MSG_LEVEL_ERROR)
             else:
                 tmp_target_menu_option = tmp_exec[2]
                 entry_parameter = tmp_target_menu_option.get('entry_parameter').get('parameter')
@@ -1493,7 +1496,7 @@ class loadTable():
                         'msg_args': msg_args,
                         'msg': msg,
                     }
-                    self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR)
+                    self.set_message(dict_msg, g.appmsg.get_api_message("MSG-00004", []), MSG_LEVEL_ERROR)
                     return retBool, status_code, msg
             # rest_key → カラム名に変換
             colname_parameter = self.convert_restkey_colname(entry_parameter, current_row)
@@ -1515,7 +1518,7 @@ class loadTable():
                     'msg_args': '',
                     'msg': result,
                 }
-                self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR)
+                self.set_message(dict_msg, g.appmsg.get_api_message("MSG-00004", []), MSG_LEVEL_ERROR)
             else:
                 result_uuid = result[0].get(primary_key_list[0])
                 if history_flg is True:
@@ -1591,7 +1594,7 @@ class loadTable():
                     'msg_args': '',
                     'msg': tmp_exec[1],
                 }
-                self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR)
+                self.set_message(dict_msg, g.appmsg.get_api_message("MSG-00004", []), MSG_LEVEL_ERROR)
             else:
                 tmp_target_menu_option = tmp_exec[2]
                 entry_parameter = tmp_target_menu_option.get('entry_parameter').get('parameter')
@@ -1626,7 +1629,7 @@ class loadTable():
                 'msg_args': msg_args,
                 'msg': msg,
             }
-            self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR)
+            self.set_message(dict_msg, g.appmsg.get_api_message("MSG-00004", []), MSG_LEVEL_ERROR)
 
         return retBool, result
 
@@ -1829,7 +1832,7 @@ class loadTable():
                         'msg_args': msg_args,
                         'msg': msg,
                     }
-                    self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR)
+                    self.set_message(dict_msg, g.appmsg.get_api_message("MSG-00004", []), MSG_LEVEL_ERROR)
 
     # []:PK指定時の重複チェックの実施
     def chk_primay_val(self, entry_parameter, target_uuid_key, primary_val, cmd_type):
@@ -1866,18 +1869,21 @@ class loadTable():
         exec_config = self.get_menu_before_validate_register()
         # parameter = target_option.get('parameter')
         # file = target_option.get('file')
-        external_validate_path = 'common_libs.validate.valid_{}'.format(self.get_menu_id())
         if exec_config is not None:
-            if exec_config is not None:
-                exec_func = importlib.import_module(external_validate_path)  # noqa: F841
-                eval_str = 'exec_func.{}(self.objdbca, self.objtable, target_option)'.format(exec_config)
-                tmp_exec = eval(eval_str)
-                
-                if tmp_exec[0] is not True:
-                    retBool = False
-                    msg = tmp_exec[1]
-                else:
-                    target_option = tmp_exec[2]
+            if str(self.get_sheet_type()) in ["1", "2", "3", "4"]:
+                # メニュー作成機能で作成したメニュー用のファイルを指定
+                external_validate_path = 'common_libs.validate.valid_cmdb_menu'
+            else:
+                external_validate_path = 'common_libs.validate.valid_{}'.format(self.get_menu_id())
+            exec_func = importlib.import_module(external_validate_path)  # noqa: F841
+            eval_str = 'exec_func.{}(self.objdbca, self.objtable, target_option)'.format(exec_config)
+            tmp_exec = eval(eval_str)
+            
+            if tmp_exec[0] is not True:
+                retBool = False
+                msg = tmp_exec[1]
+            else:
+                target_option = tmp_exec[2]
 
         return retBool, msg, target_option,
 
@@ -1895,17 +1901,20 @@ class loadTable():
         exec_config = self.get_menu_after_validate_register()
         # parameter = target_option.get('parameter')
         # file = target_option.get('file')
-        external_validate_path = 'common_libs.validate.valid_{}'.format(self.get_menu_id())
         if exec_config is not None:
-            if exec_config is not None:
-                exec_func = importlib.import_module(external_validate_path)  # noqa: F841
-                eval_str = 'exec_func.{}(self.objdbca, self.objtable, target_option)'.format(exec_config)
-                tmp_exec = eval(eval_str)
-                if tmp_exec[0] is not True:
-                    retBool = False
-                    msg = tmp_exec[1]
-                else:
-                    target_option = tmp_exec[2]
+            if str(self.get_sheet_type()) in ["1", "2", "3", "4"]:
+                # メニュー作成機能で作成したメニュー用のファイルを指定
+                external_validate_path = 'common_libs.validate.valid_cmdb_menu'
+            else:
+                external_validate_path = 'common_libs.validate.valid_{}'.format(self.get_menu_id())
+            exec_func = importlib.import_module(external_validate_path)  # noqa: F841
+            eval_str = 'exec_func.{}(self.objdbca, self.objtable, target_option)'.format(exec_config)
+            tmp_exec = eval(eval_str)
+            if tmp_exec[0] is not True:
+                retBool = False
+                msg = tmp_exec[1]
+            else:
+                target_option = tmp_exec[2]
 
         return retBool, msg, target_option,
 
@@ -1964,7 +1973,7 @@ class loadTable():
                     'msg_args': msg_args,
                     'msg': msg,
                 }
-                self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR)
+                self.set_message(dict_msg, g.appmsg.get_api_message("MSG-00004", []), MSG_LEVEL_ERROR)
 
         return retBool, status_code, msg_args,
 
@@ -1987,7 +1996,7 @@ class loadTable():
                     'msg_args': msg_args,
                     'msg': msg,
                 }
-                self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR)
+                self.set_message(dict_msg, g.appmsg.get_api_message("MSG-00004", []), MSG_LEVEL_ERROR)
             else:
                 lastupdatetime_current = lastupdatetime_current.replace('-', '/')
                 lastupdatetime_parameter = lastupdatetime_parameter.replace('-', '/')
@@ -2009,7 +2018,7 @@ class loadTable():
                         'msg_args': msg_args,
                         'msg': msg,
                     }
-                    self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR)
+                    self.set_message(dict_msg, g.appmsg.get_api_message("MSG-00004", []), MSG_LEVEL_ERROR)
         except ValueError as msg_args:
             status_code = '499-00211'
             msg_args = [lastupdatetime_parameter]
@@ -2019,7 +2028,7 @@ class loadTable():
                 'msg_args': msg_args,
                 'msg': msg,
             }
-            self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR)
+            self.set_message(dict_msg, g.appmsg.get_api_message("MSG-00004", []), MSG_LEVEL_ERROR)
             
     def convert_cmd_type(self, cmd_type, target_uuid, row_data, entry_parameter):
         """
@@ -2056,7 +2065,7 @@ class loadTable():
                         'msg_args': msg_args,
                         'msg': msg,
                     }
-                    self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR)
+                    self.set_message(dict_msg, g.appmsg.get_api_message("MSG-00004", []), MSG_LEVEL_ERROR)
             
         return cmd_type
 
@@ -2120,7 +2129,7 @@ class loadTable():
                 'msg_args': msg_args,
                 'msg': msg,
             }
-            self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR)
+            self.set_message(dict_msg, g.appmsg.get_api_message("MSG-00004", []), MSG_LEVEL_ERROR)
         return parameter
 
     def chk_required(self, cmd_type, parameter):
@@ -2152,4 +2161,4 @@ class loadTable():
                 'msg_args': msg_args,
                 'msg': msg,
             }
-            self.set_message(dict_msg, '__line__', MSG_LEVEL_ERROR)
+            self.set_message(dict_msg, g.appmsg.get_api_message("MSG-00004", []), MSG_LEVEL_ERROR)
