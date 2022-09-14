@@ -527,15 +527,27 @@ initEvents() {
       switch( type ) {
           // コンダクター作業実行
           case 'execute':
-              cd.menuButtonDisabled( true );
-              cd.conductorExecuteModal().then(function( result ){
+              cd.menuButtonDisabled( true );           
+              
+              const executeConfig = {
+                  title: 'Conductor作業実行',
+                  operation: {
+                      selectNameKey: 'operation_name',
+                      info: `/menu/${cd.menu}/conductor/execute/info/`,
+                      filter: `/menu/${cd.menu}/conductor/execute/filter/operation_list/`,
+                      filterPulldown: `/menu/${cd.menu}/conductor/execute/filter/operation_list/search/candidates/`,
+                      sub: 'operation_list'
+                  }
+              };
+              
+              fn.executeModalOpen('conductor_execute', cd.menu,  executeConfig).then(function( result ){
                   if ( result === 'cancel') {
                       cd.menuButtonDisabled( false );
                   } else {
                       const executeData = {
-                          'conductor_class_id': cd.id,
-                          'operation_id': result.operation_id,
-                          'schedule_date': result.schedule_date,
+                          'conductor_class_name': cd.data.conductor.conductor_name,
+                          'operation_name': result.name,
+                          'schedule_date': result.schedule,
                           'conductor_data': cd.data
                       };
                       fn.fetch(`/menu/${cd.menu}/conductor/execute/`, null, 'POST', executeData ).then(function( exeResult ){
@@ -567,9 +579,9 @@ initEvents() {
           case 'selectConductor': {
               cd.menuButtonDisabled( true );
               
-              cd.selectModalOpen('conductor').then(function( selectId ){
-                  if ( selectId ) {
-                      cd.fetchConductor( selectId ).then(function( result ){
+              cd.selectModalOpen('conductor').then(function( select ){
+                  if ( select ) {
+                      cd.fetchConductor( select[0].id ).then(function( result ){
                           cd.menuButtonDisabled( false );
                           cd.conductorMode('view');
                           cd.message('success', '読み込み完了しました。');
@@ -1669,7 +1681,7 @@ initNode() {
       '8': ['stop', '緊急停止'], // 緊急停止
       '12': ['error', '準備エラー'], // 準備エラー
       '13': ['skip', 'Skip終了'], // Skip終了
-      '15': ['warning', '警告終了'], // 警告終了
+      '14': ['warning', '警告終了'], // 警告終了
       '9999': ['other', 'Other'],
     };
 
@@ -5361,6 +5373,7 @@ panelEvents() {
             case 'operation':
                 cd.selectModalOpen('operation').then(function( selectId ){
                     if ( selectId ) {
+                        if ( fn.typeof( selectId ) === 'arrya') selectId = selectId[0];
                         const operationName = cd.getOperationName( selectId );
                         cd.operationUpdate( nodeId, selectId, operationName );
                     }
@@ -5372,6 +5385,7 @@ panelEvents() {
             case 'conductor':
                 cd.selectModalOpen('condcutor').then(function( selectId ){
                     if ( selectId ) {
+                        if ( fn.typeof( selectId ) === 'arrya') selectId = selectId[0];
                         const conductorName = cd.getConductorName( selectId );
                         cd.callConductorUpdate( nodeId, selectId, conductorName );
                     }
@@ -5752,18 +5766,38 @@ conductorHistory() {
 selectModalOpen( type ) {
     const cd = this;
     
-    const restUrls = { info: `/menu/${cd.menu}/conductor/execute/info/`};
-    let infoSubKey;
+    return new Promise(function( resolve ){
+
+        const selectConfig = { info: `/menu/${cd.menu}/conductor/execute/info/`};
+        let title;
+
+        if ( type === 'operation') {
+            title = 'オペレーション選択';
+            selectConfig.selectNameKey = 'operation_name';
+            selectConfig.filter = `/menu/${cd.menu}/conductor/execute/filter/operation_list/`;
+            selectConfig.pulldown = `/menu/${cd.menu}/conductor/execute/filter/operation_list/search/candidates/`;
+            selectConfig.sub = 'operation_list';
+        } else {
+            title = 'Conductor選択';
+            selectConfig.selectNameKey = 'conductor_name';
+            selectConfig.filter = `/menu/${cd.menu}/conductor/execute/filter/conductor_class_list/`;
+            selectConfig.pulldown = `/menu/${cd.menu}/conductor/execute/filter/conductor_class_list/search/candidates/`;
+            selectConfig.sub = 'conductor_class_list';
+        }
+
+        fn.selectModalOpen( type, title, cd.menu, selectConfig ).then(function( selectResut ){console.log(selectResut)
+            resolve( selectResut );
+        });
+        
+    });
     
-    if ( type === 'operation') {
-        restUrls.filter = `/menu/${cd.menu}/conductor/execute/filter/operation_list/`;
-        restUrls.pulldown = `/menu/${cd.menu}/conductor/execute/filter/operation_list/search/candidates/`;
-        infoSubKey = 'operation_list';
-    } else {
-        restUrls.filter = `/menu/${cd.menu}/conductor/execute/filter/conductor_class_list/`;
-        restUrls.pulldown = `/menu/${cd.menu}/conductor/execute/filter/conductor_class_list/search/candidates/`;
-        infoSubKey = 'conductor_class_list';
-    }
+    
+    
+    
+    
+    
+    
+    /*
     
     if ( !cd.modal ) cd.modal = {};
     return new Promise(function( resolve, reject ){
@@ -5796,6 +5830,7 @@ selectModalOpen( type ) {
             setClickEvent();
         }
     });
+    */
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -5999,7 +6034,7 @@ nodeReSet( reSetConductorData ) {
   指定のIDのコンダクターを読み込む
 ##################################################
 */
-fetchConductor( conductorId ) {
+fetchConductor( conductorId ) {console.log(conductorId)
     const cd = this;
     
     let process = fn.processingModal();

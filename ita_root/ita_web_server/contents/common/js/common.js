@@ -27,6 +27,9 @@
 */
 const fn = ( function() {
     'use strict';
+    
+    // モーダルインスタンス用
+    const modalInstance = {};
 
     // windowオブジェクトがあるかどうか
     const windowCheck = function() {
@@ -822,7 +825,7 @@ calendar: function( setDate, currentDate, startDate, endDate ){
 },
 /*
 ##################################################
-   Data picker
+   Date picker
 ##################################################
 */
 datePicker: function( timeFlag, className, date, start, end ) {
@@ -856,7 +859,7 @@ datePicker: function( timeFlag, className, date, start, end ) {
         hour = min = sec = 0;
     }
     
-    let placeholder = 'yyyy-MM-dd';
+    let placeholder = 'yyyy/MM/dd';
     if ( timeFlag ) placeholder += ' HH:mm:ss';
     
     if ( className === 'datePickerFromDateText' && !end ) {
@@ -1057,7 +1060,7 @@ datePicker: function( timeFlag, className, date, start, end ) {
 },
 /*
 ##################################################
-   Data picker dialog
+   Date picker dialog
 ##################################################
 */
 datePickerDialog: function( type, timeFlag, title, date ){
@@ -1135,6 +1138,25 @@ datePickerDialog: function( type, timeFlag, title, date ){
         
         dialog.open( $dataPicker );
     });
+},
+/*
+##################################################
+   Date picker Event
+##################################################
+*/
+setDatePickerEvent: function( $target, title ) {
+    const $container = $target.closest('.inputDateContainer'),
+          $button = $container.find('.inputDateCalendarButton');
+    
+    $button.on('click', function(){
+        const value = $target.val();
+        fn.datePickerDialog('date', true, title, value ).then(function( result ){
+            if ( result !== 'cancel') {
+                $target.val( result.date ).change().focus().trigger('input');
+            }
+        });
+    });
+    
 },
 /*
 ##################################################
@@ -1518,7 +1540,7 @@ html: {
     dateInput: function( timeFlag, className, value, name, attrs = {} ) {
         className = classNameCheck( className, 'inputDate');
         
-        const placeholder = ( timeFlag )? 'yyyy-MM-dd HH:mm:ss': 'yyyy-MM-dd';
+        const placeholder = ( timeFlag )? 'yyyy/MM/dd HH:mm:ss': 'yyyy/MM/dd';
         attrs.timeFlag = timeFlag;
         attrs.placeholder = placeholder;
         
@@ -1669,44 +1691,6 @@ errorModal: function( error, pageName ) {
         dialog.open(`<div class="errorContainer">${html}</div>`);
     });
     
-},
-/*
-##################################################
-   選択用モーダルの初期設定
-##################################################
-*/
-initSelectModal: function( title, menu, restUrls, sub = '') {
-    
-    return new Promise(function( resolve, reject ) {
-        const config = {
-            mode: 'modeless',
-            width: 'auto',
-            minWidth: '640px',
-            height: '100%',
-            header: {
-                title: title
-            }
-        };
-        const modal = new Dialog( config );
-        modal.open();
-        
-        fn.fetch( restUrls.info ).then(function( info ){
-            const params = cmn.getCommonParams();
-            params.menuNameRest = menu;
-            params.restFilter = restUrls.filter;
-            params.restFilterPulldown = restUrls.pulldown;
-            
-            if ( sub !== '') info = info[ sub ];
-            
-            const table = new DataTable(`SE_${menu.toUpperCase()}${sub}`, 'select', info, params );
-            modal.setBody( table.setup() );
-            
-            resolve({
-                modal: modal,
-                table: table
-            });
-        });
-    });
 },
 /*
 ##################################################
@@ -1865,6 +1849,173 @@ setCommonEvents: function() {
 },
 /*
 ##################################################
+  選択用モーダル
+##################################################
+*/
+selectModalOpen: function( modalId, title, menu, config ) {
+    return new Promise(function( resolve, reject ){
+        const setClickEvent = function() {
+            const button = '.tableHeaderMainMenuButton[data-type="tableSelect"], .tableHeaderMainMenuButton[data-type="tableCancel"]';
+            modalInstance[ modalId ].table.$.header.one('click', button, function(){
+                modalInstance[ modalId ].modal.hide();
+                
+                const $button = $( this ),
+                      buttonType = $button.attr('data-type');
+                switch ( buttonType ) {
+                    case 'tableSelect': {
+                        const selectId = modalInstance[ modalId ].table.select.select;
+                        resolve( selectId );
+                    } break;
+                    case 'tableCancel':
+                        resolve( null );
+                    break;
+                }
+            });
+        };
+        
+        if ( !modalInstance[ modalId ] ) {
+            fn.initSelectModal( title, menu, config ).then(function( modal ){
+                modalInstance[ modalId ] = modal;
+                setClickEvent();
+            });
+        } else {
+            modalInstance[ modalId ].modal.show();
+            setClickEvent();
+        }
+    });
+},
+/*
+##################################################
+   選択用モーダルの初期設定
+   tableとmodalのインスタンスを返す
+##################################################
+*/
+initSelectModal: function( title, menu, selectConfig ) {
+    
+    return new Promise(function( resolve, reject ) {
+        const modalConfig = {
+            mode: 'modeless',
+            width: 'auto',
+            minWidth: '640px',
+            height: '100%',
+            header: {
+                title: title
+            }
+        };
+        const modal = new Dialog( modalConfig );
+        modal.open();
+        
+        const resolveModal = function( info ) {
+            const params = cmn.getCommonParams();
+            params.menuNameRest = menu;
+            params.selectNameKey = selectConfig.selectNameKey;
+            params.restFilter = selectConfig.filter;
+            params.restFilterPulldown = selectConfig.filterPulldown;
+            
+            // 取得したinfoのSubキー確認
+            if ( selectConfig.sub ) info = info[ selectConfig.sub ];
+
+            const tableId = `SE_${menu.toUpperCase()}${( selectConfig.sub )? `_${selectConfig.sub}`: ``}`,
+                  table = new DataTable( tableId, 'select', info, params );
+            modal.setBody( table.setup() );
+            resolve({
+                modal: modal,
+                table: table
+            });
+        };
+        
+        console.log(menu)
+        console.log(selectConfig)
+        
+        // Table info確認
+        if ( selectConfig.infoData ) {
+            resolveModal( selectConfig.infoData );
+        } else {
+            // infoが無ければ読み込む
+            fn.fetch( selectConfig.info ).then(function( info ){
+                resolveModal( info );
+            });
+        }
+    });
+},
+/*
+##################################################
+  作業実行
+##################################################
+*/
+executeModalOpen: function( modalId, menu, executeConfig ) {
+    return new Promise(function( resolve ){
+        const funcs = {
+            ok: function(){
+                modalInstance[ modalId ].hide();
+                resolve({
+                    id: modalInstance[ modalId ].$.dbody.find('.executeOperetionId').text(),
+                    name: modalInstance[ modalId ].$.dbody.find('.executeOperetionName').text(),
+                    schedule:  modalInstance[ modalId ].$.dbody.find('.executeSchedule').val()
+                });
+            },
+            cancel: function(){
+                modalInstance[ modalId ].hide();
+                resolve('cancel');
+            }
+        };
+
+        if ( !modalInstance[ modalId ] ) {
+            const html = `
+            <div class="dialogContentContainer">
+                <div class="dialogContentBlock">
+                    <div class="dialogContentTitle">オペレーション</div>
+                    <div class="dialogContentBody">
+                        ${fn.html.button('オペレーション選択', 'executeOperetionSelectButton')}
+                        <div class="executeOperetionId"></div>
+                        <div class="executeOperetionName"></div>
+                    </div>
+                </div>
+                <div class="dialogContentBlock">
+                    <div class="dialogContentTitle">スケジュール</div>
+                    <div class="dialogContentBody">
+                        ${fn.html.dateInput( true, 'executeSchedule', '')}
+                        <p>予約日時を指定する場合は、日時フォーマット(YYYY/MM/DD HH:II)で入力して下さい。<br>ブランクの場合は即時実行となります。</p>
+                    </div>
+                </div>
+            </div>`;
+
+            const config = {
+                mode: 'modeless',
+                position: 'center',
+                header: {
+                    title: executeConfig.title
+                },
+                width: '480px',
+                footer: {
+                    button: {
+                        ok: { text: executeConfig.title, action: 'positive'},
+                        cancel: { text: '閉じる', action: 'normal'}
+                    }
+                }
+            };
+            modalInstance[ modalId ] = new Dialog( config, funcs );
+            
+            modalInstance[ modalId ].open( html );
+            cmn.setDatePickerEvent( modalInstance[ modalId ].$.dbody.find('.executeSchedule') );
+            
+            modalInstance[ modalId ].$.dbody.find('.executeOperetionSelectButton').on('click', function(){
+                cmn.selectModalOpen( 'operation', 'オペレーション選択', menu, executeConfig.operation ).then(function( selectResult ){
+                    if ( selectResult ) {
+                        modalInstance[ modalId ].$.dbody.find('.executeOperetionId').text( selectResult[0].id );
+                        modalInstance[ modalId ].$.dbody.find('.executeOperetionName').text( selectResult[0].name );
+                    }
+                });
+            });
+            
+        } else {
+            modalInstance[ modalId ].btnFn = funcs;
+            modalInstance[ modalId ].show();
+        }
+    });
+},
+/*
+##################################################
    メッセージを出す
 ##################################################
 */
@@ -1880,6 +2031,7 @@ message: function( type, message, title, icon, closeTime ) {
 ##################################################
 */
 gotoErrPage: function( message ) {
+    // windowFlagでWorker内か判定
     if ( windowFlag ) {
         if ( message ) {
             window.alert( message );

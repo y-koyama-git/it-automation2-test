@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-//   Exastro IT Automation / conductor.js
+//   Exastro IT Automation / create_menu.js
 //
 //   -----------------------------------------------------------------------------------------------
 //
@@ -30,17 +30,20 @@ function getParam(name, url) {
     return decodeURIComponent(results[2].replace(/\+/g, " "));
 }
 
+let menuCreateUserInfo;
+let nameConvertList;
+
 class CreateMenu {
 /*
 ##################################################
     Constructor
 ##################################################
 */
-constructor( target, mode ) {
+constructor( target, userInfo ) {
     const cm = this;
     
     cm.target = target;
-    cm.mode = mode;
+    menuCreateUserInfo = userInfo;
 }
 /*
 ##################################################
@@ -54,16 +57,16 @@ setup() {
     let itaEditorMode = 'new';
     let createManagementMenuID = '';
 
-    if ( getParam('create_menu_id') != null ){
+    if ( getParam('menu_name_rest') != null ){
         if ( getParam('mode') != null ){
             itaEditorMode = getParam('mode');
         } else {
             itaEditorMode = 'view';
         }
-        loadMenuID = getParam('create_menu_id');
+        loadMenuID = getParam('menu_name_rest');
     }
-    if ( getParam('create_management_menu_id') != null ){
-        createManagementMenuID = getParam('create_management_menu_id');
+    if ( getParam('history_id') != null ){
+        createManagementMenuID = getParam('history_id');
     }
 
     const html = `
@@ -99,11 +102,17 @@ setup() {
     // HTMLセット
     $( cm.target ).html( html );
     
-    // 必要なデータの読み込み
-    fn.fetch('/create/define/').then(function( result ){
-        cm.init( result );
-        console.log(result);
-    });
+    if ( loadMenuID === ''){
+        // 必要なデータの読み込み
+        fn.fetch('/create/define/').then(function( result ){
+            cm.init( result );
+        });
+    } else {
+        // 必要なデータの読み込み
+        fn.fetch('/create/define/' + loadMenuID).then(function( result ){
+          cm.init( result );
+      });
+    }
 }
 /*
 ##################################################
@@ -117,7 +126,6 @@ editorMenuHtml( editorMode ) {
                 <ul class="menu-editor-menu-ul">
                     <li class="menu-editor-menu-li"><button class="menu-editor-menu-button" data-menu-button="newColumn">項目</button></li>
                     <li class="menu-editor-menu-li"><button class="menu-editor-menu-button" data-menu-button="newColumnGroup">グループ</button></li>
-                    <li class="menu-editor-menu-li"><button class="menu-editor-menu-button" data-menu-button="newColumnRepeat">リピート</button></li>
                 </ul>
                 <ul class="menu-editor-menu-ul">
                     <li class="menu-editor-menu-li"><button id="button-undo" class="menu-editor-menu-button" data-menu-button="undo">取り消し</button></li>
@@ -212,16 +220,16 @@ panelContainerHtml( editorMode ) {
                                         <td class="property-td" colspan="3"><span id="create-menu-name" class="property-span"></span></td>
                                     </tr>
                                     <tr>
+                                        <th class="property-th">メニュー名(REST) :</th>
+                                        <td class="property-td" colspan="3"><span id="create-menu-name-rest" class="property-span"></span></td>
+                                    </tr>
+                                    <tr>
                                         <th class="property-th">作成対象 :</th>
                                         <td class="property-td" colspan="3"><span id="create-menu-type" class="property-span"></span></td>
                                     </tr>
                                     <tr>
                                         <th class="property-th">表示順序 :</th>
                                         <td class="property-td" colspan="3"><span id="create-menu-order" class="property-span"></span></td>
-                                    </tr>
-                                    <tr class="parameter-sheet">
-                                        <th class="property-th" colspan="2">ホストグループ利用 :</th>
-                                        <td class="property-td" colspan="2"><span id="create-menu-use-host-group" class="property-span"></span></td>
                                     </tr>
                                     <tr class="parameter-sheet parameter-operation">
                                         <th class="property-th" colspan="2">縦メニュー利用 :</th>
@@ -314,6 +322,10 @@ panelContainerHtml( editorMode ) {
                                         <th class="property-th">メニュー名<span class="input_required">*</span> :</th>
                                         <td class="property-td" colspan="3"><input id="create-menu-name" class="property-text" type="text"></td>
                                     </tr>
+                                    <tr title="作成するメニュー（パラメータシート/データシート）のREST API用の名称を入力します。">
+                                        <th class="property-th">メニュー名(REST)<span class="input_required">*</span> :</th>
+                                        <td class="property-td" colspan="3"><input id="create-menu-name-rest" class="property-text" type="text"></td>
+                                    </tr>
                                     <tr title="プルダウンから「パラメータシート(ホスト/オペレーションあり)」、\n「パラメータシート(オペレーションあり)」、「データシート」のいずれかを選択します。">
                                         <th class="property-th">作成対象 :</th>
                                         <td class="property-td" colspan="3">
@@ -323,12 +335,6 @@ panelContainerHtml( editorMode ) {
                                     <tr title="メニューグループにおける表示順序を入力します。昇順に表示されます。\n※0～2147483647の整数数値が入力できます。">
                                         <th class="property-th">表示順序<span class="input_required">*</span> :</th>
                                         <td class="property-td" colspan="3"><input id="create-menu-order" class="property-number" type="number" data-min="0" data-max="2147483647"></td>
-                                    </tr>
-                                    <tr class="parameter-sheet" title="「利用する」チェックボックスにチェックをいれた場合、「入力用」メニューグループにて「ホスト名/ホストグループ名」単位のパラメータシートが作成されます。\n「利用する」チェックボックスにチェックを入れない場合は「ホスト名」単位のパラメータシートが作成されます。">
-                                        <th class="property-th" colspan="2">ホストグループ利用 :</th>
-                                        <td class="property-td" colspan="2">
-                                            <label class="property-label" ><input type="checkbox" id="create-menu-use-host-group" disabled> 利用する</label>
-                                        </td>
                                     </tr>
                                     <tr class="parameter-sheet parameter-operation" title="「利用する」チェックボックスにチェックをいれた場合、縦メニューに対応したパラメータシートを作成します。">
                                         <th class="property-th" colspan="2">縦メニュー利用 <span id="vertical-menu-help" class="editor-help" title="Help">?</span> :</th>
@@ -433,6 +439,10 @@ panelContainerHtml( editorMode ) {
                                         <th class="property-th">メニュー名<span class="input_required">*</span> :</th>
                                         <td class="property-td" colspan="3"><input id="create-menu-name" class="property-text" type="text"></td>
                                     </tr>
+                                    <tr title="作成するメニュー（パラメータシート/データシート）のREST API用の名称を入力します。">
+                                        <th class="property-th">メニュー名(REST)<span class="input_required">*</span> :</th>
+                                        <td class="property-td" colspan="3"><input id="create-menu-name-rest" class="property-text" type="text"></td>
+                                    </tr>
                                     <tr title="プルダウンから「パラメータシート(ホスト/オペレーションあり)」、\n「パラメータシート(オペレーションあり)」、「データシート」のいずれかを選択します。">
                                         <th class="property-th">作成対象 :</th>
                                         <td class="property-td" colspan="3">
@@ -442,12 +452,6 @@ panelContainerHtml( editorMode ) {
                                     <tr title="メニューグループにおける表示順序を入力します。昇順に表示されます。\n※0～2147483647の整数数値が入力できます。">
                                         <th class="property-th">表示順序<span class="input_required">*</span> :</th>
                                         <td class="property-td" colspan="3"><input id="create-menu-order" class="property-number" type="number" data-min="0" data-max="2147483647"></td>
-                                    </tr>
-                                    <tr class="parameter-sheet" title="「利用する」チェックボックスにチェックをいれた場合、「入力用」メニューグループにて「ホスト名/ホストグループ名」単位のパラメータシートが作成されます。\n「利用する」チェックボックスにチェックを入れない場合は「ホスト名」単位のパラメータシートが作成されます。">
-                                        <th class="property-th" colspan="2">ホストグループ利用 :</th>
-                                        <td class="property-td" colspan="2">
-                                            <label class="property-label" ><input type="checkbox" id="create-menu-use-host-group"> 利用する</label>
-                                        </td>
                                     </tr>
                                     <tr class="parameter-sheet parameter-operation" title="「利用する」チェックボックスにチェックをいれた場合、縦メニューに対応したパラメータシートを作成します。">
                                         <th class="property-th" colspan="2">縦メニュー利用 <span id="vertical-menu-help" class="editor-help" title="Help">?</span> :</th>
@@ -549,9 +553,7 @@ editorFooterHtml( editorMode, createManagementMenuID ) {
                 <li class="menu-editor-menu-li"><button class="menu-editor-menu-button positive" data-menu-button="edit">編集</button></li>
                 <li class="menu-editor-menu-li"><button class="menu-editor-menu-button positive" data-menu-button="initialize">初期化</button></li>
                 <li class="menu-editor-menu-li"><button class="menu-editor-menu-button positive" data-menu-button="diversion">流用新規</button></li>
-                <li class="menu-editor-menu-li">
-                    <-- メニュー作成履歴画面に飛ばせるようにする 後で -->
-                </li>
+                <li class="menu-editor-menu-li"><button class="menu-editor-menu-button positive" data-menu-button="management">メニュー作成履歴</button></li>
             </ul>`;
         } else {
             return `
@@ -585,12 +587,12 @@ editorFooterHtml( editorMode, createManagementMenuID ) {
 */
 init( info ) {
     const cm = this;
-    
+
     //cm.info = info;
     menuEditorArray = info;
+    nameConvertList = menuEditorArray.name_convert_list;
     menuEditorMode = $('#menu-editor').attr('data-editor-mode');
-    
-    console.log(cm.info);
+
     menuEditor( menuEditorMode, menuEditorArray );
     //cm.$.base.html( '<pre>' + JSON.stringify( cm.info, null, '\t') + '</pre>' );
 }
@@ -608,6 +610,12 @@ let menuEditorArray = {};
 
 // 言語化対応必要
 let LangStream = 'ja';
+
+// 一意制約更新カウント
+let uniquechangecount = 0;
+
+// 一意制約削除カウント
+let uniquedeletecount = 0;
 
 // テキストの無害化
 const textEntities = function( text, flag ) {
@@ -874,7 +882,8 @@ const languageText = {
     '0049':["参照項目",''],
     '0050':["初期値",''],
     '0051':["メニュー",''],
-    '0052':["項目",'']
+    '0052':["項目",''],
+    '0053':["item_",'']
 }
 
 // テキスト呼び出し用
@@ -937,7 +946,7 @@ const listIdName = function( type, id ) {
                 return name;
             }
         } else {
-            if ( Number( list[i] ) === Number( id ) ) {
+            if ( list[i] === id ) {
                 name = list[i]
                 return name;
             }
@@ -965,6 +974,21 @@ const columnHeaderHTML = ''
     + '<input class="menu-column-title-input" type="text" value=""'+modeDisabled+'>'
     + '<span class="menu-column-title-dummy"></span>'
   + '</div>'
+  + '<div class="menu-column-title on-hover" title="' + textEntities("項目の名称(REST API用)を入力します。",1) + '">'
+    + '<input class="menu-column-title-rest-input" type="text" value=""'+modeDisabled+'>'
+    + '<span class="menu-column-title-dummy"></span>'
+  + '</div>'
+  + '<div class="menu-column-function">'
+    + '<div class="menu-column-delete on-hover" title="' + textEntities("項目を削除します。",1) + '"></div>'
+    + '<div class="menu-column-copy on-hover" title="' + textEntities("項目をコピーします。",1) + '"></div>'
+  + '</div>';
+
+  const columnHeaderGroupHTML = ''
+  + '<div class="menu-column-move" title="' + textEntities("項目を移動します。",1) + '"></div>'
+  + '<div class="menu-column-title on-hover" title="' + textEntities("項目の名称を入力します。[最大長]256バイト\n※項目名に「/」は使用禁止です。\n※「リピート枠内で使用した名称[数字]」は、リピート枠外の項目名には使用できません。",1) + '">'
+    + '<input class="menu-column-title-input" type="text" value=""'+modeDisabled+'>'
+    + '<span class="menu-column-title-dummy"></span>'
+  + '</div>'
   + '<div class="menu-column-function">'
     + '<div class="menu-column-delete on-hover" title="' + textEntities("項目を削除します。",1) + '"></div>'
     + '<div class="menu-column-copy on-hover" title="' + textEntities("項目をコピーします。",1) + '"></div>'
@@ -976,7 +1000,7 @@ const columnEmptyHTML = ''
 const columnGroupHTML = ''
   + '<div class="menu-column-group" data-group-id="">'
     + '<div class="menu-column-group-header">'
-      + columnHeaderHTML
+      + columnHeaderGroupHTML
     + '</div>'
     + '<div class="menu-column-group-body">'
     + '</div>'
@@ -1002,16 +1026,16 @@ const selectInputMethodData = menuEditorArray.column_class_list,
     selectInputMethodDataLength = selectInputMethodData.length;
 let inputMethodHTML = '';
 for ( let i = 0; i < selectInputMethodDataLength ; i++ ) {
-    inputMethodHTML += '<option value="' + selectInputMethodData[i].column_class_id + '">' + selectInputMethodData[i].column_class_disp_name + '</option>';
+    inputMethodHTML += '<option value="' + selectInputMethodData[i].column_class_id + '" data-value="' + selectInputMethodData[i].column_class_name + '">' + selectInputMethodData[i].column_class_disp_name + '</option>';
 }
 
 // プルダウン選択 select
 const selectPulldownListData = menuEditorArray.pulldown_item_list,
     selectPulldownListDataLength = selectPulldownListData.length;
 let selectPulldownListHTML = '';
-for ( let i = 0; i < selectPulldownListDataLength ; i++ ) {
-    selectPulldownListHTML += '<option value="' + selectPulldownListData[i].link_id + '">' + selectPulldownListData[i].link_pulldown + '</option>';
-}
+  for ( let i = 0; i < selectPulldownListDataLength ; i++ ) {
+      selectPulldownListHTML += '<option value="' + selectPulldownListData[i].link_id + '">' + selectPulldownListData[i].link_pulldown + '</option>';
+  }
 
 //パラメータシート参照 select
 /*
@@ -1041,7 +1065,7 @@ const columnHTML = ''
     + '</div>'
     + '<div class="menu-column-body">'
       + '<div class="menu-column-type" title="' + textEntities("入力方式をプルダウンメニューの「文字列(単一行)」、「文字列(複数行)」、\n「整数」、「小数」、「日時」、「日付」、「プルダウン選択」、「パスワード」、\n「ファイルアップロード」、「リンク」、「パラメータ参照」のいずれかから選択します。",1) + '">'
-        + '<select class="menu-column-type-select"'+modeDisabled+''+modeKeepData+'>' + inputMethodHTML + '</select>'
+        + '<select class="menu-column-type-select" id="menu-column-type-select"'+modeDisabled+''+modeKeepData+'>' + inputMethodHTML + '</select>'
       + '</div>'
       + '<div class="menu-column-config">'
         + '<table class="menu-column-config-table" date-select-value="1">'
@@ -1125,11 +1149,11 @@ const columnHTML = ''
           + '</tr>'
           + '<tr class="date-time" title="' + textEntities("作成したメニューから登録する際、デフォルトで入力欄に入る値を設定します。",1) + '">'
             + '<th>' + textCode('0050') + '</th>'
-            + '<td><input size="19" maxlength="19" class="config-text datetime-default-value callDateTimePicker" type="text" value=""'+modeDisabled+'></td>'
+            + '<td>' + fn.html.dateInput( true, 'callDateTimePicker datetime-default-value config-text', '', 'dateTime') + '</td>'
           + '</tr>'
           + '<tr class="date" title="' + textEntities("作成したメニューから登録する際、デフォルトで入力欄に入る値を設定します。",1) + '">'
             + '<th>' + textCode('0050') + '</th>'
-            + '<td><input size="10" maxlength="10" class="config-text date-default-value callDateTimePicker2" type="text" value=""'+modeDisabled+'></td>'
+            + '<td>' + fn.html.dateInput( false, 'callDateTimePicker date-default-value config-text', '', 'date') + '</td>'
           + '</tr>'
           + '<tr class="link" title="' + textEntities("作成したメニューから登録する際、デフォルトで入力欄に入る値を設定します。\n「最大バイト数」を超える値は設定できません。",1) + '">'
             + '<th>' + textCode('0050') + '</th>'
@@ -1245,7 +1269,7 @@ const history = {
         historyButtonCheck();
         previewTable();
         resetSelect2( $menuTable );
-        resetDatetimepicker( $menuTable );
+        //resetDatetimepicker( $menuTable );
         resetEventPulldownDefaultValue( $menuTable );
         resetEventPulldownParameterSheetReference( $menuTable );
         updateUniqueConstraintDispData();
@@ -1256,7 +1280,7 @@ const history = {
         historyButtonCheck();
         previewTable();
         resetSelect2( $menuTable );
-        resetDatetimepicker( $menuTable );
+        //resetDatetimepicker( $menuTable );
         resetEventPulldownDefaultValue( $menuTable );
         resetEventPulldownParameterSheetReference( $menuTable );
         updateUniqueConstraintDispData();
@@ -1284,18 +1308,20 @@ const addColumn = function( $target, type, number, loadData, previewFlag, emptyF
     let html = '',
         id = '',
         title = '',
-        name;
+        name,
+        name_rest;
     
     switch( type ) {
-        case 'item':
+        case 'column':
             html = columnHTML;
-            name = loadData['ITEM_NAME'];
-            id = 'i' + number;
+            name = loadData['item_name'];
+            name_rest = loadData['item_name_rest'];
+            id = 'c' + number;
             title = textCode('0000');
             break;
         case 'group':
             html = columnGroupHTML;
-            name = loadData['COL_GROUP_NAME']
+            name = loadData['column_group_name']
             id = 'g' + number;
             title = textCode('0001');
             break;
@@ -1306,15 +1332,16 @@ const addColumn = function( $target, type, number, loadData, previewFlag, emptyF
     }
 
     const $addColumn = $( html ),
-        $addColumnInput = $addColumn.find('.menu-column-title-input');
-    
+          $addColumnInput = $addColumn.find('.menu-column-title-input'),
+          $addColumnRestInput = $addColumn.find('.menu-column-title-rest-input');
+
     $target.append( $addColumn );
     // プルダウンにselect2を適用する
     $target.find('.config-select').select2();
     
     $addColumn.attr('id', id );
 
-    if ( type !== 'item' && emptyFlag === true ) {
+    if ( type !== 'column' && emptyFlag === true ) {
         $addColumn.find('.menu-column-group-body, .menu-column-repeat-body').html( columnEmptyHTML );
     }
     
@@ -1325,6 +1352,7 @@ const addColumn = function( $target, type, number, loadData, previewFlag, emptyF
         $menuEditor.find('.menu-column-title-input').each( function( i ){
           nameList[ i ] = $( this ).val();
         });
+
         let condition = true;
         while( condition ) {
           if ( nameList.indexOf( name ) !== -1 ) {
@@ -1337,11 +1365,14 @@ const addColumn = function( $target, type, number, loadData, previewFlag, emptyF
         return name;
       }
       $addColumnInput.val( checkName( title + ' ' + number ) );
+      $addColumnRestInput.val( checkName( 'item_' + number ) );
     } else {
         $addColumnInput.val( name );
+        $addColumnRestInput.val( name_rest );
     }
     
     titleInputChange( $addColumnInput );
+    titleInputChange( $addColumnRestInput );
     columnHeightUpdate();
     
     if ( previewFlag === true ) {
@@ -1357,8 +1388,8 @@ const addColumn = function( $target, type, number, loadData, previewFlag, emptyF
     }
 
     //日付と時日時の初期値入力欄にdatetimepickerを設定
-    $addColumn.find(".callDateTimePicker").datetimepicker({format:'Y/m/d H:i:s', step:5, lang:LangStream});
-    $addColumn.find(".callDateTimePicker2").datetimepicker({timepicker:false, format:'Y/m/d', lang:LangStream});
+    //$addColumn.find(".callDateTimePicker").datetimepicker({format:'Y/m/d H:i:s', step:5, lang:LangStream});
+    //$addColumn.find(".callDateTimePicker2").datetimepicker({timepicker:false, format:'Y/m/d', lang:LangStream});
 
     emptyCheck();
 
@@ -1406,61 +1437,57 @@ const setEventPulldownDefaultValue = function($item){
 
     });
 }
-/*
+
 const getpulldownDefaultValueList = function($item, defaultValue = ""){
-    let loadNowSelect = '<option value="">'+getSomeMessage("ITACREPAR_1295")+'</option>';
-    let faildSelect = '<option value="">'+getSomeMessage("ITACREPAR_1288")+'</option>';
-    $item.find('.pulldown-default-select').html(loadNowSelect); //最初に読み込み中メッセージのセレクトボックスを挿入
-    const selectLinkId = $item.find('.pulldown-select option:selected').val();
+  let loadNowSelect = '<option value="">Please Wait... Loading</option>';
+  let faildSelect = '<option value="">初期値の取得に失敗しました。</option>';
+  $item.find('.pulldown-default-select').html(loadNowSelect); //最初に読み込み中メッセージのセレクトボックスを挿入
 
-    //「選択項目」のメニューで初期値として利用可能な値のリストを作成する。
-    let selectDefaultValueList;
-    const printselectDefaultValueURL = '/common/common_printSelectDefaultValue.php?link_id=' + selectLinkId + '&user_id=' +gLoginUserID;
-    $.ajax({
-      type: 'get',
-      url: printselectDefaultValueURL,
-      dataType: 'text'
-    }).done( function( result ) {
-        if(JSON.parse( result ) == 'failed'){
-          selectDefaultValueList = null;
-          //エラーメッセージ入りセレックとボックスを挿入
-          $item.find('.pulldown-default-select').html(faildSelect);
-          history.add(); //historyを更新
+  let menu = "",
+      column = ""; 
+  //「選択項目」のメニューで初期値として利用可能な値のリストを作成する。
+  let selectDefaultValueList;
+  let value = $item.find('.pulldown-select').val();
+  for (let i = 0; i < menuEditorArray.pulldown_item_list.length; i++) {
+    if ( menuEditorArray.pulldown_item_list[i].link_id == value ) {
+      menu = menuEditorArray.pulldown_item_list[i].menu_name_rest;
+      column = menuEditorArray.pulldown_item_list[i].column_name_rest;
+    }
+  }
+  const restInitialUrl = '/create/define/pulldown/initial/' + menu + '/' + column + '/';
+  fn.fetch( restInitialUrl ).then(function( result ) {
+      //選択可能な参照項目の一覧を取得し、セレクトボックスを生成
+      selectDefaultValueList = result;
+      /*if ( selectDefaultValueList[0] == 'redirectOrderForHADACClient' ) {
+        window.alert( selectDefaultValueList[2] );
+        var redirectUrl = selectDefaultValueList[1][1] + location.search.replace('?','&');
+        return redirectTo(selectDefaultValueList[1][0], redirectUrl, selectDefaultValueList[1][2]);
+      }
+      */
+      let selectPulldownDefaultListHTML = '<option value=""></option>'; //一つ目に空を追加
+      let defaultCheckFlg = false;
+      for ( let key in selectDefaultValueList ) {
+        if(defaultValue == key){
+          selectPulldownDefaultListHTML += '<option value="' + key + '" selected>' + selectDefaultValueList[key] + '</option>';
+          defaultCheckFlg = true;
         }else{
-          //選択可能な参照項目の一覧を取得し、セレクトボックスを生成
-          selectDefaultValueList = JSON.parse( result );
-          if ( selectDefaultValueList[0] == 'redirectOrderForHADACClient' ) {
-            window.alert( selectDefaultValueList[2] );
-            var redirectUrl = selectDefaultValueList[1][1] + location.search.replace('?','&');
-            return redirectTo(selectDefaultValueList[1][0], redirectUrl, selectDefaultValueList[1][2]);
-          }
-          const selectPulldownDefaultListLength = selectDefaultValueList.length;
-          let selectPulldownDefaultListHTML = '<option value=""></option>'; //一つ目に空を追加
-          let defaultCheckFlg = false;
-          for ( let i = 0; i < selectPulldownDefaultListLength ; i++ ) {
-            if(defaultValue == selectDefaultValueList[i].id){
-              selectPulldownDefaultListHTML += '<option value="' + selectDefaultValueList[i].id + '" selected>' + selectDefaultValueList[i].value + '</option>';
-              defaultCheckFlg = true;
-            }else{
-              selectPulldownDefaultListHTML += '<option value="' + selectDefaultValueList[i].id + '">' + selectDefaultValueList[i].value + '</option>';
-            }
-          }
-          //デフォルト値を持っているが一致するレコードが無い場合、ID変換失敗(ID)の選択肢を追加。
-          if(defaultCheckFlg == false && defaultValue){
-            selectPulldownDefaultListHTML += '<option value="' + defaultValue + '" selected>' + getSomeMessage("ITACREPAR_1255", {0:defaultValue}) + '</option>';
-          }
-          $item.find('.pulldown-default-select').html(selectPulldownDefaultListHTML);
-          history.add(); //historyを更新
+          selectPulldownDefaultListHTML += '<option value="' + key + '">' + selectDefaultValueList[key] + '</option>';
         }
-
-    }).fail( function( result ) {
-      selectDefaultValueList = null;
-      //エラーメッセージ入りセレックとボックスを挿入
-      $item.find('.pulldown-default-select').html(faildSelect);
-      history.add(); //historyを更新
-    });
+      }
+        //デフォルト値を持っているが一致するレコードが無い場合、ID変換失敗(ID)の選択肢を追加。
+        if(defaultCheckFlg == false && defaultValue){
+          selectPulldownDefaultListHTML += '<option value="' + defaultValue + '" selected>' + "ID変換失敗 {0:" + defaultValue + "}" + '</option>';
+        }
+        $item.find('.pulldown-default-select').html(selectPulldownDefaultListHTML);
+        history.add(); //historyを更新
+  }).catch(function ( e ) {
+    alert( e );
+    selectDefaultValueList = null;
+    //エラーメッセージ入りセレックとボックスを挿入
+    $item.find('.pulldown-default-select').html(faildSelect);
+    history.add(); //historyを更新
+  });
 }
-*/
 
 const resetEventPulldownDefaultValue = function($menuTable){
     const $item = $menuTable.find('.menu-column');
@@ -1552,6 +1579,29 @@ const resetEventPulldownParameterSheetReference = function($menuTable){
     });
 }
 
+$menuEditWindow.on('click', '.inputDateCalendarButton', function(){
+    const $button = $( this ),
+          $input = $button.closest('.inputDateContainer').find('.callDateTimePicker'), // 対象のinput textを指定する
+          value = $input.val(),
+          id = $input[0].id;
+
+    let flg,
+        name;
+    if ( id === 'dateTime' ){
+        flg = true;
+        name = '日時';
+    } else {
+        flg = false;
+        name = '日付';
+    }
+
+    fn.datePickerDialog('date', flg, name, value ).then(function( result ){
+        if ( result !== 'cancel') {
+            $input.val( result.date ).change().focus().trigger('input');
+        }
+    });
+});
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //   メニュー
@@ -1561,11 +1611,18 @@ const resetEventPulldownParameterSheetReference = function($menuTable){
 $menuEditor.find('.menu-editor-menu-button').on('click', function() {
     const $button = $( this ),
         buttonType = $button.attr('data-menu-button');
+
+    let url_path,
+        splitstr,
+        organization_id,
+        workspace_id,
+        menu;
+
     switch ( buttonType ) {
         case 'newColumn':
             const currentItemCounter = itemCounter;
-            addColumn( $menuTable, 'item', itemCounter++ );
-            const $newColumnTarget = $menuEditor.find('#i'+currentItemCounter);
+            addColumn( $menuTable, 'column', itemCounter++ );
+            const $newColumnTarget = $menuEditor.find('#c'+currentItemCounter);
             //editの場合disabledを外す。
             if(menuEditorMode === 'edit'){
                 $newColumnTarget.find('.menu-column-type-select').prop('disabled', false); //カラムタイプ
@@ -1602,38 +1659,74 @@ $menuEditor.find('.menu-editor-menu-button').on('click', function() {
             break;
         case 'registration':
             if ( !window.confirm("メニュー作成を実行しますか？\n※既に同じメニュー名のメニューや「メニュー定義一覧」メニューの項番が同じメニューが存在する場合、上書きでメニューが作成され、入力済みのデータは削除されます。\n入力済みのデータが必要な場合は、「キャンセル」を選択して、データをバックアップしてください。" ) ) return false;
-            createRegistrationData('registration');
+            createRegistrationData('create_new');
             break;
         case 'update-initialize':
             //メニュー作成状態が「未作成」の場合、windowメッセージを変更
-            if(menuEditorArray['selectMenuInfo']['menu']['MENU_CREATE_STATUS'] == 1){
+            if(menuEditorArray['menu_info']['menu']['menu_create_done_status_id'] == 1){
                 if ( !window.confirm("メニュー作成を実行しますか？\n※既に同じメニュー名のメニューや「メニュー定義一覧」メニューの項番が同じメニューが存在する場合、上書きでメニューが作成され、入力済みのデータは削除されます。\n入力済みのデータが必要な場合は、「キャンセル」を選択して、データをバックアップしてください。") ) return false;
+                createRegistrationData('create_new');
             }else{
                 if ( !window.confirm("メニューの初期化を実行しますか？\n※このメニューの入力済みのデータは削除されます。\n入力済みのデータが必要な場合は、「キャンセル」を選択して、データをバックアップしてください。") ) return false;
+                createRegistrationData('initialize');
             }
-            createRegistrationData('update-initialize');
             break;
         case 'update':
             if ( !window.confirm("メニューの編集を実行しますか？\n※既存の項目に入力されているデータは残りますが、既存の項目を削除していた場合、その項目に入力されていたデータは削除されます。\n既存の項目で「正規表現」を変更した場合、既存のデータと不整合が発生する可能性があります。\nまた、新たに追加した項目を「必須」や「一意制約」としていた場合、必須項目に空のデータが入り、データの不整合が発生する可能性があります。\n修正が必要な場合は「キャンセル」を選択してください。" ) ) return false;
-            createRegistrationData('update');
+            createRegistrationData('edit');
+            break;
+        case 'management':
+            //uuidでフィルターされたメニュー作成履歴画面へ移動
+            url_path = location.pathname;
+            splitstr = url_path.split('/');
+            organization_id = splitstr[1];
+            workspace_id = splitstr[3];
+            const uuid = getParam('history_id');
+            const filter = encodeURIComponent( JSON.stringify( {"uuid":{"NORMAL": uuid }} ) );
+            const hisUrl = '/' + organization_id + '/workspaces/' + workspace_id + '/ita/?menu=menu_creation_history&filter=' + filter;
+            location.replace( hisUrl );
             break;
         case 'initialize':
         case 'reload-initialize':
             // 初期化モードで開きなおす
-            location.href = '/default/menu/01_browse.php?no=2100160011&create_menu_id=' + menuEditorTargetID + '&mode=initialize';
+            menuEditorTargetID = $('#menu-editor').attr('data-load-menu-id');
+            url_path = location.pathname;
+            splitstr = url_path.split('/');
+            organization_id = splitstr[1];
+            workspace_id = splitstr[3];
+            menu = getParam('menu');
+            window.location.href = '/' + organization_id + '/workspaces/' + workspace_id + '/ita/?menu=' + menu + '&menu_name_rest=' + menuEditorTargetID + '&mode=initialize';
             break;
         case 'edit':
         case 'reload':
             // 編集モードで開きなおす
-            location.href = '/default/menu/01_browse.php?no=2100160011&create_menu_id=' + menuEditorTargetID + '&mode=edit';
+            menuEditorTargetID = $('#menu-editor').attr('data-load-menu-id');
+            url_path = location.pathname;
+            splitstr = url_path.split('/');
+            organization_id = splitstr[1];
+            workspace_id = splitstr[3];
+            menu = getParam('menu');
+            window.location.href = '/' + organization_id + '/workspaces/' + workspace_id + '/ita/?menu=' + menu + '&menu_name_rest=' + menuEditorTargetID + '&mode=edit';
             break;
         case 'diversion':
             // 流用新規モードで開きなおす
-            location.href = '/default/menu/01_browse.php?no=2100160011&create_menu_id=' + menuEditorTargetID + '&mode=diversion';
+            menuEditorTargetID = $('#menu-editor').attr('data-load-menu-id');
+            url_path = location.pathname;
+            splitstr = url_path.split('/');
+            organization_id = splitstr[1];
+            workspace_id = splitstr[3];
+            menu = getParam('menu');
+            window.location.href = '/' + organization_id + '/workspaces/' + workspace_id + '/ita/?menu=' + menu + '&menu_name_rest=' + menuEditorTargetID + '&mode=diversion';
             break;
         case 'cancel':
             // 閲覧モードで開きなおす
-            location.href = '/default/menu/01_browse.php?no=2100160011&create_menu_id=' + menuEditorTargetID;
+            menuEditorTargetID = $('#menu-editor').attr('data-load-menu-id');
+            url_path = location.pathname;
+            splitstr = url_path.split('/');
+            organization_id = splitstr[1];
+            workspace_id = splitstr[3];
+            menu = getParam('menu');
+            window.location.href = '/' + organization_id + '/workspaces/' + workspace_id + '/ita/?menu=' + menu + '&menu_name_rest=' + menuEditorTargetID;
             break;
     }
 });
@@ -1653,11 +1746,17 @@ const titleInputChange = function( $input ) {
 $('.menu-column-title-input').each( function(){
     titleInputChange( $(this) );
 });
+$('.menu-column-title-rest-input').each( function(){
+  titleInputChange( $(this) );
+});
 $menuEditor.on({
     'input' : function () {
         if ( $( this ).is('.menu-column-title-input') ) {
             titleInputChange( $( this ) );
         }
+        if ( $( this ).is('.menu-column-title-rest-input') ) {
+          titleInputChange( $( this ) );
+      }
     },
     'change' : function() {
         if ( $( this ).is('.menu-column-title-input') ) {
@@ -1665,6 +1764,11 @@ $menuEditor.on({
             previewTable();
             updateUniqueConstraintDispData();
         }
+        if ( $( this ).is('.menu-column-title-rest-input') ) {
+          history.add();
+          previewTable();
+          updateUniqueConstraintDispData();
+      }
     },
     'focus' : function() {
         // $(this).focus().select(); Edge対応版
@@ -1678,7 +1782,7 @@ $menuEditor.on({
     'mousedown' : function( e ) {
         e.stopPropagation();
     }
-}, '.menu-column-title-input, .menu-column-repeat-number-input');
+}, '.menu-column-title-input, .menu-column-title-rest-input, .menu-column-repeat-number-input');
 
   // input欄外でも選択可能にする
 $menuEditor.on({
@@ -1686,7 +1790,7 @@ $menuEditor.on({
         if ( menuEditorMode !== 'view') {
             const $input = $( this );
             setTimeout( function(){
-                $input.find('.menu-column-title-input, .menu-column-repeat-number-input').focus().select();
+                $input.find('.menu-column-title-input, .menu-column-title-rest-input, .menu-column-repeat-number-input').focus().select();
             }, 1 );
         }
     }
@@ -1841,10 +1945,10 @@ $menuEditor.on('mousedown', '.menu-column-move', function( e ){
           // リピート
           const $repeatColumn = $hoverTarget.parent('.menu-column-repeat');
           if ( $hoverTarget.is('.menu-column-repeat-header')
-               && !$repeatColumn.prev().is( $column ) ) {
+              && !$repeatColumn.prev().is( $column ) ) {
             $repeatColumn.addClass('left');
           } else if ( $hoverTarget.is('.menu-column-repeat-footer')
-               && !$repeatColumn.next().is( $column ) ) {
+              && !$repeatColumn.next().is( $column ) ) {
             $repeatColumn.addClass('right');
           }
         } else if ( $hoverTarget.is('.column-empty') ) {
@@ -2041,18 +2145,18 @@ const resetSelect2 = function( $target ) {
 };
 
 // datetimepickerを再適用
-const resetDatetimepicker = function ( $target ) {
-    if ( $target.find('.callDateTimePicker').length ) {
-      //既存の要素を削除
-      $target.find(".callDateTimePicker").datetimepicker("destroy");
-      $target.find(".callDateTimePicker2").datetimepicker("destroy");
-      $('.xdsoft_datetimepicker').remove();
-      // datetimepickeを再適用
-      $target.find(".callDateTimePicker").datetimepicker({format:'Y/m/d H:i:s', step:5, lang:LangStream});
-      $target.find(".callDateTimePicker2").datetimepicker({timepicker:false, format:'Y/m/d', lang:LangStream});
+//const resetDatetimepicker = function ( $target ) {
+//    if ( $target.find('.callDateTimePicker').length ) {
+//      //既存の要素を削除
+//      $target.find(".callDateTimePicker").datetimepicker("destroy");
+//      $target.find(".callDateTimePicker2").datetimepicker("destroy");
+//      $('.xdsoft_datetimepicker').remove();
+//      // datetimepickeを再適用
+//      $target.find(".callDateTimePicker").datetimepicker({format:'Y/m/d H:i:s', step:5, lang:LangStream});
+//      $target.find(".callDateTimePicker2").datetimepicker({timepicker:false, format:'Y/m/d', lang:LangStream});
 
-    }
-}
+//    }
+//}
 
 $menuEditor.on('click', '.menu-column-copy', function(){
   const $column = $( this ).closest('.menu-column, .menu-column-group');
@@ -2081,9 +2185,10 @@ $menuEditor.on('click', '.menu-column-copy', function(){
       
       if ( $eachColumn.is('.menu-column') ) {
         const i = itemCounter++;
-        $input.val( title + '(' + i + ')' );
+        //$input.val( title + '(' + i + ')' );
+        $input.val( title );
         $eachColumn.attr({
-          'id': 'i' + i,
+          'id': 'c' + i,
           'data-item-id': ''
         });
       } else if ( $eachColumn.is('.menu-column-group') ) {
@@ -2099,8 +2204,8 @@ $menuEditor.on('click', '.menu-column-copy', function(){
     });
 
     //日付と時日時の初期値入力欄にdatetimepickerを設定
-    $clone.find(".callDateTimePicker").datetimepicker({format:'Y/m/d H:i:s', step:5, lang:LangStream});
-    $clone.find(".callDateTimePicker2").datetimepicker({timepicker:false, format:'Y/m/d', lang:LangStream});
+    //$clone.find(".callDateTimePicker").datetimepicker({format:'Y/m/d H:i:s', step:5, lang:LangStream});
+    //$clone.find(".callDateTimePicker2").datetimepicker({timepicker:false, format:'Y/m/d', lang:LangStream});
     // プルダウン選択の初期値取得eventを再適用する
     resetEventPulldownDefaultValue( $menuTable );
     // パラメータ参照の項目取得eventを再適用する
@@ -2291,7 +2396,7 @@ const previewTable = function(){
             // Head
             const rowspan = $column.attr('data-rowpan');
             let itemHTML = '<th rowspan="' + rowspan + '" class="sortTriggerInTbl">'
-                           + textEntities( $column.find('.menu-column-title-input').val() );
+                          + textEntities( $column.find('.menu-column-title-input').val() );
             if ( repeatCount > 1 ) {
               itemHTML += '[' + repeatCount + ']';
             }
@@ -2341,6 +2446,7 @@ const previewTable = function(){
             }
 
           // Item end
+        /*
         } else if ( $column.is('.menu-column-repeat') ) {
           // リピート
             const repeatNumber = $column.find('.menu-column-repeat-number-input').val();
@@ -2358,6 +2464,7 @@ const previewTable = function(){
                 }
             }
           // Repeat end
+        */
         } else if ( $column.is('.menu-column-group') ) {
           // グループ
             const colspan = childColumnCount( $column, 'group' ),
@@ -2494,7 +2601,7 @@ const repeatRemoveConfirm = function() {
           // select2を再適用する
           resetSelect2( $menuTable );
           // datetimepickerを再適用する
-          resetDatetimepicker( $menuTable );
+          //resetDatetimepicker( $menuTable );
           // プルダウン選択の初期値取得eventを再適用する
           resetEventPulldownDefaultValue( $menuTable );
           // パラメータ参照の項目取得eventを再適用する
@@ -2638,7 +2745,7 @@ $('#menu-editor-row-resize').on('mousedown', function( e ){
 
 const menuGroupBody = function() {
 
-    const menuGroupData = menuEditorArray.selectMenuGroupList,
+    const menuGroupData = menuEditorArray.target_menu_group_list,
           menuListRowLength = menuGroupData.length,
           menuGroupType = ['for-input','for-substitution','for-reference'],
           menuGroupAbbreviation = [textCode('0036'),textCode('0037'),textCode('0038')],
@@ -2680,19 +2787,19 @@ const menuGroupBody = function() {
       html += '<tr>';
       // body Radio
       for ( let j = 0; j < menuGroupTypeLength; j++ ) {
-        const radioClass = 'select-menu radio-number-' + menuGroupData[i]['MENU_GROUP_ID'],
-              radioID = 'radio-' + menuGroupType[j] + '-' + menuGroupData[i]['MENU_GROUP_ID'];
+        const radioClass = 'select-menu radio-number-' + menuGroupData[i]['menu_group_id'],
+              radioID = 'radio-' + menuGroupType[j] + '-' + menuGroupData[i]['menu_group_id'];
         html += ''
         + '<th class="radio ' + menuGroupType[j] + '">'
           + '<span class="menu-group-radio">'
-            + '<input type="radio" class="' + radioClass +'" id="' + radioID + '" name="' + menuGroupType[j] + '" value="' + menuGroupData[i]['MENU_GROUP_ID'] + '" data-name="' + menuGroupData[i]['MENU_GROUP_NAME'] + '">'
+            + '<input type="radio" class="' + radioClass +'" id="' + radioID + '" name="' + menuGroupType[j] + '" value="' + menuGroupData[i]['menu_group_id'] + '" data-name="' + menuGroupData[i]['menu_group_name'] + '">'
             + '<label class="select-menu-label" for="' + radioID + '"></label>'
           + '</span>'
         + '</th>' 
       }
       // Menu group Data
-      html += '<td class="id">' + menuGroupData[i]['MENU_GROUP_ID'] + '</td>'
-            + '<td class="name">' + textEntities( menuGroupData[i]['MENU_GROUP_NAME'] ) + '</td>';
+      html += '<td class="id">' + menuGroupData[i]['menu_group_id'] + '</td>'
+            + '<td class="name">' + textEntities( menuGroupData[i]['menu_group_name'] ) + '</td>';
   
       html += '</tr>';      
     }
@@ -2789,12 +2896,13 @@ $('#vertical-menu-help').on('click', function() {
 // カンマ区切りロールIDリストからロールNAMEリストを返す
 const getRoleListIdToName = function( roleListText ) {
     if ( roleListText !== undefined && roleListText !== '') {
-      const roleList = roleListText.split(','),
+      const roleList = roleListText,
             roleListLength = roleList.length,
             roleNameList = new Array;
-  
+
       for ( let i = 0; i < roleListLength; i++ ) {
-        const roleName = listIdName('role', roleList[i]);
+        //const roleName = listIdName('role', roleList[i]);
+        const roleName = roleList[i];
         if ( roleName !== null ) {
           const hideRoleName = "********";
           if ( roleName !== hideRoleName ) {
@@ -2836,7 +2944,8 @@ const modalRoleList = function() {
     const initRoleList = ( $input.attr('data-role-id') === undefined )? '': $input.attr('data-role-id');
     // 決定時の処理    
     const okEvent = function( newRoleList ) {
-      $input.text(　getRoleListIdToName( newRoleList ) ).attr('data-role-id', newRoleList );
+      //$input.text( getRoleListIdToName( newRoleList ) ).attr('data-role-id', newRoleList );
+      $input.text( newRoleList ).attr('data-role-id', newRoleList );
       itaModalClose();
     };
     // キャンセル時の処理    
@@ -2844,7 +2953,7 @@ const modalRoleList = function() {
       itaModalClose();
     };
   
-    setRoleSelectModalBody( menuEditorArray.roleList, initRoleList, okEvent, cancelEvent );
+    setRoleSelectModalBody( menuEditorArray.role_list, initRoleList, okEvent, cancelEvent );
     
 };
 
@@ -2866,12 +2975,8 @@ const modalReferenceItemList = function($target) {
       //newItemListのIDから項目名に変換
       const newItemListArray = newItemList.split(',');
       const newItemNameListArray = [];
-      newItemListArray.forEach(function(id){
-        extractItemList.forEach(function(data){
-          if(data['ITEM_ID'] == id){
-            newItemNameListArray.push(data['ITEM_NAME']);
-          }
-        });
+      newItemListArray.forEach(function(data){
+          newItemNameListArray.push(data);
       });
 
       //カンマ区切りの文字列に変換に参照項目上に表示
@@ -2892,27 +2997,128 @@ const modalReferenceItemList = function($target) {
 
     //選択されている「プルダウン選択」で選択可能な参照項目のみを取得する
     let targetReferenceItem;
-    const printReferenceItemURL = '/common/common_printReferenceItem.php?link_id=' + selectLinkId + '&user_id=' +gLoginUserID;
-    $.ajax({
-      type: 'get',
-      url: printReferenceItemURL,
-      dataType: 'text'
-    }).done( function( result ) {
-        //選択可能な参照項目の一覧を取得
-        targetReferenceItem = JSON.parse( result );
-        if ( targetReferenceItem[0] == 'redirectOrderForHADACClient' ) {
+    let menu = "",
+    column = ""; 
+
+    for (let i = 0; i < menuEditorArray.pulldown_item_list.length; i++) {
+      if (menuEditorArray.pulldown_item_list[i].link_id == selectLinkId) {
+        menu = menuEditorArray.pulldown_item_list[i].menu_name_rest;
+        column = menuEditorArray.pulldown_item_list[i].column_name_rest;
+      }
+    }
+    const printReferenceItemURL = '/create/define/reference/item/' + menu + '/' + column + '/';
+    
+    //選択可能な参照項目の一覧を取得
+    fn.fetch( printReferenceItemURL ).then( function(result) {
+        targetReferenceItem = result;
+        /*if ( targetReferenceItem[0] == 'redirectOrderForHADACClient' ) {
           window.alert( targetReferenceItem[2] );
           var redirectUrl = targetReferenceItem[1][1] + location.search.replace('?','&');
           return redirectTo(targetReferenceItem[1][0], redirectUrl, targetReferenceItem[1][2]);   
-        }
+        }*/
         setRerefenceItemSelectModalBody(targetReferenceItem, initItemList, okEvent, cancelEvent, closeEvent);
-
-    }).fail( function( result ) {
+    }).catch( function( e ) {
       targetReferenceItem = null;
       setRerefenceItemSelectModalBody(targetReferenceItem, initItemList, okEvent, cancelEvent, closeEvent);
   
     });
 }
+
+//////////////////////////////////////////////////////
+// 参照項目一覧取得・選択
+//////////////////////////////////////////////////////
+// モーダル Body HTML
+function setRerefenceItemSelectModalBody( itemList, initData, okCallback, cancelCallBack, closeCallBack, valueType ) {
+  if ( valueType === undefined ) valueType = 'id';
+  const $modalBody = $('.editor-modal-body');
+  const $modalFooterMenu = $('.editor-modal-footer-menu');
+
+  let itemSelectHTML;
+
+  // 入力値を取得する
+  const checkList = ( initData !== null || initData !== undefined )? initData.split(','): [''];
+
+  if(itemList != null){
+      //const itemLength = itemList.length;
+      //if(itemLength != 0){
+          itemSelectHTML = '<div class="modal-table-wrap">'
+                            + '<form id="modal-reference-item-select">'
+                            + '<table class="modal-table modal-select-table">'
+                              + '<thead>'
+                                + '<th class="select">Select</th><th class="id">ID</th><th class="name">Name</th>'
+                              + '</thead>'
+                              + '<tbody>';
+
+
+          for ( const key in itemList ) {
+            const itemName = itemList[key],
+                  itemID = key,
+                  //checkValue = ( valueType === 'name')? itemName: itemID,
+                  checkValue = itemName,
+                  checkedFlag = ( checkList.indexOf( checkValue ) !== -1 )? ' checked': '',
+                  //value = ( valueType === 'name')? itemName: itemID;
+                  value = itemName;
+            itemSelectHTML += '<tr>'
+            + '<th><input value="' + value + '" class="modal-checkbox" type="checkbox"' + checkedFlag + '></th>'
+            + '<th>' + itemID + '</th><td>' + itemName + '</td></tr>';
+          }
+
+          itemSelectHTML += ''
+              + '</tbody>'
+            + '</table>'
+            + '</form>'
+          + '</div>';
+      /*}else{
+          //ボタンを「閉じる」に変更
+          $modalFooterMenu.children().remove();
+          $modalFooterMenu.append('<li class="editor-modal-footer-menu-item"><button class="editor-modal-footer-menu-button negative" data-button-type="close">閉じる</li>');
+          itemSelectHTML = '<p class="modal-one-message">getSomeMessage("ITACREPAR_1251")</p>';*/
+      //}
+  }else{
+      //ボタンを「閉じる」に変更
+      $modalFooterMenu.children().remove();
+      $modalFooterMenu.append('<li class="editor-modal-footer-menu-item"><button class="editor-modal-footer-menu-button negative" data-button-type="close">閉じる</li>');
+      itemSelectHTML = '<p class="modal-one-message">参照項目の取得に失敗しました。</p>';
+  }
+
+  $modalBody.html( itemSelectHTML );
+
+  // 行で選択
+  $modalBody.find('.modal-select-table').on('click', 'tr', function(){
+    const $tr = $( this ),
+          checked = $tr.find('.modal-checkbox').prop('checked');
+    if ( checked ) {
+      $tr.find('.modal-checkbox').prop('checked', false );
+    } else {
+      $tr.find('.modal-checkbox').prop('checked', true );
+    }
+  });
+
+  // 決定・取り消しボタン
+  const $modalButton = $('.editor-modal-footer-menu-button');
+  $modalButton.prop('disabled', false ).on('click', function() {
+    const $button = $( this ),
+          btnType = $button.attr('data-button-type');
+    switch( btnType ) {
+      case 'ok':
+        // 選択しているチェックボックスを取得
+        let checkboxArray = new Array;
+        $modalBody.find('.modal-checkbox:checked').each( function(){
+          checkboxArray.push( $( this ).val() );
+        });
+        const newItemList = checkboxArray.join(',');
+        okCallback( newItemList, itemList );
+        break;
+      case 'cancel':
+        cancelCallBack();
+        break;
+      case 'close':
+        closeCallBack();
+        break;
+    }
+  });
+}
+
 
 //一意制約(複数項目)
 const modalUniqueConstraint = function() {
@@ -2929,8 +3135,9 @@ const modalUniqueConstraint = function() {
       let targetItemData = {};
       let columnId = "";
       columnId = targetItem.attr('id');
+      //columnId = targetItem.find('.menu-column-title-rest-input').val();
       let itemName = "";
-      itemName = targetItem.find('.menu-column-title-input').val();
+      itemName = targetItem.find('.menu-column-title-rest-input').val();
       let itemId = "";
       itemId = targetItem.attr('data-item-id');
       targetItemData = {
@@ -2990,6 +3197,11 @@ const getUniqueConstraintDispData = function(uniqueConstraintArrayData){
   
     let uniqueConstraintConv = "";
     let uniqueConstraintName = "";
+    let columnList;
+    let columnKey;
+    if ( 'menu_info' in menuEditorArray){
+      columnList = menuEditorArray.menu_info.column;
+    }
   
     for (let i = 0; i < uniqueConstraintLength; i++){
         let targetIdLength = uniqueConstraintArrayData[i].length;
@@ -2998,10 +3210,29 @@ const getUniqueConstraintDispData = function(uniqueConstraintArrayData){
         if(targetIdLength != 0){
           for (let j = 0; j < targetIdLength; j++){
             for (let columnId in uniqueConstraintArrayData[i][j]){
+              if( uniquechangecount === 0 && uniquedeletecount === 0 ){
+                if ( 'menu_info' in menuEditorArray){
+                  for (const column  in columnList){
+                    if ( columnId === columnList[column]['item_name_rest'] ){
+                      columnKey = column;
+                      break;
+                    }
+                  }
+                }
+              }
+
               if(idPatternConv == ""){
-                idPatternConv = columnId;
+                if ( 'menu_info' in menuEditorArray && uniquechangecount === 0 && uniquedeletecount === 0 ){
+                  idPatternConv = columnKey;
+                } else {
+                  idPatternConv = columnId;
+                }
               }else{
-                idPatternConv = idPatternConv + "-" + columnId;
+                if ( 'menu_info' in menuEditorArray && uniquechangecount === 0 && uniquedeletecount === 0 ){
+                  idPatternConv = idPatternConv + "-" + columnKey;
+                } else {
+                  idPatternConv = idPatternConv + "-" + columnId;
+                }
               }
   
               if(idPatternName == ""){
@@ -3022,10 +3253,11 @@ const getUniqueConstraintDispData = function(uniqueConstraintArrayData){
   
           //項目名部分の文字列を結合
           if(uniqueConstraintName == ""){
-              idPatternName = "(" + idPatternName + ")";
+              idPatternName = "[" + idPatternName + "]";
               uniqueConstraintName = idPatternName;
           }else{
-              idPatternName = "(" + idPatternName + ")";
+              idPatternName = idPatternName;
+              idPatternName = "[" + idPatternName + "]";
               uniqueConstraintName = uniqueConstraintName + "," + idPatternName;
           }
         }
@@ -3040,7 +3272,34 @@ const getUniqueConstraintDispData = function(uniqueConstraintArrayData){
 
 //項目を削除したとき、一意制約(複数項目)にその項目が含まれていた場合削除する。
 const deleteUniqueConstraintDispData = function(targetColumnId){
-    let currentUniqueConstraintData = menuEditorArray['unique-constraints-current'];
+    let currentUniqueConstraintData = new Array();
+    let tmpList;
+    let columnList;
+
+    if ( 'menu_info' in menuEditorArray){
+      if( uniquechangecount === 0 && uniquedeletecount === 0 ){
+        columnList = menuEditorArray.menu_info.column;
+        tmpList = menuEditorArray['unique-constraints-current'];
+        for ( let i = 0; i < tmpList.length; i++ ) {
+          let uniqueList = new Array();
+          for ( let j = 0; j < tmpList[i].length; j++){
+            for (const column  in columnList){
+              if ( tmpList[i][j] === columnList[column]['item_name_rest'] ){
+                let unique = {[column] : tmpList[i][j]};
+                uniqueList.push(unique);
+                break;
+              }
+            }
+          }
+          currentUniqueConstraintData.push(uniqueList);
+        }
+      } else {
+        currentUniqueConstraintData = menuEditorArray['unique-constraints-current'];
+      }
+    } else {
+      currentUniqueConstraintData = menuEditorArray['unique-constraints-current'];
+    }
+
     if(currentUniqueConstraintData != null){
       let newCurrentUniqueConstraintData = currentUniqueConstraintData;
       let uniqueConstraintLength = currentUniqueConstraintData.length;
@@ -3066,6 +3325,7 @@ const deleteUniqueConstraintDispData = function(targetColumnId){
       }
   
       //更新後の値をページに反映
+      uniquedeletecount = uniquedeletecount + 1;
       const uniqueConstraintData = getUniqueConstraintDispData(newCurrentUniqueConstraintData);
       const uniqueConstraintConv = uniqueConstraintData.conv;
       const uniqueConstraintName = uniqueConstraintData.name;
@@ -3081,7 +3341,34 @@ const deleteUniqueConstraintDispData = function(targetColumnId){
 
 //項目名が変更されるアクションがあったとき、一意制約(複数項目)で表示している項目名をセットしなおす。
 const updateUniqueConstraintDispData = function(){
-    let currentUniqueConstraintData = menuEditorArray['unique-constraints-current'];
+    let currentUniqueConstraintData = new Array();
+    let tmpList;
+    let columnList;
+
+    if ( 'menu_info' in menuEditorArray){
+      if( uniquechangecount === 0 && uniquedeletecount === 0 ){
+        columnList = menuEditorArray.menu_info.column;
+        tmpList = menuEditorArray['unique-constraints-current'];
+        for ( let i = 0; i < tmpList.length; i++ ) {
+          let uniqueList = new Array();
+          for ( let j = 0; j < tmpList[i].length; j++){
+            for (const column  in columnList){
+              if ( tmpList[i][j] === columnList[column]['item_name_rest'] ){
+                let unique = {[column] : tmpList[i][j]};
+                uniqueList.push(unique);
+                break;
+              }
+            }
+          }
+          currentUniqueConstraintData.push(uniqueList);
+        }
+      } else {
+        currentUniqueConstraintData = menuEditorArray['unique-constraints-current'];
+      }
+    } else {
+      currentUniqueConstraintData = menuEditorArray['unique-constraints-current'];
+    }
+
     if(currentUniqueConstraintData != null){
       let newCurrentUniqueConstraintData = currentUniqueConstraintData;
       let uniqueConstraintLength = currentUniqueConstraintData.length;
@@ -3089,7 +3376,7 @@ const updateUniqueConstraintDispData = function(){
           let targetIdLength = currentUniqueConstraintData[i].length;
           for (let j = 0; j < targetIdLength; j++){
             for (let columnId in currentUniqueConstraintData[i][j]){
-              let $itemNameArea = $menuTable.find('#'+columnId).find('.menu-column-title-input');
+              let $itemNameArea = $menuTable.find('#'+columnId).find('.menu-column-title-rest-input');
               if($itemNameArea.length != 0){
                 let itemName = $itemNameArea.val();
                 newCurrentUniqueConstraintData[i][j] = {[columnId] : itemName}; //項目名を再設定
@@ -3099,6 +3386,7 @@ const updateUniqueConstraintDispData = function(){
       }
 
       //更新後の値をページに反映
+      uniquechangecount = uniquechangecount + 1;
       const uniqueConstraintData = getUniqueConstraintDispData(newCurrentUniqueConstraintData);
       const uniqueConstraintConv = uniqueConstraintData.conv;
       const uniqueConstraintName = uniqueConstraintData.name;
@@ -3125,11 +3413,12 @@ const createRegistrationData = function( type ){
     }
   
     let createMenuJSON = {
-      'menu' : {},
-      'group' : {},
-      'item' : {},
-      'repeat' : {},
-      'type' : {}
+      'menu'   : {},
+      'group'  : {},
+      'column' : {},
+      //'item' : {},
+      //'repeat' : {},
+      'type'   : {}
     };
     
     // Order用カウンター
@@ -3138,22 +3427,24 @@ const createRegistrationData = function( type ){
     // メニュー作成情報
     createMenuJSON['menu'] = getPanelParameter();
     if ( menuEditorMode === 'initialize' || menuEditorMode === 'edit') {
-      createMenuJSON['menu']['LAST_UPDATE_TIMESTAMP'] = menuEditorArray.selectMenuInfo['menu']['LAST_UPDATE_TIMESTAMP'];
+      createMenuJSON['menu']['last_update_date_time'] = menuEditorArray.menu_info['menu']['last_update_date_time'];
     }
     
     // CREATE_ITEM_IDからKEYを返す
     const CREATE_ITEM_ID_to_KEY = function( itemID ) {
-      for ( let key in menuEditorArray.selectMenuInfo['item'] ) {
-        if ( menuEditorArray.selectMenuInfo['item'][ key ]['CREATE_ITEM_ID'] === itemID ) {
-          return menuEditorArray.selectMenuInfo['item'][ key ]['ITEM_NAME'];
+      for ( let key in menuEditorArray.menu_info['column'] ) {
+        // CREATE_ITEM_ID ⇒ create_column_id
+        if ( menuEditorArray.menu_info['column'][ key ]['create_column_id'] === itemID ) {
+          return menuEditorArray.menu_info['column'][ key ]['item_name'];
         }
       }
     }
     // リピート項目チェック（名前とグループからCREATE_ITEM_IDとLAST_UPDATE_TIMESTAMPを返す）
+    /*
     const repeatItemCheckID = function( groupID, itemName ) {
       for ( let key in menuEditorArray.selectMenuInfo['item'] ) {
-        if ( menuEditorArray.selectMenuInfo['item'][ key ]['COL_GROUP_ID'] === groupID &&
-             menuEditorArray.selectMenuInfo['item'][ key ]['ITEM_NAME'] === itemName ) {
+        if ( menuEditorArray.selectMenuInfo['item'][ key ]['col_group_id'] === groupID &&
+            menuEditorArray.selectMenuInfo['item'][ key ]['item_name'] === itemName ) {
           // リピートで作成された項目かチェック
           if ( menuEditorArray.selectMenuInfo['item'][ key ]['REPEAT_ITEM'] === true ) {
             return [
@@ -3166,34 +3457,38 @@ const createRegistrationData = function( type ){
       // 見つからない場合はnullを返す
       return [ null, null ];
     }
+    */
+
     // COL_GROUP_IDからKEYを返す
     const COL_GROUP_ID_to_KEY = function( groupID ) {
-      for ( let key in menuEditorArray.selectMenuInfo['group'] ) {
-        if ( menuEditorArray.selectMenuInfo['group'][ key ]['COL_GROUP_ID'] === groupID ) {
-          return menuEditorArray.selectMenuInfo['group'][ key ]['COL_GROUP_NAME'];
+      for ( let key in menuEditorArray.menu_info['group'] ) {
+        if ( menuEditorArray.menu_info['group'][ key ]['column_group_id'] === groupID ) {
+          return menuEditorArray.menu_info['group'][ key ]['column_group_name'];
         }
       }
     }
     // リピート項目チェック（名前からCREATE_ITEM_IDとLAST_UPDATE_TIMESTAMPを返す）
+    /*
     const repeatGroupCheckID = function( groupName ) {
       for ( let key in menuEditorArray.selectMenuInfo['group'] ) {
-        if ( menuEditorArray.selectMenuInfo['group'][ key ]['COL_GROUP_NAME'] === groupName ) {
+        if ( menuEditorArray.selectMenuInfo['group'][ key ]['col_group_name'] === groupName ) {
           // リピートで作成された項目かチェック
           if ( menuEditorArray.selectMenuInfo['group'][ key ]['REPEAT_GROUP'] === true ) {
-            return menuEditorArray.selectMenuInfo['group'][ key ]['COL_GROUP_ID'];
+            return menuEditorArray.selectMenuInfo['group'][ key ]['col_group_id'];
           }
         }
       }
       // 見つからない場合はnullを返す
       return [ null, null ];
     }
+    */
     
     const tableAnalysis = function( $cols, repeatCount ) {
       
       // 子セルを調べる
       $cols.children().each( function(){
         const $column = $( this );
-        
+
         if ( $column.is('.menu-column') ) {
             // 項目ここから
               const order = itemCount++,
@@ -3202,11 +3497,16 @@ const createRegistrationData = function( type ){
                   repeatFlag = false,
                   CREATE_ITEM_ID = $column.attr('data-item-id'),
                   LAST_UPDATE_TIMESTAMP = null;
-  
+
+              let select = document.getElementById('menu-column-type-select');
+              //let idx = select.selectedIndex;
+              let column_class  = select.options[selectTypeValue - 1].dataset.value;
+
               if ( CREATE_ITEM_ID === '') CREATE_ITEM_ID = null;
+              if ( menuEditorMode === 'diversion') CREATE_ITEM_ID = null;
               if ( menuEditorMode === 'initialize' || menuEditorMode === 'edit' ) {
-                if ( menuEditorArray.selectMenuInfo['item'][key] ) {
-                  LAST_UPDATE_TIMESTAMP = menuEditorArray.selectMenuInfo['item'][key]['LAST_UPDATE_TIMESTAMP'];
+                if ( menuEditorArray.menu_info['column'][key] ) {
+                  LAST_UPDATE_TIMESTAMP = menuEditorArray.menu_info['column'][key]['last_update_date_time'];
                 }
               }
               // 親カラムグループ
@@ -3219,6 +3519,8 @@ const createRegistrationData = function( type ){
               if ( parentsID === undefined ) parentsID = null;
               // 項目名
               let itemName = $column.find('.menu-column-title-input').val();
+              let itemNameRest = $column.find('.menu-column-title-rest-input').val();
+              /*
               if ( repeatCount > 1 ) {
                 itemName += '[' + repeatCount + ']';
                 repeatFlag = true;
@@ -3231,73 +3533,97 @@ const createRegistrationData = function( type ){
                   CREATE_ITEM_ID = repeatItemData[0];
                   LAST_UPDATE_TIMESTAMP = repeatItemData[1];
                 }
-  
               }
+              */
+
+              let required = $column.find('.required').prop('checked');
+              if ( required === false ){
+                required = "False";
+              } else {
+                required = "True";
+              }
+
+              let uniqued = $column.find('.unique').prop('checked');
+              if ( uniqued === false ){
+                uniqued = "False";
+              } else {
+                uniqued = "True";
+              }
+
               // JSONデータ
-              createMenuJSON['item'][key] = {
-                'CREATE_ITEM_ID' : CREATE_ITEM_ID,
-                'MENU_NAME' : createMenuJSON['menu']['MENU_NAME'],
-                'ITEM_NAME' : itemName,
-                'DISP_SEQ' : order,
-                'REQUIRED' : (selectTypeValue == '11') ? false : $column.find('.required').prop('checked'), //パラメータシート参照の場合「必須」はfalse
-                'UNIQUED' : (selectTypeValue == '11') ? false : $column.find('.unique').prop('checked'),　//パラメータシート参照の場合「一意制約」はfalse
-                'COL_GROUP_ID' : parents,
-                'INPUT_METHOD_ID' : selectTypeValue,
-                'DESCRIPTION' : $column.find('.explanation').val(),
-                'NOTE' : $column.find('.note').val(),
-                'REPEAT_ITEM' : repeatFlag,
-                'MIN_WIDTH' : $column.css('min-width'),
-                'LAST_UPDATE_TIMESTAMP' : LAST_UPDATE_TIMESTAMP
+              createMenuJSON['column'][key] = {
+                'create_column_id' : CREATE_ITEM_ID,
+                'menu_name_rest' : createMenuJSON['menu']['menu_name_rest'],
+                'item_name' : itemName,
+                'item_name_rest' : itemNameRest,
+                'display_order' : order,
+                'required' : required, //パラメータシート参照の場合「必須」はfalse
+                'uniqued' : uniqued, //パラメータシート参照の場合「一意制約」はfalse
+                'column_group' : parents,
+                'column_class' : column_class,
+                'description' : $column.find('.explanation').val(),
+                'remarks' : $column.find('.note').val(),
+                //'REPEAT_ITEM' : repeatFlag,
+                //'MIN_WIDTH' : $column.css('min-width'),
+                'last_update_date_time' : LAST_UPDATE_TIMESTAMP
               }
               // 項目タイプ
               switch ( selectTypeValue ) {
                 case '1':
-                  createMenuJSON['item'][key]['MAX_LENGTH'] = $column.find('.max-byte').val();
-                  createMenuJSON['item'][key]['PREG_MATCH'] = $column.find('.regex').val();
-                  createMenuJSON['item'][key]['SINGLE_DEFAULT_VALUE'] = $column.find('.single-default-value').val();
+                  createMenuJSON['column'][key]['single_string_maximum_bytes'] = $column.find('.max-byte').val();
+                  createMenuJSON['column'][key]['single_string_regular_expression'] = $column.find('.regex').val();
+                  createMenuJSON['column'][key]['single_string_default_value'] = $column.find('.single-default-value').val();
                   break;
                 case '2':
-                  createMenuJSON['item'][key]['MULTI_MAX_LENGTH'] = $column.find('.max-byte').val();
-                  createMenuJSON['item'][key]['MULTI_PREG_MATCH'] = $column.find('.regex').val();
-                  createMenuJSON['item'][key]['MULTI_DEFAULT_VALUE'] = $column.find('.multiple-default-value').val();
+                  createMenuJSON['column'][key]['multi_string_maximum_bytes'] = $column.find('.max-byte').val();
+                  createMenuJSON['column'][key]['multi_string_regular_expression'] = $column.find('.regex').val();
+                  createMenuJSON['column'][key]['multi_string_default_value'] = $column.find('.multiple-default-value').val();
                   break;
                 case '3':
-                  createMenuJSON['item'][key]['INT_MIN'] = $column.find('.int-min-number').val();
-                  createMenuJSON['item'][key]['INT_MAX'] = $column.find('.int-max-number').val();
-                  createMenuJSON['item'][key]['INT_DEFAULT_VALUE'] = $column.find('.int-default-value').val();
+                  createMenuJSON['column'][key]['integer_minimum_value'] = $column.find('.int-min-number').val();
+                  createMenuJSON['column'][key]['integer_maximum_value'] = $column.find('.int-max-number').val();
+                  createMenuJSON['column'][key]['integer_default_value'] = $column.find('.int-default-value').val();
                   break;
                 case '4':
-                  createMenuJSON['item'][key]['FLOAT_MIN'] = $column.find('.float-min-number').val();
-                  createMenuJSON['item'][key]['FLOAT_MAX'] = $column.find('.float-max-number').val();
-                  createMenuJSON['item'][key]['FLOAT_DIGIT'] = $column.find('.digit-number').val();
-                  createMenuJSON['item'][key]['FLOAT_DEFAULT_VALUE'] = $column.find('.float-default-value').val();
+                  createMenuJSON['column'][key]['decimal_minimum_value'] = $column.find('.float-min-number').val();
+                  createMenuJSON['column'][key]['decimal_maximum_value'] = $column.find('.float-max-number').val();
+                  createMenuJSON['column'][key]['decimal_digit'] = $column.find('.digit-number').val();
+                  createMenuJSON['column'][key]['decimal_default_value'] = $column.find('.float-default-value').val();
                   break;
                 case '5':
-                  createMenuJSON['item'][key]['DATETIME_DEFAULT_VALUE'] = $column.find('.datetime-default-value').val();
+                  createMenuJSON['column'][key]['detetime_default_value'] = $column.find('.datetime-default-value').val();
                   break;
                 case '6':
-                  createMenuJSON['item'][key]['DATE_DEFAULT_VALUE'] = $column.find('.date-default-value').val();
+                  createMenuJSON['column'][key]['dete_default_value'] = $column.find('.date-default-value').val();
                   break;
                 case '7':
-                  createMenuJSON['item'][key]['OTHER_MENU_LINK_ID'] = $column.find('.pulldown-select').val();
-                  createMenuJSON['item'][key]['PULLDOWN_DEFAULT_VALUE'] = $column.find('.pulldown-default-select').val();
-                  createMenuJSON['item'][key]['REFERENCE_ITEM'] = $column.find('.reference-item').attr('data-reference-item-id');
+                  createMenuJSON['column'][key]['pulldown_selection'] = $column.find('.pulldown-select').val();
+                  const selectPulldownListData = menuEditorArray.pulldown_item_list,
+                  selectPulldownListDataLength = selectPulldownListData.length;
+                  for (let i = 0; i < selectPulldownListDataLength; i++ ) {
+                    if ( createMenuJSON['column'][key]['pulldown_selection'] == selectPulldownListData[i].link_id ) {
+                      createMenuJSON['column'][key]['pulldown_selection'] = selectPulldownListData[i].link_pulldown;
+                    }
+                  }
+                  createMenuJSON['column'][key]['pulldown_selection_default_value'] = $column.find('.pulldown-default-select').val();
+                  createMenuJSON['column'][key]['reference_item'] = $column.find('.reference-item').attr('data-reference-item-id');
                   break;
                 case '8':
-                  createMenuJSON['item'][key]['PW_MAX_LENGTH'] = $column.find('.password-max-byte').val();
+                  createMenuJSON['column'][key]['password_maximum_bytes'] = $column.find('.password-max-byte').val();
                   break;
                 case '9':
-                  createMenuJSON['item'][key]['UPLOAD_MAX_SIZE'] = $column.find('.file-max-size').val();
+                  createMenuJSON['column'][key]['file_upload_maximum_bytes'] = $column.find('.file-max-size').val();
                   break;
                 case '10':
-                  createMenuJSON['item'][key]['LINK_LENGTH'] = $column.find('.max-byte').val();
-                  createMenuJSON['item'][key]['LINK_DEFAULT_VALUE'] = $column.find('.link-default-value').val();
+                  createMenuJSON['column'][key]['link_maximum_bytes'] = $column.find('.max-byte').val();
+                  createMenuJSON['column'][key]['link_default_value'] = $column.find('.link-default-value').val();
                   break;
-                case '11':
-                  createMenuJSON['item'][key]['TYPE3_REFERENCE'] = $column.find('.type3-reference-item').val();
-                  break;
+                //case '11':
+                //  createMenuJSON['column'][key]['TYPE3_REFERENCE'] = $column.find('.type3-reference-item').val();
+                //  break;
               }
             // Item end
+          /*
           } else if ( $column.is('.menu-column-repeat') ) {
             // リピート
               const repeatNumber = $column.find('.menu-column-repeat-number-input').val();
@@ -3325,6 +3651,7 @@ const createRegistrationData = function( type ){
                   }
               }
             // Repeat end
+          */
           } else if ( $column.is('.menu-column-group') ) {
             // グループ
               let groupID = $column.attr('data-group-id'),
@@ -3334,7 +3661,9 @@ const createRegistrationData = function( type ){
                   parentArray = [],
                   columns = [],
                   repeatFlag = false;
+              if ( menuEditorMode === 'diversion') groupID = null;
                // グループ名
+              /*
               if ( repeatCount > 1 ) {
                 groupName += '[' + repeatCount + ']';
                 repeatFlag = true;
@@ -3348,6 +3677,7 @@ const createRegistrationData = function( type ){
                 }
   
               }
+              */
               // 親グループ
               $column.parents('.menu-column-group').each( function() {
                 parentArray.unshift( $( this ).find('.menu-column-title-input').val() );
@@ -3359,11 +3689,11 @@ const createRegistrationData = function( type ){
               });
               // グループJSON
               createMenuJSON['group'][key] = {
-                'COL_GROUP_ID' : groupID,
-                'COL_GROUP_NAME' : groupName,
-                'PARENT' : parents,
-                'COLUMNS' : columns,
-                'REPEAT_GROUP' : repeatFlag,
+                'col_group_id' : groupID,
+                'col_group_name' : groupName,
+                'parent_full_col_group_name' : parents,
+                'columns' : columns,
+                //'REPEAT_GROUP' : repeatFlag,
               }
               tableAnalysis( $column.children('.menu-column-group-body'), repeatCount );
             // Group end
@@ -3387,14 +3717,57 @@ const createRegistrationData = function( type ){
     tableAnalysis ( $menuTable, 0 );
     
     // JSON変換
-    const menuData = JSON.stringify( createMenuJSON );
-  
-    if ( type === 'registration' ) {
-      registerTable(menuData);
-    } else if ( type === 'update-initialize' || type === 'update') {
-      updateTable(menuData);
+    //const menuData = JSON.stringify( createMenuJSON );
+    const menuData = createMenuJSON;
+
+    fn.fetch('/create/define/execute/', null, 'POST', menuData ).then(function(result){
+      let id  = result['history_id'];
+      let string = "メニュー作成を受付ました。\nメニュー作成履歴ボタンを押して、メニュー作成状況を確認してください。\nUUID:";
+      let log = string + id;
+      menuEditorLog.set( 'done', log );
+      window.alert(log);
+      let url_path = location.pathname,
+          splitstr = url_path.split('/'),
+          organization_id = splitstr[1],
+          workspace_id = splitstr[3],
+          menu_name_rest = result['menu_name_rest'],
+          menu = getParam('menu');
+      window.location.href = '/' + organization_id + '/workspaces/' + workspace_id + '/ita/?menu=' + menu + '&menu_name_rest=' + menu_name_rest + '&history_id=' + id;
+    }).catch(function( error ){
+      let message = errorFormat(error.message);
+      menuEditorLog.clear();
+      menuEditorLog.set( 'error', message );
+      window.alert("バリデーションエラーです。");
+    });
+};
+
+const errorFormat = function( error ) {
+    let errorMessage;
+    let message;
+    let keyVal;
+    let val;
+    let errMessage = "";
+    try {
+        errorMessage = JSON.parse(error);
+        for ( const key in errorMessage ) {
+            message = errorMessage[key];
+            if ( key === '__line__'){
+                val = message + '<br><br>';
+                errMessage = errMessage + val;
+            } else {
+                if (key in nameConvertList) {
+                    keyVal = nameConvertList[key] + ':' + message + '<br><br>';
+                    errMessage = errMessage + keyVal;
+                } else {
+                    keyVal = key + ':' + message + '<br><br>';
+                    errMessage = errMessage + keyVal;
+                }
+            }
+        }
+    } catch ( e ) {
+        errMessage = error;
     }
-  
+    return errMessage;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3405,17 +3778,18 @@ const createRegistrationData = function( type ){
 
 const loadMenu = function() {
     
-    const loadJSON = menuEditorArray.selectMenuInfo;
+    const loadJSON = menuEditorArray.menu_info;
     // 流用新規時に引き継がない項目
     if ( menuEditorMode === 'diversion' ){
-      loadJSON['menu']['CREATE_MENU_ID'] = null;
-      loadJSON['menu']['MENU_NAME'] = null;
-      loadJSON['menu']['DISP_SEQ'] = null;
-      loadJSON['menu']['LAST_UPDATE_TIMESTAMP'] = null;
-      loadJSON['menu']['LAST_UPDATE_TIMESTAMP_FOR_DISPLAY'] = null;
-      loadJSON['menu']['LAST_UPDATE_USER'] = null;
-      loadJSON['menu']['DESCRIPTION'] = null;
-      loadJSON['menu']['NOTE'] = null;
+      loadJSON['menu']['menu_create_id'] = null;
+      loadJSON['menu']['menu_name'] = null;
+      loadJSON['menu']['menu_name_rest'] = null;
+      loadJSON['menu']['disp_seq'] = null;
+      loadJSON['menu']['last_update_date_time'] = null;
+      // loadJSON['menu']['LAST_UPDATE_TIMESTAMP_FOR_DISPLAY'] = null;
+      // loadJSON['menu']['LAST_UPDATE_USER'] = null;
+      loadJSON['menu']['description'] = null;
+      loadJSON['menu']['remarks'] = null;
     }
 
     // パネル情報表示
@@ -3443,10 +3817,11 @@ const loadMenu = function() {
           const groupData = loadJSON['group'][id],
                 $group = $('#' + id );
           
-          $group.attr('data-group-id', groupData['COL_GROUP_ID'] );
+          $group.attr('data-group-id', groupData['column_group_id'] );
           
           recursionMenuTable( $group.children('.menu-column-group-body'), groupData );
           
+        /*
         } else if ( type === 'r' ) {
           // リピート
           addColumn( $target, 'repeat', number, loadJSON['repeat'][id], false, false );
@@ -3456,76 +3831,81 @@ const loadMenu = function() {
           $repeat.find('.menu-column-repeat-number-input').val( repeatData['REPEAT_CNT'] ).change();
           
           recursionMenuTable( $repeat.children('.menu-column-repeat-body'), repeatData );
-          
+        */
         } else {
           // 項目
-          addColumn( $target, 'item', number, loadJSON['item'][id], false );
-          const itemData = loadJSON['item'][id],
-                $item = $('#' + id );        
+          addColumn( $target, 'column', number, loadJSON['column'][id], false );
+          const itemData = loadJSON['column'][id],
+                $item = $('#' + id );
 
-          $item.css('min-width', itemData['min-width'] );
+          // 該当するものがない
+          // $item.css('min-width', itemData['min-width'] );
 
-          $item.attr('data-item-id', itemData['CREATE_ITEM_ID'] );
-          $item.find('.menu-column-type-select').val( itemData['INPUT_METHOD_ID'] ).change();
-          $item.find('.required').prop('checked', itemData['REQUIRED'] ).change();
-          $item.find('.unique').prop('checked', itemData['UNIQUED'] ).change();
+          let required;
+          let uniqued;
+          if ( itemData['required'] === '0'){
+            required = false;
+          } else {
+            required = true;
+          }
 
-          let descriptionText = itemData['DESCRIPTION'] === null ? '' : itemData['DESCRIPTION'];
-          let noteText = itemData['NOTE'] === null ? '' : itemData['NOTE'];
+          if ( itemData['uniqued'] === '0'){
+            uniqued = false;
+          } else {
+            uniqued = true;
+          }
+
+          $item.attr('data-item-id', itemData['create_column_id'] );
+          $item.find('.menu-column-type-select').val( itemData['column_class_id'] ).change();
+          $item.find('.required').prop('checked', required ).change();
+          $item.find('.unique').prop('checked', uniqued ).change();
+
+          let descriptionText = itemData['description'] === null ? '' : itemData['description'];
+          let noteText = itemData['remarks'] === null ? '' : itemData['remarks'];
 
           $item.find('.explanation').val( descriptionText ).change();
           if ( descriptionText !== '' ) $item.find('.explanation').addClass('text-in');
           $item.find('.note').val( noteText ).change();
           if ( noteText !== '' ) $item.find('.note').addClass('text-in');
 
-          switch ( itemData['INPUT_METHOD_ID'] ) {
+          switch ( itemData['column_class_id'] ) {
             case '1':
-              $item.find('.max-byte').val( itemData['MAX_LENGTH'] ).change();
-              $item.find('.regex').val( itemData['PREG_MATCH'] ).change();
-              $item.find('.single-default-value').val( itemData['SINGLE_DEFAULT_VALUE'] ).change();
+              $item.find('.max-byte').val( itemData['single_string_maximum_bytes'] ).change();
+              $item.find('.regex').val( itemData['single_string_regular_expression'] ).change();
+              $item.find('.single-default-value').val( itemData['single_string_default_value'] ).change();
               break;
             case '2':
-              $item.find('.max-byte').val( itemData['MULTI_MAX_LENGTH'] ).change();
-              $item.find('.regex').val( itemData['MULTI_PREG_MATCH'] ).change();
-              $item.find('.multiple-default-value').val( itemData['MULTI_DEFAULT_VALUE'] ).change();
+              $item.find('.max-byte').val( itemData['multi_string_maximum_bytes'] ).change();
+              $item.find('.regex').val( itemData['multi_string_regular_expression'] ).change();
+              $item.find('.multiple-default-value').val( itemData['multi_string_default_value'] ).change();
               break;
             case '3':
-              $item.find('.int-min-number').val( itemData['INT_MIN'] ).change();
-              $item.find('.int-max-number').val( itemData['INT_MAX'] ).change();
-              $item.find('.int-default-value').val( itemData['INT_DEFAULT_VALUE'] ).change();
+              $item.find('.int-min-number').val( itemData['integer_minimum_value'] ).change();
+              $item.find('.int-max-number').val( itemData['integer_maximum_value'] ).change();
+              $item.find('.int-default-value').val( itemData['integer_default_value'] ).change();
               break;
             case '4':
-              $item.find('.float-min-number').val( itemData['FLOAT_MIN'] ).change();
-              $item.find('.float-max-number').val( itemData['FLOAT_MAX'] ).change();
-              $item.find('.digit-number').val( itemData['FLOAT_DIGIT'] ).change();
-              $item.find('.float-default-value').val( itemData['FLOAT_DEFAULT_VALUE'] ).change();
+              $item.find('.float-min-number').val( itemData['decimal_minimum_value'] ).change();
+              $item.find('.float-max-number').val( itemData['decimal_maximum_value'] ).change();
+              $item.find('.digit-number').val( itemData['decimal_digit'] ).change();
+              $item.find('.float-default-value').val( itemData['decimal_default_value'] ).change();
               break;
             case '5':
-              $item.find('.datetime-default-value').val( itemData['DATETIME_DEFAULT_VALUE'] ).change();
+              $item.find('.datetime-default-value').val( itemData['detetime_default_value'] ).change();
               break;
             case '6':
-              $item.find('.date-default-value').val( itemData['DATE_DEFAULT_VALUE'] ).change();
+              $item.find('.date-default-value').val( itemData['dete_default_value'] ).change();
               break;
             case '7':
-              $item.find('.pulldown-select').val( itemData['OTHER_MENU_LINK_ID'] ).change();
-              getpulldownDefaultValueList($item, itemData['PULLDOWN_DEFAULT_VALUE']); //「プルダウン選択」の初期値として選べる値を取得し、初期値に設定されているものをselectedにする。
-              $item.find('.reference-item').attr('data-reference-item-id', itemData['REFERENCE_ITEM']).change();
+              $item.find('.pulldown-select').val( itemData['pulldown_selection'] ).change();
+              getpulldownDefaultValueList($item, itemData['pulldown_selection_default_value']); //「プルダウン選択」の初期値として選べる値を取得し、初期値に設定されているものをselectedにする。
+              $item.find('.reference-item').attr('data-reference-item-id', itemData['reference_item']).change();
               //newItemListのIDから項目名に変換
-              if(itemData['REFERENCE_ITEM'] != null){
-                const newItemListArray = itemData['REFERENCE_ITEM'].split(',');
+              if(itemData['reference_item'] != null){
+                const newItemListArray = itemData['reference_item'].split(',');
                 const newItemNameListArray = [];
-                newItemListArray.forEach(function(id){
-                  let existsFlg = false;
-                  menuEditorArray.referenceItemList.forEach(function(data){
-                    if(data['ITEM_ID'] == id){
-                      newItemNameListArray.push(data['ITEM_NAME']);
-                      existsFlg = true;
-                    }
-                  });
-                  //referenceItemListに存在しない参照項目はID変換失敗(ID)を表示させる。
-                  if(existsFlg == false){
-                    newItemNameListArray.push("ID変換失敗({0:id})");
-                  }
+                newItemListArray.forEach(function(data){
+                      newItemNameListArray.push(data);
                 });
                 //重複を排除
                 let setNewItemNameList = new Set(newItemNameListArray);
@@ -3536,20 +3916,21 @@ const loadMenu = function() {
               }
               break;
             case '8':
-              $item.find('.password-max-byte').val( itemData['PW_MAX_LENGTH'] ).change();
+              $item.find('.password-max-byte').val( itemData['password_maximum_bytes'] ).change();
               break;
             case '9':
-              $item.find('.file-max-size').val( itemData['UPLOAD_MAX_SIZE'] ).change();
+              $item.find('.file-max-size').val( itemData['file_upload_maximum_bytes'] ).change();
               break;
             case '10':
-              $item.find('.max-byte').val( itemData['LINK_LENGTH'] ).change();
-              $item.find('.link-default-value').val( itemData['LINK_DEFAULT_VALUE'] ).change();
+              $item.find('.max-byte').val( itemData['link_maximum_bytes'] ).change();
+              $item.find('.link-default-value').val( itemData['link_default_value'] ).change();
               break;
-            case '11':
-              let type3ReferenceMenuId = menuEditorArray.referenceSheetType3ItemData[itemData['TYPE3_REFERENCE']];
-              $item.find('.type3-reference-menu').val( type3ReferenceMenuId ).change();
-              getpulldownParameterSheetReferenceList($item, itemData['TYPE3_REFERENCE']); //「プルダウン選択」の初期値として選べる値を取得し、初期値に設定されているものをselectedにする。
-              break;          }
+            //case '11':
+            //  let type3ReferenceMenuId = menuEditorArray.referenceSheetType3ItemData[itemData['TYPE3_REFERENCE']];
+            //  $item.find('.type3-reference-menu').val( type3ReferenceMenuId ).change();
+            //  getpulldownParameterSheetReferenceList($item, itemData['TYPE3_REFERENCE']); //「プルダウン選択」の初期値として選べる値を取得し、初期値に設定されているものをselectedにする。
+            //  break;          
+          }
           //プルダウン選択の初期値を取得するイベントを設定
           setEventPulldownDefaultValue($item);
           //パラメータシート参照の選択項目を取得するイベントを設定
@@ -3574,174 +3955,237 @@ const loadMenu = function() {
 
 const getPanelParameter = function() {
     // 入力値を取得する
-        const parameterArray = {};
+    const parameterArray = {};
         
-        parameterArray['CREATE_MENU_ID'] = $('#create-menu-id').attr('data-value'); // 項番
-        parameterArray['MENU_NAME'] = $('#create-menu-name').val(); // メニュー名
-        parameterArray['TARGET'] = $('#create-menu-type').val(); // 作成対象
-        parameterArray['DISP_SEQ'] = $('#create-menu-order').val(); // 表示順序
-        parameterArray['LAST_UPDATE_TIMESTAMP_FOR_DISPLAY'] = $('#create-menu-last-modified').attr('data-value'); // 最終更新日時
-        parameterArray['LAST_UPDATE_USER'] = $('#create-last-update-user').attr('data-value'); // 最終更新者
-        parameterArray['DESCRIPTION'] = $('#create-menu-explanation').val(); // 説明
-        parameterArray['ACCESS_AUTH'] = getRoleListValidID( $('#permission-role-name-list').attr('data-role-id') ); // ロール
-        parameterArray['UNIQUE_CONSTRAINT'] = $('#unique-constraint-list').attr('data-unique-list'); //一意制約(複数項目)
-        parameterArray['NOTE'] = $('#create-menu-note').val(); // 備考
-        
-        // 作成対象別項目
-        const type = parameterArray['TARGET'];
-        if ( type === '1' || type === '3') {
-          // パラメータシート
-            if ( type === '1' ) {
-              // ホストグループ利用有無
-              const hostgroup = $('#create-menu-use-host-group').prop('checked');
-              if ( hostgroup ) {
-                parameterArray['PURPOSE'] = menuEditorArray.selectParamPurpose[1]['PURPOSE_ID'];
-              } else {
-                parameterArray['PURPOSE'] = menuEditorArray.selectParamPurpose[0]['PURPOSE_ID'];
-              }
-            } else {
-              parameterArray['PURPOSE'] = null;
-            }
-            // 縦メニュー利用有無
-            const vertical = $('#create-menu-use-vertical').prop('checked');
-            if ( vertical ) {
-              parameterArray['VERTICAL'] = '1';
-            } else {
-              parameterArray['VERTICAL'] = null;
-            }
-            parameterArray['MENUGROUP_FOR_INPUT'] = $('#create-menu-for-input').attr('data-id'); // 入力用
-            parameterArray['MENUGROUP_FOR_SUBST'] = $('#create-menu-for-substitution').attr('data-id'); // 代入値
-            parameterArray['MENUGROUP_FOR_VIEW'] = $('#create-menu-for-reference').attr('data-id'); // 参照用
-        } else if ( type === '2') {
-          // データシート
-            parameterArray['PURPOSE'] = null;
-            parameterArray['MENUGROUP_FOR_INPUT'] = $('#create-menu-for-input').attr('data-id'); // 入力用
+    parameterArray['menu_create_id'] = $('#create-menu-id').attr('data-value'); // 項番
+    parameterArray['menu_name'] = $('#create-menu-name').val(); // メニュー名
+    parameterArray['menu_name_rest'] = $('#create-menu-name-rest').val(); // メニュー名(REST)
+    //parameterArray['TARGET'] = $('#create-menu-type').val(); // 作成対象
+
+    let select = document.getElementById('create-menu-type');
+    let idx = select.selectedIndex;
+    let sheet_type  = select.options[idx].text;
+    parameterArray['sheet_type'] = sheet_type; // 作成対象
+
+    parameterArray['display_order'] = $('#create-menu-order').val(); // 表示順序
+    //parameterArray['LAST_UPDATE_TIMESTAMP_FOR_DISPLAY'] = $('#create-menu-last-modified').attr('data-value'); // 最終更新日時
+    //parameterArray['LAST_UPDATE_USER'] = $('#create-last-update-user').attr('data-value'); // 最終更新者
+    parameterArray['description'] = $('#create-menu-explanation').val(); // 説明
+
+    let role = getRoleListValidID( $('#permission-role-name-list').attr('data-role-id') );
+    if (role == "" ){
+      parameterArray['role_list'] = role; // ロール
+    } else {
+      let role_list = role.split(',');
+      parameterArray['role_list'] = role_list; // ロール
+    }
+
+    let unique = $('#unique-constraint-list').attr('data-unique-list');
+    if (unique == null ){
+      parameterArray['unique_constraint'] = unique; //一意制約(複数項目)
+    } else if(unique == [['']]) {
+      parameterArray['unique_constraint'] = null;
+    } else {
+      let unique_list = unique.split(',');
+      let unique_constraint = [];
+      let list;
+      for (let i = 0; i < unique_list.length; i++) {
+        list = unique_list[i].split('-');
+        for (let j = 0; j < list.length; j++) {
+          list[j] = $menuTable.find('#'+list[j]).find('.menu-column-title-rest-input').val();
         }
-        // undefined, ''をnullに
-        for ( let key in parameterArray ) {
-          if ( parameterArray[key] === undefined || parameterArray[key] === '') {
-            parameterArray[key] = null;
-          }
-        }
-        parameterArray['number-item'] = itemCounter;
-        parameterArray['number-group'] = groupCounter;
-        
-        return parameterArray;
-    };
-    
-    const setPanelParameter = function( setData ) {
-      // nullを空白に
-      for ( let key in setData['menu'] ) {
-        if ( setData['menu'][key] === null ) {
-          setData['menu'][key] = '';
-        }
+        unique_constraint[i] = list;
       }
-      // パネルに値をセットする
-        const type = setData['menu']['TARGET'];
+      parameterArray['unique_constraint'] = unique_constraint; //一意制約(複数項目)
+    }
+
+    parameterArray['remarks'] = $('#create-menu-note').val(); // 備考
+        
+    // 作成対象別項目
+    //const type = parameterArray['sheet_type_id'];
+    const type = $('#create-menu-type').val();
+    if ( type === '1' || type === '3') {
+      // パラメータシート
+        /*
+        if ( type === '1' ) {
+          // ホストグループ利用有無
+          const hostgroup = $('#create-menu-use-host-group').prop('checked');
+          if ( hostgroup ) {
+            parameterArray['PURPOSE'] = menuEditorArray.selectParamPurpose[1]['purpose_id'];
+          } else {
+            parameterArray['PURPOSE'] = menuEditorArray.selectParamPurpose[0]['purpose_id'];
+          }
+        } else {
+          parameterArray['PURPOSE'] = null;
+        }
+        */
+        // 縦メニュー利用有無
+        const vertical = $('#create-menu-use-vertical').prop('checked');
+        if ( vertical ) {
+          //parameterArray['vertical'] = '1';
+          parameterArray['vertical'] = "True";
+        } else {
+          //parameterArray['VERTICAL'] = null;
+          parameterArray['vertical'] = "False";
+        }
+        parameterArray['menu_group_for_input'] = $('#create-menu-for-input').text(); // 入力用
+        parameterArray['menu_group_for_subst'] = $('#create-menu-for-substitution').text(); // 代入値用
+        parameterArray['menu_group_for_ref'] = $('#create-menu-for-reference').text(); // 参照用
+        //parameterArray['menu_group_for_input_id'] = $('#create-menu-for-input').attr('data-id'); // 入力用
+        //parameterArray['menu_group_for_subst_id'] = $('#create-menu-for-substitution').attr('data-id'); // 代入値
+        //parameterArray['menu_group_for_ref_id'] = $('#create-menu-for-reference').attr('data-id'); // 参照用
+    } else if ( type === '2') {
+      // データシート
+        //parameterArray['PURPOSE'] = null;
+        //parameterArray['menu_group_for_input'] = $('#create-menu-for-input').attr('data-id'); // 入力用
+        parameterArray['menu_group_for_input'] = $('#create-menu-for-input').text(); // 入力用
+    }
+    // undefined, ''をnullに
+    for ( let key in parameterArray ) {
+      if ( parameterArray[key] === undefined || parameterArray[key] === '') {
+        parameterArray[key] = null;
+      }
+    }
+    parameterArray['number_item'] = itemCounter;
+    parameterArray['number_group'] = groupCounter;
+        
+    return parameterArray;
+};
+    
+const setPanelParameter = function( setData ) {
+  // nullを空白に
+  for ( let key in setData['menu'] ) {
+    if ( setData['menu'][key] === null ) {
+      setData['menu'][key] = '';
+    }
+  }
+  // パネルに値をセットする
+  const type = setData['menu']['sheet_type_id'];
         $property.attr('data-menu-type', type );  
         
-        if ( menuEditorMode !== 'diversion' ){
-          // 項番
-          $('#create-menu-id')
-            .attr('data-value', setData['menu']['CREATE_MENU_ID'] )
-            .text( setData['menu']['CREATE_MENU_ID'] );
-          // 最終更新日時
-          $('#create-menu-last-modified')
-            .attr('data-value', setData['menu']['LAST_UPDATE_TIMESTAMP_FOR_DISPLAY'] )
-            .text( setData['menu']['LAST_UPDATE_TIMESTAMP_FOR_DISPLAY'] );
-          // 最終更新者
-          $('#create-last-update-user')
-            .attr('data-value', setData['menu']['LAST_UPDATE_USER'] )
-            .text( setData['menu']['LAST_UPDATE_USER'] );
-        }
-        // ロール
-        const roleList = ( setData['menu']['ACCESS_AUTH'] === undefined )? '': setData['menu']['ACCESS_AUTH'];
-        $('#permission-role-name-list')
-          .attr('data-role-id', roleList )
-          .text( getRoleListIdToName( roleList ) );
+  if ( menuEditorMode !== 'diversion' ){
+    // 項番
+    $('#create-menu-id')
+      .attr('data-value', setData['menu']['menu_create_id'] )
+      .text( setData['menu']['menu_create_id'] );
+    // 最終更新日時
+    //$('#create-menu-last-modified')
+    //  .attr('data-value', setData['menu']['LAST_UPDATE_TIMESTAMP_FOR_DISPLAY'] )
+    //  .text( setData['menu']['LAST_UPDATE_TIMESTAMP_FOR_DISPLAY'] );
+    // 最終更新者
+    //$('#create-last-update-user')
+    //  .attr('data-value', setData['menu']['LAST_UPDATE_USER'] )
+    //  .text( setData['menu']['LAST_UPDATE_USER'] );
+  }
+  // ロール
+  const roleList = ( setData['menu']['selected_role_id'] === undefined )? '': setData['menu']['selected_role_id'];
+  $('#permission-role-name-list')
+    .attr('data-role-id', roleList )
+    .text( getRoleListIdToName( roleList ) );
     
-        // 一意制約(複数項目)
-        const initUniqueConstraintData = getUniqueConstraintDispData(setData['menu']['unique-constraints-current']);
-        const initUniqueConstraintConv = initUniqueConstraintData.conv;
-        const initUniqueConstraintName = initUniqueConstraintData.name;
-        $('#unique-constraint-list')
-          .text(initUniqueConstraintName)
-          .attr('data-unique-list', initUniqueConstraintConv);
-        menuEditorArray['unique-constraints-current'] = setData['menu']['unique-constraints-current']; //更新用に格納しなおす
+  // 一意制約(複数項目)
+  let unique_constraint_current = setData['menu']['unique_constraint_current'];
+  let unique_dict = {};
+  let unique_list = [];
+  let all_unique_list = [];
+  for ( let i = 0; i < unique_constraint_current.length; i++ ) {
+    unique_list = [];
+    let list = unique_constraint_current[i];
+    for ( let j = 0; j < list.length; j++ ) {
+      let data = list[j];
+      unique_dict = {};
+      unique_dict[data] = data;
+      unique_list[j] = unique_dict;
+    }
+    all_unique_list[i] = unique_list;
+  }
+
+  const initUniqueConstraintData = getUniqueConstraintDispData(all_unique_list);
+  const initUniqueConstraintConv = initUniqueConstraintData.conv;
+  const initUniqueConstraintName = initUniqueConstraintData.name;
+  $('#unique-constraint-list')
+    .text(initUniqueConstraintName)
+    .attr('data-unique-list', initUniqueConstraintConv);
+  menuEditorArray['unique-constraints-current'] = setData['menu']['unique_constraint_current']; //更新用に格納しなおす
     
-        // エディットモード別
-        if ( menuEditorMode === 'view') {
-          $('#create-menu-name').text( setData['menu']['MENU_NAME'] ); // メニュー名
-          $('#create-menu-type').text( listIdName('target', setData['menu']['TARGET'] )); // 作成対象
-          $('#create-menu-order').text( setData['menu']['DISP_SEQ'] ); // 表示順序
-          $('#create-menu-explanation').text( setData['menu']['DESCRIPTION'] );  // 説明
-          $('#create-menu-note').text( setData['menu']['NOTE'] ); // 備考
-        } else {
-          $('#create-menu-name').val( setData['menu']['MENU_NAME'] ); // メニュー名
-          $('#create-menu-type').val( setData['menu']['TARGET'] ); // 作成対象
-          $('#create-menu-order').val( setData['menu']['DISP_SEQ'] ); // 表示順序
-          $('#create-menu-explanation').val( setData['menu']['DESCRIPTION'] );  // 説明
-          $('#create-menu-note').val( setData['menu']['NOTE'] ); // 備考
-        } 
+  // エディットモード別
+  if ( menuEditorMode === 'view') {
+    $('#create-menu-name').text( setData['menu']['menu_name'] ); // メニュー名
+    $('#create-menu-name-rest').text( setData['menu']['menu_name_rest'] ); // メニュー名(REST)
+    $('#create-menu-type').text( listIdName('target', setData['menu']['sheet_type_id'] )); // 作成対象
+    $('#create-menu-order').text( setData['menu']['disp_seq'] ); // 表示順序
+    $('#create-menu-explanation').text( setData['menu']['description'] );  // 説明
+    $('#create-menu-note').text( setData['menu']['remarks'] ); // 備考
+  } else {
+    $('#create-menu-name').val( setData['menu']['menu_name'] ); // メニュー名
+    $('#create-menu-name-rest').val( setData['menu']['menu_name_rest'] ); // メニュー名(REST)
+    $('#create-menu-type').val( setData['menu']['sheet_type_id'] ); // 作成対象
+    $('#create-menu-order').val( setData['menu']['disp_seq'] ); // 表示順序
+    $('#create-menu-explanation').val( setData['menu']['description'] );  // 説明
+    $('#create-menu-note').val( setData['menu']['remarks'] ); // 備考
+  } 
       
-        // 作成対象項目別
-        if ( type === '1' || type === '3') {
-          // パラメータシート
-            if ( type === '1') {
-              // ホストグループ利用有無
-              if ( setData['menu']['PURPOSE'] === '2' ) {
-                if ( menuEditorMode === 'view') {
-                  $('#create-menu-use-host-group').text(textCode('0041'));
-                } else {
-                  $('#create-menu-use-host-group').prop('checked', true );
-                }
-              }
-            }
-            // 縦メニュー利用有無
-            if ( setData['menu']['VERTICAL'] === '1') {
-              if ( menuEditorMode === 'view') {
-                $('#create-menu-use-vertical').text(textCode('0041'));
-              } else {
-                $('#create-menu-use-vertical').prop('checked', true );
-              }
-            }
-            // 入力用
-            $('#create-menu-for-input')
-              .attr('data-id', setData['menu']['MENUGROUP_FOR_INPUT'] )
-              .text( listIdName( 'group', setData['menu']['MENUGROUP_FOR_INPUT'] ));
-            // 代入値自動登録用
-            $('#create-menu-for-substitution')
-              .attr('data-id', setData['menu']['MENUGROUP_FOR_SUBST'] )
-              .text( listIdName( 'group', setData['menu']['MENUGROUP_FOR_SUBST'] ));
-            // 参照用
-            $('#create-menu-for-reference')
-              .attr('data-id', setData['menu']['MENUGROUP_FOR_VIEW'] )
-              .text( listIdName( 'group', setData['menu']['MENUGROUP_FOR_VIEW'] ));
-        } else if ( type === '2') {
-          // データシート
-            // 入力用
-            $('#create-menu-for-input')
-              .attr('data-id', setData['menu']['MENUGROUP_FOR_INPUT'] )
-              .text( listIdName( 'group', setData['menu']['MENUGROUP_FOR_INPUT'] ));
+  // 作成対象項目別
+  if ( type === '1' || type === '3') {
+    // パラメータシート
+    if ( type === '1') {
+      // ホストグループ利用有無
+      /*
+      if ( setData['menu']['PURPOSE'] === '2' ) {
+        if ( menuEditorMode === 'view') {
+          $('#create-menu-use-host-group').text(textCode('0041'));
+        } else {
+          $('#create-menu-use-host-group').prop('checked', true );
         }
+      }
+      */
+    }
+    // 縦メニュー利用有無
+    if ( setData['menu']['vertical'] === '1') {
+      if ( menuEditorMode === 'view') {
+        $('#create-menu-use-vertical').text(textCode('0041'));
+      } else {
+        $('#create-menu-use-vertical').prop('checked', true );
+      }
+    }
+    // 入力用
+    $('#create-menu-for-input')
+      .attr('data-id', setData['menu']['menu_group_for_input_id'] )
+      .text( setData['menu']['menu_group_for_input'] );
+    // 代入値自動登録用
+    $('#create-menu-for-substitution')
+      .attr('data-id', setData['menu']['menu_group_for_subst_id'] )
+      .text( setData['menu']['menu_group_for_subst'] );
+    // 参照用
+    $('#create-menu-for-reference')
+      .attr('data-id', setData['menu']['menu_group_for_ref_id'] )
+      .text( setData['menu']['menu_group_for_ref'] );
+  } else if ( type === '2') {
+    // データシート
+    // 入力用
+    $('#create-menu-for-input')
+      .attr('data-id', setData['menu']['menu_group_for_input_id'] )
+      .text( setData['menu']['menu_group_for_input'] );
+  }
     
-        //「メニュー作成状態」が2(作成済み)の場合は、メニュー名入力欄を非活性にする。
-        if(menuEditorMode != 'diversion'){
-          if(setData['menu']['MENU_CREATE_STATUS'] == 2){
-            $('#create-menu-name').prop('disabled', true);
-          }
-        }
+  //「メニュー作成状態」が2(作成済み)の場合は、メニュー名(REST)入力欄を非活性にする。
+  if(menuEditorMode != 'diversion'){
+    if(setData['menu']['menu_create_done_status_id'] == 2){
+      //$('#create-menu-name').prop('disabled', true);
+      $('#create-menu-name-rest').prop('disabled', true);
+    }
+  }
     
-        //「メニュー作成状態」が1（未作成）の場合に各種ボタンを操作
-        if(setData['menu']['MENU_CREATE_STATUS'] == 1){
-          $('[data-menu-button="edit"]').parent().remove(); //「編集」ボタンを削除
-          $('[data-menu-button="initialize"]').text(textCode('0046')); //「初期化」ボタンを「作成」に名称変更
-          $('[data-menu-button="update-initialize"]').text(textCode('0046')); //「作成(初期化)」ボタンを「作成」に名称変更
-        }
-    
-        itemCounter = setData['menu']['number-item'] + 1;
-        groupCounter = setData['menu']['number-group'] + 1;
-        repeatCounter = 1;
+  //「メニュー作成状態」が1（未作成）の場合に各種ボタンを操作
+  if(setData['menu']['menu_create_done_status_id'] == 1){
+    $('[data-menu-button="edit"]').parent().remove(); //「編集」ボタンを削除
+    $('[data-menu-button="initialize"]').text(textCode('0046')); //「初期化」ボタンを「作成」に名称変更
+    $('[data-menu-button="update-initialize"]').text(textCode('0046')); //「作成(初期化)」ボタンを「作成」に名称変更
+  }
+
+  itemCounter = setData['menu']['number_item'] + 1;
+  groupCounter = setData['menu']['number_group'] + 1;
+  repeatCounter = 1;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3753,9 +4197,9 @@ const getPanelParameter = function() {
 // メニューグループ初期値
 const initialMenuGroup = function() {
 
-    const forInputID = '2100011610', // 入力用
-          forSubstitutionID = '2100011611', // 代入値自動登録用
-          forReference = '2100011612', // 参照用
+    const forInputID = '502', // 入力用
+          forSubstitutionID = '503', // 代入値自動登録用
+          forReference = '504', // 参照用
           forInputName = listIdName( 'group', forInputID ),
           forSubstitutionName = listIdName( 'group', forSubstitutionID ),
           forReferenceName = listIdName( 'group', forReference );
@@ -3778,26 +4222,29 @@ const initialMenuGroup = function() {
         .attr('data-id', forReference )
         .text( forReferenceName );
     }
-    // ACCESS_AUTHの初期値を入れる
-    if ( menuEditorArray.roleList !== undefined ) {
+    // ロールの初期値を入れる
+    if ( menuEditorArray.role_list !== undefined ) {
       const roleDefault = new Array,
-            roleLength = menuEditorArray.roleList.length;
-      for ( let i = 0; i < roleLength; i++ ) {
-        if ( menuEditorArray.roleList[i]['DEFAULT'] === 'checked') {
-          roleDefault.push( menuEditorArray.roleList[i]['ROLE_ID'] );
-        } 
-      }
+            roleLength = menuEditorArray.role_list.length;
+      const roleCheckList = menuCreateUserInfo.roles;
+            for (let i = 0; i < roleCheckList.length; i++) {
+              for (let j = 0; j < roleLength; j++) {
+                if (roleCheckList[i] === menuEditorArray.role_list[j]) {
+                  roleDefault.push(menuEditorArray.role_list[j]);
+                }
+              }
+            }
       const newRoleList = roleDefault.join(',');
-      $('#permission-role-name-list').text(　getRoleListIdToName( newRoleList ) ).attr('data-role-id', newRoleList );
+      $('#permission-role-name-list').text( newRoleList ).attr('data-role-id', newRoleList );
     }
 };
 
 if ( menuEditorMode === 'new' ) {
     initialMenuGroup();
     const currentItemCounter = itemCounter;
-    addColumn( $menuTable, 'item', itemCounter++ );
+    addColumn( $menuTable, 'column', itemCounter++ );
     //プルダウン選択の初期値を取得するイベントを設定
-    const $newColumnTarget = $menuEditor.find('#i'+currentItemCounter);
+    const $newColumnTarget = $menuEditor.find('#c'+currentItemCounter);
     setEventPulldownDefaultValue($newColumnTarget);
     //パラメータシート参照の選択項目を取得するイベントを設定
     setEventPulldownParameterSheetReference($newColumnTarget);
@@ -3806,5 +4253,255 @@ if ( menuEditorMode === 'new' ) {
 }
 repeatCheck();
 history.clear();
+
+}
+
+//////////////////////////////////////////////////////
+// ロール一覧取得・選択
+//////////////////////////////////////////////////////
+
+// モーダル Body HTML
+function setRoleSelectModalBody( roleList, initData, okCallback, cancelCallBack, valueType ) {
+
+  if ( valueType === undefined ) valueType = 'id';
+  const $modalBody = $('.editor-modal-body');
+
+  let roleSelectHTML = ''
+  + '<div class="modal-table-wrap">'
+    + '<form id="modal-role-select">'
+    + '<table class="modal-table modal-select-table">'
+      + '<thead>'
+        + '<th class="select">Select</th><th class="name">Name</th>'
+      + '</thead>'
+      + '<tbody>';
+
+  // 入力値を取得する
+  const checkList = ( initData !== null || initData !== undefined )? initData.split(','): [''];
+
+  const roleLength = roleList.length;
+  for ( let i = 0; i < roleLength; i++ ) {
+    const roleName = roleList[i],
+          hideRoleName = "********";
+    // ********は表示しない
+    if ( roleName !== hideRoleName ) {
+      //const roleID = String(i),
+            //checkValue = ( valueType === 'name')? roleName: roleID,
+      const checkValue = roleName,
+            checkedFlag = ( checkList.indexOf( checkValue ) !== -1 )? ' checked': '',
+            //value = ( valueType === 'name')? roleName: roleID;
+            value = roleName;
+      roleSelectHTML += '<tr>'
+      + '<th><input value="' + value + '" class="modal-checkbox" type="checkbox"' + checkedFlag + '></th>'
+      + '<td>' + roleName + '</td></tr>';
+    }
+  }
+
+  roleSelectHTML += ''      
+      + '</tbody>'
+    + '</table>'
+    + '</form>'
+  + '</div>';
+
+  $modalBody.html( roleSelectHTML );
+
+  // 行で選択
+  $modalBody.find('.modal-select-table').on('click', 'tr', function(){
+    const $tr = $( this ),
+          checked = $tr.find('.modal-checkbox').prop('checked');
+    if ( checked ) {
+      $tr.find('.modal-checkbox').prop('checked', false );
+    } else {
+      $tr.find('.modal-checkbox').prop('checked', true );
+    }
+  });
+
+  // 決定・取り消しボタン
+  const $modalButton = $('.editor-modal-footer-menu-button');
+  $modalButton.prop('disabled', false ).on('click', function() {
+    const $button = $( this ),
+          btnType = $button.attr('data-button-type');
+    switch( btnType ) {
+      case 'ok':
+        // 選択しているチェックボックスを取得
+        let checkboxArray = new Array;
+        $modalBody.find('.modal-checkbox:checked').each( function(){
+          checkboxArray.push( $( this ).val() );
+        });
+        const newRoleList = checkboxArray.join(',');
+        okCallback( newRoleList );
+        break;
+      case 'cancel':
+        cancelCallBack();
+        break;
+    }
+  });
+}
+
+//////////////////////////////////////////////////////
+// 一意制約
+//////////////////////////////////////////////////////
+// モーダル Body HTML
+function setUniqueConstraintModalBody(columnItemData, initmodalUniqueConstraintList, okCallback, cancelCallBack, closeCallBack) {
+  const $modalBody = $('.editor-modal-body');
+  const $modalFooterMenu = $('.editor-modal-footer-menu');
+  const initUniqueConstraintArray = (initmodalUniqueConstraintList == '') ? new Array : initmodalUniqueConstraintList.split(',');
+  const initUniqueConstraintLength = initUniqueConstraintArray.length;
+  const columnItemDataLength = columnItemData.length;
+  let uniqueConstraintSelectHTML;
+
+  if(columnItemData.length == 0){
+      //項目が0個の場合、メッセージを表示
+      noColumnHTML = '<div class="column-none-message">' + "項目が一つもありません" + '</div>';
+      $modalBody.html( noColumnHTML );
+
+      //ボタンを「閉じる」に変更
+      $modalFooterMenu.children().remove();
+      $modalFooterMenu.append('<li class="editor-modal-footer-menu-item"><button class="editor-modal-footer-menu-button negative" data-button-type="close">' + "閉じる" + '</li>');
+  }else{
+      //項目の数だけチェックボックスを作成する「パターン」のテンプレート
+      uniqueConstraintLineTemplate = '<div class="unique-constraint-pattern-tmp unique-constraint-box" data-unique-ptn="">'
+                                      +'<span>';
+
+      for (let i = 0; i < columnItemDataLength; i++){
+          const columnID = columnItemData[i]['columnId'],
+                itemName = columnItemData[i]['itemName'],
+                itemID = columnItemData[i]['itemId'];
+          uniqueConstraintLineTemplate += '<div class="unique-edit-check-wrap">'
+                                          + '<input type="checkbox" id="" class="unique-constraint-checkbox unique-edit-check" data-item-id="'+ itemID +'" data-column-id="'+ columnID +'">'
+                                          + '<label class="unique-constraint-label unique-edit-label" for="">' + itemName + '</label>'
+                                        + '</div>';
+
+      }
+
+      uniqueConstraintLineTemplate += '</span>'
+                                  +'<div class="line-delete-button-wrap"><button type="button" class="line-delete-button">' + "削除" + '</button></div>'
+                              +'</div>';
+
+      uniqueConstraintSelectHTML = ''
+                    +'<div id="modal-unique-constraint-area" class="">'
+                    + uniqueConstraintLineTemplate
+                      + '<ul class="add-unique-pattern">'
+                        + '<li class=""><button class="add-unique-pattern-button positive" data-button-type="add">' + "パターンを追加" + '</li>'
+                      + '</ul>'
+                      + '<form id="modal-unique-constraint-select">'
+                      + '<div class="unique-none-message" hidden>' + "パターンが一つもありません。" + '</div>'
+                      + '<br>';
+
+      uniqueConstraintSelectHTML += ''
+                      + '</form>'
+                    + '</div>';
+
+      $modalBody.html( uniqueConstraintSelectHTML );
+
+
+      //初期表示およびパターン追加処理
+      const $uniqueConstraintArea = $('#modal-unique-constraint-area');
+      const $addPatternButton = $uniqueConstraintArea.find('.add-unique-pattern-button');
+      const $patternTemplate = $uniqueConstraintArea.find('.unique-constraint-pattern-tmp');
+      const $addArea = $('#modal-unique-constraint-select');
+      const $noneMsg = $uniqueConstraintArea.find('.unique-none-message');
+      let patternCount = 0;
+
+      //パターン追加関数
+      function addPattern($newPattern){
+          $newPattern.show(); //非表示を解除
+          $newPattern.removeClass('unique-constraint-pattern-tmp').addClass('unique-constraint-pattern'); //Class入れ替え
+          patternCount++;
+          $newPattern.attr('data-unique-ptn', 'p'+patternCount); //連番を設定
+          $newPattern.find('.unique-constraint-checkbox').each(function(){
+              let itemId = $(this).attr('data-column-id');
+              $(this).attr('id', 'p'+patternCount+itemId); //idを設定
+              $(this).next('label').attr('for', 'p'+patternCount+itemId); //forを設定
+          });
+          $addArea.append($newPattern);
+
+          //「削除」ボタンにイベント追加
+          $newPattern.find('.line-delete-button').on('click', function(){
+              //対象のパターンを削除
+              $(this).parents('.unique-constraint-box').remove();
+
+              //パターンが0の場合はメッセージを表示
+              $pattern = $addArea.find('.unique-constraint-box');
+              if($pattern.length == 0){
+                  $noneMsg.show();
+              }
+          });
+      }
+
+      
+      if(initUniqueConstraintLength == 0){
+          //一意制約の設定値がない場合、メッセージを表示
+          $noneMsg.show();
+      }else{
+          ///一意制約の設定値がある場合、パターンの数だけループ処理
+          for (let i = 0; i < initUniqueConstraintLength; i++){
+              //パターンを生成
+              let $newPattern = $patternTemplate.clone(true);
+              addPattern($newPattern);
+
+              //初期チェック状態を設定
+              const patternStr = initUniqueConstraintArray[i];
+              const patternArray = patternStr.split('-'); //「-」で連結したIDを配列化
+              const patternLength = patternArray.length;
+              for(let j = 0; j < patternLength; j++){
+                  //入力済みの設定値を反映
+                  const patternId = patternArray[j];
+                  $target = $newPattern.find('[data-column-id="'+patternId+'"]'); //対象をdata-column-idで検索
+                  if($target.length != 0){
+                      $target.prop('checked', true);
+                  }
+              }
+          }
+      }
+
+      //「パターンを追加」ボタン
+      $addPatternButton.on('click', function(){
+          //パターンが無い場合のメッセージを非表示
+          if(!$noneMsg.is('hidden')){
+              $noneMsg.hide();
+          }
+
+          //新しいパターンを生成
+          let $newPattern = $patternTemplate.clone(true);
+          addPattern($newPattern);
+      });
+  }
+
+  // 決定・取り消しボタン
+  const $modalButton = $('.editor-modal-footer-menu-button');
+  $modalButton.prop('disabled', false ).on('click', function() {
+      const $button = $( this ),
+            btnType = $button.attr('data-button-type');
+      switch( btnType ) {
+        case 'ok':
+          //設定値を格納する配列を定義
+          let currentUniqueConstraintArray = new Array;
+          // 選択しているチェックボックスを取得
+          $modalBody.find('.unique-constraint-box').each(function(){
+              $targetPattern = $(this);
+              if($targetPattern.hasClass('unique-constraint-pattern-tmp') == true){
+                  return true;
+              }
+              let currentPatternArray = new Array;
+              $targetPattern.find('.unique-constraint-checkbox:checked').each(function(){
+                  let columnId = $(this).attr('data-column-id');
+                  let itemName = $(this).next('label').html();
+                  let idName = {[columnId] : itemName};
+                  currentPatternArray.push(idName);
+              });
+
+              currentUniqueConstraintArray.push(currentPatternArray);
+          });
+
+          okCallback(currentUniqueConstraintArray);
+          break;
+        case 'cancel':
+          cancelCallBack();
+          break;
+        case 'close':
+          closeCallBack();
+          break;
+      }
+  });
 
 }
