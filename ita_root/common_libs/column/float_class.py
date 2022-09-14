@@ -112,7 +112,7 @@ class FloatColumn(Column):
                 retBool = True
             elif min_num is not None and max_num is not None:
                 # 最小値、最大値閾値あり
-                if min_num <= val <= max_num:
+                if float(min_num) <= float(val) <= float(max_num):
                     retBool = True
                 else:
                     retBool = False
@@ -121,7 +121,7 @@ class FloatColumn(Column):
 
             elif min_num is not None:
                 # 最小値閾値あり
-                if min_num <= val:
+                if float(min_num) <= float(val):
                     retBool = True
                 else:
                     retBool = False
@@ -129,7 +129,7 @@ class FloatColumn(Column):
                     return retBool, msg
             elif max_num is not None:
                 # 最大値閾値あり
-                if val <= max_num:
+                if float(val) <= float(max_num):
                     retBool = True
                 else:
                     retBool = False

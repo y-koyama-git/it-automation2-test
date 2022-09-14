@@ -13,6 +13,7 @@
 #
 import json
 import re
+import ast
 from flask import g
 # from common_libs.common.exception import AppException
 from common_libs.common import *  # noqa: F403
@@ -137,7 +138,15 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
     
     try:
         # メニュー作成用の各テーブルからレコードを取得
-        result, msg, recode_t_menu_define, recode_t_menu_column_group, recode_t_menu_column, recode_t_menu_unique_constraint, recode_t_menu_role, recode_t_menu_other_link \
+        result, \
+            msg, \
+            recode_t_menu_define, \
+            recode_t_menu_column_group, \
+            recode_t_menu_column, \
+            recode_t_menu_unique_constraint, \
+            recode_t_menu_role, \
+            recode_t_menu_other_link, \
+            recode_v_menu_reference_item \
             = _collect_menu_create_data(objdbca, menu_create_id)  # noqa: E501
         if not result:
             raise Exception(msg)
@@ -157,6 +166,12 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
         # シートタイプによる処理の分岐
         file_upload_only_flag = False
         if sheet_type == "1":  # パラメータシート(ホスト/オペレーションあり)
+            # テーブル名/ビュー名を生成
+            create_table_name = 'T_CMDB_' + str(menu_create_id)
+            create_table_name_jnl = 'T_CMDB_' + str(menu_create_id) + '_JNL'
+            create_view_name = 'V_CMDB_' + str(menu_create_id)
+            create_view_name_jnl = 'V_CMDB_' + str(menu_create_id) + '_JNL'
+            
             if vertical_flag:
                 # パラメータシート(縦メニュー利用あり)用テーブル作成SQL
                 sql_file_path = "./sql/parameter_sheet_cmdb_vertical.sql"  # ####メモ：ファイルの格納先ディレクトリとかは定数で管理したほうがいいかも。
@@ -176,6 +191,12 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
                 msg = "シートタイプ「データシート」では項目0件のメニューを作成できません。"
                 raise Exception(msg)
             
+            # テーブル名を生成
+            create_table_name = 'T_CMDB_' + str(menu_create_id)
+            create_table_name_jnl = 'T_CMDB_' + str(menu_create_id) + '_JNL'
+            create_view_name = None
+            create_view_name_jnl = None
+            
             # データシート用テーブル作成SQL
             sql_file_path = "./sql/data_sheet_cmdb.sql"  # ####メモ：ファイルの格納先ディレクトリとかは定数で管理したほうがいいかも。
             
@@ -190,10 +211,14 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
         if create_type == 'create_new' or create_type == 'initialize':
             with open(sql_file_path, "r") as f:
                 file = f.read()
-                file = file.replace('____CMDB_TABLE_NAME____', create_table_name)
-                file = file.replace('____CMDB_TABLE_NAME_JNL____', create_table_name_jnl)
-                file = file.replace('____CMDB_VIEW_NAME____', create_view_name)
-                file = file.replace('____CMDB_VIEW_NAME_JNL____', create_view_name_jnl)
+                if sheet_type == "1":  # パラメータシート(ホスト/オペレーションあり)
+                    file = file.replace('____CMDB_TABLE_NAME____', create_table_name)
+                    file = file.replace('____CMDB_TABLE_NAME_JNL____', create_table_name_jnl)
+                    file = file.replace('____CMDB_VIEW_NAME____', create_view_name)
+                    file = file.replace('____CMDB_VIEW_NAME_JNL____', create_view_name_jnl)
+                elif sheet_type == "2":  # データシート
+                    file = file.replace('____CMDB_TABLE_NAME____', create_table_name)
+                    file = file.replace('____CMDB_TABLE_NAME_JNL____', create_table_name_jnl)
                 sql_list = file.split(";\n")
                 for sql in sql_list:
                     if re.fullmatch(r'[\s\n\r]*', sql) is None:
@@ -264,7 +289,7 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
                     }
             
             # 「メニュー-カラム紐付管理」にレコードを登録
-            result, msg = _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uuid, dict_t_comn_column_group, dict_t_menu_column_group, recode_t_menu_column, dict_t_menu_other_link)  # noqa: E501
+            result, msg = _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uuid, dict_t_comn_column_group, dict_t_menu_column_group, recode_t_menu_column, dict_t_menu_other_link, recode_v_menu_reference_item)  # noqa: E501
             if not result:
                 raise Exception(msg)
             
@@ -306,6 +331,7 @@ def _collect_menu_create_data(objdbca, menu_create_id):
             recode_t_menu_unique_constraint, 「一意制約(複数項目)作成情報」からレコード(1件)
             recode_t_menu_role, # 「メニューロール作成情報」から対象のレコード(複数)
             recode_t_menu_other_link # 「他メニュー連携」のレコード(全件)
+            recode_v_menu_reference_item # 「参照項目情報」のレコード(全件)
     """
     # テーブル/ビュー名
     t_menu_define = 'T_MENU_DEFINE'  # メニュー定義一覧
@@ -314,6 +340,7 @@ def _collect_menu_create_data(objdbca, menu_create_id):
     t_menu_unique_constraint = 'T_MENU_UNIQUE_CONSTRAINT'  # 一意制約(複数項目)作成情報
     t_menu_role = 'T_MENU_ROLE'  # メニューロール作成情報
     t_menu_other_link = 'T_MENU_OTHER_LINK'  # 他メニュー連携
+    v_menu_reference_item = 'V_MENU_REFERENCE_ITEM'  # 参照項目情報(VIEW)
     
     try:
         # 「メニュー定義一覧」から対象のレコードを取得
@@ -340,11 +367,14 @@ def _collect_menu_create_data(objdbca, menu_create_id):
         
         # 「他メニュー連携」から全てのレコードを取得
         recode_t_menu_other_link = objdbca.table_select(t_menu_other_link, 'WHERE DISUSE_FLAG = %s', [0])
+        
+        # 「参照項目情報」から全てのレコードを取得
+        recode_v_menu_reference_item = objdbca.table_select(v_menu_reference_item, 'WHERE DISUSE_FLAG = %s', [0])
     
     except Exception as msg:
-        return False, msg, None, None, None, None, None, None
+        return False, msg, None, None, None, None, None, None, None
     
-    return True, None, recode_t_menu_define, recode_t_menu_column_group, recode_t_menu_column, recode_t_menu_unique_constraint, recode_t_menu_role, recode_t_menu_other_link  # noqa: E501
+    return True, None, recode_t_menu_define, recode_t_menu_column_group, recode_t_menu_column, recode_t_menu_unique_constraint, recode_t_menu_role, recode_t_menu_other_link, recode_v_menu_reference_item  # noqa: E501
 
 
 def _insert_t_comn_menu(objdbca, recode_t_menu_define, menu_group_col_name):
@@ -673,7 +703,7 @@ def _insert_t_comn_column_group(objdbca, target_column_group_list, dict_t_menu_c
     return True, None
 
 
-def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uuid, dict_t_comn_column_group, dict_t_menu_column_group, recode_t_menu_column, dict_t_menu_other_link):  # noqa: E501, C901
+def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uuid, dict_t_comn_column_group, dict_t_menu_column_group, recode_t_menu_column, dict_t_menu_other_link, recode_v_menu_reference_item):  # noqa: E501, C901
     """
         「メニュー-カラム紐付管理」メニューのテーブルにレコードを追加する
         ARGS:
@@ -685,6 +715,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             dict_t_menu_column_group: 「カラムグループ作成情報」のレコードのidをkeyにしたdict
             recode_t_menu_column：「メニュー項目作成情報」の対象のレコード一覧
             dict_t_menu_other_link: 「他メニュー連携」のレコードのidをkeyにしたdict
+            recode_v_menu_reference_item: 「参照項目情報」のレコード一覧
         RETRUN:
             boolean, msg
     """
@@ -714,6 +745,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             "REF_COL_NAME": None,
             "REF_SORT_CONDITIONS": None,
             "REF_MULTI_LANG": 0,  # False
+            "REFERENCE_ITEM": None,
             "SENSITIVE_COL_NAME": None,
             "FILE_UPLOAD_PLACE": None,
             "BUTTON_ACTION": None,
@@ -762,6 +794,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "REF_COL_NAME": "HOST_NAME",
                 "REF_SORT_CONDITIONS": None,
                 "REF_MULTI_LANG": 0,  # False
+                "REFERENCE_ITEM": None,
                 "SENSITIVE_COL_NAME": None,
                 "FILE_UPLOAD_PLACE": None,
                 "BUTTON_ACTION": None,
@@ -816,6 +849,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "REF_COL_NAME": "OPERATION_DATE_NAME",
                 "REF_SORT_CONDITIONS": None,
                 "REF_MULTI_LANG": 0,  # False
+                "REFERENCE_ITEM": None,
                 "SENSITIVE_COL_NAME": None,
                 "FILE_UPLOAD_PLACE": None,
                 "BUTTON_ACTION": None,
@@ -862,6 +896,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "REF_COL_NAME": None,
                 "REF_SORT_CONDITIONS": None,
                 "REF_MULTI_LANG": 0,  # False
+                "REFERENCE_ITEM": None,
                 "SENSITIVE_COL_NAME": None,
                 "FILE_UPLOAD_PLACE": None,
                 "BUTTON_ACTION": None,
@@ -908,6 +943,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "REF_COL_NAME": None,
                 "REF_SORT_CONDITIONS": None,
                 "REF_MULTI_LANG": 0,  # False
+                "REFERENCE_ITEM": None,
                 "SENSITIVE_COL_NAME": None,
                 "FILE_UPLOAD_PLACE": None,
                 "BUTTON_ACTION": None,
@@ -954,6 +990,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "REF_COL_NAME": None,
                 "REF_SORT_CONDITIONS": None,
                 "REF_MULTI_LANG": 0,  # False
+                "REFERENCE_ITEM": None,
                 "SENSITIVE_COL_NAME": None,
                 "FILE_UPLOAD_PLACE": None,
                 "BUTTON_ACTION": None,
@@ -1000,6 +1037,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "REF_COL_NAME": None,
                 "REF_SORT_CONDITIONS": None,
                 "REF_MULTI_LANG": 0,  # False
+                "REFERENCE_ITEM": None,
                 "SENSITIVE_COL_NAME": None,
                 "FILE_UPLOAD_PLACE": None,
                 "BUTTON_ACTION": None,
@@ -1047,6 +1085,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                     "REF_COL_NAME": None,
                     "REF_SORT_CONDITIONS": None,
                     "REF_MULTI_LANG": 0,  # False
+                    "REFERENCE_ITEM": None,
                     "SENSITIVE_COL_NAME": None,
                     "FILE_UPLOAD_PLACE": None,
                     "BUTTON_ACTION": None,
@@ -1085,6 +1124,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
         
         # 「メニュー作成機能で作成した項目」の対象の数だけループスタート
         for recode in recode_t_menu_column:
+            column_name_rest = recode.get('COLUMN_NAME_REST')
             column_class = str(recode.get('COLUMN_CLASS'))
             
             # 初期値に登録する値を生成
@@ -1099,6 +1139,10 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             ref_col_name = None
             ref_sort_conditions = None
             ref_multi_lang = 0
+            reference_item = None
+            reference_item_list = []
+            str_convert_reference_item_list = None
+            set_before_function = None
             
             # カラムクラスが「プルダウン選択」の場合、「他メニュー連携」のレコードからIDColumnに必要なデータを取得し変数に格納
             if column_class == "7":
@@ -1114,7 +1158,22 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                     column_class = "21"  # JsonIDColumn
                 else:
                     ref_col_name = target_other_menu_link_recode.get('REF_COL_NAME')
-            
+                
+                # 「参照項目」情報を取得
+                reference_item = recode.get('REFERENCE_ITEM')
+                if reference_item:
+                    reference_item_list = ast.literal_eval(reference_item)
+                    set_before_function = "set_reference_value"
+                    if type(reference_item_list) is not list:
+                        raise Exception("「参照項目」の値が不正です")
+                    
+                    # reference_itemの中のcolumn_name_restを「_ref_X」形式に変換
+                    convert_reference_item_list = []
+                    for ref_count, target_column_name_rest in enumerate(reference_item_list, 1):
+                        ref_column_name_rest = str(column_name_rest) + "_ref_" + str(ref_count)
+                        convert_reference_item_list.append(ref_column_name_rest)
+                    str_convert_reference_item_list = json.dumps(convert_reference_item_list)
+                    
             # 「カラムグループ作成情報」のIDから同じフルカラムグループ名の対象を「カラムグループ管理」から探しIDを指定
             col_group_id = None
             tmp_col_group_id = recode.get('CREATE_COL_GROUP_ID')
@@ -1134,7 +1193,6 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 col_group_id = param_col_group_id
             
             # 「メニュー作成機能で作成した項目」用のレコードを作成
-            column_name_rest = recode.get('COLUMN_NAME_REST')
             res_valid = _check_column_validation(objdbca, menu_uuid, column_name_rest)
             if not res_valid:
                 raise Exception("「メニュー-カラム紐付管理」に同じメニューとカラム名(rest)の組み合わせが既に存在している。")
@@ -1152,6 +1210,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "REF_COL_NAME": ref_col_name,
                 "REF_SORT_CONDITIONS": ref_sort_conditions,
                 "REF_MULTI_LANG": ref_multi_lang,
+                "REFERENCE_ITEM": str_convert_reference_item_list,
                 "SENSITIVE_COL_NAME": None,
                 "FILE_UPLOAD_PLACE": None,
                 "BUTTON_ACTION": None,
@@ -1167,7 +1226,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "INITIAL_VALUE": initial_value,
                 "VALIDATE_OPTION": validate_option,
                 "VALIDATE_REG_EXP": validate_regular_expression,
-                "BEFORE_VALIDATE_REGISTER": None,
+                "BEFORE_VALIDATE_REGISTER": set_before_function,
                 "AFTER_VALIDATE_REGISTER": None,
                 "DESCRIPTION_JA": recode.get('DESCRIPTION_JA'),
                 "DESCRIPTION_EN": recode.get('DESCRIPTION_EN'),
@@ -1179,7 +1238,58 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             
             # 表示順序を加算
             disp_seq_num = int(disp_seq_num) + 10
-        
+            
+            # 「参照項目」がある場合、参照項目用のレコードを作成
+            if reference_item_list:
+                for ref_count, target_column_name_rest in enumerate(reference_item_list, 1):
+                    ref_column_name_rest = str(column_name_rest) + "_ref_" + str(ref_count)
+                    # 「参照項目情報」から対象のレコードを特定
+                    for ref_item_recode in recode_v_menu_reference_item:
+                        reference_link_id = ref_item_recode.get('LINK_ID')
+                        reference_column_name_rest = ref_item_recode.get('COLUMN_NAME_REST')
+                        if target_column_name_rest == reference_column_name_rest and other_menu_link_id == reference_link_id:
+                            data_list = {
+                                "MENU_ID": menu_uuid,
+                                "COLUMN_NAME_JA": ref_item_recode.get('COLUMN_NAME_JA'),
+                                "COLUMN_NAME_EN": ref_item_recode.get('COLUMN_NAME_EN'),
+                                "COLUMN_NAME_REST": ref_column_name_rest,
+                                "COL_GROUP_ID": col_group_id,  # 直前に作成したIDColumnの項目と同じカラムグループを採用する
+                                "COLUMN_CLASS": "7",  # IDColumn
+                                "COLUMN_DISP_SEQ": disp_seq_num,
+                                "REF_TABLE_NAME": ref_item_recode.get('REF_TABLE_NAME'),
+                                "REF_PKEY_NAME": ref_item_recode.get('REF_PKEY_NAME'),
+                                "REF_COL_NAME": ref_item_recode.get('REF_COL_NAME'),
+                                "REF_SORT_CONDITIONS": ref_item_recode.get('REF_SORT_CONDITIONS'),
+                                "REF_MULTI_LANG": ref_item_recode.get('REF_MULTI_LANG'),
+                                "REFERENCE_ITEM": None,
+                                "SENSITIVE_COL_NAME": None,
+                                "FILE_UPLOAD_PLACE": None,
+                                "BUTTON_ACTION": None,
+                                "COL_NAME": "DATA_JSON",
+                                "SAVE_TYPE": "JSON",
+                                "AUTO_INPUT": 0,  # False
+                                "INPUT_ITEM": 2,  # 2:入力欄非表示
+                                "VIEW_ITEM": 1,  # True
+                                "UNIQUE_ITEM": 0,  # False
+                                "REQUIRED_ITEM": 0,  # False
+                                "AUTOREG_HIDE_ITEM": 0,  # False
+                                "AUTOREG_ONLY_ITEM": 0,  # False
+                                "INITIAL_VALUE": None,
+                                "VALIDATE_OPTION": None,
+                                "VALIDATE_REG_EXP": None,
+                                "BEFORE_VALIDATE_REGISTER": None,
+                                "AFTER_VALIDATE_REGISTER": None,
+                                "DESCRIPTION_JA": ref_item_recode.get('DESCRIPTION_JA'),
+                                "DESCRIPTION_EN": ref_item_recode.get('DESCRIPTION_EN'),
+                                "DISUSE_FLAG": "0",
+                                "LAST_UPDATE_USER": g.get('USER_ID')
+                            }
+                            primary_key_name = 'COLUMN_DEFINITION_ID'
+                            objdbca.table_insert(t_comn_menu_column_link, data_list, primary_key_name)
+                            
+                            # 表示順序を加算
+                            disp_seq_num = int(disp_seq_num) + 10
+                    
         # 「メニュー作成機能で作成した項目」が0件の場合、特殊な項目を作成
         if not recode_t_menu_column:
             validate_option = '{"min_length": 0,"max_length": 255}'
@@ -1196,6 +1306,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "REF_COL_NAME": None,
                 "REF_SORT_CONDITIONS": None,
                 "REF_MULTI_LANG": 0,  # False
+                "REFERENCE_ITEM": None,
                 "SENSITIVE_COL_NAME": None,
                 "FILE_UPLOAD_PLACE": None,
                 "BUTTON_ACTION": None,
@@ -1243,6 +1354,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             "REF_COL_NAME": None,
             "REF_SORT_CONDITIONS": None,
             "REF_MULTI_LANG": 0,  # False
+            "REFERENCE_ITEM": None,
             "SENSITIVE_COL_NAME": None,
             "FILE_UPLOAD_PLACE": None,
             "BUTTON_ACTION": None,
@@ -1289,6 +1401,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             "REF_COL_NAME": None,
             "REF_SORT_CONDITIONS": None,
             "REF_MULTI_LANG": 0,  # False
+            "REFERENCE_ITEM": None,
             "SENSITIVE_COL_NAME": None,
             "FILE_UPLOAD_PLACE": None,
             "BUTTON_ACTION": None,
@@ -1335,6 +1448,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             "REF_COL_NAME": None,
             "REF_SORT_CONDITIONS": None,
             "REF_MULTI_LANG": 0,  # False
+            "REFERENCE_ITEM": None,
             "SENSITIVE_COL_NAME": None,
             "FILE_UPLOAD_PLACE": None,
             "BUTTON_ACTION": None,
@@ -1381,6 +1495,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             "REF_COL_NAME": None,
             "REF_SORT_CONDITIONS": None,
             "REF_MULTI_LANG": 0,  # False
+            "REFERENCE_ITEM": None,
             "SENSITIVE_COL_NAME": None,
             "FILE_UPLOAD_PLACE": None,
             "BUTTON_ACTION": None,
@@ -1534,7 +1649,7 @@ def _create_validate_option(recode):
     
     # カラムクラスに応じて処理を分岐
     if column_class == "1":  # SingleTextColumn
-        single_max_length = str(recode.get('SINGLE_MAX_LENGTH'))
+        single_max_length = recode.get('SINGLE_MAX_LENGTH')
         single_regular_expression = str(recode.get('SINGLE_REGULAR_EXPRESSION'))
         tmp_validate_option['min_length'] = "0"
         tmp_validate_option['max_length'] = single_max_length
@@ -1542,7 +1657,7 @@ def _create_validate_option(recode):
             validate_regular_expression = single_regular_expression
         
     elif column_class == "2":  # MultiTextColumn
-        multi_max_length = str(recode.get('MULTI_MAX_LENGTH'))
+        multi_max_length = recode.get('MULTI_MAX_LENGTH')
         multi_regular_expression = str(recode.get('MULTI_REGULAR_EXPRESSION'))
         tmp_validate_option['min_length'] = "0"
         tmp_validate_option['max_length'] = multi_max_length
@@ -1550,17 +1665,17 @@ def _create_validate_option(recode):
             validate_regular_expression = multi_regular_expression
         
     elif column_class == "3":  # NumColumn
-        num_min = str(recode.get('NUM_MIN'))
-        num_max = str(recode.get('NUM_MAX'))
+        num_min = recode.get('NUM_MIN')
+        num_max = recode.get('NUM_MAX')
         if num_min:
             tmp_validate_option["int_min"] = num_min
         if num_max:
             tmp_validate_option["int_max"] = num_max
         
     elif column_class == "4":  # FloatColumn
-        float_min = str(recode.get('FLOAT_MIN'))
-        float_max = str(recode.get('FLOAT_MAX'))
-        float_digit = str(recode.get('FLOAT_DIGIT'))
+        float_min = recode.get('FLOAT_MIN')
+        float_max = recode.get('FLOAT_MAX')
+        float_digit = recode.get('FLOAT_DIGIT')
         if float_min:
             tmp_validate_option["float_min"] = float_min
         if float_max:
