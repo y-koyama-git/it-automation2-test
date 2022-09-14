@@ -166,7 +166,7 @@ def run_unexecuted(wsDb, num_of_run_instance, organization_id, workspace_id):
 
         # 予約時間or最終更新日+ソート用カラム+作業番号（判別用）でリスト生成
         id = str(rec["LAST_UPDATE_TIMESTAMP"]) + "-" + str(rec["TIME_REGISTER"]) + "-" + execution_no
-        if not rec["TIME_BOOK"]:
+        if rec["TIME_BOOK"]:
             if rec["LAST_UPDATE_TIMESTAMP"] < rec["TIME_BOOK"]:
                 id = str(rec["TIME_BOOK"]) + "-" + str(rec["TIME_REGISTER"]) + "-" + execution_no
         execution_order_list.append(id)
@@ -194,17 +194,15 @@ def run_unexecuted(wsDb, num_of_run_instance, organization_id, workspace_id):
 
         # データを取り出して、作業実行
         execute_data = execution_info_datalist[execution_order]
-        result = instance_prepare(wsDb, execute_data, organization_id, workspace_id)
+        result = run_child_process(wsDb, execute_data, organization_id, workspace_id)
         if result[0] is False:
             return False, result[1]
-        else:
-            g.applogger.debug(result[1])
 
     return True,
 
 
-def instance_prepare(wsDb, execute_data, organization_id, workspace_id):
-    # 作業を準備
+def run_child_process(wsDb, execute_data, organization_id, workspace_id):
+    # 作業を準備し、子プロを実行
 
     driver_id = execute_data["DRIVER_ID"]
     driver_name = execute_data["DRIVER_NAME"]
@@ -219,7 +217,7 @@ def instance_prepare(wsDb, execute_data, organization_id, workspace_id):
 
     # 未実行状態で緊急停止出来るようにしているので
     # 未実行状態かを判定
-    status_id = int(execute_data["STATUS_ID"])
+    status_id = execute_data["STATUS_ID"]
     if status_id != ansc_const.NOT_YET and status_id != ansc_const.RESERVE:
         return False, "Emergency stop in unexecuted state.(execution_no: {})".format(execution_no)
 
@@ -239,17 +237,16 @@ def instance_prepare(wsDb, execute_data, organization_id, workspace_id):
     g.applogger.debug("ITAANSIBLEH-STD-50077 (作業No.:{}, driver_name:{})".format(driver_name, execution_no))
 
     command = ["python3", "backyard/backyard_child_init.py", organization_id, workspace_id, execution_no, driver_id]
-    cp = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    # cp = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    cp = subprocess.Popen(command)  # noqa: F841
 
     g.applogger.debug("ITAANSIBLEH-STD-50078 (作業No.:{}, driver_name:{})".format(driver_name, execution_no))
 
-    return True, {"return_code": cp.poll(),
-                  "stdout": cp.stdout,
-                  "stderr": cp.stderr}
+    return True,
 
 
 def child_process_exist_check_ps():
-    # ps -efw | grep backyard/backyard_child_init.py | grep -v grep 
+    # ps -efw | grep backyard/backyard_child_init.py | grep -v grep
     cp1 = subprocess.run(
         ["ps", "-efw"],
         capture_output=True,
