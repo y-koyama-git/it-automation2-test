@@ -19,7 +19,7 @@ metadata:
 spec:
   containers:
   - name: it-ansible-agent
-    image: ydkarino/ita_ansible_agent:0.1
+    image: exastro/ita_ansible_agent:0.1
     command: [
       "bash",
       "-c",
