@@ -147,6 +147,9 @@ class AnsibleExecute():
         if run_mode == '2':
             stransibleplaybook_options += ' --check '
 
+        # 改行をスペースに置換
+        stransibleplaybook_options = stransibleplaybook_options.replace('\n', ' ')
+
         # 並列実行数対応 (pioneerの場合)
         if forks:
             # 数値の場合に文字列に変換
