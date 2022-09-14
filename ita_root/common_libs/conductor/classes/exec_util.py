@@ -690,7 +690,7 @@ class ConductorExecuteLibs():
                 tmp_msg_json = json.loads(msg)
                 for eno, errinfo in tmp_msg_json.items():
                     for ekey, einfo in errinfo.items():
-                        if ekey != '__line__':
+                        if ekey != g.appmsg.get_api_message("MSG-00004", []):
                             msg_json.setdefault(ekey, einfo)
                         else:
                             for node_err in einfo:
