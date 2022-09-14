@@ -21,6 +21,8 @@ from common_libs.column import *  # noqa: F403
 
 from common_libs.conductor.classes.util import ConductorCommonLibs  # noqa: F401
 
+from common_libs.ansible_driver.functions.rest_libs import *  # noqa: F403
+
 import json
 import uuid
 import copy
@@ -698,7 +700,7 @@ class ConductorExecuteLibs():
                                     for node_name, node_msg in tmp_node_err_json.items():
                                         msg_json.setdefault(node_name, node_msg.splitlines())
                 result = json.dumps(msg_json, ensure_ascii=False)
-            except Exception as e:
+            except Exception:
                 result = msg
         except Exception as e:
             g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
@@ -1416,27 +1418,27 @@ class ConductorExecuteLibs():
                 "1": {
                     'menu': 'execution_list_ansible_legacy',
                     'path': 'ansible/legacy',
-                    'execute': '',
+                    'execute': 'T_COMN_MOVEMENT',
                     'abort': '',
                     'status': ''
                 },
                 "2": {
                     'menu': 'execution_list_ansible_pioneer',
                     'path': 'ansible/pioneer',
-                    'execute': '',
+                    'execute': 'T_COMN_MOVEMENT',
                     'post_abort': '',
                     'status': ''
                 },
                 "3": {
                     'menu': 'execution_list_ansible_role',
                     'path': 'ansible/legacy_role',
-                    'execute': '',
+                    'execute': 'T_COMN_MOVEMENT',
                     'abort': '',
                     'status': 'T_ANSR_EXEC_STS_INST'
                 },
                 "4": {
                     'menu': '',
-                    'execute': '',
+                    'execute': 'T_COMN_MOVEMENT',
                     'abort': '',
                     'status': ''
                 }
@@ -2548,7 +2550,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                     orchestra_id = execution_info.get('orchestra_id')
                     movement_path = self.get_movement_path(orchestra_id, orchestra_id)
                     target_mv_zip = "{}/{}_{}.zip".format(movement_path, tmp_data_prefix, orchestra_id)
-                    if os.path.isfile(target_mv_zip) is True:
+                    if os.path.isfile(target_mv_zip) is True:  # noqa: F405
                         shutil.copy2(target_mv_zip, tmp_work_path + '/')
                 # 全MVをzip化,base64
                 tmp_result = shutil.make_archive(tmp_work_path_filename, ext, root_dir=tmp_work_path)
@@ -2627,22 +2629,35 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             orchestra_info = self.get_orchestra_info()
             action_config = orchestra_info.get('name').get(orchestra_id).get(action_type)
             if action_type == 'execute':
-                operation_id = action_options.get('operation_id')
+                # operation_id = action_options.get('operation_id')
                 operation_name = action_options.get('operation_name')
                 movement_id = action_options.get('movement_id')
-                movement_name = action_options.get('movement_name')
+                # movement_name = action_options.get('movement_name')
                 conductor_id = action_options.get('conductor_id')
                 conductor_name = action_options.get('conductor_name')
+                movement_row = {}
+                where_str = textwrap.dedent("""
+                    WHERE `DISUSE_FLAG` = 0 AND `MOVEMENT_ID` = %s
+                """).format().strip()
+                table_name = action_config
+                rows = self.objdbca.table_select(table_name, where_str, [movement_id])
+                for row in rows:
+                    movement_row = row
                 # 作業実行
-                ### tmp_execute = insert_execution_list(self.objdbca, "1", orchestra_id, operation_name, movement_name, scheduled_date, conductor_id, conductor_name):
-                # if tmp_execute is not False:
-                #    # tmp_result = tmp_execute
-                tmp_result = "1"
+                try:
+                    tmp_execute = insert_execution_list(self.objdbca, "1", orchestra_id, operation_name, movement_row, None, conductor_id, conductor_name)  # noqa: F405 E501
+                    tmp_result = tmp_execute.get('execution_no')
+                except Exception:
+                    pass
+
             elif action_type == 'abort':
                 execution_id = action_options.get('execution_id')
                 # 緊急停止
-                ### tmp_result = execution_scram(self.objdbca, orchestra_id, execution_id):
-                tmp_result = True
+                try:
+                    tmp_result = execution_scram(self.objdbca, orchestra_id, execution_id)  # noqa: F405
+                except Exception:
+                    pass
+
             elif action_type == 'status':
                 # ステータス取得
                 execution_id = action_options.get('execution_id')
@@ -3181,7 +3196,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             conductor_id = node_options.get('instance_data').get('conductor').get('conductor_id')
             conductor_name = node_options.get('instance_data').get('conductor').get('conductor_name')
             
-            #operation 
+            # operation
             operation_id = node_options.get('instance_data').get('conductor').get('operation_id')
             operation_name = node_options.get('instance_data').get('conductor').get('operation_name')
             tmp_operation_id = node_filter_data.get('parameter').get('operation_id')
@@ -3230,9 +3245,10 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                             if execution_id is not None:
                                 execute_flg = True
                                 node_filter_data['parameter']['execution_id'] = execution_id
+
                         except Exception:
-                            err_msg = 'msg'
-                            node_filter_data = self.add_execution_log(node_filter_data, err_msg)
+                            # err_msg = 'msg'
+                            # node_filter_data = self.add_execution_log(node_filter_data, err_msg)
                             n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('6')
                             c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('7')
                 else:
