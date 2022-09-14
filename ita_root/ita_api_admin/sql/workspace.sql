@@ -196,6 +196,7 @@ CREATE TABLE T_COMN_MENU_COLUMN_LINK
     REF_COL_NAME                    VARCHAR(64),                                -- ID連携項目名
     REF_SORT_CONDITIONS             TEXT,                                       -- ID連携ソート条件
     REF_MULTI_LANG                  VARCHAR(2),                                 -- ID連携多言語対応有無
+    REFERENCE_ITEM                  TEXT,                                       -- 参照項目
     SENSITIVE_COL_NAME              VARCHAR(64),                                -- Sensitive設定用カラム名
     FILE_UPLOAD_PLACE               VARCHAR(255),                               -- ファイルアップロード配置場所
     BUTTON_ACTION                   TEXT,                                       -- ボタンアクション
@@ -240,6 +241,7 @@ CREATE TABLE T_COMN_MENU_COLUMN_LINK_JNL
     REF_COL_NAME                    VARCHAR(64),                                -- ID連携項目名
     REF_SORT_CONDITIONS             TEXT,                                       -- ID連携ソート条件
     REF_MULTI_LANG                  VARCHAR(2),                                 -- ID連携多言語対応有無
+    REFERENCE_ITEM                  TEXT,                                       -- 参照項目
     SENSITIVE_COL_NAME              VARCHAR(64),                                -- Sensitive設定用カラム名
     FILE_UPLOAD_PLACE               VARCHAR(255),                               -- ファイルアップロード配置場所
     BUTTON_ACTION                   TEXT,                                       -- ボタンアクション
