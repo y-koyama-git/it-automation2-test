@@ -56,6 +56,8 @@ class YamlParse:
             # パーサーが辞書以外のリターンをした場合はyamlフォーマットエラーにする。
             if isinstance(retParse, dict):
                 pass
+            elif not retParse:
+                return retParse
             else:
                 self.SetLastError("not yaml format.")
                 return False
