@@ -32,7 +32,7 @@ def menu_column_group_valid(objdbca, objtable, option):
     # 更新時、自分のカラムグループを選択していないかどうか確認
     if parent_column_group and column_group_id and parent_column_group == column_group_id:
         retBool = False
-        msg = "自分のカラムグループは親カラムグループに選択できません。"
+        msg = g.appmsg.get_api_message("MSG-20011", [])
     if not retBool:
         return retBool, msg, option
 
@@ -54,7 +54,7 @@ def menu_column_group_valid(objdbca, objtable, option):
             else:
                 if uuid == return_values[0].get("PA_COL_GROUP_ID"):
                     retBool = False
-                    msg = "ループ関係になるため選択不可です。"
+                    msg = g.appmsg.get_api_message("MSG-20012", [])
                     break
                 elif not return_values[0].get("PA_COL_GROUP_ID"):
                     break
@@ -75,7 +75,7 @@ def menu_column_group_valid(objdbca, objtable, option):
                 matcharray.append(data.get("CREATE_COL_GROUP_ID"))
         if len(matcharray) > 0:
             retBool = False
-            msg = "親カラムグループに選択されているため廃止できません。子カラムグループの項番{}".format(matcharray)
+            msg = g.appmsg.get_api_message("MSG-20013", [matcharray])
     
     # 復活時、親カラムグループが廃止されていたらエラー
     if cmd_type == "Restore":
@@ -86,7 +86,7 @@ def menu_column_group_valid(objdbca, objtable, option):
         
         if return_values[0].get("DISUSE_FLAG") == "1":
             retBool = False
-            msg = "親カラムグループが廃止されています。項番{}".format(return_values[0].get("CREATE_COL_GROUP_ID"))
+            msg = g.appmsg.get_api_message("MSG-20014", [return_values[0].get("CREATE_COL_GROUP_ID")])
     # ---------カラムグループ名---------
     
     # ---------フルカラムグループ名---------
@@ -128,7 +128,8 @@ def menu_column_group_valid(objdbca, objtable, option):
                     ret = objdbca.table_update(table_name, data_list, "CREATE_COL_GROUP_ID", False)
                     if not ret:
                         retBool = False
-                        msg = 'DBの接続に失敗しました'
+                        # msg = 'DBの更新に失敗しました。'
+                        msg = g.appmsg.get_api_message("MSG-20015", [])
                         break
                     full_column_group_name_ja = full_column_group_name_ja + "/" + return_values[0].get('COL_GROUP_NAME_JA')
                     full_column_group_name_en = full_column_group_name_en + "/" + return_values[0].get('COL_GROUP_NAME_EN')
