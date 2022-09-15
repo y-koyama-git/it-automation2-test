@@ -296,9 +296,15 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
             # 「メニュー定義-テーブル紐付管理」にレコードを登録
             result, msg = _insert_t_menu_table_link(objdbca, menu_uuid, create_table_name, create_table_name_jnl)
             
-            # 「他メニュー連携」にレコードを登録(対象メニューグループ「入力用」の場合のみ実施)
+            # 対象メニューグループ「入力用」の場合のみ実施
             if menu_group_col_name == "MENU_GROUP_ID_INPUT":
+                # 「他メニュー連携」にレコードを登録
                 result, msg = _insert_t_menu_other_link(objdbca, menu_uuid, create_table_name, recode_t_menu_column)
+                if not result:
+                    raise Exception(msg)
+                
+                # 「参照項目情報」にレコードを登録
+                result, msg = _insert_t_menu_reference_item(objdbca, menu_uuid, create_table_name, recode_t_menu_column)
                 if not result:
                     raise Exception(msg)
         
@@ -1254,7 +1260,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                                 "COLUMN_NAME_EN": ref_item_recode.get('COLUMN_NAME_EN'),
                                 "COLUMN_NAME_REST": ref_column_name_rest,
                                 "COL_GROUP_ID": col_group_id,  # 直前に作成したIDColumnの項目と同じカラムグループを採用する
-                                "COLUMN_CLASS": "7",  # IDColumn
+                                "COLUMN_CLASS": column_class,  # 「7:IDColumn」or「21:JsonIDColumn」
                                 "COLUMN_DISP_SEQ": disp_seq_num,
                                 "REF_TABLE_NAME": ref_item_recode.get('REF_TABLE_NAME'),
                                 "REF_PKEY_NAME": ref_item_recode.get('REF_PKEY_NAME'),
@@ -1546,6 +1552,7 @@ def _insert_t_menu_table_link(objdbca, menu_uuid, create_table_name, create_tabl
     try:
         data_list = {
             "MENU_ID": menu_uuid,
+            "MENU_NAME_REST": menu_uuid,
             "TABLE_NAME": create_table_name,
             "KEY_COL_NAME": "ROW_ID",
             "TABLE_NAME_JNL": create_table_name_jnl,
@@ -1626,6 +1633,79 @@ def _insert_t_menu_other_link(objdbca, menu_uuid, create_table_name, recode_t_me
                     }
                     primary_key_name = 'LINK_ID'
                     result = objdbca.table_insert(t_menu_other_link, data_list, primary_key_name)
+        
+    except Exception as msg:
+        print(msg)
+        return False, msg
+    
+    return result, None
+
+
+def _insert_t_menu_reference_item(objdbca, menu_uuid, create_table_name, recode_t_menu_column):
+    """
+        「参照項目情報」メニューのテーブルにレコードを追加する。
+        ARGS:
+            objdbca: DB接クラス DBConnectWs()
+            menu_uuid: 対象のメニュー（「メニュー管理」のレコード）のUUID
+            create_table_name: 作成した対象のテーブル名
+            recode_t_menu_column: 「メニュー項目作成情報」の対象のレコード一覧
+        RETRUN:
+            result, msg
+    """
+    # テーブル名
+    t_menu_other_link = 'T_MENU_OTHER_LINK'
+    t_menu_reference_item = 'T_MENU_REFERENCE_ITEM'
+    
+    try:
+        result = True
+        
+        # 「他メニュー連携」テーブルで対象のメニューIDのレコードを取得
+        ret = objdbca.table_select(t_menu_other_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_uuid, 0])  # noqa: E501
+        if not ret:
+            # 対象が無い場合は登録処理を実施せずにreturn
+            return True, None
+        
+        for other_menu_record in ret:
+            other_menu_link_column_name_rest = other_menu_record.get('REF_COL_NAME_REST')
+            link_id = other_menu_record.get('LINK_ID')
+            disp_seq_num = 10
+            for column_record in recode_t_menu_column:
+                column_name_rest = column_record.get('COLUMN_NAME_REST')
+                # 「他メニュー連携」のカラム名(rest)と「メニュー項目作成情報」のカラム名(rest)が同一の場合はスキップ
+                if other_menu_link_column_name_rest == column_name_rest:
+                    continue
+                
+                # 参照項目の対象とするカラムクラス一覧(1:SingleTextColumn, 2:MultiTextColumn, 3:NumColumn, 4:FloatColumn, 5:DateTimeColumn, 6:DateColumn, 9:FileUploadColumn, 10:HostInsideLinkTextColumn)  # noqa: E501
+                target_column_class_list = ["1", "2", "3", "4", "5", "6", "9", "10"]
+                column_class = column_record.get('COLUMN_CLASS')
+                
+                # カラムクラスが参照項目の対象であれば、「参照項目情報」にレコードを登録
+                if column_class in target_column_class_list:
+                    column_name_ja = column_record.get('COLUMN_NAME_JA')
+                    column_name_en = column_record.get('COLUMN_NAME_EN')
+                    description_ja = column_record.get('DESCRIPTION_JA')
+                    description_en = column_record.get('DESCRIPTION_EN')
+                    data_list = {
+                        "LINK_ID": link_id,
+                        "DISP_SEQ": disp_seq_num,
+                        "COLUMN_CLASS": column_class,
+                        "COLUMN_NAME_JA": column_name_ja,
+                        "COLUMN_NAME_EN": column_name_en,
+                        "COLUMN_NAME_REST": column_name_rest,
+                        "REF_COL_NAME": column_name_rest,
+                        "REF_SORT_CONDITIONS": None,
+                        "REF_MULTI_LANG": "0",  # False
+                        "SENSITIVE_FLAG": "0",  # False
+                        "DESCRIPTION_JA": description_ja,
+                        "DESCRIPTION_EN": description_en,
+                        "DISUSE_FLAG": "0",
+                        "LAST_UPDATE_USER": g.get('USER_ID')
+                    }
+                    primary_key_name = 'REFERENCE_ID'
+                    result = objdbca.table_insert(t_menu_reference_item, data_list, primary_key_name)
+                    
+                    # 表示順序を加算
+                    disp_seq_num = int(disp_seq_num) + 10
         
     except Exception as msg:
         print(msg)
@@ -1859,6 +1939,8 @@ def _disuse_menu_create_recode(objdbca, recode_t_menu_define):
     t_comn_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
     t_menu_table_link = 'T_MENU_TABLE_LINK'
     t_menu_other_link = 'T_MENU_OTHER_LINK'
+    t_menu_reference_item = 'T_MENU_REFERENCE_ITEM'
+    v_menu_reference_item = 'V_MENU_REFERENCE_ITEM'
     
     try:
         print("廃止処理スタート")
@@ -1904,6 +1986,18 @@ def _disuse_menu_create_recode(objdbca, recode_t_menu_define):
                 'DISUSE_FLAG': "1"
             }
             objdbca.table_update(t_menu_table_link, data, "MENU_ID")
+            
+            # 「参照項目」にて対象のレコードを廃止
+            # 廃止レコードのUUIDを特定するため、VIEWから対象レコードを取得
+            ret = objdbca.table_select(v_menu_reference_item, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
+            if ret:
+                for record in ret:
+                    reference_id = record.get('REFERENCE_ID')
+                    data = {
+                        'REFERENCE_ID': reference_id,
+                        'DISUSE_FLAG': "1"
+                    }
+                    objdbca.table_update(t_menu_reference_item, data, "REFERENCE_ID")
             
             # 「他メニュー連携」にて対象のレコードを廃止
             data = {

@@ -14,6 +14,7 @@
 
 import re
 import binascii
+import ast
 from libs.organization_common import check_auth_menu  # noqa: F401
 from flask import g
 
@@ -764,56 +765,40 @@ def menu_column_valid(objdbca, objtable, option):
         if retBool and parameter_sheet_reference:
             retBool = False
             msg = g.appmsg.get_api_message("MSG-20172", [])
-        # # 参照項目
-        # if retBool and reference_item:
-        #     # プルダウン選択がない場合、エラー
-        #     if not pulldown_selection:
-        #         retBool = False
-        #         msg = "「メニューグループ：メニュー：項目」が選択されていない場合、「参照項目」は設定できません。"
-        #         return retBool, msg, option
-        #     # カンマ区切りの数字であることをチェック
-        #     arry_reference_item = reference_item.split(',')
-        #     for id in arry_reference_item:
-        #         if not id.isdigit():
-        #             retBool = False
-        #             msg = "「参照項目」にはカンマ区切りのIDのみ入力できます。"
-        #             return retBool, msg, option
-        #     # プルダウン選択のIDから対象のメニューIDを取得
-        #     table_name = "V_MENU_OTHER_LINK"
-        #     where_str = "DISUSE_FLAG = '0' AND LINK_ID =  %s"
-        #     bind_value_list = [pulldown_selection]
-        #     return_values = objdbca.table_select(table_name, where_str, bind_value_list)
-        #     # メニューIDを取得
-        #     menu_id = ""
-        #     if len(return_values) > 0:
-        #         menu_id = return_values[0]['MENU_ID']
-        #     else:
-        #         retBool = False
-        #         msg = "「プルダウン選択」の対象を特定できませんでした。"
-        #         return retBool, msg, option
+        # 参照項目
+        if retBool and reference_item:
+            # プルダウン選択がない場合、エラー
+            if not pulldown_selection:
+                retBool = False
+                msg = g.appmsg.get_api_message("MSG-20252", [])
+                return retBool, msg, option
+            
+            # list形式であることをチェック
+            reference_item_list = ast.literal_eval(reference_item)
+            if type(reference_item_list) is not list:
+                retBool = False
+                msg = g.appmsg.get_api_message("MSG-20253", [])
+                return retBool, msg, option
 
-        #     # 参照項目リストを取得
-        #     table_name = "T_MENU_REFERENCE_ITEM"
-        #     where_str = "DISUSE_FLAG = '0' AND MENU_ID =  %s"
-        #     bind_value_list = [menu_id]
-        #     return_values = objdbca.table_select(table_name, where_str, bind_value_list)
-        #     # 参照項目リストから、プルダウン選択のメニューの中に参照項目のIDが存在するかをチェック
-        #     for id in arry_reference_item:
-        #         check_flg = False
-        #         for data in return_values:
-        #             if data['ORIGINAL_MENU_FLAG'] == 1:
-        #                 # 既存メニューの場合、LINK_IDが一致している場合のみ許可
-        #                 if data['LINK_ID'] == pulldown_selection:
-        #                     if data['ITEM_ID'] == id:
-        #                         check_flg = True
-        #                         break
-        #             else:
-        #                 if data['ITEM_ID'] == id:
-        #                     check_flg = True
-        #                     break
-        #         if not check_flg:
-        #             retBool = False
-        #             msg = "選択できない参照項目のIDが含まれています。"
+            # 参照項目リストを取得
+            table_name = "V_MENU_REFERENCE_ITEM"
+            where_str = "WHERE DISUSE_FLAG = '0' AND LINK_ID = %s"
+            bind_value_list = [pulldown_selection]
+            return_values = objdbca.table_select(table_name, where_str, bind_value_list)
+            
+            # 入力された値と、「参照項目情報」の値に一致があるかどうかを確認
+            for column_name_rest in reference_item_list:
+                check_bool = False
+                for record in return_values:
+                    check_column_name_rest = record.get('COLUMN_NAME_REST')
+                    if column_name_rest == check_column_name_rest:
+                        check_bool = True
+                        break
+                
+                if not check_bool:
+                    retBool = False
+                    msg = g.appmsg.get_api_message("MSG-20254", [column_name_rest])
+                    return retBool, msg, option
 
         # 初期値(プルダウン選択)
         if retBool and pulldown_selection_default_value:

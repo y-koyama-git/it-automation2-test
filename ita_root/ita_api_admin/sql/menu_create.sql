@@ -245,7 +245,6 @@ CREATE TABLE T_MENU_CREATE_HISTORY
     MENU_CREATE_ID                  VARCHAR(40),                                -- メニュー定義一覧のID
     STATUS_ID                       VARCHAR(40),                                -- ステータス
     CREATE_TYPE                     VARCHAR(40),                                -- 作成タイプ
-    MENU_MATERIAL                   VARCHAR(255),                               -- メニュー資材
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1)   ,                              -- 廃止フラグ
     LAST_UPDATE_TIMESTAMP           DATETIME(6)  ,                              -- 最終更新日時
@@ -262,7 +261,6 @@ CREATE TABLE T_MENU_CREATE_HISTORY_JNL
     MENU_CREATE_ID                  VARCHAR(40),                                -- メニュー定義一覧のID
     STATUS_ID                       VARCHAR(40),                                -- ステータス
     CREATE_TYPE                     VARCHAR(40),                                -- 作成タイプ
-    MENU_MATERIAL                   VARCHAR(255),                               -- メニュー資材
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1)   ,                              -- 廃止フラグ
     LAST_UPDATE_TIMESTAMP           DATETIME(6)  ,                              -- 最終更新日時
@@ -277,6 +275,7 @@ CREATE TABLE T_MENU_TABLE_LINK
 (
     MENU_TABLE_LINK_ID              VARCHAR(40),                                -- 項番(UUID)
     MENU_ID                         VARCHAR(40),                                -- メニュー一覧のID
+    MENU_NAME_REST                  VARCHAR(40),                                -- メニュー一覧のMENU_NAME_RESTと紐づくID
     TABLE_NAME                      VARCHAR(255),                               -- テーブル名
     KEY_COL_NAME                    VARCHAR(255),                               -- 主キー
     TABLE_NAME_JNL                  VARCHAR(255),                               -- 履歴テーブル名
@@ -294,6 +293,7 @@ CREATE TABLE T_MENU_TABLE_LINK_JNL
     JOURNAL_ACTION_CLASS            VARCHAR (8),                                -- 履歴用変更種別
     MENU_TABLE_LINK_ID              VARCHAR(40),                                -- 項番(UUID)
     MENU_ID                         VARCHAR(40),                                -- メニュー一覧のID
+    MENU_NAME_REST                  VARCHAR(40),                                -- メニュー一覧のMENU_NAME_RESTと紐づくID
     TABLE_NAME                      VARCHAR(255),                               -- テーブル名
     KEY_COL_NAME                    VARCHAR(255),                               -- 主キー
     TABLE_NAME_JNL                  VARCHAR(255),                               -- 履歴テーブル名
