@@ -69,7 +69,6 @@ if [ "${SSHAGENT_EXEC}" = "RUN" ]; then
     fi
   done < ${FILE}
 fi
-
 # roleでansible.cfgを有効にする為にinをカレントディレクトリにしてAnsible実行するshellを作成
 cd <<in_directory_path>>
 #/usr/local/bin/ansible-playbook -vvv  -i /exastro/data_relay_storage/ansible_driver/legacy/ns/0000000096/in/hosts  --vault-password-file /exastro/data_relay_storage/ansible_driver/legacy/ns/0000000096/.tmp/.tmpkey /exastro/data_relay_storage/ansible_driver/legacy/ns/0000000096/in/playbook.yml
@@ -78,7 +77,6 @@ RET_CODE=$?
 if [ "${SSHAGENT_EXEC}" = "RUN" ]; then
   eval `ssh-agent -k` 1>/dev/null
 fi
-RET_CODE=$?
 if [ ${RET_CODE} -eq 0 ]; then
     STATUS_STR='COMPLETED';
 else
