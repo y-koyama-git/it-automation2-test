@@ -157,6 +157,7 @@ class RestApiCaller():
             g.applogger.error(print_backtrace)
             g.applogger.error(print_url)
             g.applogger.error(print_HttpContext)
+            g.applogger.error("http response header\n%s\n%s\n%s" % (e.code, e.headers, e.reason))
 
         except urllib.error.URLError as e:
             # 返却用のArrayを編集
@@ -166,12 +167,13 @@ class RestApiCaller():
             g.applogger.error(print_backtrace)
             g.applogger.error(print_url)
             g.applogger.error(print_HttpContext)
+            g.applogger.error(e.reason)
 
         else:
-            print_HttpResponsHeader = "http response header\n%s" % (http_response_header)
-
             response_array = {}
-            if type(http_response_header) not in (list, dict):
+            if not isinstance(http_response_header, list):
+                print_HttpResponsHeader = "http response header\n%s" % (http_response_header)
+
                 # 返却用のArrayを編集
                 response_array['statusCode'] = -2
                 response_array['responseContents'] = {"errorMessage":"HTTP access error "}
@@ -179,10 +181,16 @@ class RestApiCaller():
                 g.applogger.error(print_backtrace)
                 g.applogger.error(print_url)
                 g.applogger.error(print_HttpContext)
+                g.applogger.error(print_HttpResponsHeader)
+                g.applogger.error(responseContents)
 
             else:
                 # 通信結果を判定
                 if len(http_response_header) > 0:
+                    print_HttpResponsHeader = "http response header\n%s\n" % (status_code)
+                    for t in http_response_header:
+                        print_HttpResponsHeader += '%s: %s\n' % (t[0], t[1])
+
                     # 返却用のArrayを編集
                     response_array['statusCode'] = status_code
                     if status_code < 200 or status_code >= 400:
