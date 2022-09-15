@@ -89,7 +89,7 @@ CREATE TABLE T_COMN_ROLE_MENU_LINK
 (
     LINK_ID                         VARCHAR(40),                                -- UUID
     MENU_ID                         VARCHAR(40),                                -- メニュー
-    ROLE_ID                         VARCHAR(40),                                -- ロール
+    ROLE_ID                         VARCHAR(64),                                -- ロール
     PRIVILEGE                       VARCHAR(2),                                 -- 紐付
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1),                                 -- 廃止フラグ
@@ -105,7 +105,7 @@ CREATE TABLE T_COMN_ROLE_MENU_LINK_JNL
     JOURNAL_ACTION_CLASS            VARCHAR (8),                                -- 履歴用変更種別
     LINK_ID                         VARCHAR(40),                                -- UUID
     MENU_ID                         VARCHAR(40),                                -- メニュー
-    ROLE_ID                         VARCHAR(40),                                -- ロール
+    ROLE_ID                         VARCHAR(64),                                -- ロール
     PRIVILEGE                       VARCHAR(2),                                 -- 紐付
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1),                                 -- 廃止フラグ

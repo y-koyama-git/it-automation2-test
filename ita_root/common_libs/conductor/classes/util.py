@@ -114,6 +114,11 @@ class ConductorCommonLibs():
             self._orchestra_id_list.append(data['ORCHESTRA_ID'])
         # print(self._orchestra_id_list)
 
+        self.config_data = {}
+        self.conductor_data = {}
+        self.node_datas = {}
+        self.edge_datas = {}
+
     def chk_format_all(self, c_all_data):
         """
         check all conductor infomation
@@ -927,7 +932,7 @@ class ConductorCommonLibs():
             - err_code xxx-xxxxx
             # - err msg args (list)
         """
-
+        chk_num_1 = len(c_all_data)
         if c_all_data:
             res_check = self.chk_format_all(c_all_data)
             if res_check[0] is False:
@@ -973,6 +978,13 @@ class ConductorCommonLibs():
         }
         res.update(self.node_datas)
         res.update(self.edge_datas)
+        
+        chk_num_2 = len(res)
+        self.debug_storage([ chk_num_1 , chk_num_2])
+
+        if chk_num_1 != chk_num_2:
+            msg = g.appmsg.get_api_message('MSG-40013')
+            return False, msg
 
         return True, res,
 
@@ -1204,3 +1216,10 @@ class ConductorCommonLibs():
         except Exception:
             return False
         return call_conductor_id_List
+
+    def debug_storage(self, msg):
+        import inspect, os
+        info = inspect.getouterframes(inspect.currentframe())[1]
+        msg_line = "{} ({}:{})".format(msg, os.path.basename(info.filename), info.lineno)
+        with open('/storage/debug.log', 'a') as f:
+            print("{}".format(msg_line), file=f)

@@ -36,6 +36,10 @@ import shutil
 from datetime import datetime
 
 
+bool_master_true = 'True'
+bool_master_false = 'False'
+
+
 class ConductorExecuteLibs():
     """
         ConductorExecuteLibs
@@ -392,10 +396,10 @@ class ConductorExecuteLibs():
                 raise Exception()
 
             # conductor_dataのバリデーション + IDから名称を現時点に最新化
-            #cclibs = ConductorCommonLibs()
-            #tmp_result = cclibs.override_node_idlink(copy.deepcopy(conductor_data))
-            #if tmp_result[0] is False:
-            #    raise Exception()
+            # cclibs = ConductorCommonLibs()
+            # tmp_result = cclibs.override_node_idlink(copy.deepcopy(conductor_data))
+            # if tmp_result[0] is False:
+            #     raise Exception()
             # conductor_data = tmp_result[1]
 
             if 'id' in conductor_data.get('conductor'):
@@ -2102,19 +2106,19 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             RETRUN:
                 '0' / '1'
         """
-        node_skip = '0'
+        node_skip = 'False'
         try:
             instance_data = self.get_instance_data(conductor_instance_id)
             conductor_class = instance_data.get('conductor_class')
             node_skip = conductor_class.get(node_name).get('skip')
             if node_skip is None:
-                node_skip = '0'
+                node_skip = 'False'
         except Exception as e:
             g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
             type_, value, traceback_ = sys.exc_info()
             msg = traceback.format_exception(type_, value, traceback_)
             g.applogger.error(msg)
-            node_skip = '0'
+            node_skip = 'False'
         return node_skip
 
     def get_in_out_node(self, conductor_instance_id, node_name):
@@ -2918,14 +2922,14 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
 
             # SKIP
             node_skip = self.get_node_skip(conductor_instance_id, node_name)
-            if node_skip == '1':
+            if node_skip == bool_master_true:
                 n_status_id = instance_info_data.get('dict').get('node_status').get('13')
                 node_options['node_status_id'] = n_status_id
-                node_options.setdefault('skip', '1')
+                node_options.setdefault('skip', bool_master_true)
 
             # 緊急停止
             abort_status = self.get_abort_status(conductor_instance_id)
-            if abort_status == '1':
+            if abort_status == bool_master_true:
                 node_options.setdefault('abort_status', abort_status)
 
             # 前後のNode取得
@@ -3069,7 +3073,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('3')
             node_options['next_node_exec_flg'] = '1'
 
-            if skip == '1':
+            if skip == bool_master_true:
                 n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('13')
             else:
                 # 緊急停止(Nodeのステータス変更のみ)
@@ -3147,7 +3151,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             else:
                 c_status_id = end_type
             
-            if skip == '1':
+            if skip == bool_master_true:
                 n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('13')
             else:
                 # 緊急停止(Nodeのステータス変更のみ)
@@ -3250,10 +3254,10 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
 
             execute_flg = False
             # ##################### 強制SKIP対応 #####################
-            # skip = '1'
+            skip = 'True'
             # ##################### 強制SKIP対応 #####################
             # SKIP時
-            if skip == '1':
+            if skip == bool_master_true:
                 n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('13')
             else:
                 # 作業未実行時
@@ -3270,7 +3274,6 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                             # MV作業実行
                             action_type = 'execute'
                             tmp_result = self.orchestra_action(action_type, orchestrator_id, action_options)
-                            print(tmp_result)
                             if tmp_result[0] is not True:
                                 raise Exception()
 
@@ -3431,9 +3434,11 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('3')
             
             call_execute_flg = False
-
+            # ##################### 強制SKIP対応 #####################
+            # skip = 'True'
+            # ##################### 強制SKIP対応 #####################
             # SKIP時
-            if skip == '1':
+            if skip == bool_master_true:
                 n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('13')
             else:
                 # 作業未実行時
@@ -3641,7 +3646,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             # Conductor実行中
             c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('3')
 
-            if skip == '1':
+            if skip == bool_master_true:
                 n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('13')
             else:
                 # 緊急停止(Nodeのステータス変更のみ)
@@ -3719,7 +3724,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             # Conductor実行中
             c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('3')
 
-            if skip == '1':
+            if skip == bool_master_true:
                 n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('13')
             else:
                 # 緊急停止(Nodeのステータス変更のみ)
@@ -3817,7 +3822,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             # Conductor実行中
             c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('3')
 
-            if skip == '1':
+            if skip == bool_master_true:
                 n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('13')
             else:
                 # 緊急停止(Nodeのステータス変更のみ)
@@ -3991,7 +3996,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             # Conductor実行中
             c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('3')
 
-            if skip == '1':
+            if skip == bool_master_true:
                 n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('13')
             else:
                 # 緊急停止(Nodeのステータス変更のみ)
