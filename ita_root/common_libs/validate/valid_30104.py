@@ -28,6 +28,8 @@ def conductor_class_validate(objdbca, objtable, option):
             msg = g.appmsg.get_api_message(status_code, msg_args)
             retBool = result[0]
         else:
+            pass
+            """
             result = cclibs.override_node_idlink(copy.deepcopy(conductor_data))
             if result[0] is False:
                 status_code = '499-00201'
@@ -38,6 +40,7 @@ def conductor_class_validate(objdbca, objtable, option):
                 conductor_data = result[1]
                 conductor_data['conductor']['id'] = entry_parameter.get('parameter').get('conductor_class_id')
                 option['entry_parameter']['parameter'][target_rest_name] = json.dumps(conductor_data)
+            """
         # """
         pass
     except Exception:
