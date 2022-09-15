@@ -1869,18 +1869,19 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                     conductor_end_status = '9'
                 elif len(status_count.get('7')) != 0:
                     # 想定外エラーへ
-                    conductor_end_status = '9'
+                    conductor_end_status = '11'
 
             # 正常終了時、ENDNodeのend_typeで上書き
-            if conductor_end_status in ['6']:
-                if '9' in end_node_type_list:
-                    conductor_end_status = '9'
-                elif '7' in end_node_type_list:
-                    conductor_end_status = '7'
-                elif '8' in end_node_type_list:
-                    conductor_end_status = '8'
-                elif '6' in end_node_type_list:
-                    conductor_end_status = '6'
+            if len(end_node_type_list) != 0:
+                if conductor_end_status in ['6', '7', '8', '9', '11']:
+                    if '9' in end_node_type_list:
+                        conductor_end_status = '9'
+                    elif '7' in end_node_type_list:
+                        conductor_end_status = '7'
+                    elif '8' in end_node_type_list:
+                        conductor_end_status = '8'
+                    elif '6' in end_node_type_list:
+                        conductor_end_status = '6'
 
             # Conductor終了ステータス設定
             c_status_id = instance_info_data.get('dict').get('conductor_status').get(conductor_end_status)
@@ -1900,9 +1901,9 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             ARGS:
                 conductor_instance_id: conductor_instance_id
             RETRUN:
-                '0' / '1'
+                'False' / 'True'
         """
-        abort_flag = '0'
+        abort_flag = 'False'
         try:
             table_name = 'T_COMN_CONDUCTOR_INSTANCE'
             where_str = "where `CONDUCTOR_INSTANCE_ID` in (%s) "
@@ -1911,9 +1912,12 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             if len(tmp_result) == 1:
                 abort_flag = tmp_result[0].get('ABORT_EXECUTE_FLAG')
                 if abort_flag is None:
-                    abort_flag = '0'
+                    abort_flag = 'False'
+                else:
+                    if abort_flag in [1, "1"]:
+                        abort_flag = 'True'
         except Exception:
-            abort_flag = '0'
+            abort_flag = 'False'
         return abort_flag
 
     def get_system_config(self):
@@ -2104,7 +2108,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                 start_node_instance_id: node_instance_id
                 target_all_node_list: {status_id:[node_instance_id,,,,,]}
             RETRUN:
-                '0' / '1'
+                'False' / 'True'
         """
         node_skip = 'False'
         try:
