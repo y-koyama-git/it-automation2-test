@@ -129,20 +129,20 @@ INSERT INTO T_COMN_MENU_TABLE_LINK (TABLE_DEFINITION_ID,MENU_ID,TABLE_NAME,VIEW_
 
 テンプレートファイル内の変数には接頭文字として「VAR_」を付与して下さい。
 接頭文字が「VAR_」の変数が、代入値管理メニューにて選択可能になります。
-(例) {{ VAR_OMCS }}','You can perform maintenance (view/register/update/discard) the template file in the Playbook.
+(例) {{ VAR_TEST }}','You can perform maintenance (view/register/update/discard) the template file in the Playbook.
 
 Assign “VAR_\" as a prefix string for the variable of template file.
 Variables with prefix string \"VAR_\" can be selected from substitution value list.
-(Example) {{ VAR_OMCS }}','0','1','0','0','1','1','1','1','0',NULL,NULL,NULL,'external_valid_menu_after',NULL,'0',_____DATE_____,1);
+(Example) {{ VAR_TEST }}','0','1','0','0','1','1','1','1','0',NULL,NULL,NULL,'external_valid_menu_after',NULL,'0',_____DATE_____,1);
 INSERT INTO T_COMN_MENU_TABLE_LINK_JNL (JOURNAL_SEQ_NO,JOURNAL_REG_DATETIME,JOURNAL_ACTION_CLASS,TABLE_DEFINITION_ID,MENU_ID,TABLE_NAME,VIEW_NAME,PK_COLUMN_NAME_REST,MENU_INFO_JA,MENU_INFO_EN,SHEET_TYPE,HISTORY_TABLE_FLAG,INHERIT,VERTICAL,ROW_INSERT_FLAG,ROW_UPDATE_FLAG,ROW_DISUSE_FLAG,ROW_REUSE_FLAG,SUBSTITUTION_VALUE_LINK_FLAG,LOCK_TABLE,UNIQUE_CONSTRAINT,BEFORE_VALIDATE_REGISTER,AFTER_VALIDATE_REGISTER,NOTE,DISUSE_FLAG,LAST_UPDATE_TIMESTAMP,LAST_UPDATE_USER) VALUES(20106,_____DATE_____,'INSERT','20106','20106','T_ANSC_TEMPLATE_FILE',NULL,'template_id','Playbookで使用するテンプレートファイルをメンテナンス(閲覧/登録/更新/廃止)できます。
 
 テンプレートファイル内の変数には接頭文字として「VAR_」を付与して下さい。
 接頭文字が「VAR_」の変数が、代入値管理メニューにて選択可能になります。
-(例) {{ VAR_OMCS }}','You can perform maintenance (view/register/update/discard) the template file in the Playbook.
+(例) {{ VAR_TEST }}','You can perform maintenance (view/register/update/discard) the template file in the Playbook.
 
 Assign “VAR_\" as a prefix string for the variable of template file.
 Variables with prefix string \"VAR_\" can be selected from substitution value list.
-(Example) {{ VAR_OMCS }}','0','1','0','0','1','1','1','1','0',NULL,NULL,NULL,'external_valid_menu_after',NULL,'0',_____DATE_____,1);
+(Example) {{ VAR_TEST }}','0','1','0','0','1','1','1','1','0',NULL,NULL,NULL,'external_valid_menu_after',NULL,'0',_____DATE_____,1);
 INSERT INTO T_COMN_MENU_TABLE_LINK (TABLE_DEFINITION_ID,MENU_ID,TABLE_NAME,VIEW_NAME,PK_COLUMN_NAME_REST,MENU_INFO_JA,MENU_INFO_EN,SHEET_TYPE,HISTORY_TABLE_FLAG,INHERIT,VERTICAL,ROW_INSERT_FLAG,ROW_UPDATE_FLAG,ROW_DISUSE_FLAG,ROW_REUSE_FLAG,SUBSTITUTION_VALUE_LINK_FLAG,LOCK_TABLE,UNIQUE_CONSTRAINT,BEFORE_VALIDATE_REGISTER,AFTER_VALIDATE_REGISTER,NOTE,DISUSE_FLAG,LAST_UPDATE_TIMESTAMP,LAST_UPDATE_USER) VALUES('20107','20107','T_ANSC_COMVRAS_USLIST',NULL,'no','メニューの繰り返し項目を縦に管理するメニュー情報をメンテナンス(参照/更新/廃止/復活)できます。','Maintenance (view/register/update/discard) can be performed on the menu information that manages the repeated items of the menu vertically.','0','0','0','0','0','0','0','0','0',NULL,NULL,NULL,NULL,NULL,'0',_____DATE_____,1);
 INSERT INTO T_COMN_MENU_TABLE_LINK_JNL (JOURNAL_SEQ_NO,JOURNAL_REG_DATETIME,JOURNAL_ACTION_CLASS,TABLE_DEFINITION_ID,MENU_ID,TABLE_NAME,VIEW_NAME,PK_COLUMN_NAME_REST,MENU_INFO_JA,MENU_INFO_EN,SHEET_TYPE,HISTORY_TABLE_FLAG,INHERIT,VERTICAL,ROW_INSERT_FLAG,ROW_UPDATE_FLAG,ROW_DISUSE_FLAG,ROW_REUSE_FLAG,SUBSTITUTION_VALUE_LINK_FLAG,LOCK_TABLE,UNIQUE_CONSTRAINT,BEFORE_VALIDATE_REGISTER,AFTER_VALIDATE_REGISTER,NOTE,DISUSE_FLAG,LAST_UPDATE_TIMESTAMP,LAST_UPDATE_USER) VALUES(20107,_____DATE_____,'INSERT','20107','20107','T_ANSC_COMVRAS_USLIST',NULL,'no','メニューの繰り返し項目を縦に管理するメニュー情報をメンテナンス(参照/更新/廃止/復活)できます。','Maintenance (view/register/update/discard) can be performed on the menu information that manages the repeated items of the menu vertically.','0','0','0','0','0','0','0','0','0',NULL,NULL,NULL,NULL,NULL,'0',_____DATE_____,1);
 INSERT INTO T_COMN_MENU_TABLE_LINK (TABLE_DEFINITION_ID,MENU_ID,TABLE_NAME,VIEW_NAME,PK_COLUMN_NAME_REST,MENU_INFO_JA,MENU_INFO_EN,SHEET_TYPE,HISTORY_TABLE_FLAG,INHERIT,VERTICAL,ROW_INSERT_FLAG,ROW_UPDATE_FLAG,ROW_DISUSE_FLAG,ROW_REUSE_FLAG,SUBSTITUTION_VALUE_LINK_FLAG,LOCK_TABLE,UNIQUE_CONSTRAINT,BEFORE_VALIDATE_REGISTER,AFTER_VALIDATE_REGISTER,NOTE,DISUSE_FLAG,LAST_UPDATE_TIMESTAMP,LAST_UPDATE_USER) VALUES('20401','20401','T_ANSR_ROLE_NAME',NULL,'item_no','Ansible-Legacy Roleのロール名とロールパッケージの紐付を行います。','Associate role name and role package of Ansible-Legacy Role.','0','0','0','0','0','0','0','0','0',NULL,'[["ROLE_PACKAGE_ID","ROLE_NAME"]]',NULL,NULL,NULL,'0',_____DATE_____,1);
