@@ -392,11 +392,11 @@ class ConductorExecuteLibs():
                 raise Exception()
 
             # conductor_dataのバリデーション + IDから名称を現時点に最新化
-            cclibs = ConductorCommonLibs()
-            tmp_result = cclibs.override_node_idlink(copy.deepcopy(conductor_data))
-            if tmp_result[0] is False:
-                raise Exception()
-            conductor_data = tmp_result[1]
+            #cclibs = ConductorCommonLibs()
+            #tmp_result = cclibs.override_node_idlink(copy.deepcopy(conductor_data))
+            #if tmp_result[0] is False:
+            #    raise Exception()
+            # conductor_data = tmp_result[1]
 
             if 'id' in conductor_data.get('conductor'):
                 tmp_conductor_data_id = conductor_data.get('conductor').get('id')
@@ -3250,7 +3250,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
 
             execute_flg = False
             # ##################### 強制SKIP対応 #####################
-            skip = '1'
+            # skip = '1'
             # ##################### 強制SKIP対応 #####################
             # SKIP時
             if skip == '1':
@@ -3270,6 +3270,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                             # MV作業実行
                             action_type = 'execute'
                             tmp_result = self.orchestra_action(action_type, orchestrator_id, action_options)
+                            print(tmp_result)
                             if tmp_result[0] is not True:
                                 raise Exception()
 
@@ -3277,6 +3278,8 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                             if execution_id is not None:
                                 execute_flg = True
                                 node_filter_data['parameter']['execution_id'] = execution_id
+                            else:
+                                raise Exception()
 
                         except Exception:
                             # err_msg = 'msg'

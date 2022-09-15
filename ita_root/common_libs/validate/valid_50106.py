@@ -12,6 +12,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 import ast
+from flask import g
 
 
 def menu_unique_constraint_valid(objdbca, objtable, option):
@@ -27,7 +28,8 @@ def menu_unique_constraint_valid(objdbca, objtable, option):
         unique_constraint_item = ast.literal_eval(unique_constraint_item)
     except Exception:
         retBool = False
-        msg = "一意制約(複数項目)の形式が不正です。"
+        msg = g.appmsg.get_api_message("MSG-20246", [])
+        return retBool, msg, option
 
     # 指定されたメニューからメニュー項目名(REST)を取得
     where_str = "WHERE DISUSE_FLAG = '0' AND MENU_CREATE_ID = %s"
@@ -39,11 +41,10 @@ def menu_unique_constraint_valid(objdbca, objtable, option):
                 item_name_rest.append(data.get('COLUMN_NAME_REST'))
             except Exception:
                 retBool = False
-                msg = "選択されたメニュー名は不正です"
-        print(item_name_rest)
+                msg = g.appmsg.get_api_message("MSG-20247", [])
     else:
         retBool = False
-        msg = "選択されたメニュー名は不正です"
+        msg = g.appmsg.get_api_message("MSG-20248", [])
     # リスト型かどうか判定
     if retBool:
         if isinstance(unique_constraint_item, list):
@@ -52,13 +53,13 @@ def menu_unique_constraint_valid(objdbca, objtable, option):
                     for item in item_list:
                         if item not in item_name_rest:
                             retBool = False
-                            msg = "指定できない値です{}".format(item)
+                            msg = g.appmsg.get_api_message("MSG-20249", [item])
                             return retBool, msg, option
                 else:
                     retBool = False
-                    msg = "一意制約(複数項目)はリスト型にしてください。2"
+                    msg = g.appmsg.get_api_message("MSG-20250", [])
         else:
             retBool = False
-            msg = "一意制約(複数項目)はリスト型にしてください。"
+            msg = g.appmsg.get_api_message("MSG-20251", [])
 
     return retBool, msg, option
