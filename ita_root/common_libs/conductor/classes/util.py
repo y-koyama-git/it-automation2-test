@@ -130,54 +130,61 @@ class ConductorCommonLibs():
         err_code = '499-00201'
         tmp_c_all_data = copy.deepcopy(c_all_data)
         
-        # check first block
-        res_chk = self.chk_format(c_all_data)
-        if res_chk[0] is False:
-            return False, err_code, res_chk[1]
+        try:
+            # check first block
+            res_chk = self.chk_format(c_all_data)
+            if res_chk[0] is False:
+                return False, err_code, res_chk[1]
 
-        # check config block
-        res_chk = self.chk_config(self.config_data)
-        if res_chk[0] is False:
-            return False, err_code, res_chk[1]
+            # check config block
+            res_chk = self.chk_config(self.config_data)
+            if res_chk[0] is False:
+                return False, err_code, res_chk[1]
 
-        # check conductor block
-        res_chk = self.chk_conductor(self.conductor_data)
-        if res_chk[0] is False:
-            return False, err_code, res_chk[1]
+            # check conductor block
+            res_chk = self.chk_conductor(self.conductor_data)
+            if res_chk[0] is False:
+                return False, err_code, res_chk[1]
 
-        # check edge block
-        res_chk = self.chk_edge(self.edge_datas)
-        if res_chk[0] is False:
-            return False, err_code, res_chk[1]
+            # check edge block
+            res_chk = self.chk_edge(self.edge_datas)
+            if res_chk[0] is False:
+                return False, err_code, res_chk[1]
 
-        # check node block
-        res_chk = self.chk_node(self.node_datas)
-        if res_chk[0] is False:
-            return False, err_code, res_chk[1]
+            # check node block
+            res_chk = self.chk_node(self.node_datas)
+            if res_chk[0] is False:
+                return False, err_code, res_chk[1]
 
-        # check node detail
-        res_chk = self.chk_node_detail(self.node_datas)
-        if res_chk[0] is False:
-            return False, err_code, res_chk[1]
+            # check node detail
+            res_chk = self.chk_node_detail(self.node_datas)
+            if res_chk[0] is False:
+                return False, err_code, res_chk[1]
 
-        # check node call loop
-        #  res_chk = self.chk_call_loop(self.conductor_data['id'], self._node_call_datas)
-        # if res_chk[0] is False:
-        #     return False, err_code, res_chk[1]
+            # check node call loop
+            #  res_chk = self.chk_call_loop(self.conductor_data['id'], self._node_call_datas)
+            # if res_chk[0] is False:
+            #     return False, err_code, res_chk[1]
 
-        # check node parallel
-        if self.chk_type_parallel() is False:
-            return False, err_code, 'condition from parallel-branch to merge is invalid'
+            # check node parallel
+            if self.chk_type_parallel() is False:
+                return False, err_code, 'condition from parallel-branch to merge is invalid'
 
-        # chk parallel -> marge use case
-        res_chk = self.chk_parallel_marge(tmp_c_all_data)
-        if res_chk[0] is False:
-            return False, err_code, res_chk[1]
+            # chk parallel -> marge use case
+            res_chk = self.chk_parallel_marge(tmp_c_all_data)
+            if res_chk[0] is False:
+                return False, err_code, res_chk[1]
 
-        # check node call loop
-        res_chk = self.chk_call_loop_base_1(tmp_c_all_data.get('conductor').get('id'), tmp_c_all_data)
-        if res_chk[0] is False:
-            return False, err_code, res_chk[1]
+            # check node call loop
+            res_chk = self.chk_call_loop_base_1(tmp_c_all_data.get('conductor').get('id'), tmp_c_all_data)
+            if res_chk[0] is False:
+                return False, err_code, res_chk[1]
+
+        except Exception:
+            tmp_msg_key = g.appmsg.get_api_message('MSG-00004')
+            tmp_msg = g.appmsg.get_api_message('MSG-40004')
+            err_msg = json.dumps([json.dumps({tmp_msg_key: tmp_msg}, ensure_ascii=False)], ensure_ascii=False)
+            return False, err_code, err_msg,
 
         return True,
 
@@ -498,7 +505,7 @@ class ConductorCommonLibs():
                 # err_msg_args.append('movement_id is not available')
                 err_msg_args.append(g.appmsg.get_api_message('MSG-40014', [node_blcok.get('movement_id'), node_blcok.get('movement_name')]))
                 
-            #if 'movement_name' not in node_blcok:
+            # if 'movement_name' not in node_blcok:
             #    # err_msg_args.append('movement_name')
             #    err_msg_args.append(g.appmsg.get_api_message('MSG-40014', [node_blcok.get('movement_id'), node_blcok.get('movement_name')]))
 
@@ -515,7 +522,7 @@ class ConductorCommonLibs():
                 # err_msg_args.append('operation_id is not available')
                 err_msg_args.append(g.appmsg.get_api_message('MSG-40016', [node_blcok.get('operation_id'), node_blcok.get('operation_name')]))
 
-            #if 'operation_name' not in node_blcok:
+            # if 'operation_name' not in node_blcok:
             #    # err_msg_args.append('operation_name')
             #    err_msg_args.append(g.appmsg.get_api_message('MSG-40016', [node_blcok.get('operation_id'), node_blcok.get('operation_name')]))
 
@@ -776,7 +783,6 @@ class ConductorCommonLibs():
                 block_err_msg_args.append('type')
             else:
                 val = block_1['type']
-                ###  暫定追加
                 if val not in ['edge', 'egde']:
                     block_err_msg_args.append('type')
 
@@ -921,7 +927,6 @@ class ConductorCommonLibs():
             - err_code xxx-xxxxx
             # - err msg args (list)
         """
-        retCode = 'xxx-xxxxx'
 
         if c_all_data:
             res_check = self.chk_format_all(c_all_data)
@@ -1004,7 +1009,9 @@ class ConductorCommonLibs():
                                     raise Exception()
         except Exception:
             retBool = False
-            msg = json.dumps([json.dumps({"Usecase": g.appmsg.get_api_message('MSG-40011')}, ensure_ascii=False)], ensure_ascii=False)
+            tmp_msg_key = g.appmsg.get_api_message('MSG-00004')
+            tmp_msg = g.appmsg.get_api_message('MSG-40011')
+            msg = json.dumps([json.dumps({tmp_msg_key: tmp_msg}, ensure_ascii=False)], ensure_ascii=False)
         return retBool, msg,
 
     # parallel->margeNode検索
