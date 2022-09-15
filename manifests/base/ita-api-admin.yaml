@@ -40,6 +40,12 @@ spec:
         - name: ita-api-admin
           image: exastro/it-automation2-test-ita-api-admin:build.bb3ff0.20220915-092615
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
           envFrom:
             - secretRef:
                 name: secret-ita-mariadb

@@ -38,6 +38,12 @@ spec:
         - name: ita-web-server
           image: exastro/it-automation2-test-ita-web-server:build.bb3ff0.20220915-092629
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
           envFrom:
             - secretRef:
                 name: secret-ita-mariadb

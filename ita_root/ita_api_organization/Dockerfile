@@ -19,9 +19,15 @@ FROM    registry.access.redhat.com/ubi8/ubi-init as common_build
 ARG USERNAME
 ARG GROUPNAME
 ARG APP_PATH
+
 ENV PYTHONPATH=/exastro/
 ENV DEFAULT_LANGUAGE=ja
 ENV STORAGEPATH=/storage/
+ENV LISTEN_PORT             8000
+ENV APACHE_PID_DIR          /var/run_$USERNAME/httpd/pid
+ENV APACHE_SOCKET_DIR       /var/run_$USERNAME/httpd/socket
+ENV APACHE_USERNAME         $USERNAME
+ENV APACHE_GROUPNAME        $GROUPNAME
 
 RUN dnf install -y \
     gcc \
@@ -49,7 +55,13 @@ RUN dnf install -y \
 &&  pip3.9 install \
     connexion[swagger-ui] \
 &&  groupadd $GROUPNAME \
-&&  useradd -m -s /bin/bash -g $GROUPNAME $USERNAME
+&&  useradd -m -s /bin/bash -g $GROUPNAME $USERNAME \
+&&  setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd \
+&&  chown $USERNAME:$GROUPNAME /var/log/httpd \
+&&  mkdir -p $APACHE_PID_DIR \
+&&  chown $USERNAME:$GROUPNAME $APACHE_PID_DIR \
+&&  mkdir -p $APACHE_SOCKET_DIR \
+&&  chown $USERNAME:$GROUPNAME $APACHE_SOCKET_DIR
 
 #
 # Build for development
@@ -88,7 +100,7 @@ COPY ./ita_root/ita_api_organization/ $APP_PATH/
 COPY ./ita_root/common_libs/ $APP_PATH/common_libs/
 COPY ./ita_root/messages/ $APP_PATH/messages/
 
-CMD ["sudo","-E","httpd","-D","FOREGROUND"]
+CMD ["httpd","-D","FOREGROUND"]
 
 #
 # Build for production
@@ -106,5 +118,7 @@ COPY ./ita_root/ita_api_organization/config/httpd.conf/wsgi.conf /etc/httpd/conf
 COPY ./ita_root/ita_api_organization/ $APP_PATH/
 COPY ./ita_root/common_libs/ $APP_PATH/common_libs/
 COPY ./ita_root/messages/ $APP_PATH/messages/
+
+USER $USERNAME
 
 CMD ["httpd","-D","FOREGROUND"]
