@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
         - name: ita-by-ansible-legacy-role-vars-listup
-          image: exastro/it-automation2-test-ita-by-ansible-legacy-role-vars-listup:build.bb3ff0.20220915-095525
+          image: exastro/it-automation2-test-ita-by-ansible-legacy-role-vars-listup:build.c39041.20220915-113750
           imagePullPolicy: IfNotPresent
           resources:
             requests:

@@ -36,9 +36,18 @@ spec:
       labels:
         name: ita-api-admin
     spec:
+      initContainers:
+        # temporary response to organization_create_controller.py  organization_create, os.makedirs(organization_dir)
+        - name: setup-storage
+          command: ["sh", "-c", "chown -R 1000:1000 /storage "]
+          image: busybox:latest
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+          - mountPath: /storage
+            name: persistent-storage
       containers:
         - name: ita-api-admin
-          image: exastro/it-automation2-test-ita-api-admin:build.bb3ff0.20220915-092615
+          image: exastro/it-automation2-test-ita-api-admin:build.c39041.20220915-113752
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -62,11 +71,15 @@ spec:
           volumeMounts:
             - name: persistent-storage
               mountPath: /storage
-          lifecycle:
-            postStart:
-              exec:
-                command: ["/bin/sh", "-c", "chmod -R 777 /storage"] # temporary response to organization_create_controller.py  organization_create, os.makedirs(organization_dir)
+            - name: contaier-volume
+              mountPath: /var/run_app_user/httpd/pid
+              subPath: httpd-pid
+            - name: contaier-volume
+              mountPath: /var/run_app_user/httpd/socket
+              subPath: httpd-socket
       volumes:
         - name: persistent-storage
           persistentVolumeClaim:
             claimName: ita-pvc
+        - name: contaier-volume
+          emptyDir: {}

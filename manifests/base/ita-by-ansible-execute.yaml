@@ -60,7 +60,7 @@ spec:
       serviceAccountName: ita-ansible-execute-sa
       containers:
         - name: ita-by-ansible-execute
-          image: exastro/it-automation2-test-ita-by-ansible-execute:build.bb3ff0.20220915-092600
+          image: exastro/it-automation2-test-ita-by-ansible-execute:build.c39041.20220915-113901
           imagePullPolicy: Always
           resources:
             requests:

@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
         - name: ita-by-ansible-towermaster-sync
-          image: exastro/it-automation2-test-ita-by-ansible-towermaster-sync:build.bb3ff0.20220915-095524
+          image: exastro/it-automation2-test-ita-by-ansible-towermaster-sync:build.c39041.20220915-113743
           imagePullPolicy: IfNotPresent
           resources:
             requests:

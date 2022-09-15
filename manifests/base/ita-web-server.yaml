@@ -36,7 +36,7 @@ spec:
     spec:
       containers:
         - name: ita-web-server
-          image: exastro/it-automation2-test-ita-web-server:build.bb3ff0.20220915-092629
+          image: exastro/it-automation2-test-ita-web-server:build.c39041.20220915-113846
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -53,10 +53,13 @@ spec:
                 name: params-ita-common
             - configMapRef:
                 name: params-ita-web-server
-          #volumeMounts:
-          #  - name: persistent-storage
-          #    mountPath: /hoge # <--- Please activate this block after correct path to mount is fixed
-      #volumes:
-      #- name: persistent-storage
-      #  persistentVolumeClaim:
-      #    claimName: ita-pvc
+          volumeMounts:
+            - name: contaier-volume
+              mountPath: /var/run_app_user/httpd/pid
+              subPath: httpd-pid
+            - name: contaier-volume
+              mountPath: /var/run_app_user/httpd/socket
+              subPath: httpd-socket
+      volumes:
+      - name: contaier-volume
+        emptyDir: {}
