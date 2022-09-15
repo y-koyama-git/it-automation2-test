@@ -21,4 +21,6 @@ RUN dnf install -y \
 &&  pip3.9 install \
     ansible
 
+COPY .ita_root/ita_by_ansible_execute/ita_ansible_agent/config/ansible.cfg /etc/ansible/ansible.cfg
+
 CMD ["ansible-playbook"]

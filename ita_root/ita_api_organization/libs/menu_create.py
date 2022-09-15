@@ -241,9 +241,6 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
                 col_detail["pulldown_selection"] = recode.get('OTHER_MENU_LINK_ID')  # プルダウン選択 メニューグループ:メニュー:項目
                 col_detail["pulldown_selection_default_value"] = recode.get('OTHER_MENU_LINK_DEFAULT_VALUE')  # プルダウン選択 初期値
                 col_detail["reference_item"] = ast.literal_eval(recode.get('REFERENCE_ITEM'))  # プルダウン選択 参照項目
-                # str_unique_constraint = json.dumps(ret[0].get('UNIQUE_CONSTRAINT_ITEM'))
-                # unique_constraint_current = json.loads(str_unique_constraint)
-                # menu['unique_constraint_current'] = json.loads(unique_constraint_current)
             
             # カラムクラス「パスワード」用のパラメータを追加
             if column_class_name == "PasswordColumn":
@@ -413,6 +410,8 @@ def collect_pulldown_initial_value(objdbca, menu_name_rest, column_name_rest):
     ref_pkey_name = ret[0].get('REF_PKEY_NAME')
     ref_col_name = ret[0].get('REF_COL_NAME')
     ref_multi_lang = ret[0].get('REF_MULTI_LANG')
+    ref_col_name_rest = ret[0].get('REF_COL_NAME_REST')
+    menu_create_flag = ret[0].get('MENU_CREATE_FLAG')
     
     # 「プルダウン選択」の対象テーブルからレコード一覧を取得
     ret = objdbca.table_select(ref_table_name, 'WHERE DISUSE_FLAG = %s', [0])
@@ -423,9 +422,55 @@ def collect_pulldown_initial_value(objdbca, menu_name_rest, column_name_rest):
         else:
             value = recode.get(ref_col_name)
         
-        initial_value_dict[key] = value
+        # メニュー作成機能で作ったメニューの場合、値がJSON形式なので取り出す。
+        if str(menu_create_flag) == "1":
+            value_dict = ast.literal_eval(value)
+            value = value_dict.get(ref_col_name_rest)
+        if value:
+            initial_value_dict[key] = value
     
     return initial_value_dict
+
+
+def collect_pulldown_reference_item(objdbca, menu_name_rest, column_name_rest):
+    """
+        「プルダウン選択」項目で選択した対象の「参照項目」候補一覧取得
+        ARGS:
+            objdbca:DB接クラス  DBConnectWs()
+            menu_name_rest: 対象のmenu_name_rest
+            column_name_rest: 対象のcolumn_name_rest
+        RETRUN:
+            initial_value_dict
+    """
+    # テーブル/ビュー名
+    v_menu_other_link = 'V_MENU_OTHER_LINK'
+    v_menu_reference_item = 'V_MENU_REFERENCE_ITEM'
+    
+    # 変数定義
+    lang = g.get('LANGUAGE')
+    reference_item_dict = {}
+    
+    # 「他メニュー連携」から対象のレコード一覧を取得
+    ret = objdbca.table_select(v_menu_other_link, 'WHERE MENU_NAME_REST = %s AND REF_COL_NAME_REST = %s AND DISUSE_FLAG = %s', [menu_name_rest, column_name_rest, 0])  # noqa: E501
+    if not ret:
+        log_msg_args = [menu_name_rest, column_name_rest]
+        api_msg_args = [menu_name_rest, column_name_rest]
+        raise AppException("499-00010", log_msg_args, api_msg_args)  # noqa: F405
+    
+    # LINK_IDを特定
+    link_id = ret[0].get('LINK_ID')
+    
+    # 「参照項目情報」からLINK_IDに紐づくレコードを取得
+    ret = objdbca.table_select(v_menu_reference_item, 'WHERE LINK_ID = %s AND DISUSE_FLAG = %s', [link_id, 0])
+    if ret:
+        for record in ret:
+            print(record)
+            reference_id = record.get('REFERENCE_ID')
+            column_name = record.get('COLUMN_NAME_' + lang.upper())
+            column_name_rest = record.get('COLUMN_NAME_REST')
+            reference_item_dict[reference_id] = {'column_name': column_name, 'column_name_rest': column_name_rest}
+    
+    return reference_item_dict
 
 
 def menu_create_execute(objdbca, exec_target):
@@ -1742,7 +1787,6 @@ def _insert_t_menu_create_history(objdbca, menu_create_id, status_id, create_typ
             "MENU_CREATE_ID": menu_create_id,
             "STATUS_ID": status_id,
             "CREATE_TYPE": create_type,
-            "MENU_MATERIAL": "",
             "DISUSE_FLAG": "0",
             "LAST_UPDATE_USER": user_id
         }
