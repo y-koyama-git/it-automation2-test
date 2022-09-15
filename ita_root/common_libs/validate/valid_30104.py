@@ -21,6 +21,7 @@ def conductor_class_validate(objdbca, objtable, option):
         conductor_data = json.loads(tmp_parameter.get(target_rest_name))
         
         cclibs = ConductorCommonLibs(cmd_type=option.get('cmd_type'))
+        debug_storage(len(conductor_data))
         result = cclibs.chk_format_all(copy.deepcopy(conductor_data))
         if result[0] is False:
             status_code = '499-00201'
@@ -30,6 +31,7 @@ def conductor_class_validate(objdbca, objtable, option):
         else:
             pass
             """
+            debug_storage(len(conductor_data))
             result = cclibs.override_node_idlink(copy.deepcopy(conductor_data))
             if result[0] is False:
                 status_code = '499-00201'
@@ -38,9 +40,12 @@ def conductor_class_validate(objdbca, objtable, option):
                 retBool = result[0]
             else:
                 conductor_data = result[1]
+                debug_storage(len(conductor_data))
+                debug_storage(json.dumps(conductor_data))
                 conductor_data['conductor']['id'] = entry_parameter.get('parameter').get('conductor_class_id')
                 option['entry_parameter']['parameter'][target_rest_name] = json.dumps(conductor_data)
-            """
+                
+            # """
         # """
         pass
     except Exception:
@@ -105,3 +110,12 @@ def convert_conductor_ver_1(option):
     option['entry_parameter']['parameter']['setting'] = tmp_setting
     # pprint.pprint(option)
     return option
+
+
+def debug_storage(msg):
+    import inspect, os
+    info = inspect.getouterframes(inspect.currentframe())[1]
+    msg_line = "{} ({}:{})".format(msg, os.path.basename(info.filename), info.lineno)
+    
+    with open('/storage/debug.log', 'a') as f:
+        print("{}".format(msg_line), file=f)
