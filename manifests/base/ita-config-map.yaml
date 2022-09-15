@@ -19,6 +19,7 @@ metadata:
 data:
   DEFAULT_LANGUAGE: "en"
   CONTAINER_BASE: "kubernetes"
+  TZ: "Asia/Tokyo"
 ---
 apiVersion: v1
 kind: ConfigMap
