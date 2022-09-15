@@ -396,11 +396,11 @@ class ConductorExecuteLibs():
                 raise Exception()
 
             # conductor_dataのバリデーション + IDから名称を現時点に最新化
-            # cclibs = ConductorCommonLibs()
-            # tmp_result = cclibs.override_node_idlink(copy.deepcopy(conductor_data))
-            # if tmp_result[0] is False:
-            #     raise Exception()
-            # conductor_data = tmp_result[1]
+            cclibs = ConductorCommonLibs()
+            tmp_result = cclibs.override_node_idlink(copy.deepcopy(conductor_data))
+            if tmp_result[0] is False:
+                raise Exception()
+            conductor_data = tmp_result[1]
 
             if 'id' in conductor_data.get('conductor'):
                 tmp_conductor_data_id = conductor_data.get('conductor').get('id')

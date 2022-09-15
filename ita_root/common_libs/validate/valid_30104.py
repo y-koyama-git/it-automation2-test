@@ -30,7 +30,7 @@ def conductor_class_validate(objdbca, objtable, option):
             retBool = result[0]
         else:
             pass
-            """
+            # """
             debug_storage(len(conductor_data))
             result = cclibs.override_node_idlink(copy.deepcopy(conductor_data))
             if result[0] is False:
