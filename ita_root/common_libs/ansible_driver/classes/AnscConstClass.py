@@ -81,6 +81,7 @@ class AnscConst:
     DF_VAR_TYPE_VAR = "VAR"
     DF_VAR_TYPE_GBL = "GBL"
     DF_VAR_TYPE_TPF = "TPF"
+    DF_VAR_TYPE_CPF = "CPF"
 
     # 具体値 SENSITIVE設定値
     DF_SENSITIVE_OFF = "0"    # False
@@ -91,6 +92,7 @@ class AnscConst:
     VAR_parent_VarName = r"^\s*[0-9a-zA-Z_]*\s*$"      # 通常の変数
     GBL_parent_VarName = r"^\s*GBL_[0-9a-zA-Z_]*\s*$"  # グローバル変数
     TPF_parent_VarName = r"^\s*TPF_[0-9a-zA-Z_]*\s*$"  # テンプレート変数
+    CPF_parent_VarName = r"^\s*CPF_[0-9a-zA-Z_]*\s*$"
     
     # 実行エンジン
     DF_EXEC_MODE_ANSIBLE = '1'    # Ansibleで実行
@@ -140,14 +142,16 @@ class AnscConst:
     DF_VarName_pattenAry[DF_TEMP_VARS] = []
     DF_VarName_pattenAry[DF_README_VARS] = []
     # default変数定義ファイル変数定義用
-    DF_VarName_pattenAry[DF_DEF_VARS].append({'parent': True, 'type': DF_VAR_TYPE_VAR, 'pattern': VAR_parent_VarName})
     DF_VarName_pattenAry[DF_DEF_VARS].append({'parent': False, 'type': DF_VAR_TYPE_GBL, 'pattern': GBL_parent_VarName})
+    DF_VarName_pattenAry[DF_DEF_VARS].append({'parent': True, 'type': DF_VAR_TYPE_VAR, 'pattern': VAR_parent_VarName})
     # テンプレート管理変数定義用
-    DF_VarName_pattenAry[DF_TEMP_VARS].append({'parent': True, 'type': DF_VAR_TYPE_VAR, 'pattern': VAR_parent_VarName})
+    DF_VarName_pattenAry[DF_TEMP_VARS].append({'parent': False, 'type': DF_VAR_TYPE_TPF, 'pattern': TPF_parent_VarName})
+    DF_VarName_pattenAry[DF_TEMP_VARS].append({'parent': False, 'type': DF_VAR_TYPE_CPF, 'pattern': CPF_parent_VarName})
     DF_VarName_pattenAry[DF_TEMP_VARS].append({'parent': True, 'type': DF_VAR_TYPE_GBL, 'pattern': GBL_parent_VarName})
+    DF_VarName_pattenAry[DF_TEMP_VARS].append({'parent': True, 'type': DF_VAR_TYPE_VAR, 'pattern': VAR_parent_VarName})
     # ITA-Readme変数定義用
-    DF_VarName_pattenAry[DF_README_VARS].append({'parent': True, 'type': DF_VAR_TYPE_VAR, 'pattern': VAR_parent_VarName})
     DF_VarName_pattenAry[DF_README_VARS].append({'parent': False, 'type': DF_VAR_TYPE_GBL, 'pattern': GBL_parent_VarName})
+    DF_VarName_pattenAry[DF_README_VARS].append({'parent': True, 'type': DF_VAR_TYPE_VAR, 'pattern': VAR_parent_VarName})
 
     # Tower Project Path
     DF_TowerProjectPath = "/var/lib/awx/projects"
