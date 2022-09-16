@@ -92,7 +92,7 @@ class AnscConst:
     VAR_parent_VarName = r"^\s*[0-9a-zA-Z_]*\s*$"      # 通常の変数
     GBL_parent_VarName = r"^\s*GBL_[0-9a-zA-Z_]*\s*$"  # グローバル変数
     TPF_parent_VarName = r"^\s*TPF_[0-9a-zA-Z_]*\s*$"  # テンプレート変数
-    CPF_parent_VarName = r"^\s*CPF_[0-9a-zA-Z_]*\s*$"  # 
+    CPF_parent_VarName = r"^\s*CPF_[0-9a-zA-Z_]*\s*$"
     
     # 実行エンジン
     DF_EXEC_MODE_ANSIBLE = '1'    # Ansibleで実行
