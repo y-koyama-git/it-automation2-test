@@ -1549,6 +1549,9 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
         # Conductor変更後のステータス
         self.conductor_update_status = {}
 
+        # Conductor変更後のmsg
+        self.conductor_update_msg = {}
+
         # メニューID
         self.menu = ''
 
@@ -1650,6 +1653,42 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                 self.conductor_update_status.get(conductor_instance_id)
         """
         return self.conductor_update_status.get(conductor_instance_id)
+
+    def set_conductor_update_msg(self, conductor_instance_id, rest_key, msg):
+        """
+            conductor_update_msg を設定
+            ARGS:
+                conductor_instance_id:
+                status_id:
+        """
+        if conductor_instance_id in self.conductor_update_status:
+            if rest_key in self.conductor_update_status[conductor_instance_id]:
+                if isinstance(self.conductor_update_msg[conductor_instance_id][rest_key], list):
+                    self.conductor_update_msg[conductor_instance_id][rest_key].append(msg)
+                else:
+                    self.conductor_update_msg[conductor_instance_id][rest_key] = [msg]
+            else:
+                self.conductor_update_msg.setdefault(conductor_instance_id, {})
+                self.conductor_update_msg[conductor_instance_id].setdefault(rest_key, [])
+                self.conductor_update_msg[conductor_instance_id][rest_key].append(msg)
+        else:
+            self.conductor_update_msg.setdefault(conductor_instance_id, {})
+            self.conductor_update_msg[conductor_instance_id].setdefault(rest_key, [])
+            self.conductor_update_msg[conductor_instance_id][rest_key].append(msg)
+
+    def get_conductor_update_msg(self, conductor_instance_id, rest_key):
+        """
+            conductor_update_msg取得
+            ARGS:
+                conductor_instance_id:
+            RETRUN:
+                self.conductor_update_msg.get(conductor_instance_id)
+        """
+        try:
+            msg = self.conductor_update_msg.get(conductor_instance_id).get(rest_key)
+        except Exception:
+            msg = []
+        return msg
 
     def get_storage_path(self):
         """
@@ -1997,7 +2036,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             retBool = False
         return retBool, result,
 
-    def add_execution_log(self, parameter, msg=''):
+    def add_execution_log(self, parameter, str_msg=''):
         """
             execution_logへのmsg追加
             ARGS:
@@ -2006,25 +2045,26 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             RETRUN:
             parameter
         """
-
+        retBool = True
         try:
             g.applogger.debug(addline_msg('{}'.format(sys._getframe().f_code.co_name)))
             tmp_str_execution_log = parameter['parameter']['execution_log']
+            
             if tmp_str_execution_log is None:
-                tmp_str_execution_log = []
+                tmp_execution_log_list = [str_msg]
             elif isinstance(tmp_str_execution_log, list):
-                tmp_str_execution_log.append(msg)
+                tmp_execution_log_list = tmp_str_execution_log.append(str_msg)
             elif isinstance(tmp_str_execution_log, str):
                 try:
                     tmp_execution_log_list = json.loads(tmp_str_execution_log)
                     if isinstance(tmp_execution_log_list, list):
-                        tmp_execution_log_list.append(msg)
+                        tmp_execution_log_list.append(str_msg)
                     else:
-                        tmp_execution_log_list = [msg]
+                        tmp_execution_log_list = [str_msg]
                 except Exception:
-                    tmp_execution_log_list = [msg]
+                    tmp_execution_log_list = [str_msg]
             if len(tmp_execution_log_list) != 0:
-                parameter['parameter']['execution_log'] = json.dumps(tmp_execution_log_list)
+                parameter['parameter']['execution_log'] = json.dumps(tmp_execution_log_list, ensure_ascii=False)
         except Exception as e:
             g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
             type_, value, traceback_ = sys.exc_info()
@@ -2842,6 +2882,12 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             
             conductor_update_status = self.get_conductor_update_status(conductor_instance_id)
             current_status_id = conductor_filter['parameter']['status_id']
+            
+            #
+            if 'execution_log' in conductor_filter['parameter']:
+                execution_logs = self.get_conductor_update_msg(conductor_instance_id, 'execution_log')
+                for execution_log in execution_logs:
+                    tmp_ret, conductor_filter = self.add_execution_log(conductor_filter, execution_log)
 
             # 未実行、未実行(予約)時、実行中+開始時刻
             if current_status_id in start_status:
@@ -3342,8 +3388,10 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                                 raise Exception()
 
                         except Exception:
-                            # err_msg = 'msg'
-                            # node_filter_data = self.add_execution_log(node_filter_data, err_msg)
+                            msg_code = 'MSG-40026'
+                            msg_args = [movement_id, operation_id]
+                            err_msg = g.appmsg.get_api_message(msg_code, msg_args)
+                            self.set_conductor_update_msg(conductor_instance_id, 'execution_log', err_msg)
                             n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('6')
                             c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('7')
                 else:
@@ -3546,8 +3594,10 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                             node_filter_data['parameter']['execution_id'] = call_conductor_instance_id
                             call_execute_flg = True
                         except Exception:
-                            err_msg = 'msg'
-                            node_filter_data = self.add_execution_log(node_filter_data, err_msg)
+                            msg_code = 'MSG-40027'
+                            msg_args = [call_caonductor_class_id, call_operation_id]
+                            err_msg = g.appmsg.get_api_message(msg_code, msg_args)
+                            self.set_conductor_update_msg(conductor_instance_id, 'execution_log', err_msg)
                             n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('6')
                             c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('7')
                 else:

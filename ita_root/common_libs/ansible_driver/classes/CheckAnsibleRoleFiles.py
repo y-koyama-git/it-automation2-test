@@ -777,7 +777,7 @@ class CheckAnsibleRoleFiles():
                 errmsg = chkObj.GetLastError()
                 chkObj = None
 
-                self.SetLastError(os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno, errmsg)
+                self.SetLastError(os.path.basename(inspect.currentframe().f_code.co_filename), inspect.currentframe().f_lineno, errmsg[0])
                 return False, ina_parent_vars_list, ina_vars_list, ina_array_vars_list, ina_varsval_list
 
             chkObj = None
