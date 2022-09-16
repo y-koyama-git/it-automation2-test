@@ -17,8 +17,9 @@ metadata:
   name: params-ita-org
   namespace: exastro-it-automation
 data:
-  TEST: "hello"
   LISTEN_PORT: "8080"
+  STORAGEPATH: "/storage/"
+  DEFAULT_LANGUAGE: "ja"
   PLATFORM_API_HOST: "platform-api.exastro-platform.svc"
   PLATFORM_API_PORT: "8000"
 ---
@@ -39,18 +40,19 @@ spec:
     spec:
       containers:
         - name: ita-api-organization
-          image: exastro/it-automation2-test-ita-api-organization:main.417879.20220902-183032
+          image: exastro/it-automation2-test-ita-api-organization:build.c39041.20220915-113739
           imagePullPolicy: IfNotPresent
-          env:
-            - name: PYTHONPATH
-              value: "/exastro/"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
           envFrom:
             - secretRef:
-                name: secret-ita-maria
-            - secretRef:
-                name: secret-ita-common
+                name: secret-ita-mariadb
             - configMapRef:
-                name: params-ita-maria
+                name: params-ita-mariadb
             - configMapRef:
                 name: params-ita-common
             - configMapRef:
@@ -58,7 +60,15 @@ spec:
           volumeMounts:
             - name: persistent-storage
               mountPath: /storage
+            - name: contaier-volume
+              mountPath: /var/run_app_user/httpd/pid
+              subPath: httpd-pid
+            - name: contaier-volume
+              mountPath: /var/run_app_user/httpd/socket
+              subPath: httpd-socket
       volumes:
         - name: persistent-storage
           persistentVolumeClaim:
             claimName: ita-pvc
+        - name: contaier-volume
+          emptyDir: {}

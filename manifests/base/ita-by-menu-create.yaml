@@ -11,64 +11,48 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ita-by-menu-create 
-  namespace: exastro-it-automation 
+  name: ita-by-menu-create
+  namespace: exastro-it-automation
 spec:
   selector:
     matchLabels:
-      name: ita-by-menu-create 
-  replicas: 1 
+      name: ita-by-menu-create
+  replicas: 1
   template:
     metadata:
       labels:
-        name: ita-by-menu-create 
+        name: ita-by-menu-create
     spec:
       containers:
-      - name: ita-by-menu-create 
-        image: ydkarino/ita_by_menu_create:0.4
-        imagePullPolicy: Always 
-        resources:
-          requests:
-            memory: "64Mi"  #仮決め
-            cpu: "250m"     #仮決め
-          limits:
-            memory: "64Mi"  #仮決め
-            cpu: "250m"     #仮決め 
-        securityContext:
-          allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: true
-          runAsUser: 1000
-          runAsGroup: 1000
-          runAsNonRoot: true
-        envFrom:
-        - secretRef:
-            name: secret-ita-mariadb
-        - configMapRef:
-            name: params-ita-mariadb
-        - configMapRef:
-            name: params-ita-common
-        - configMapRef:
-            name: params-ita-by-menu-create
-        volumeMounts:
-          - name: persistent-storage
-            mountPath: /storage
+        - name: ita-by-menu-create
+          image: exastro/it-automation2-test-ita-by-menu-create:build.c39041.20220915-113840
+          imagePullPolicy: Always
+          resources:
+            requests:
+              memory: "64Mi" #仮決め
+              cpu: "250m"    #仮決め
+            limits:
+              memory: "64Mi" #仮決め
+              cpu: "250m"    #仮決め
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+          envFrom:
+            - secretRef:
+                name: secret-ita-mariadb
+            - configMapRef:
+                name: params-ita-mariadb
+            - configMapRef:
+                name: params-ita-common
+            - configMapRef:
+                name: params-ita-by-menu-create
+          volumeMounts:
+            - name: persistent-storage
+              mountPath: /storage
       volumes:
-      - name: persistent-storage
-        persistentVolumeClaim:
-          claimName: ita-pvc
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: ita-by-menu-create 
-  namespace: exastro-it-automation 
-  labels:
-    name: ita-by-menu-create 
-spec:
-  type: NodePort 
-  ports:
-  - name: tomcat
-    port: 8080
-    targetPort: 8080
-  selector:
-    name: ita-by-menu-create 
+        - name: persistent-storage
+          persistentVolumeClaim:
+            claimName: ita-pvc
