@@ -666,14 +666,6 @@ def create_movement_zip(objdbca, menu, data_type, conductor_instance_id):
             "objconductor": objconductor,
             "objnode": objnode,
         }
-        local_env = {
-            'language': g.LANGUAGE,
-            'user': g.USER_ID,
-            'organization_id': g.ORGANIZATION_ID,
-            'workspace_id': g.WORKSPACE_ID,
-            'conductor_storage_path_ita': None,
-            'base_storage_path_ita': None
-        }
         ### 
         from random import randint
         if randint(1, 3) == 2:
@@ -692,7 +684,7 @@ def create_movement_zip(objdbca, menu, data_type, conductor_instance_id):
             }
             return result
 
-        objCexec = ConductorExecuteBkyLibs(objdbca, local_env)  # noqa: F405
+        objCexec = ConductorExecuteBkyLibs(objdbca)  # noqa: F405
 
         tmp_result = objCexec.is_conductor_instance_id(conductor_instance_id)
         if tmp_result is False:
