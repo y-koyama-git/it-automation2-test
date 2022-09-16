@@ -107,5 +107,18 @@
     "MSG-40027": "Conductor call: Failed to execute Conductor. (Conductor class ID: {}, operation ID: {})",
     "BKY-00001": "[sample] Common backyard error",
     "BKY-10001": "[sample] Ansible backyard error",
-    "BKY-20001": "[sample] Create Menu backyard error"
+    "BKY-20001": "[sample] Create Menu backyard error",
+    "BKY-20201": "Invalid sheet type ID (ID: {})",
+    "BKY-20202": "A menu with 0 items cannot be created when the sheet type is \"Datasheet\".",
+    "BKY-20203": "Target ID does not exist in \"Menu definition list. \" (ID: {})",
+    "BKY-20204": "There is no record in \"Menu role creation info\".",
+    "BKY-20205": "The same \"Menu name (rest)\" exists. (menu_name_rest: {})",
+    "BKY-20206": "There is a combination of the same \"menu group\" and \"menu name\".",
+    "BKY-20207": "A record with the same menu ID exists in \"Menu-Table link list\". (menu_id: {})",
+    "BKY-20208": "\"Parameter\" record does not exist in \"Column group list\".",
+    "BKY-20209": "\"Operation\" record does not exist in \"Column group list\".",
+    "BKY-20210": "There is no record of the parent column group of the target column group in \"Column group list\". (column_group_name: {})",
+    "BKY-20211": "The same combination of \"Menu ID\" and \"Column name (rest)\" exists in \"Menu-Column link list\". (menuID: {}, Column name rest: {})",
+    "BKY-20212": "Invalid value for \"Reference item\". (Reference item: {})",
+    "BKY-20213": "Abnormal parent-child relationship of records in \"Column group creation info\"."
 }
