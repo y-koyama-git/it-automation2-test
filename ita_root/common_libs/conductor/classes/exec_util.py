@@ -43,7 +43,7 @@ bool_master_false = 'False'
 class ConductorExecuteLibs():
     """
         ConductorExecuteLibs
-        COnductor作業関連
+        COnductor編集、作業実行関連
     """
 
     def __init__(self, objdbca, menu, objmenus, cmd_type='Register', target_uuid=''):
@@ -70,6 +70,7 @@ class ConductorExecuteLibs():
         self.orchestras_info = None
         self.set_orchestra_info()
 
+    # conductor 編集,作業実行 関連
     def get_class_info_data(self, mode=""):
         """
             Conductor基本情報の取得
@@ -696,6 +697,7 @@ class ConductorExecuteLibs():
 
         return conductor_data
 
+    # maintenance関連
     def conductor_class_exec_maintenance(self, conductor_parameter, target_uuid='', cmd_type=''):
         """
             Conductor登録, 更新(conductorclassの登録,更新)
@@ -726,41 +728,6 @@ class ConductorExecuteLibs():
             g.applogger.error(msg)
             tmp_result = False,
         return tmp_result
-
-    def maintenance_error_message_format(self, msg):
-        """
-            Conductor登録, 更新のエラーメッセージフォーマット
-            ARGS:
-                msg:message
-            RETRUN:
-                bool, msg
-        """
-        result = {}
-        try:
-            try:
-                msg_json = {}
-                tmp_msg_json = json.loads(msg)
-                for eno, errinfo in tmp_msg_json.items():
-                    for ekey, einfo in errinfo.items():
-                        if ekey != g.appmsg.get_api_message("MSG-00004", []):
-                            msg_json.setdefault(ekey, einfo)
-                        else:
-                            for node_err in einfo:
-                                node_err_json = json.loads(node_err)
-                                for tmp_node_err in node_err_json:
-                                    tmp_node_err_json = json.loads(tmp_node_err)
-                                    for node_name, node_msg in tmp_node_err_json.items():
-                                        msg_json.setdefault(node_name, node_msg.splitlines())
-                result = json.dumps(msg_json, ensure_ascii=False)
-            except Exception:
-                result = msg
-        except Exception as e:
-            g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
-            type_, value, traceback_ = sys.exc_info()
-            msg = traceback.format_exception(type_, value, traceback_)
-            g.applogger.error(msg)
-            result = False,
-        return result
 
     def conductor_instance_exec_maintenance(self, conductor_parameter, target_uuid='', cmd_type=''):
         """
@@ -827,6 +794,42 @@ class ConductorExecuteLibs():
 
         return tmp_result
 
+    def maintenance_error_message_format(self, msg):
+        """
+            Conductor登録, 更新のエラーメッセージフォーマット
+            ARGS:
+                msg:message
+            RETRUN:
+                bool, msg
+        """
+        result = {}
+        try:
+            try:
+                msg_json = {}
+                tmp_msg_json = json.loads(msg)
+                for eno, errinfo in tmp_msg_json.items():
+                    for ekey, einfo in errinfo.items():
+                        if ekey != g.appmsg.get_api_message("MSG-00004", []):
+                            msg_json.setdefault(ekey, einfo)
+                        else:
+                            for node_err in einfo:
+                                node_err_json = json.loads(node_err)
+                                for tmp_node_err in node_err_json:
+                                    tmp_node_err_json = json.loads(tmp_node_err)
+                                    for node_name, node_msg in tmp_node_err_json.items():
+                                        msg_json.setdefault(node_name, node_msg.splitlines())
+                result = json.dumps(msg_json, ensure_ascii=False)
+            except Exception:
+                result = msg
+        except Exception as e:
+            g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
+            type_, value, traceback_ = sys.exc_info()
+            msg = traceback.format_exception(type_, value, traceback_)
+            g.applogger.error(msg)
+            result = False,
+        return result
+
+    # conductor 作業関連
     def get_instance_info_data(self, conductor_instance_id='', mode=''):
         """
             Conductor作業確認用の基本情報の取得
@@ -1127,6 +1130,117 @@ class ConductorExecuteLibs():
 
         return result
 
+    def is_conductor_instance_id(self, conductor_instance_id):
+        """
+            作業対象のConductorの確認
+            ARGS:
+                conductor_instance_id: conductor_instance_id
+            RETRUN:
+                retBool
+        """
+        retBool = True
+        result = {}
+        try:
+            retBool, result = self.get_filter_conductor(conductor_instance_id)
+        except Exception as e:
+            g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
+            type_, value, traceback_ = sys.exc_info()
+            msg = traceback.format_exception(type_, value, traceback_)
+            g.applogger.error(msg)
+            retBool = False
+        return retBool
+
+    def get_filter_conductor(self, conductor_instance_id):
+        """
+            作業対象のConductorを取得(FILTER)
+            ARGS:
+                conductor_instance_id: conductor_instance_id
+            RETRUN:
+                retBool, result,
+        """
+        retBool = True
+        result = {}
+        try:
+            objconductor = self.objmenus.get('objconductor')
+            filter_parameter = {
+                "conductor_instance_id": {"LIST": [conductor_instance_id]}
+            }
+            tmp_result = objconductor.rest_filter(filter_parameter)
+            if tmp_result[0] != '000-00000':
+                retBool = False
+            if len(tmp_result[1]) == 1:
+                result = tmp_result[1][0]
+            else:
+                retBool = False
+        except Exception as e:
+            g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
+            type_, value, traceback_ = sys.exc_info()
+            msg = traceback.format_exception(type_, value, traceback_)
+            g.applogger.error(msg)
+            retBool = False
+        return retBool, result,
+
+    def get_filter_conductor_parent(self, parent_conductor_instance_id):
+        """
+            作業対象の親Conductorを取得(FILTER)
+            ARGS:
+                conductor_instance_id: conductor_instance_id
+            RETRUN:
+                retBool, result,
+        """
+        retBool = True
+        result = {}
+        try:
+            tmp_result = self.get_filter_conductor(parent_conductor_instance_id)
+            if tmp_result[0] is not True:
+                retBool = False
+            parent_id = tmp_result[1].get('parameter').get('parent_conductor_instance_id')
+            parent_name = tmp_result[1].get('parameter').get('parent_conductor_instance_name')
+            result.setdefault('parent_id', parent_id)
+            result.setdefault('parent_name', parent_name)
+        except Exception as e:
+            g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
+            type_, value, traceback_ = sys.exc_info()
+            msg = traceback.format_exception(type_, value, traceback_)
+            g.applogger.error(msg)
+            retBool = False
+        return retBool, result,
+
+    def get_filter_conductor_top_parent(self, parent_conductor_instance_id=None, parent_conductor_instance_name=None):
+        """
+            作業対象の最上位のConductorを取得(FILTER)
+            ARGS:
+                parent_conductor_instance_id: conductor_instance_id
+                parent_conductor_instance_name: conductor_instance_name
+            RETRUN:
+                retBool, result,
+        """
+        retBool = True
+        result = {}
+        parent_id = parent_conductor_instance_id
+        parent_name = parent_conductor_instance_name
+
+        try:
+            while parent_id is not None:
+                tmp_result = self.get_filter_conductor_parent(parent_id)
+                if tmp_result[0] is True:
+                    tmp_parent_id = tmp_result[1].get('parent_id')
+                    tmp_parent_name = tmp_result[1].get('parent_name')
+                    if tmp_parent_id is None:
+                        result.setdefault('parent_id', parent_id)
+                        result.setdefault('parent_name', parent_name)
+                        break
+                    else:
+                        parent_id = tmp_parent_id
+                        parent_name = tmp_parent_name
+        except Exception as e:
+            g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
+            type_, value, traceback_ = sys.exc_info()
+            msg = traceback.format_exception(type_, value, traceback_)
+            g.applogger.error(msg)
+            retBool = False
+        return retBool, result,
+
     def execute_action(self, mode='', conductor_instance_id='', node_instance_id=''):
         """
             Conductor作業に対する個別処理(cancel,scram,relese)
@@ -1284,117 +1398,7 @@ class ConductorExecuteLibs():
 
         return retBool, status_code, msg_args,
 
-    def is_conductor_instance_id(self, conductor_instance_id):
-        """
-            作業対象のConductorの確認
-            ARGS:
-                conductor_instance_id: conductor_instance_id
-            RETRUN:
-                retBool
-        """
-        retBool = True
-        result = {}
-        try:
-            retBool, result = self.get_filter_conductor(conductor_instance_id)
-        except Exception as e:
-            g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
-            type_, value, traceback_ = sys.exc_info()
-            msg = traceback.format_exception(type_, value, traceback_)
-            g.applogger.error(msg)
-            retBool = False
-        return retBool
-
-    def get_filter_conductor(self, conductor_instance_id):
-        """
-            作業対象のConductorを取得(FILTER)
-            ARGS:
-                conductor_instance_id: conductor_instance_id
-            RETRUN:
-                retBool, result,
-        """
-        retBool = True
-        result = {}
-        try:
-            objconductor = self.objmenus.get('objconductor')
-            filter_parameter = {
-                "conductor_instance_id": {"LIST": [conductor_instance_id]}
-            }
-            tmp_result = objconductor.rest_filter(filter_parameter)
-            if tmp_result[0] != '000-00000':
-                retBool = False
-            if len(tmp_result[1]) == 1:
-                result = tmp_result[1][0]
-            else:
-                retBool = False
-        except Exception as e:
-            g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
-            type_, value, traceback_ = sys.exc_info()
-            msg = traceback.format_exception(type_, value, traceback_)
-            g.applogger.error(msg)
-            retBool = False
-        return retBool, result,
-
-    def get_filter_conductor_parent(self, parent_conductor_instance_id):
-        """
-            作業対象の親Conductorを取得(FILTER)
-            ARGS:
-                conductor_instance_id: conductor_instance_id
-            RETRUN:
-                retBool, result,
-        """
-        retBool = True
-        result = {}
-        try:
-            tmp_result = self.get_filter_conductor(parent_conductor_instance_id)
-            if tmp_result[0] is not True:
-                retBool = False
-            parent_id = tmp_result[1].get('parameter').get('parent_conductor_instance_id')
-            parent_name = tmp_result[1].get('parameter').get('parent_conductor_instance_name')
-            result.setdefault('parent_id', parent_id)
-            result.setdefault('parent_name', parent_name)
-        except Exception as e:
-            g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
-            type_, value, traceback_ = sys.exc_info()
-            msg = traceback.format_exception(type_, value, traceback_)
-            g.applogger.error(msg)
-            retBool = False
-        return retBool, result,
-
-    def get_filter_conductor_top_parent(self, parent_conductor_instance_id=None, parent_conductor_instance_name=None):
-        """
-            作業対象の最上位のConductorを取得(FILTER)
-            ARGS:
-                parent_conductor_instance_id: conductor_instance_id
-                parent_conductor_instance_name: conductor_instance_name
-            RETRUN:
-                retBool, result,
-        """
-        retBool = True
-        result = {}
-        parent_id = parent_conductor_instance_id
-        parent_name = parent_conductor_instance_name
-
-        try:
-            while parent_id is not None:
-                tmp_result = self.get_filter_conductor_parent(parent_id)
-                if tmp_result[0] is True:
-                    tmp_parent_id = tmp_result[1].get('parent_id')
-                    tmp_parent_name = tmp_result[1].get('parent_name')
-                    if tmp_parent_id is None:
-                        result.setdefault('parent_id', parent_id)
-                        result.setdefault('parent_name', parent_name)
-                        break
-                    else:
-                        parent_id = tmp_parent_id
-                        parent_name = tmp_parent_name
-        except Exception as e:
-            g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
-            type_, value, traceback_ = sys.exc_info()
-            msg = traceback.format_exception(type_, value, traceback_)
-            g.applogger.error(msg)
-            retBool = False
-        return retBool, result,
-
+    # orchestra関連
     def set_orchestra_info(self):
         """
             storage path 設定
@@ -1528,9 +1532,9 @@ class ConductorExecuteLibs():
 class ConductorExecuteBkyLibs(ConductorExecuteLibs):
     """
         ConductorExecuteLibs
-        COnductor作業実行関連
+        COnductor作業実行処理関連
     """
-    def __init__(self, objdbca='', local_env={}):
+    def __init__(self, objdbca=''):
         
         # DB接続
         self.objdbca = objdbca
@@ -1555,11 +1559,13 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
         self.target_uuid = ''
         
         # user id
-        self.user_id = local_env.get('user')
+        self.user_id = g.USER_ID
+
         # organization_id
-        self.organization_id = local_env.get('organization_id')
+        self.organization_id = g.ORGANIZATION_ID
+
         # workspace_id
-        self.workspace_id = local_env.get('workspace_id')
+        self.workspace_id = g.WORKSPACE_ID
         
         # conductor_storage_path
         self.conductor_storage_path = None
@@ -1983,6 +1989,229 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             for row in tmp_result:
                 result.setdefault(row.get('CONFIG_ID'), row.get('VALUE'))
 
+        except Exception as e:
+            g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
+            type_, value, traceback_ = sys.exc_info()
+            msg = traceback.format_exception(type_, value, traceback_)
+            g.applogger.error(msg)
+            retBool = False
+        return retBool, result,
+
+    def add_execution_log(self, parameter, msg=''):
+        """
+            execution_logへのmsg追加
+            ARGS:
+                parameter:
+                msg:
+            RETRUN:
+            parameter
+        """
+
+        try:
+            g.applogger.debug(addline_msg('{}'.format(sys._getframe().f_code.co_name)))
+            tmp_str_execution_log = parameter['parameter']['execution_log']
+            if tmp_str_execution_log is None:
+                tmp_str_execution_log = []
+            elif isinstance(tmp_str_execution_log, list):
+                tmp_str_execution_log.append(msg)
+            elif isinstance(tmp_str_execution_log, str):
+                try:
+                    tmp_execution_log_list = json.loads(tmp_str_execution_log)
+                    if isinstance(tmp_execution_log_list, list):
+                        tmp_execution_log_list.append(msg)
+                    else:
+                        tmp_execution_log_list = [msg]
+                except Exception:
+                    tmp_execution_log_list = [msg]
+            if len(tmp_execution_log_list) != 0:
+                parameter['parameter']['execution_log'] = json.dumps(tmp_execution_log_list)
+        except Exception as e:
+            g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
+            type_, value, traceback_ = sys.exc_info()
+            msg = traceback.format_exception(type_, value, traceback_)
+            g.applogger.error(msg)
+            retBool = False
+        return retBool, parameter,
+
+    def get_execute_mv_node_list(self, conductor_instance_id):
+        """
+            作業対象ConductorのMovementの作業IDを取得
+            RETRUN:
+                retBool, result,
+        """
+        retBool = True
+        result = {}
+
+        try:
+            # 作業実行している+処理終了しているNode(call/movement)
+            table_name = 'T_COMN_CONDUCTOR_NODE_INSTANCE'
+            where_str = textwrap.dedent("""
+                WHERE `CONDUCTOR_INSTANCE_ID` = %s
+                AND `NODE_TYPE_ID` IN ('call', 'movement')
+                AND `STATUS_ID` IN ('5', '6', '7', '8', '12', '13', '14')
+                AND `EXECUTION_ID` IS NOT NULL
+            """)
+            
+            bind_value_list = [conductor_instance_id]
+            tmp_result = self.objdbca.table_select(table_name, where_str, bind_value_list)
+
+            for row in tmp_result:
+                node_type = row.get('NODE_TYPE_ID')
+                execution_id = row.get('EXECUTION_ID')
+                orchestra_id = row.get('ORCHESTRA_ID')
+                if node_type == 'movement' and execution_id is not None:
+                    # 実行済みMovement
+                    result.setdefault(
+                        execution_id,
+                        {
+                            "orchestra_id": orchestra_id,
+                            "execution_id": execution_id
+                        }
+                    )
+                elif node_type == 'call' and execution_id is not None:
+                    # 実行済みcallは、関連Conductor先まで
+                    tmp_result = self.get_execute_mv_node_list(execution_id)
+                    if tmp_result[0] is True:
+                        if len(tmp_result[1]) != 0:
+                            result.update(tmp_result[1])
+            # result = list(set(result))
+
+        except Exception as e:
+            g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
+            type_, value, traceback_ = sys.exc_info()
+            msg = traceback.format_exception(type_, value, traceback_)
+            g.applogger.error(msg)
+            retBool = False
+        return retBool, result,
+
+    def create_zip_data(self, conductor_instance_id, data_type='', execution_data={}):
+        """
+        作業対象のファイル取得+ZIP化+base64
+            RETRUN:
+                retBool, result,
+        """
+        retBool = True
+        result = {}
+        driver_name = 'Conductor'
+        ext = 'zip'
+        tmp_work_dir_path = ''
+        
+        try:
+            # data_typeから取得対象判別
+            if data_type == 'input':
+                target_datatype = {'input': {"prefix": "InputData", "target_dir": "in"}}
+            elif data_type == 'result':
+                target_datatype = {'result': {"prefix": "ResultData", "target_dir": "out"}}
+            else:
+                raise Exception()
+
+            # 一時作業ディレクトリ指定
+            tmp_work_dir = uuid.uuid4()
+            strage_path = os.environ.get('STORAGEPATH')  # noqa: F405
+            tmp_work_dir_path = "{}/{}/{}/tmp/{}".format(
+                strage_path,
+                self.organization_id,
+                self.workspace_id,
+                tmp_work_dir
+            ).replace('//', '/')
+            
+            for tmp_data_type, tmp_data_info in target_datatype.items():
+                # prefix
+                tmp_data_prefix = tmp_data_info.get('prefix')
+                tmp_target_dir = tmp_data_info.get('target_dir')
+                # ZIP対象ディレクトリ
+                tmp_work_path = "{}/{}/".format(
+                    tmp_work_dir_path,
+                    tmp_data_type
+                ).replace('//', '/')
+                
+                # 出力ファイル名 prefix_Conductor_id
+                tmp_file_name = "{}_{}_{}".format(
+                    tmp_data_prefix,
+                    driver_name,
+                    conductor_instance_id
+                ).replace('//', '/')
+                
+                # 出力ファイルパス path_prefix_Conductor_id
+                tmp_work_path_filename = "{}/{}".format(
+                    tmp_work_dir_path,
+                    tmp_file_name
+                ).replace('//', '/')
+                
+                # ZIPファイル path/name
+                zip_file_path = "{}.{}".format(tmp_work_path_filename, ext)
+                zip_file_name = "{}.{}".format(tmp_file_name, ext)
+                
+                # 一時作業ディレクトリ作成、掃除
+                tmp_isdir = os.path.isdir(tmp_work_path)  # noqa: F405
+                if tmp_isdir is False:
+                    os.makedirs(tmp_work_path, exist_ok=True)  # noqa: F405
+                else:
+                    shutil.rmtree(tmp_work_path)
+                    os.makedirs(tmp_work_path, exist_ok=True)  # noqa: F405
+
+                # 対象MVの作業関連ファイルを一時作業ディレクトリへCP
+                for execution_id, execution_info in execution_data.items():
+                    orchestra_id = execution_info.get('orchestra_id')
+                    movement_path = self.get_movement_path(orchestra_id, execution_id)
+                    target_movement_path = movement_path[1].get(tmp_target_dir)
+                    target_mv_zip = "{}/{}_{}.zip".format(target_movement_path, tmp_data_prefix, execution_id)
+                    if os.path.isfile(target_mv_zip) is True:  # noqa: F405
+                        shutil.copy2(target_mv_zip, tmp_work_path + '/')
+
+                # 全MVをzip化,base64
+                tmp_result = shutil.make_archive(tmp_work_path_filename, ext, root_dir=tmp_work_path)
+
+                with open(tmp_result, "rb") as f:
+                    zip_base64_str = base64.b64encode(f.read()).decode('utf-8')  # noqa: F405
+
+                result.setdefault('file_name', zip_file_name)
+                result.setdefault('file_data', zip_base64_str)
+
+                if os.path.isfile(zip_file_path) is True:  # noqa: F405
+                    os.remove(zip_file_path)  # noqa: F405
+
+        except Exception as e:
+            g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
+            type_, value, traceback_ = sys.exc_info()
+            msg = traceback.format_exception(type_, value, traceback_)
+            g.applogger.error(msg)
+            retBool = False
+
+        finally:
+            # 一時作業ディレクトリ掃除
+            if tmp_work_dir_path != '':
+                if os.path.isdir(tmp_work_dir_path) is True:  # noqa: F405
+                    shutil.rmtree(tmp_work_dir_path)
+
+        return retBool, result,
+
+    def create_movement_zip(self, conductor_instance_id, data_type=''):
+        """
+            作業対象ConductorのMVのZIPファイルbase64化
+            RETRUN:
+                retBool, result,
+        """
+        retBool = True
+        result = {}
+        try:
+            # 対象MV取得
+            tmp_result = self.get_execute_mv_node_list(conductor_instance_id)
+            print(tmp_result)
+            if tmp_result[0] is not True:
+                raise Exception()
+            
+            execution_data = tmp_result[1]
+            if len(execution_data) == 0:
+                raise Exception()
+            
+            # ZIPファイル生成＋base64化
+            tmp_result = self.create_zip_data(conductor_instance_id, data_type, execution_data)
+            if tmp_result[0] is not True:
+                raise Exception()
+
+            zipdata = tmp_result[1]
+            result = zipdata
         except Exception as e:
             g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
             type_, value, traceback_ = sys.exc_info()
@@ -2510,193 +2739,6 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             retBool = False
         return retBool, result,
 
-    def get_execute_mv_node_list(self, conductor_instance_id):
-        """
-            作業対象ConductorのMovementの作業IDを取得
-            RETRUN:
-                retBool, result,
-        """
-        retBool = True
-        result = {}
-
-        try:
-            # 作業実行している+処理終了しているNode(call/movement)
-            table_name = 'T_COMN_CONDUCTOR_NODE_INSTANCE'
-            where_str = textwrap.dedent("""
-                WHERE `CONDUCTOR_INSTANCE_ID` = %s
-                AND `NODE_TYPE_ID` IN ('call', 'movement')
-                AND `STATUS_ID` IN ('5', '6', '7', '8', '12', '13', '14')
-                AND `EXECUTION_ID` IS NOT NULL
-            """)
-            
-            bind_value_list = [conductor_instance_id]
-            tmp_result = self.objdbca.table_select(table_name, where_str, bind_value_list)
-
-            for row in tmp_result:
-                node_type = row.get('NODE_TYPE_ID')
-                execution_id = row.get('EXECUTION_ID')
-                orchestra_id = row.get('ORCHESTRA_ID')
-                if node_type == 'movement' and execution_id is not None:
-                    # 実行済みMovement
-                    result.setdefault(
-                        execution_id,
-                        {
-                            "orchestra_id": orchestra_id,
-                            "execution_id": execution_id
-                        }
-                    )
-                elif node_type == 'call' and execution_id is not None:
-                    # 実行済みcallは、関連Conductor先まで
-                    tmp_result = self.get_execute_mv_node_list(execution_id)
-                    if tmp_result[0] is True:
-                        if len(tmp_result[1]) != 0:
-                            result.update(tmp_result[1])
-            # result = list(set(result))
-
-        except Exception as e:
-            g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
-            type_, value, traceback_ = sys.exc_info()
-            msg = traceback.format_exception(type_, value, traceback_)
-            g.applogger.error(msg)
-            retBool = False
-        return retBool, result,
-
-    def create_zip_data(self, conductor_instance_id, data_type='', execution_data={}):
-        """
-        作業対象のファイル取得+ZIP化+base64
-            RETRUN:
-                retBool, result,
-        """
-        retBool = True
-        result = {}
-        driver_name = 'Conductor'
-        ext = 'zip'
-        tmp_work_dir_path = ''
-        
-        try:
-            # data_typeから取得対象判別
-            if data_type == 'input':
-                target_datatype = {'input': {"prefix": "InputData", "target_dir": "in"}}
-            elif data_type == 'result':
-                target_datatype = {'result': {"prefix": "ResultData", "target_dir": "out"}}
-            else:
-                raise Exception()
-
-            # 一時作業ディレクトリ指定
-            tmp_work_dir = uuid.uuid4()
-            strage_path = os.environ.get('STORAGEPATH')  # noqa: F405
-            tmp_work_dir_path = "{}/{}/{}/tmp/{}".format(
-                strage_path,
-                self.organization_id,
-                self.workspace_id,
-                tmp_work_dir
-            ).replace('//', '/')
-            
-            for tmp_data_type, tmp_data_info in target_datatype.items():
-                # prefix
-                tmp_data_prefix = tmp_data_info.get('prefix')
-                tmp_target_dir = tmp_data_info.get('target_dir')
-                # ZIP対象ディレクトリ
-                tmp_work_path = "{}/{}/".format(
-                    tmp_work_dir_path,
-                    tmp_data_type
-                ).replace('//', '/')
-                
-                # 出力ファイル名 prefix_Conductor_id
-                tmp_file_name = "{}_{}_{}".format(
-                    tmp_data_prefix,
-                    driver_name,
-                    conductor_instance_id
-                ).replace('//', '/')
-                
-                # 出力ファイルパス path_prefix_Conductor_id
-                tmp_work_path_filename = "{}/{}".format(
-                    tmp_work_dir_path,
-                    tmp_file_name
-                ).replace('//', '/')
-                
-                # ZIPファイル path/name
-                zip_file_path = "{}.{}".format(tmp_work_path_filename, ext)
-                zip_file_name = "{}.{}".format(tmp_file_name, ext)
-                
-                # 一時作業ディレクトリ作成、掃除
-                tmp_isdir = os.path.isdir(tmp_work_path)  # noqa: F405
-                if tmp_isdir is False:
-                    os.makedirs(tmp_work_path, exist_ok=True)  # noqa: F405
-                else:
-                    shutil.rmtree(tmp_work_path)
-                    os.makedirs(tmp_work_path, exist_ok=True)  # noqa: F405
-
-                # 対象MVの作業関連ファイルを一時作業ディレクトリへCP
-                for execution_id, execution_info in execution_data.items():
-                    orchestra_id = execution_info.get('orchestra_id')
-                    movement_path = self.get_movement_path(orchestra_id, execution_id)
-                    target_movement_path = movement_path[1].get(tmp_target_dir)
-                    target_mv_zip = "{}/{}_{}.zip".format(target_movement_path, tmp_data_prefix, execution_id)
-                    if os.path.isfile(target_mv_zip) is True:  # noqa: F405
-                        shutil.copy2(target_mv_zip, tmp_work_path + '/')
-
-                # 全MVをzip化,base64
-                tmp_result = shutil.make_archive(tmp_work_path_filename, ext, root_dir=tmp_work_path)
-
-                with open(tmp_result, "rb") as f:
-                    zip_base64_str = base64.b64encode(f.read()).decode('utf-8')  # noqa: F405
-
-                result.setdefault('file_name', zip_file_name)
-                result.setdefault('file_data', zip_base64_str)
-
-                if os.path.isfile(zip_file_path) is True:  # noqa: F405
-                    os.remove(zip_file_path)  # noqa: F405
-
-        except Exception as e:
-            g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
-            type_, value, traceback_ = sys.exc_info()
-            msg = traceback.format_exception(type_, value, traceback_)
-            g.applogger.error(msg)
-            retBool = False
-
-        finally:
-            # 一時作業ディレクトリ掃除
-            if tmp_work_dir_path != '':
-                if os.path.isdir(tmp_work_dir_path) is True:  # noqa: F405
-                    shutil.rmtree(tmp_work_dir_path)
-
-        return retBool, result,
-
-    def create_movement_zip(self, conductor_instance_id, data_type=''):
-        """
-            作業対象ConductorのMVのZIPファイルbase64化
-            RETRUN:
-                retBool, result,
-        """
-        retBool = True
-        result = {}
-        try:
-            # 対象MV取得
-            tmp_result = self.get_execute_mv_node_list(conductor_instance_id)
-            print(tmp_result)
-            if tmp_result[0] is not True:
-                raise Exception()
-            
-            execution_data = tmp_result[1]
-            if len(execution_data) == 0:
-                raise Exception()
-            
-            # ZIPファイル生成＋base64化
-            tmp_result = self.create_zip_data(conductor_instance_id, data_type, execution_data)
-            if tmp_result[0] is not True:
-                raise Exception()
-
-            zipdata = tmp_result[1]
-            result = zipdata
-        except Exception as e:
-            g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
-            type_, value, traceback_ = sys.exc_info()
-            msg = traceback.format_exception(type_, value, traceback_)
-            g.applogger.error(msg)
-            retBool = False
-        return retBool, result,
-
     def orchestra_action(self, action_type, orchestra_id, action_options={}):
         """
             Movmentnへの各処理の振り分け
@@ -2764,42 +2806,6 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             g.applogger.error(msg)
             retBool = False
         return retBool, result,
-
-    def add_execution_log(self, parameter, msg=''):
-        """
-            execution_logへのmsg追加
-            ARGS:
-                parameter:
-                msg:
-            RETRUN:
-            parameter
-        """
-
-        try:
-            g.applogger.debug(addline_msg('{}'.format(sys._getframe().f_code.co_name)))
-            tmp_str_execution_log = parameter['parameter']['execution_log']
-            if tmp_str_execution_log is None:
-                tmp_str_execution_log = []
-            elif isinstance(tmp_str_execution_log, list):
-                tmp_str_execution_log.append(msg)
-            elif isinstance(tmp_str_execution_log, str):
-                try:
-                    tmp_execution_log_list = json.loads(tmp_str_execution_log)
-                    if isinstance(tmp_execution_log_list, list):
-                        tmp_execution_log_list.append(msg)
-                    else:
-                        tmp_execution_log_list = [msg]
-                except Exception:
-                    tmp_execution_log_list = [msg]
-            if len(tmp_execution_log_list) != 0:
-                parameter['parameter']['execution_log'] = json.dumps(tmp_execution_log_list)
-        except Exception as e:
-            g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
-            type_, value, traceback_ = sys.exc_info()
-            msg = traceback.format_exception(type_, value, traceback_)
-            g.applogger.error(msg)
-            retBool = False
-        return retBool, parameter,
 
     # conductor instanceの更新
     def conductor_status_update(self, conductor_instance_id):
