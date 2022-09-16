@@ -1,6 +1,7 @@
 version: '3.1'
 services:
   ita-api-organization:
+    user: 1000:1000
     build:
       dockerfile: ./ita_root/ita_api_organization/Dockerfile
       context: ../.
@@ -11,7 +12,6 @@ services:
         - https_proxy=${HTTPS_PROXY}
     environment:
       - LISTEN_PORT=8000
-      - PYTHONPATH=/exastro/
       - DEFAULT_LANGUAGE=ja
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
@@ -19,10 +19,10 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
-      - STORAGEPATH=/storage/
       - PLATFORM_API_HOST=platform-api
       - PLATFORM_API_PORT=8000
   ita-api-admin:
+    user: 1000:1000
     build:
       dockerfile: ./ita_root/ita_api_admin/Dockerfile
       context: ../.
@@ -33,7 +33,6 @@ services:
         - https_proxy=${HTTPS_PROXY}
     environment:
       - LISTEN_PORT=8079
-      - PYTHONPATH=/exastro/
       - DEFAULT_LANGUAGE=ja
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
@@ -41,12 +40,12 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
-      - STORAGEPATH=/storage/
       - GITLAB_PROTOCOL=${GITLAB_PROTOCOL:-http}
       - GITLAB_HOST=${GITLAB_HOST}
       - GITLAB_PORT=${GITLAB_PORT}
       - GITLAB_ROOT_TOKEN=${GITLAB_ROOT_TOKEN}
   ita-web-server:
+    user: 1000:1000
     build:
       dockerfile: ./ita_root/ita_web_server/Dockerfile
       context: ../.
@@ -72,6 +71,7 @@ services:
       - MARIADB_PASSWORD=${MARIADB_PASSWORD}
 
   ita-by-ansible-execute:
+    user: 1000:1000
     build:
       dockerfile: ./ita_root/ita_by_ansible_execute/Dockerfile
       context: ../.
@@ -87,13 +87,14 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
-      - HOST_STORAGEPATH=${HOST_STORAGEPATH} 
+      - HOST_STORAGEPATH=${HOST_STORAGEPATH}
       - CONTAINER_BASE=${CONTAINER_BASE}
       - GITLAB_PROTOCOL=${GITLAB_PROTOCOL:-http}
       - GITLAB_HOST=${GITLAB_HOST}
       - GITLAB_PORT=${GITLAB_PORT}
       - GITLAB_ROOT_TOKEN=${GITLAB_ROOT_TOKEN}
   ita-by-ansible-legacy-role-vars-listup:
+    user: 1000:1000
     build:
       dockerfile: ./ita_root/ita_by_ansible_legacy_role_vars_listup/Dockerfile
       context: ../.
@@ -110,6 +111,7 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
   ita-by-ansible-towermaster-sync:
+    user: 1000:1000
     build:
       dockerfile: ./ita_root/ita_by_ansible_towermaster_sync/Dockerfile
       context: ../.
@@ -126,6 +128,7 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
   ita-by-conductor-synchronize:
+    user: 1000:1000
     build:
       dockerfile: ./ita_root/ita_by_conductor_synchronize/Dockerfile
       context: ../.
@@ -142,6 +145,7 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
   ita-by-menu-create:
+    user: 1000:1000
     build:
       dockerfile: ./ita_root/ita_by_menu_create/Dockerfile
       context: ../.

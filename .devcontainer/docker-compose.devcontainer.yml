@@ -3,7 +3,6 @@ services:
   ita-api-organization:
     build:
       target: develop_build
-    user: 1000:1000
     command: "python3 -m debugpy --listen 5678 /exastro/api.py"
     volumes:
       - ..:/workspace:cached
@@ -36,7 +35,6 @@ services:
   ita-api-admin:
     build:
       target: develop_build
-    user: 1000:1000
     command: "python3 -m debugpy --listen 5678 /exastro/api.py"
     # command: bash -c "chmod -R 777 /storage && python3 -m debugpy --listen 5678 /exastro/api.py"
     volumes:
@@ -87,7 +85,6 @@ services:
   ita-by-ansible-execute:
     build:
       target: develop_build
-    user: 1000:1000
     volumes:
       - ..:/workspace:cached
       - ../ita_root/common_libs:/workspace/ita_root/ita_by_ansible_execute/common_libs:cached
@@ -121,7 +118,6 @@ services:
   ita-by-ansible-legacy-role-vars-listup:
     build:
       target: develop_build
-    user: 1000:1000
     volumes:
       - ..:/workspace:cached
       - ../ita_root/common_libs:/workspace/ita_root/ita_by_ansible_legacy_role_vars_listup/common_libs:cached
@@ -152,7 +148,6 @@ services:
   ita-by-ansible-towermaster-sync:
     build:
       target: develop_build
-    user: 1000:1000
     volumes:
       - ..:/workspace:cached
       - ../ita_root/common_libs:/workspace/ita_root/ita_by_ansible_towermaster_sync/common_libs:cached
@@ -183,7 +178,6 @@ services:
   ita-by-conductor-synchronize:
     build:
       target: develop_build
-    user: 1000:1000
     volumes:
       - ..:/workspace:cached
       - ../ita_root/common_libs:/workspace/ita_root/ita_by_conductor_synchronize/common_libs:cached
@@ -214,7 +208,6 @@ services:
   ita-by-menu-create:
     build:
       target: develop_build
-    user: 1000:1000
     volumes:
       - ..:/workspace:cached
       - ../ita_root/common_libs:/workspace/ita_root/ita_by_menu_create/common_libs:cached
