@@ -883,7 +883,7 @@ CREATE TABLE T_ANSC_TWR_JOBTP_PROPERTY
 -- M010_ANSIBLETOWER_組織名マスタ
 CREATE TABLE T_ANSC_TWR_ORGANIZATION
 (
-    ORGANIZATION_ITA_MANAGED_ID     VARCHAR(2),                                 -- UUID
+    ORGANIZATION_ITA_MANAGED_ID     VARCHAR(40),                                -- UUID
     ORGANIZATION_NAME               VARCHAR(256),                               -- 組織名
     ORGANIZATION_ID                 INT,                                        -- 組織名ID
     NOTE                            VARCHAR(4000),                              -- 備考
