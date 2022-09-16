@@ -98,6 +98,11 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
     last_update_timestamp = ret[0].get('LAST_UPDATE_TIMESTAMP')
     last_update_date_time = last_update_timestamp.strftime('%Y/%m/%d %H:%M:%S.%f')
     
+    # 最終更新者を取得
+    users_list = _get_user_list(objdbca)
+    last_updated_user_id = ret[0].get('LAST_UPDATE_USER')
+    last_updated_user = users_list.get(last_updated_user_id)
+    
     # 縦メニュー利用の有無を取得
     vertical = ret[0].get('VERTICAL')
     
@@ -129,7 +134,8 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
         "description": ret[0].get('DESCRIPTION_' + lang.upper()),
         "remarks": ret[0].get('NOTE'),
         "menu_create_done_status_id": ret[0].get('MENU_CREATE_DONE_STATUS'),
-        "last_update_date_time": last_update_date_time
+        "last_update_date_time": last_update_date_time,
+        "last_updated_user": last_updated_user
     }
     
     # 「一意制約(複数項目)作成情報」から対象のレコードを取得
@@ -1863,6 +1869,31 @@ def _format_loadtable_msg(loadtable_msg):
         result_msg[key] = msg_list
         
     return result_msg
+
+
+def _get_user_list(objdbca):
+    """
+        【内部呼び出し用】ユーザ一覧を取得する
+        ARGS:
+        RETRUN:
+            users_list
+    """
+    users_list = {}
+    lang = g.get('LANGUAGE')
+    usr_name_col = "USER_NAME_{}".format(lang.upper())
+    table_name = "T_COMN_BACKYARD_USER"
+    return_values = objdbca.table_select(table_name, 'WHERE DISUSE_FLAG = %s', [0])
+
+    for bk_user in return_values:
+        users_list[bk_user['USER_ID']] = bk_user[usr_name_col]
+
+    user_id = g.get('USER_ID')
+    if user_id not in users_list:
+        pf_users = util.get_exastro_platform_users()  # noqa: F405
+
+        users_list.update(pf_users)
+    
+    return users_list
 
 
 def add_tmp_column_group(column_group_list, col_group_recode_count, column_group_id, col_num, tmp_column_group, column_group_parent_of_child):
