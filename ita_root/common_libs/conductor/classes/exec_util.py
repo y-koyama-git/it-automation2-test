@@ -380,20 +380,13 @@ class ConductorExecuteLibs():
             conductor_class_name = parameter.get('conductor_class_name')
             operation_name = parameter.get('operation_name')
             schedule_date = parameter.get('schedule_date')
-            conductor_data = parameter.get('conductor_data')
+            p_conductor_data = parameter.get('conductor_data')
             
             # DB上のconductor_data取得
-            tmp_conductor_data = json.loads(get_list_data.get('conductor').get(conductor_class_id).get('SETTING'))
-            
-            # 上書き無し
-            if conductor_data is None or conductor_data == '':
-                conductor_data = tmp_conductor_data
-            elif len(conductor_data) == 0:
-                conductor_data = tmp_conductor_data
-            
-            # conductor_data 要素数チェック
-            if len(conductor_data) != len(tmp_conductor_data):
-                raise Exception()
+            db_conductor_data = json.loads(get_list_data.get('conductor').get(conductor_class_id).get('SETTING'))
+
+            # conductor_data 要素数チェック+上書き設定
+            conductor_data = self.override_conductor_data(p_conductor_data, db_conductor_data)
 
             # conductor_dataのバリデーション + IDから名称を現時点に最新化
             cclibs = ConductorCommonLibs()
@@ -647,6 +640,61 @@ class ConductorExecuteLibs():
         }
 
         return status_code, result,
+
+    def override_conductor_data(self, p_conductor_data, db_conductor_data):
+        """
+            conductor_dataの設定上書き
+            ARGS:
+                p_conductor_data:from parameter
+                db_conductor_data:from db
+            RETRUN:
+                conductor_data
+        """
+        try:
+            # 上書き無し
+            if p_conductor_data is None or p_conductor_data == '':
+                conductor_data = db_conductor_data
+            elif len(p_conductor_data) == 0:
+                conductor_data = db_conductor_data
+            else:
+                if len(p_conductor_data) != len(db_conductor_data):
+                    chk_or_mode = 'accept_or_key'
+                else:
+                    chk_or_mode = 'all'
+
+                if chk_or_mode == 'accept_or_key':
+                    # dbのデータに,上書き対象のみ上書き+不許可は、対象外,エラー
+                    accept_or_key_list = ['note', 'operation_id', 'call_conductor_id']
+                    for cnodeid, cinfo in p_conductor_data.items():
+                        if 'node' in cnodeid:
+                            if cnodeid in db_conductor_data:
+                                if cnodeid == db_conductor_data.get(cnodeid).get('id'):
+                                    if (cinfo.get('id') is not None) and (cinfo.get('id') != db_conductor_data.get(cnodeid).get('id')):
+                                        # node-id変更による不整合回避
+                                        raise Exception()
+                                    else:
+                                        for ck, cv in cinfo.items():
+                                            if ck in accept_or_key_list and ck != 'id':
+                                                db_conductor_data[cnodeid][ck] = cv
+                                else:
+                                    # node-id変更による不整合回避
+                                    raise Exception()
+                            else:
+                                # node-id変更による不整合回避
+                                raise Exception()
+                    conductor_data = db_conductor_data
+                else:
+                    # dbのデータに、パラメータを上書き
+                    db_conductor_data.update(p_conductor_data)
+                    conductor_data = db_conductor_data
+        except Exception as e:
+            g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
+            type_, value, traceback_ = sys.exc_info()
+            msg = traceback.format_exception(type_, value, traceback_)
+            g.applogger.error(msg)
+            raise e
+
+        return conductor_data
 
     def conductor_class_exec_maintenance(self, conductor_parameter, target_uuid='', cmd_type=''):
         """
@@ -1255,7 +1303,6 @@ class ConductorExecuteLibs():
             g.applogger.error(msg)
             retBool = False
         return retBool
-
 
     def get_filter_conductor(self, conductor_instance_id):
         """
