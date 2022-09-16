@@ -17,8 +17,11 @@ RUN dnf install -y \
     openssh-clients \
     python39 \
     python39-devel \
+    sshpass \
 &&  pip3.9 install --upgrade pip setuptools \
 &&  pip3.9 install \
     ansible
+
+COPY ./config/ansible.cfg /etc/ansible/ansible.cfg
 
 CMD ["ansible-playbook"]

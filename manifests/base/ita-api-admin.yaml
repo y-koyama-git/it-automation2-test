@@ -17,8 +17,9 @@ metadata:
   name: params-ita-admin
   namespace: exastro-it-automation
 data:
-  TEST: "hello" # temporary one
   LISTEN_PORT: "8080"
+  STORAGEPATH: "/storage/"
+  DEFAULT_LANGUAGE: "ja"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -35,32 +36,50 @@ spec:
       labels:
         name: ita-api-admin
     spec:
+      initContainers:
+        # temporary response to organization_create_controller.py  organization_create, os.makedirs(organization_dir)
+        - name: setup-storage
+          command: ["sh", "-c", "chown -R 1000:1000 /storage "]
+          image: busybox:latest
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+          - mountPath: /storage
+            name: persistent-storage
       containers:
         - name: ita-api-admin
-          image: exastro/it-automation2-test-ita-api-admin:main.ce654d.20220902-184049
+          image: exastro/it-automation2-test-ita-api-admin:build.c39041.20220915-113752
           imagePullPolicy: IfNotPresent
-          env:
-            - name: PYTHONPATH
-              value: "/exastro/"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
           envFrom:
             - secretRef:
-                name: secret-ita-maria
+                name: secret-ita-mariadb
             - secretRef:
-                name: secret-ita-common
+                name: secret-ita-gitlab
             - configMapRef:
-                name: params-ita-maria
+                name: params-ita-mariadb
             - configMapRef:
                 name: params-ita-common
+            - configMapRef:
+                name: params-ita-gitlab
             - configMapRef:
                 name: params-ita-admin
           volumeMounts:
             - name: persistent-storage
               mountPath: /storage
-          lifecycle:
-            postStart:
-              exec:
-                command: ["/bin/sh", "-c", "chmod -R 777 /storage"] # temporary response to organization_create_controller.py  organization_create, os.makedirs(organization_dir)
+            - name: contaier-volume
+              mountPath: /var/run_app_user/httpd/pid
+              subPath: httpd-pid
+            - name: contaier-volume
+              mountPath: /var/run_app_user/httpd/socket
+              subPath: httpd-socket
       volumes:
         - name: persistent-storage
           persistentVolumeClaim:
             claimName: ita-pvc
+        - name: contaier-volume
+          emptyDir: {}

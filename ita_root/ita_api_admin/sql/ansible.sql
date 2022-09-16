@@ -303,6 +303,34 @@ CREATE TABLE T_ANSC_COMVRAS_USLIST
 
 
 
+-- 20108 管理対象外変数一覧
+CREATE TABLE T_ANSC_UNMANAGED_VARLIST
+(
+    ROW_ID                          VARCHAR(40),                                -- 項番
+    VAR_NAME                        VARCHAR(255),                               -- 変数名
+    NOTE                            TEXT,                                       -- 備考
+    DISUSE_FLAG                     VARCHAR(1),                                 -- 廃止フラグ
+    LAST_UPDATE_TIMESTAMP           DATETIME(6),                                -- 最終更新日時
+    LAST_UPDATE_USER                VARCHAR(40),                                -- 最終更新者
+    PRIMARY KEY(ROW_ID)
+)ENGINE = InnoDB, CHARSET = utf8mb4, COLLATE = utf8mb4_bin, ROW_FORMAT=COMPRESSED ,KEY_BLOCK_SIZE=8;
+
+CREATE TABLE T_ANSC_UNMANAGED_VARLIST_JNL
+(
+    JOURNAL_SEQ_NO                  VARCHAR(40),                                -- 履歴用シーケンス
+    JOURNAL_REG_DATETIME            DATETIME(6),                                -- 履歴用変更日時
+    JOURNAL_ACTION_CLASS            VARCHAR (8),                                -- 履歴用変更種別
+    ROW_ID                          VARCHAR(40),                                -- 項番
+    VAR_NAME                        VARCHAR(255),                               -- 変数名
+    NOTE                            TEXT,                                       -- 備考
+    DISUSE_FLAG                     VARCHAR(1),                                 -- 廃止フラグ
+    LAST_UPDATE_TIMESTAMP           DATETIME(6),                                -- 最終更新日時
+    LAST_UPDATE_USER                VARCHAR(40),                                -- 最終更新者
+    PRIMARY KEY(JOURNAL_SEQ_NO)
+)ENGINE = InnoDB, CHARSET = utf8mb4, COLLATE = utf8mb4_bin, ROW_FORMAT=COMPRESSED ,KEY_BLOCK_SIZE=8;
+
+
+
 -- 20401 Role ロール名管理
 CREATE TABLE T_ANSR_ROLE_NAME
 (
@@ -855,7 +883,7 @@ CREATE TABLE T_ANSC_TWR_JOBTP_PROPERTY
 -- M010_ANSIBLETOWER_組織名マスタ
 CREATE TABLE T_ANSC_TWR_ORGANIZATION
 (
-    ORGANIZATION_ITA_MANAGED_ID     VARCHAR(2),                                 -- UUID
+    ORGANIZATION_ITA_MANAGED_ID     VARCHAR(40),                                -- UUID
     ORGANIZATION_NAME               VARCHAR(256),                               -- 組織名
     ORGANIZATION_ID                 INT,                                        -- 組織名ID
     NOTE                            VARCHAR(4000),                              -- 備考
@@ -952,7 +980,7 @@ CREATE TABLE T_ANSC_HARDAWRE_TYPE
 -- AACインスタンスグループ管理
 CREATE TABLE T_ANSC_TWR_INSTANCE_GROUP
 (
-    INSTANCE_GROUP_ITA_MANAGED_ID   VARCHAR(2),                                 -- UUID
+    INSTANCE_GROUP_ITA_MANAGED_ID   VARCHAR(40),                                -- UUID
     INSTANCE_GROUP_NAME             VARCHAR(256),                               -- インスタンスグループ名
     INSTANCE_GROUP_ID               INT,                                        -- インスタンスグループID
     NOTE                            VARCHAR(4000),                              -- 備考
@@ -1013,6 +1041,7 @@ TAB_A.NOTE,
 TAB_A.DISUSE_FLAG,
 TAB_A.LAST_UPDATE_TIMESTAMP,
 TAB_A.LAST_UPDATE_USER,
+TAB_B.VERTICAL,
 concat(TAB_D.MENU_GROUP_NAME_JA, ":", concat(TAB_C.MENU_NAME_JA, ":" , TAB_A.COLUMN_NAME_JA)) as V_ANSC_COLUMN_LIST_JA,
 concat(TAB_D.MENU_GROUP_NAME_EN, ":", concat(TAB_C.MENU_NAME_EN, ":" , TAB_A.COLUMN_NAME_EN)) as V_ANSC_COLUMN_LIST_EN
 FROM T_COMN_MENU_COLUMN_LINK TAB_A 
@@ -1066,6 +1095,7 @@ TAB_A.NOTE,
 TAB_A.DISUSE_FLAG,
 TAB_A.LAST_UPDATE_TIMESTAMP,
 TAB_A.LAST_UPDATE_USER,
+TAB_B.VERTICAL,
 concat(TAB_D.MENU_GROUP_NAME_JA, ":", concat(TAB_C.MENU_NAME_JA, ":" , TAB_A.COLUMN_NAME_JA)) as V_ANSC_COLUMN_LIST_JA,
 concat(TAB_D.MENU_GROUP_NAME_EN, ":", concat(TAB_C.MENU_NAME_EN, ":" , TAB_A.COLUMN_NAME_EN)) as V_ANSC_COLUMN_LIST_EN
 FROM T_COMN_MENU_COLUMN_LINK_JNL TAB_A 

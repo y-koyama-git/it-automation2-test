@@ -16,7 +16,7 @@ from flask import g
 
 
 def menu_define_valid(objdbca, objtable, option):
-    user_env = g.LANGUAGE.upper().lower()
+    # user_env = g.LANGUAGE.lower()
     retBool = True
     msg = ''
     # 個別処理
@@ -25,15 +25,17 @@ def menu_define_valid(objdbca, objtable, option):
     current_parameter = option.get('current_parameter').get('parameter')
 
     # ---------メニュー名---------
-    menu_name = entry_parameter.get("menu_name_{}".format(user_env))
+    menu_name_ja = entry_parameter.get("menu_name_ja")
+    menu_name_en = entry_parameter.get("menu_name_en")
     # メニュー名に「メインメニュー」、「Main menu」使用不可
-    if menu_name is not None:
-        if menu_name == "メインメニュー":
+    if menu_name_ja is not None and menu_name_en is not None:
+        disabled_menu_name = g.appmsg.get_api_message("MSG-20001", [])
+        if menu_name_ja == disabled_menu_name or menu_name_en == disabled_menu_name:
             retBool = False
-            msg = "メニュー名に「メインメニュー」は使用できません"
+            msg = g.appmsg.get_api_message("MSG-20002", [])
     else:
         retBool = False
-        msg = "値無し"
+        msg = g.appmsg.get_api_message("MSG-20003", [])
     
     # 更新時のみ。メニュー作成状態が2（作成済み）の場合、メニュー名(rest)が変更されていないことをチェック。
     menu_name_rest = entry_parameter.get('menu_name_rest')
@@ -44,7 +46,7 @@ def menu_define_valid(objdbca, objtable, option):
         if menu_create_done_status == "2":
             if before_menu_name != menu_name_rest:
                 retBool = False
-                msg = "メニューを作成済みの場合、「メニュー名(rest)」を変更できません。"
+                msg = g.appmsg.get_api_message("MSG-20004", [])
     
     # 「メニュー管理」テーブルで使用されているmenu_name_restは使用不可
     menu_name_rest = entry_parameter.get('menu_name_rest')
@@ -54,7 +56,7 @@ def menu_define_valid(objdbca, objtable, option):
         menu_name_rest_list.append(recode.get('MENU_NAME_REST'))
     if menu_name_rest in (menu_name_rest_list):
         retBool = False
-        msg = "「メニュー管理」に存在するメニュー名(rest)は使用できません"
+        msg = g.appmsg.get_api_message("MSG-20005", [])
 
     if not retBool:
         return retBool, msg, option
@@ -75,14 +77,14 @@ def menu_define_valid(objdbca, objtable, option):
         # 代入値自動登録用メニューグループ、参照用メニューグループが選択されている場合、エラー
         if menu_group_for_subst or menu_group_for_ref:
             retBool = False
-            msg = "「データシート」を設定した場合、「代入値自動登録用メニューグループ」「参照用メニューグループ」は設定できません。"
+            msg = g.appmsg.get_api_message("MSG-20006", [])
 
         # ---------縦メニュー利用---------
         # 縦メニュー利用が設定されている場合、エラー
         vertical = entry_parameter.get("vertical")
         if vertical == '1':
             retBool = False
-            msg = "「データシート」を設定した場合、「縦メニュー利用」は設定できません。"
+            msg = g.appmsg.get_api_message("MSG-20007", [])
         # ---------縦メニュー利用---------
 
     # 作成対象で「パラメータシート(ホスト/オペレーションあり)」を選択
@@ -90,12 +92,12 @@ def menu_define_valid(objdbca, objtable, option):
         # 代入値自動登録用メニューグループ、または参照用メニューグループが設定されていない場合、エラー
         if not menu_group_for_subst or not menu_group_for_ref:
             retBool = False
-            msg = "「パラメータシート(ホスト/オペレーションあり)」を設定した場合、「代入値自動登録用メニューグループ」、「参照用メニューグループ」は必須です。"
+            msg = g.appmsg.get_api_message("MSG-20008", [])
     # 作成対象で「パラメータシート(オペレーションあり)」を選択
     elif sheet_type == "3":
         if not menu_group_for_subst or not menu_group_for_ref:
             retBool = False
-            msg = "「パラメータシート(オペレーションあり)」を設定した場合、「代入値自動登録用メニューグループ」、「参照用メニューグループ」は必須です。"
+            msg = g.appmsg.get_api_message("MSG-20009", [])
     if not retBool:
         return retBool, msg, option
     # ---------作成対象---------
@@ -106,14 +108,14 @@ def menu_define_valid(objdbca, objtable, option):
         # 他のメニューグループと同じ場合、エラー
         if menu_group_for_subst and (menu_group_for_subst == menu_group_for_input or menu_group_for_subst == menu_group_for_ref):
             retBool = False
-            msg = "他のメニューグループと同じ値は設定できません。"
+            msg = g.appmsg.get_api_message("MSG-20010", [])
     # ---------代入値自動登録用メニューグループ---------
 
     # ---------参照用メニューグループ---------
         # 他のメニューグループと同じ場合、エラー
         if menu_group_for_ref and (menu_group_for_ref == menu_group_for_input or menu_group_for_ref == menu_group_for_subst):
             retBool = False
-            msg = "他のメニューグループと同じ値は設定できません。"
+            msg = g.appmsg.get_api_message("MSG-20010", [])
     if not retBool:
         return retBool, msg, option
     # ---------参照用メニューグループ---------

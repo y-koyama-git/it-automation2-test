@@ -4827,6 +4827,16 @@ class CreateAnsibleExecFiles():
         # lv_TowerInstanceDirPath["ExastroPath"] "Tower Exastro Projects Ptah
         return self.lv_TowerInstanceDirPath[PathId]
 
+    def getTowerInstanceDirPath(self):
+        """
+        Tower/Exastorプロジェクトパス取得()
+        Arguments:
+            なし
+        Returns:
+            Towerプロジェクトパス
+        """
+        return self.lv_TowerInstanceDirPath
+
     def setTowerProjectDirPath(self):
         """
         AAC側のProjectディレクトリパス生成

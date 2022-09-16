@@ -32,17 +32,14 @@ def backyard_main(organization_id, workspace_id):
         
         DB接続
         環境設定(言語,Lib読込,etc...)
-        ConductorIF情報取得
-        MVIF情報取得,(Orchestra毎)
         対象Conductor取得
             Conductor処理(※繰り返し開始)
                 transaction開始
                 Conductor処理1
                     共有パスを生成
-                    Conductor開始
                 Node処理開始(※繰り返し)
                     Node処理
-                Conductor処理1
+                Conductor処理2
                     ステータス反映
                 transaction終了
             Conductor処理終了(※繰り返し終了)
@@ -52,25 +49,9 @@ def backyard_main(organization_id, workspace_id):
     # g.applogger.set_level("INFO") # ["ERROR", "INFO", "DEBUG"]
 
     # 環境情報設定
-    # 言語情報
-    # if 'LANGUAGE' not in g:
-    g.LANGUAGE = 'ja'
-    # if 'USER_ID' not in g:
-    g.USER_ID = '30101'
+    # 言語情報  ja / en
+    g.LANGUAGE = 'en'
 
-    local_env = {
-        'language': g.LANGUAGE,
-        'user': g.USER_ID,
-        'organization_id': organization_id,
-        'workspace_id': workspace_id,
-        'conductor_storage_path_ita': None,
-        'base_storage_path_ita': None
-    }
-
-    # 実行制限数初期値
-    execute_limit = 10000
-    execute_limit_key = 'CONDUCTOR_LIMIT'
-        
     tmp_msg = 'Process Start'
     g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
 
@@ -78,26 +59,12 @@ def backyard_main(organization_id, workspace_id):
     objdbca = DBConnectWs(workspace_id)  # noqa: F405
 
     # conductor backyard lib読込
-    objcbkl = ConductorExecuteBkyLibs(objdbca, local_env)  # noqa: F405
+    objcbkl = ConductorExecuteBkyLibs(objdbca)  # noqa: F405
     if objcbkl.get_objmenus() is False:
         tmp_msg = 'ConductorExecuteBkyLibs Load Error'
         g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
         return False,
 
-    # Sysrtem configの取得
-    tmp_result = objcbkl.get_system_config()
-    if tmp_result[0] is not True:
-        tmp_msg = 'get_system_config Error'
-        g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
-        return False,
-    
-    # conductor実行制限
-    system_config = tmp_result[1]
-    if execute_limit_key in system_config:
-        tmp_execute_limit = system_config.get(execute_limit_key)
-        if tmp_execute_limit is not None:
-            execute_limit = tmp_execute_limit
-            
     # storage path 設定
     tmp_result = objcbkl.set_storage_path()
     if tmp_result[0] is not True:
@@ -107,7 +74,7 @@ def backyard_main(organization_id, workspace_id):
     base_conductor_storage_path = objcbkl.get_conductor_storage_path()
 
     # 作業対象のConductorの取得
-    tmp_result = objcbkl.get_execute_conductor_list(execute_limit)
+    tmp_result = objcbkl.get_execute_conductor_list()
     if tmp_result[0] is not True:
         tmp_msg = 'get_execute_conductor_list Error'
         g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
@@ -268,7 +235,7 @@ def backyard_main(organization_id, workspace_id):
             msg = traceback.format_exception(type_, value, traceback_)
             g.applogger.error(msg)
 
-        tmp_msg = 'onductor instance process end'
+        tmp_msg = 'conductor instance process end'
         g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
 
         try:
@@ -298,6 +265,9 @@ def backyard_main(organization_id, workspace_id):
 
         tmp_msg = 'conductor instance:{} END'.format(conductor_instance_id)
         g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
+
+    tmp_msg = 'execute count :{}'.format(execute_conductor_cnt)
+    g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405
 
     tmp_msg = 'Process End'
     g.applogger.debug(addline_msg('{}'.format(tmp_msg)))  # noqa: F405

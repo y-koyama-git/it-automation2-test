@@ -629,7 +629,10 @@ def create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, 
                     excel_header_list[depth - 1 - i].append(column_name)
                     header_order.append(column_name_rest)
                 else:
-                    excel_header_list[depth - 1 - i].append(dict_column_group_id_name.get(group_id))
+                    column_group_name = dict_column_group_id_name.get(group_id)
+                    if column_group_name is None:
+                        column_group_name = ''
+                    excel_header_list[depth - 1 - i].append(column_group_name)
                     header_order.append(column_name_rest)
             else:
                 group_id = recursive_get_pa_col_group_id(i - 1, dict_menu_column.get('COL_GROUP_ID'), dict_column_group_id)
@@ -637,7 +640,10 @@ def create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, 
                     excel_header_list[depth - 1 - i].append(column_name)
                     header_order.append(column_name_rest)
                 else:
-                    excel_header_list[depth - 1 - i].append(dict_column_group_id_name.get(group_id))
+                    column_group_name = dict_column_group_id_name.get(group_id)
+                    if column_group_name is None:
+                        column_group_name = ''
+                    excel_header_list[depth - 1 - i].append(column_group_name)
                     header_order.append(column_name_rest)
     
     # 親が一番上にくるようにリストを整える
@@ -1805,7 +1811,6 @@ def execute_excel_maintenance(objdbca, organization_id, workspace_id, menu, menu
     # 実行処理種別
     process_type = []
     for i in range(row_num):
-        # val = ''
         # 対象行記憶用
         target_row = []
         # 実行処理種別を見る
@@ -1837,8 +1842,10 @@ def execute_excel_maintenance(objdbca, organization_id, workspace_id, menu, menu
             parameter[row_i]["parameter"] = dict_param
             if process_type[row_i] == msg_reg:
                 process_type[row_i] = "Register"
+                parameter[row_i]["parameter"]["discard"] = "0"
             elif process_type[row_i] == msg_upd:
                 process_type[row_i] = "Update"
+                parameter[row_i]["parameter"]["discard"] = "0"
             elif process_type[row_i] == msg_dis:
                 process_type[row_i] = "Update"
                 parameter[row_i]["parameter"]["discard"] = "1"

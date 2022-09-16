@@ -20,7 +20,9 @@ import string
 import base64
 import codecs
 from pathlib import Path
+import pytz
 import datetime
+from datetime import timezone
 import re
 import os
 from flask import g
@@ -160,11 +162,26 @@ def get_iso_datetime(is_utc=True):
     Returns:
         2022-08-02T10:26:18.809Z
     """
-    timestamp = datetime.datetime.now()
-    if timestamp.strftime('%z') == "":
-        return timestamp.isoformat(timespec='milliseconds') + "Z"
+    return datetime_to_str(datetime.datetime.now())
+
+
+def datetime_to_str(p_datetime):
+    """datetime to string (ISO format)
+    Args:
+        p_datetime (datetime): datetime
+    Returns:
+        str: datetime formated string (UTC)
+    """
+    if p_datetime is None:
+        return None
+
+    if p_datetime.tzinfo is None:
+        aware_datetime = pytz.timezone(os.environ.get('TZ', 'UTC')).localize(p_datetime)
     else:
-        return timestamp.isoformat(timespec='milliseconds')
+        aware_datetime = p_datetime
+
+    utc_datetime = aware_datetime.astimezone(timezone.utc)
+    return utc_datetime.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
 
 
 def arrange_stacktrace_format(t):
