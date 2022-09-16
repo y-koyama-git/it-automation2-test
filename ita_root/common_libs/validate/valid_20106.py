@@ -170,7 +170,7 @@ def external_valid_menu_after(objdbca, objtable, option):
 
             if ret is False:
                 retBool = False
-                msg = obj.GetLastError()
+                msg = obj.GetLastError()[0]
                 boolExecuteContinue = False
             del obj
             
