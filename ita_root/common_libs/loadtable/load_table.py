@@ -1689,19 +1689,20 @@ class loadTable():
                     json_rows = json.loads(col_val)
                 except Exception:
                     json_rows = col_val
-                for jsonkey, jsonval in json_rows.items():
-                    objcolumn = self.get_columnclass(jsonkey)
-                    tmp_exec = objcolumn.convert_value_output(jsonval)
-                    if tmp_exec[0] is True:
-                        jsonval = tmp_exec[2]
+                if json_rows:
+                    for jsonkey, jsonval in json_rows.items():
+                        objcolumn = self.get_columnclass(jsonkey)
+                        tmp_exec = objcolumn.convert_value_output(jsonval)
+                        if tmp_exec[0] is True:
+                            jsonval = tmp_exec[2]
 
-                    rest_parameter.setdefault(jsonkey, jsonval)
-                    if mode not in ['excel', 'excel_jnl']:
-                        if self.get_col_class_name(jsonkey) == 'FileUploadColumn':
-                            objcolumn = self.get_columnclass(jsonkey)
-                            # ファイル取得＋64変換
-                            file_data = objcolumn.get_file_data(jsonval, target_uuid, target_uuid_jnl)
-                            rest_file.setdefault(jsonkey, file_data)
+                        rest_parameter.setdefault(jsonkey, jsonval)
+                        if mode not in ['excel', 'excel_jnl']:
+                            if self.get_col_class_name(jsonkey) == 'FileUploadColumn':
+                                objcolumn = self.get_columnclass(jsonkey)
+                                # ファイル取得＋64変換
+                                file_data = objcolumn.get_file_data(jsonval, target_uuid, target_uuid_jnl)
+                                rest_file.setdefault(jsonkey, file_data)
             else:
                 rest_key = self.get_rest_key(col_name)
                 if len(rest_key) > 0:
