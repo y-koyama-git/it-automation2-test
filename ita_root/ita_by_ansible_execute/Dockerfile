@@ -33,6 +33,7 @@ RUN dnf install -y \
     python39-mod_wsgi \
     langpacks-en \
     wget \
+    zip \
     unzip \
 &&  curl -kL https://github.com/docker/compose/releases/download/v2.5.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose \
 &&  chmod +x /usr/local/bin/docker-compose \
