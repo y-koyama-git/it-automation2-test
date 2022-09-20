@@ -25,10 +25,6 @@ class AnsibleMakeMessage():
     
     def AnsibleMakeMessage(self, chkmode, msgcode, paramAry=[]):
     
-        # 定数定義
-        AnscConst.LC_RUN_MODE_STD = "0"
-        AnscConst.LC_RUN_MODE_VARFILE = "1"
-        
         # 変数定義の解析に失敗しました。{}
         msgtbldict = {'MSG-10301': 'value'}
         msgtbldict['MSG-10301'] = {'msgcode': 'subvalue', 'paramlist': 'subvalue'}
@@ -101,13 +97,13 @@ class AnsibleMakeMessage():
             if pram_code != "":
                 if param_list == 'all':
                     parm_msg = g.appmsg.get_api_message(pram_code, paramAry)
-                    result_msg = g.appmsg.get_api_message(msgcode, parm_msg)
+                    result_msg = g.appmsg.get_api_message(msgcode, [parm_msg])
                 else:
                     param_msg = []
                     for param_no in param_list.split(','):
                         param_msg.append(paramAry[int(param_no)])
-                    
+
                     parm_msg = g.appmsg.get_api_message(pram_code, param_msg)
-                    result_msg = g.appmsg.get_api_message(msgcode, parm_msg)
+                    result_msg = g.appmsg.get_api_message(msgcode, [parm_msg])
 
         return result_msg
