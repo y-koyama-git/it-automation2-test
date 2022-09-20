@@ -93,6 +93,7 @@ class NumColumn(Column):
                         min_num = dict_valid.get('int_min')
                         # 閾値(最大値)
                         max_num = dict_valid.get('int_max')
+
                 if min_num is None and max_num is None:
                     # 最小値、最大値閾値無し
                     retBool = True
