@@ -14,6 +14,7 @@
 
 import re
 
+from flask import g
 from .text_column_class import TextColumn
 
 """
@@ -46,7 +47,7 @@ class MultiTextColumn(TextColumn):
             tmp_result = pattern.fullmatch(val)
             if tmp_result is None:
                 retBool = False
-                msg = "正規表現エラー (閾値:{},値{})[{}]".format(preg_match, val, self.rest_key_name)
+                msg = g.appmsg.get_api_message('MSG-00009', [preg_match, val])
                 return retBool, msg
         return retBool,
 
@@ -65,8 +66,5 @@ class MultiTextColumn(TextColumn):
         if val is not None:
             if len(str(val)) >= 0:
                 val = re.sub("\r\n|\r", "\n", val)
-            else:
-                retBool = False
-                msg = '値がありません'
 
         return retBool, msg, val

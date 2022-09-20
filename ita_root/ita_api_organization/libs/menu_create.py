@@ -110,8 +110,8 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
     selected_role_list = []
     ret_role_list = objdbca.table_select(t_menu_role, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
     if ret_role_list:
-        for recode in ret_role_list:
-            role_id = recode.get('ROLE_ID')
+        for record in ret_role_list:
+            role_id = record.get('ROLE_ID')
             if role_id:
                 selected_role_list.append(role_id)
     
@@ -150,15 +150,15 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
     # 「カラムグループ作成情報」からレコードをすべて取得
     column_group_list = {}
     ret = objdbca.table_select(t_menu_column_group, 'WHERE DISUSE_FLAG = %s', [0])
-    col_group_recode_count = len(ret)  # 「カラムグループ作成情報」のレコード数を格納
-    for recode in ret:
+    col_group_record_count = len(ret)  # 「カラムグループ作成情報」のレコード数を格納
+    for record in ret:
         add_data = {
-            "column_group_id": recode.get('CREATE_COL_GROUP_ID'),
-            "column_group_name": recode.get('COL_GROUP_NAME_' + lang.upper()),
-            "full_column_group_name": recode.get('FULL_COL_GROUP_NAME_' + lang.upper()),
-            "parent_column_group_id": recode.get('PA_COL_GROUP_ID')
+            "column_group_id": record.get('CREATE_COL_GROUP_ID'),
+            "column_group_name": record.get('COL_GROUP_NAME_' + lang.upper()),
+            "full_column_group_name": record.get('FULL_COL_GROUP_NAME_' + lang.upper()),
+            "parent_column_group_id": record.get('PA_COL_GROUP_ID')
         }
-        column_group_list[recode.get('CREATE_COL_GROUP_ID')] = add_data
+        column_group_list[record.get('CREATE_COL_GROUP_ID')] = add_data
     
     # 「メニュー項目作成情報」から対象のメニューのレコードを取得
     column_info_data = {}
@@ -167,28 +167,28 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
     column_group_parent_of_child = {}  # カラムグループの親子関係があるとき、子の一番大きい親を結びつける
     ret = objdbca.table_select(t_menu_column, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s ORDER BY DISP_SEQ ASC', [menu_create_id, 0])
     if ret:
-        for count, recode in enumerate(ret, 1):
+        for count, record in enumerate(ret, 1):
             # 最終更新日時のフォーマット
-            last_update_timestamp = recode.get('LAST_UPDATE_TIMESTAMP')
+            last_update_timestamp = record.get('LAST_UPDATE_TIMESTAMP')
             last_update_date_time = last_update_timestamp.strftime('%Y/%m/%d %H:%M:%S.%f')
             
             # カラムデータを格納
             col_detail = {
-                "create_column_id": recode.get('CREATE_COLUMN_ID'),
-                "item_name": recode.get('COLUMN_NAME_' + lang.upper()),
-                "item_name_rest": recode.get('COLUMN_NAME_REST'),
-                "display_order": recode.get('DISP_SEQ'),
-                "required": recode.get('REQUIRED'),
-                "uniqued": recode.get('UNIQUED'),
+                "create_column_id": record.get('CREATE_COLUMN_ID'),
+                "item_name": record.get('COLUMN_NAME_' + lang.upper()),
+                "item_name_rest": record.get('COLUMN_NAME_REST'),
+                "display_order": record.get('DISP_SEQ'),
+                "required": record.get('REQUIRED'),
+                "uniqued": record.get('UNIQUED'),
                 "column_class_id": "",
                 "column_class_name": "",
-                "description": recode.get('DESCRIPTION_' + lang.upper()),
-                "remarks": recode.get('NOTE'),
+                "description": record.get('DESCRIPTION_' + lang.upper()),
+                "remarks": record.get('NOTE'),
                 "last_update_date_time": last_update_date_time
             }
             
             # フルカラムグループ名を格納
-            column_group_id = recode.get('CREATE_COL_GROUP_ID')
+            column_group_id = record.get('CREATE_COL_GROUP_ID')
             col_detail['column_group_id'] = column_group_id
             col_detail['column_group_name'] = None
             if column_group_id:
@@ -197,7 +197,7 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
                     col_detail['column_group_name'] = target_data.get('full_column_group_name')
                 
             # カラムクラス情報を格納
-            column_class_id = recode.get('COLUMN_CLASS')
+            column_class_id = record.get('COLUMN_CLASS')
             column_class_name = format_column_class_list.get(column_class_id).get('column_class_name')
             column_class_disp_name = format_column_class_list.get(column_class_id).get('column_class_disp_name')
             col_detail['column_class_id'] = column_class_id
@@ -207,70 +207,74 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
             # カラムクラスに応じて必要な値を格納
             # カラムクラス「文字列(単一行)」用のパラメータを追加
             if column_class_name == "SingleTextColumn":
-                col_detail["single_string_maximum_bytes"] = recode.get('SINGLE_MAX_LENGTH')  # 文字列(単一行) 最大バイト数
-                col_detail["single_string_regular_expression"] = recode.get('SINGLE_REGULAR_EXPRESSION')  # 文字列(単一行) 正規表現
-                col_detail["single_string_default_value"] = recode.get('SINGLE_DEFAULT_VALUE')  # 文字列(単一行) 初期値
+                col_detail["single_string_maximum_bytes"] = record.get('SINGLE_MAX_LENGTH')  # 文字列(単一行) 最大バイト数
+                col_detail["single_string_regular_expression"] = record.get('SINGLE_REGULAR_EXPRESSION')  # 文字列(単一行) 正規表現
+                col_detail["single_string_default_value"] = record.get('SINGLE_DEFAULT_VALUE')  # 文字列(単一行) 初期値
             
             # カラムクラス「文字列(複数行)」用のパラメータを追加
             if column_class_name == "MultiTextColumn":
-                col_detail["multi_string_maximum_bytes"] = recode.get('MULTI_MAX_LENGTH')  # 文字列(複数行) 最大バイト数
-                col_detail["multi_string_regular_expression"] = recode.get('MULTI_REGULAR_EXPRESSION')  # 文字列(複数行) 正規表現
-                col_detail["multi_string_default_value"] = recode.get('MULTI_DEFAULT_VALUE')  # 文字列(複数行) 初期値
+                col_detail["multi_string_maximum_bytes"] = record.get('MULTI_MAX_LENGTH')  # 文字列(複数行) 最大バイト数
+                col_detail["multi_string_regular_expression"] = record.get('MULTI_REGULAR_EXPRESSION')  # 文字列(複数行) 正規表現
+                col_detail["multi_string_default_value"] = record.get('MULTI_DEFAULT_VALUE')  # 文字列(複数行) 初期値
             
             # カラムクラス「整数」用のパラメータを追加
             if column_class_name == "NumColumn":
-                col_detail["integer_maximum_value"] = recode.get('NUM_MAX')  # 整数 最大値
-                col_detail["integer_minimum_value"] = recode.get('NUM_MIN')  # 整数 最小値
-                col_detail["integer_default_value"] = recode.get('NUM_DEFAULT_VALUE')  # 整数 初期値
+                col_detail["integer_maximum_value"] = record.get('NUM_MAX')  # 整数 最大値
+                col_detail["integer_minimum_value"] = record.get('NUM_MIN')  # 整数 最小値
+                col_detail["integer_default_value"] = record.get('NUM_DEFAULT_VALUE')  # 整数 初期値
             
             # カラムクラス「小数」用のパラメータを追加
             if column_class_name == "FloatColumn":
-                col_detail["decimal_maximum_value"] = recode.get('FLOAT_MAX')  # 小数 最大値
-                col_detail["decimal_minimum_value"] = recode.get('FLOAT_MIN')  # 小数 最小値
-                col_detail["decimal_digit"] = recode.get('decimal_digit')  # 小数 桁数
-                col_detail["decimal_default_value"] = recode.get('FLOAT_DEFAULT_VALUE')  # 小数 初期値
+                col_detail["decimal_maximum_value"] = record.get('FLOAT_MAX')  # 小数 最大値
+                col_detail["decimal_minimum_value"] = record.get('FLOAT_MIN')  # 小数 最小値
+                col_detail["decimal_digit"] = record.get('decimal_digit')  # 小数 桁数
+                col_detail["decimal_default_value"] = record.get('FLOAT_DEFAULT_VALUE')  # 小数 初期値
             
             # カラムクラス「日時」用のパラメータを追加
             if column_class_name == "DateTimeColumn":
-                full_datetime_default_value = recode.get('DATETIME_DEFAULT_VALUE')
+                full_datetime_default_value = record.get('DATETIME_DEFAULT_VALUE')
                 datetime_default_value = full_datetime_default_value.strftime('%Y/%m/%d %H:%M:%S')
                 col_detail["detetime_default_value"] = datetime_default_value  # 日時 初期値
             
             # カラムクラス「日付」用のパラメータを追加
             if column_class_name == "DateColumn":
-                full_datet_default_value = recode.get('DATE_DEFAULT_VALUE')
+                full_datet_default_value = record.get('DATE_DEFAULT_VALUE')
                 date_default_value = full_datet_default_value.strftime('%Y/%m/%d')
                 col_detail["dete_default_value"] = date_default_value  # 日付 初期値
             
             # カラムクラス「プルダウン選択」用のパラメータを追加
             if column_class_name == "IDColumn":
-                col_detail["pulldown_selection"] = recode.get('OTHER_MENU_LINK_ID')  # プルダウン選択 メニューグループ:メニュー:項目
-                col_detail["pulldown_selection_default_value"] = recode.get('OTHER_MENU_LINK_DEFAULT_VALUE')  # プルダウン選択 初期値
-                col_detail["reference_item"] = ast.literal_eval(recode.get('REFERENCE_ITEM'))  # プルダウン選択 参照項目
+                col_detail["pulldown_selection"] = record.get('OTHER_MENU_LINK_ID')  # プルダウン選択 メニューグループ:メニュー:項目
+                col_detail["pulldown_selection_default_value"] = record.get('OTHER_MENU_LINK_DEFAULT_VALUE')  # プルダウン選択 初期値
+                reference_item = record.get('REFERENCE_ITEM')
+                if reference_item:
+                    col_detail["reference_item"] = ast.literal_eval(reference_item)  # プルダウン選択 参照項目
+                else:
+                    col_detail["reference_item"] = None  # プルダウン選択 参照項目
             
             # カラムクラス「パスワード」用のパラメータを追加
             if column_class_name == "PasswordColumn":
-                col_detail["password_maximum_bytes"] = recode.get('PASSWORD_MAX_LENGTH')  # パスワード 最大バイト数
+                col_detail["password_maximum_bytes"] = record.get('PASSWORD_MAX_LENGTH')  # パスワード 最大バイト数
             
             # カラムクラス「ファイルアップロード」用のパラメータを追加
             if column_class_name == "FileUploadColumn":
-                col_detail["file_upload_maximum_bytes"] = recode.get('FILE_UPLOAD_MAX_SIZE')  # ファイルアップロード 最大バイト数
+                col_detail["file_upload_maximum_bytes"] = record.get('FILE_UPLOAD_MAX_SIZE')  # ファイルアップロード 最大バイト数
             
             # カラムクラス「リンク」用のパラメータを追加
             if column_class_name == "HostInsideLinkTextColumn":
-                col_detail["link_maximum_bytes"] = recode.get('LINK_MAX_LENGTH')  # リンク 最大バイト数
-                col_detail["link_default_value"] = recode.get('LINK_DEFAULT_VALUE')  # リンク 初期値
+                col_detail["link_maximum_bytes"] = record.get('LINK_MAX_LENGTH')  # リンク 最大バイト数
+                col_detail["link_default_value"] = record.get('LINK_DEFAULT_VALUE')  # リンク 初期値
             
             # カラムクラス「パラメータシート参照」用のパラメータを追加 (未実装)
             # if column_class_name == "LinkIDColumn":
-            #     col_detail["parameter_sheet_reference"] = recode.get('PARAM_SHEET_LINK_ID')  # パラメータシート参照
+            #     col_detail["parameter_sheet_reference"] = record.get('PARAM_SHEET_LINK_ID')  # パラメータシート参照
             
             col_num = 'c{}'.format(count)
             column_info_data[col_num] = col_detail
             
             # カラムグループ利用があれば、カラムグループ管理用配列に追加
             if column_group_id:
-                tmp_column_group, column_group_parent_of_child = add_tmp_column_group(column_group_list, col_group_recode_count, column_group_id, col_num, tmp_column_group, column_group_parent_of_child)  # noqa: E501
+                tmp_column_group, column_group_parent_of_child = add_tmp_column_group(column_group_list, col_group_record_count, column_group_id, col_num, tmp_column_group, column_group_parent_of_child)  # noqa: E501
         
         # カラムグループ管理用配列について、カラムグループIDをg1,g2,g3...に変換し、idやnameを格納する。
         column_group_info_data, key_to_id = collect_column_group_sort_order(column_group_list, tmp_column_group, column_group_info_data)
@@ -316,41 +320,41 @@ def _collect_common_menu_create_data(objdbca):
     # カラムクラスの選択肢一覧
     column_class_list = []
     ret = objdbca.table_select(v_menu_column_class, 'ORDER BY DISP_SEQ ASC')
-    for recode in ret:
-        column_class_id = recode.get('COLUMN_CLASS_ID')
+    for record in ret:
+        column_class_id = record.get('COLUMN_CLASS_ID')
         # 「11:パラメータシート参照」は未実装のため除外
         if str(column_class_id) == "11":
             continue
-        column_class_name = recode.get('COLUMN_CLASS_NAME')
-        column_class_disp_name = recode.get('COLUMN_CLASS_DISP_NAME_' + lang.upper())
+        column_class_name = record.get('COLUMN_CLASS_NAME')
+        column_class_disp_name = record.get('COLUMN_CLASS_DISP_NAME_' + lang.upper())
         column_class_list.append({'column_class_id': column_class_id, 'column_class_name': column_class_name, 'column_class_disp_name': column_class_disp_name})  # noqa: E501
 
     # 対象メニューグループの選択肢一覧
     target_menu_group_list = []
     ret = objdbca.table_select(v_menu_target_menu_group, 'ORDER BY DISP_SEQ ASC')
-    for recode in ret:
-        menu_group_id = recode.get('MENU_GROUP_ID')
-        menu_group_name = recode.get('MENU_GROUP_NAME_' + lang.upper())
-        full_menu_group_name = recode.get('FULL_MENU_GROUP_NAME_' + lang.upper())
+    for record in ret:
+        menu_group_id = record.get('MENU_GROUP_ID')
+        menu_group_name = record.get('MENU_GROUP_NAME_' + lang.upper())
+        full_menu_group_name = record.get('FULL_MENU_GROUP_NAME_' + lang.upper())
         target_menu_group_list.append({'menu_group_id': menu_group_id, 'menu_group_name': menu_group_name, 'full_menu_group_name': full_menu_group_name})  # noqa: E501
 
     # シートタイプの選択肢一覧
     sheet_type_list = []
     ret = objdbca.table_select(v_menu_sheet_type, 'ORDER BY DISP_SEQ ASC')
-    for recode in ret:
-        sheet_type_id = recode.get('SHEET_TYPE_NAME_ID')
-        sheet_type_name = recode.get('SHEET_TYPE_NAME_' + lang.upper())
+    for record in ret:
+        sheet_type_id = record.get('SHEET_TYPE_NAME_ID')
+        sheet_type_name = record.get('SHEET_TYPE_NAME_' + lang.upper())
         sheet_type_list.append({'sheet_type_id': sheet_type_id, 'sheet_type_name': sheet_type_name})
 
     # カラムクラス「プルダウン選択」の選択項目一覧
     pulldown_item_list = []
     ret = objdbca.table_select(v_menu_other_link, 'ORDER BY MENU_GROUP_ID ASC')
-    for recode in ret:
-        link_id = recode.get('LINK_ID')
-        menu_id = recode.get('MENU_ID')
-        menu_name_rest = recode.get('MENU_NAME_REST')
-        column_name_rest = recode.get('REF_COL_NAME_REST')
-        link_pulldown = recode.get('LINK_PULLDOWN_' + lang.upper())
+    for record in ret:
+        link_id = record.get('LINK_ID')
+        menu_id = record.get('MENU_ID')
+        menu_name_rest = record.get('MENU_NAME_REST')
+        column_name_rest = record.get('REF_COL_NAME_REST')
+        link_pulldown = record.get('LINK_PULLDOWN_' + lang.upper())
         pulldown_item_list.append({'link_id': link_id, 'menu_id': menu_id, 'menu_name_rest': menu_name_rest, 'column_name_rest': column_name_rest, 'link_pulldown': link_pulldown})  # noqa: E501
     
     # ロールの選択肢一覧
@@ -421,12 +425,12 @@ def collect_pulldown_initial_value(objdbca, menu_name_rest, column_name_rest):
     
     # 「プルダウン選択」の対象テーブルからレコード一覧を取得
     ret = objdbca.table_select(ref_table_name, 'WHERE DISUSE_FLAG = %s', [0])
-    for recode in ret:
-        key = recode.get(ref_pkey_name)
+    for record in ret:
+        key = record.get(ref_pkey_name)
         if str(ref_multi_lang) == "1":
-            value = recode.get(ref_col_name + "_" + lang.upper())
+            value = record.get(ref_col_name + "_" + lang.upper())
         else:
-            value = recode.get(ref_col_name)
+            value = record.get(ref_col_name)
         
         # メニュー作成機能で作ったメニューの場合、値がJSON形式なので取り出す。
         if str(menu_create_flag) == "1":
@@ -698,15 +702,15 @@ def _create_exist_execute(objdbca, create_param, type_name):  # noqa: C901
         # 「一意制約(複数項目)」の値があり、かつ「一意制約(複数項目)作成情報」にレコードが存在する場合、レコードを更新
         unique_constraint = menu_data.get('unique_constraint')
         if current_t_menu_unique_constraint and unique_constraint:
-            target_recode = current_t_menu_unique_constraint[0]
-            retbool, result_code, msg_args = _update_t_menu_unique_constraint(objdbca, menu_data, target_recode)
+            target_record = current_t_menu_unique_constraint[0]
+            retbool, result_code, msg_args = _update_t_menu_unique_constraint(objdbca, menu_data, target_record)
             if not retbool:
                 raise Exception(result_code, msg_args)
         
         # 「一意制約(複数項目)」の値がない、かつ「一意制約(複数項目)作成情報」にレコードが存在する場合、レコードを廃止
         elif current_t_menu_unique_constraint and not unique_constraint:
-            target_recode = current_t_menu_unique_constraint[0]
-            retbool, result_code, msg_args = _disuse_t_menu_unique_constraint(objdbca, target_recode)
+            target_record = current_t_menu_unique_constraint[0]
+            retbool, result_code, msg_args = _disuse_t_menu_unique_constraint(objdbca, target_record)
             if not retbool:
                 raise Exception(result_code, msg_args)
         
@@ -724,10 +728,10 @@ def _create_exist_execute(objdbca, create_param, type_name):  # noqa: C901
         current_role_list = []
         current_role_dict = {}
         if current_t_menu_role:
-            for recode in current_t_menu_role:
-                menu_role_id = recode.get('MENU_ROLE_ID')
-                role = recode.get('ROLE_ID')
-                last_update_timestamp = recode.get('LAST_UPDATE_TIMESTAMP')
+            for record in current_t_menu_role:
+                menu_role_id = record.get('MENU_ROLE_ID')
+                role = record.get('ROLE_ID')
+                last_update_timestamp = record.get('LAST_UPDATE_TIMESTAMP')
                 last_update_date_time = last_update_timestamp.strftime('%Y/%m/%d %H:%M:%S.%f')
                 current_role_list.append(role)
                 current_role_dict[role] = {"menu_role_id": menu_role_id, 'last_update_date_time': last_update_date_time}
@@ -897,9 +901,9 @@ def _update_t_menu_define(objdbca, current_t_menu_define, menu_data, type_name):
             # シートタイプのIDと名称の紐付け取得
             sheet_type_list = objdbca.table_select(v_menu_sheet_type, 'ORDER BY DISP_SEQ ASC')
             sheet_type_dict = {}
-            for recode in sheet_type_list:
-                sheet_type_name_id = recode.get('SHEET_TYPE_NAME_ID')
-                sheet_type_dict[sheet_type_name_id] = recode.get('SHEET_TYPE_NAME_' + lang.upper())
+            for record in sheet_type_list:
+                sheet_type_name_id = record.get('SHEET_TYPE_NAME_ID')
+                sheet_type_dict[sheet_type_name_id] = record.get('SHEET_TYPE_NAME_' + lang.upper())
             
             current_sheet_type_name = sheet_type_dict[current_sheet_type]  # シートタイプ名称
             if not current_sheet_type_name == sheet_type:
@@ -1025,8 +1029,8 @@ def _insert_t_menu_column_group(objdbca, group_data_list):
             
             # 『「フルカラムグループ(ja)」』か『「フルカラムグループ(en)」』ですでに同じレコードがあれば処理をスキップ
             skip_flag = False
-            for recode in column_group_list:
-                if full_column_group_name_ja == recode.get('FULL_COL_GROUP_NAME_JA') or full_column_group_name_en == recode.get('FULL_COL_GROUP_NAME_EN'):  # noqa: E501
+            for record in column_group_list:
+                if full_column_group_name_ja == record.get('FULL_COL_GROUP_NAME_JA') or full_column_group_name_en == record.get('FULL_COL_GROUP_NAME_EN'):  # noqa: E501
                     skip_flag = True
             
             if skip_flag:
@@ -1216,19 +1220,19 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
     try:
         # current_t_menu_column_listのレコードについて、create_column_idをkeyにしたdict型に変換
         current_t_menu_column_dict = {}
-        for recode in current_t_menu_column_list:
-            create_column_id = recode.get('CREATE_COLUMN_ID')
-            current_t_menu_column_dict[create_column_id] = recode
+        for record in current_t_menu_column_list:
+            create_column_id = record.get('CREATE_COLUMN_ID')
+            current_t_menu_column_dict[create_column_id] = record
         
         # 現在登録されている「他メニュー連携」のレコードを取得
         other_menu_link_list = objdbca.table_select(v_menu_other_link, 'WHERE DISUSE_FLAG = %s', [0])
         
         # 「他メニュー連携」のレコードをLINK_IDをkeyとしたdict型に変換
         format_other_menu_link_list = {}
-        for recode in other_menu_link_list:
-            link_pulldown_ja = recode.get('LINK_PULLDOWN_JA')
-            link_pulldown_en = recode.get('LINK_PULLDOWN_EN')
-            format_other_menu_link_list[recode.get('LINK_ID')] = {'link_pulldown_ja': link_pulldown_ja, 'link_pulldown_en': link_pulldown_en}
+        for record in other_menu_link_list:
+            link_pulldown_ja = record.get('LINK_PULLDOWN_JA')
+            link_pulldown_en = record.get('LINK_PULLDOWN_EN')
+            format_other_menu_link_list[record.get('LINK_ID')] = {'link_pulldown_ja': link_pulldown_ja, 'link_pulldown_en': link_pulldown_en}
         
         # loadTableの呼び出し
         objmenu = load_table.loadTable(objdbca, 'menu_item_creation_info')  # noqa: F405
@@ -1251,27 +1255,27 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
                     # カラムクラスのIDと名称の紐付け取得
                     column_class_list = objdbca.table_select(v_menu_column_class, 'ORDER BY DISP_SEQ ASC')
                     column_class_dict = {}
-                    for recode in column_class_list:
-                        column_class_id = recode.get('COLUMN_CLASS_ID')
-                        column_class_dict[column_class_id] = recode.get('COLUMN_CLASS_NAME')
+                    for record in column_class_list:
+                        column_class_id = record.get('COLUMN_CLASS_ID')
+                        column_class_dict[column_class_id] = record.get('COLUMN_CLASS_NAME')
                     
                     # 更新対象の現在のレコードを取得
-                    target_recode = current_t_menu_column_dict.get(create_column_id)
+                    target_record = current_t_menu_column_dict.get(create_column_id)
                     
                     # 「カラムクラス」が変更されている場合エラー判定
-                    current_column_class_id = target_recode.get('COLUMN_CLASS')
+                    current_column_class_id = target_record.get('COLUMN_CLASS')
                     current_column_class_name = column_class_dict.get(current_column_class_id)
                     if not column_class == current_column_class_name:
                         raise Exception("499-00706", [item_name, "column_class"])  # 「編集」の際は既存項目の対象の設定を変更できません。(項目: {}, 対象: {})
                     
                     # 「必須」が変更されている場合エラー判定
-                    current_required_id = str(target_recode.get('REQUIRED'))
+                    current_required_id = str(target_record.get('REQUIRED'))
                     update_required_id = "1" if column_data.get('required') == "True" else "0"
                     if not current_required_id == update_required_id:
                         raise Exception("499-00706", [item_name, "required"])  # 「編集」の際は既存項目の対象の設定を変更できません。(項目: {}, 対象: {})
                     
                     # 「一意制約」が変更されている場合エラー判定
-                    current_uniqued_id = str(target_recode.get('UNIQUED'))
+                    current_uniqued_id = str(target_record.get('UNIQUED'))
                     update_uniqued_id = "1" if column_data.get('uniqued') == "True" else "0"
                     if not current_uniqued_id == update_uniqued_id:
                         raise Exception("499-00706", [item_name, "uniqued"])  # 「編集」の際は既存項目の対象の設定を変更できません。(項目: {}, 対象: {})
@@ -1279,7 +1283,7 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
                     # カラムクラス「文字列(単一行)」の場合のバリデーションチェック
                     if column_class == "SingleTextColumn":
                         # 最大バイト数が既存の値よりも下回っている場合エラー判定
-                        current_single_string_maximum_bytes = int(target_recode.get('SINGLE_MAX_LENGTH'))
+                        current_single_string_maximum_bytes = int(target_record.get('SINGLE_MAX_LENGTH'))
                         update_single_string_maximum_bytes = int(column_data.get('single_string_maximum_bytes'))
                         if current_single_string_maximum_bytes > update_single_string_maximum_bytes:
                             raise Exception("499-00707", [item_name, "single_string_maximum_bytes"])  # 「編集」の際は既存項目の対象の値が下回る変更はできません。(項目: {}, 対象: {})
@@ -1287,21 +1291,21 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
                     # カラムクラス「文字列(複数行)」の場合のバリデーションチェック
                     if column_class == "MultiTextColumn":
                         # 最大バイト数が既存の値よりも下回っている場合エラー判定
-                        current_multi_string_maximum_bytes = int(target_recode.get('MULTI_MAX_LENGTH'))
+                        current_multi_string_maximum_bytes = int(target_record.get('MULTI_MAX_LENGTH'))
                         update_multi_string_maximum_bytes = int(column_data.get('multi_string_maximum_bytes'))
                         if current_multi_string_maximum_bytes > update_multi_string_maximum_bytes:
                             raise Exception("499-00707", [item_name, "multi_string_maximum_bytes"])  # 「編集」の際は既存項目の対象の値が下回る変更はできません。(項目: {}, 対象: {})
                     
                     # カラムクラス「整数」の場合のバリデーションチェック
                     if column_class == "NumColumn":
-                        current_integer_minimum_value = None if not target_recode.get('NUM_MIN') else int(target_recode.get('NUM_MIN'))
+                        current_integer_minimum_value = None if not target_record.get('NUM_MIN') else int(target_record.get('NUM_MIN'))
                         update_integer_minimum_value = None if not column_data.get('integer_minimum_value') else int(column_data.get('integer_minimum_value'))  # noqa: E501
                         # 最小値が既存の値よりも上回っている場合エラー判定
                         if current_integer_minimum_value and update_integer_minimum_value:
                             if current_integer_minimum_value < update_integer_minimum_value:
                                 raise Exception("499-00708", [item_name, "integer_minimum_value"])  # 「編集」の際は既存項目の対象の値が上回る変更はできません。(項目: {}, 対象: {})
                         
-                        current_integer_maximum_value = None if not target_recode.get('NUM_MAX') else int(target_recode.get('NUM_MAX'))
+                        current_integer_maximum_value = None if not target_record.get('NUM_MAX') else int(target_record.get('NUM_MAX'))
                         update_integer_maximum_value = None if not column_data.get('integer_maximum_value') else int(column_data.get('integer_maximum_value'))  # noqa: E501
                         # 最大値が既存の値よりも下回っている場合エラー判定
                         if current_integer_maximum_value and update_integer_maximum_value:
@@ -1310,21 +1314,21 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
                     
                     # カラムクラス「小数」の場合のバリデーションチェック
                     if column_class == "FloatColumn":
-                        current_decimal_minimum_value = None if not target_recode.get('FLOAT_MIN') else int(target_recode.get('FLOAT_MIN'))
+                        current_decimal_minimum_value = None if not target_record.get('FLOAT_MIN') else int(target_record.get('FLOAT_MIN'))
                         update_decimal_minimum_value = None if not column_data.get('decimal_minimum_value') else int(column_data.get('decimal_minimum_value'))  # noqa: E501
                         # 最小値が既存の値よりも上回っている場合エラー判定
                         if current_decimal_minimum_value and update_decimal_minimum_value:
                             if current_decimal_minimum_value < update_decimal_minimum_value:
                                 raise Exception("499-00708", [item_name, "decimal_minimum_value"])  # 「編集」の際は既存項目の対象の値が上回る変更はできません。(項目: {}, 対象: {})
                         
-                        current_decimal_maximum_value = None if not target_recode.get('FLOAT_MAX') else int(target_recode.get('FLOAT_MAX'))
+                        current_decimal_maximum_value = None if not target_record.get('FLOAT_MAX') else int(target_record.get('FLOAT_MAX'))
                         update_decimal_maximum_value = None if not column_data.get('decimal_maximum_value') else int(column_data.get('decimal_maximum_value'))  # noqa: E501
                         # 最大値が既存の値よりも下回っている場合エラー判定
                         if current_decimal_maximum_value and update_decimal_maximum_value:
                             if current_decimal_maximum_value > update_decimal_maximum_value:
                                 raise Exception("499-00707", [item_name, "decimal_maximum_value"])  # 「編集」の際は既存項目の対象の値が下回る変更はできません。(項目: {}, 対象: {})
                         
-                        current_decimal_digit = None if not target_recode.get('FLOAT_DIGIT') else int(target_recode.get('FLOAT_DIGIT'))
+                        current_decimal_digit = None if not target_record.get('FLOAT_DIGIT') else int(target_record.get('FLOAT_DIGIT'))
                         update_decimal_digit = None if not column_data.get('decimal_digit') else int(column_data.get('decimal_digit'))  # noqa: E501
                         # 桁数が既存の値よりも下回っている場合エラー判定
                         if current_decimal_digit and update_decimal_digit:
@@ -1336,7 +1340,7 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
                         update_pulldown_selection = column_data.get('pulldown_selection')
                         
                         # 現在設定されているIDのlink_pulldownを取得
-                        current_other_menu_link_id = target_recode.get('OTHER_MENU_LINK_ID')
+                        current_other_menu_link_id = target_record.get('OTHER_MENU_LINK_ID')
                         current_other_menu_link_data = format_other_menu_link_list.get(current_other_menu_link_id)
                         current_pulldown_selection = current_other_menu_link_data.get('link_pulldown_' + lang.lower())
                         
@@ -1344,12 +1348,20 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
                         if not update_pulldown_selection == current_pulldown_selection:
                             raise Exception("499-00706", [item_name, "pulldown_selection"])  # 「編集」の際は既存項目の対象の設定を変更できません。(項目: {}, 対象: {})
                         
-                        # ####メモ：参照項目に変更がある場合のエラー判定も必要
+                        # 現在設定されているIDのreference_itemを取得
+                        current_reference_item = target_record.get('REFERENCE_ITEM')
+                        update_reference_item_list = column_data.get('reference_item')
+                        update_reference_item_dump = json.dumps(update_reference_item_list)
+                        update_reference_item = str(update_reference_item_dump)
+                        
+                        # reference_itemが変更されている場合エラー判定
+                        if not current_reference_item == update_reference_item:
+                            raise Exception("499-00706", [item_name, "reference_item"])  # 「編集」の際は既存項目の対象の設定を変更できません。(項目: {}, 対象: {})
                     
                     # カラムクラス「パスワード」の場合のバリデーションチェック
                     if column_class == "PasswordColumn":
                         # 最大バイト数が既存の値よりも下回っている場合エラー判定
-                        current_password_maximum_bytes = int(target_recode.get('PASSWORD_MAX_LENGTH'))
+                        current_password_maximum_bytes = int(target_record.get('PASSWORD_MAX_LENGTH'))
                         update_password_maximum_bytes = int(column_data.get('password_maximum_bytes'))
                         if current_password_maximum_bytes > update_password_maximum_bytes:
                             raise Exception("499-00707", [item_name, "password_maximum_bytes"])  # 「編集」の際は既存項目の対象の値が下回る変更はできません。(項目: {}, 対象: {})
@@ -1357,7 +1369,7 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
                     # カラムクラス「ファイルアップロード」の場合のバリデーションチェック
                     if column_class == "FileUploadColumn":
                         # 最大バイト数が既存の値よりも下回っている場合エラー判定
-                        current_file_upload_maximum_bytes = int(target_recode.get('FILE_UPLOAD_MAX_SIZE'))
+                        current_file_upload_maximum_bytes = int(target_record.get('FILE_UPLOAD_MAX_SIZE'))
                         update_file_upload_maximum_bytes = int(column_data.get('file_upload_maximum_bytes'))
                         if current_file_upload_maximum_bytes > update_file_upload_maximum_bytes:
                             raise Exception("499-00707", [item_name, "file_upload_maximum_bytes"])  # 「編集」の際は既存項目の対象の値が下回る変更はできません。(項目: {}, 対象: {})
@@ -1365,7 +1377,7 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
                     # カラムクラス「リンク」の場合のバリデーションチェック
                     if column_class == "HostInsideLinkTextColumn":
                         # 最大バイト数が既存の値よりも下回っている場合エラー判定
-                        current_link_maximum_bytes = int(target_recode.get('LINK_MAX_LENGTH'))
+                        current_link_maximum_bytes = int(target_record.get('LINK_MAX_LENGTH'))
                         update_link_maximum_bytes = int(column_data.get('link_maximum_bytes'))
                         if current_link_maximum_bytes > update_link_maximum_bytes:
                             raise Exception("499-00707", [item_name, "link_maximum_bytes"])  # 「編集」の際は既存項目の対象の値が下回る変更はできません。(項目: {}, 対象: {})
@@ -1516,13 +1528,13 @@ def _disuse_t_menu_column(objdbca, current_t_menu_column_list, column_data_list)
         # 現在登録されているレコードのIDをlist化
         current_target_create_column_id_list = []
         current_target_id_timestamp = {}
-        for recode in current_t_menu_column_list:
+        for record in current_t_menu_column_list:
             # IDをlistに格納
-            create_column_id = recode.get('CREATE_COLUMN_ID')
+            create_column_id = record.get('CREATE_COLUMN_ID')
             current_target_create_column_id_list.append(create_column_id)
             
             # IDと最終更新日時を紐づけたdictを作成
-            last_update_timestamp = recode.get('LAST_UPDATE_TIMESTAMP')
+            last_update_timestamp = record.get('LAST_UPDATE_TIMESTAMP')
             last_update_date_time = last_update_timestamp.strftime('%Y/%m/%d %H:%M:%S.%f')
             current_target_id_timestamp[create_column_id] = last_update_date_time
         
@@ -1609,13 +1621,13 @@ def _insert_t_menu_unique_constraint(objdbca, menu_data):
     return True, None, None
 
 
-def _update_t_menu_unique_constraint(objdbca, menu_data, target_recode):
+def _update_t_menu_unique_constraint(objdbca, menu_data, target_record):
     """
         【内部呼び出し用】「一意制約(複数項目)作成情報」のレコードを更新する
         ARGS:
             objdbca:DB接クラス  DBConnectWs()
             menu_data: 登録対象のメニュー情報
-            target_recode: 「一意制約(複数項目)作成情報」の更新対象のレコード情報
+            target_record: 「一意制約(複数項目)作成情報」の更新対象のレコード情報
         RETRUN:
             boolean, result_code, msg_args
     """
@@ -1624,8 +1636,8 @@ def _update_t_menu_unique_constraint(objdbca, menu_data, target_recode):
         menu_name = menu_data.get('menu_name')
         
         # 更新対象レコードからuuidと最終更新日時を取得
-        unique_constraint_id = target_recode.get('UNIQUE_CONSTRAINT_ID')
-        last_update_timestamp = target_recode.get('LAST_UPDATE_TIMESTAMP')
+        unique_constraint_id = target_record.get('UNIQUE_CONSTRAINT_ID')
+        last_update_timestamp = target_record.get('LAST_UPDATE_TIMESTAMP')
         last_update_date_time = last_update_timestamp.strftime('%Y/%m/%d %H:%M:%S.%f')
         
         unique_constraint = menu_data.get('unique_constraint')
@@ -1656,20 +1668,20 @@ def _update_t_menu_unique_constraint(objdbca, menu_data, target_recode):
     return True, None, None
 
 
-def _disuse_t_menu_unique_constraint(objdbca, target_recode):
+def _disuse_t_menu_unique_constraint(objdbca, target_record):
     """
         【内部呼び出し用】「一意制約(複数項目)作成情報」のレコードを廃止する
         ARGS:
             objdbca:DB接クラス  DBConnectWs()
             menu_data: 登録対象のメニュー情報
-            target_recode: 「一意制約(複数項目)作成情報」の更新対象のレコード情報
+            target_record: 「一意制約(複数項目)作成情報」の更新対象のレコード情報
         RETRUN:
             boolean, result_code, msg_args
     """
     try:
         # 廃止対象レコードからuuidと最終更新日時を取得
-        unique_constraint_id = target_recode.get('UNIQUE_CONSTRAINT_ID')
-        last_update_timestamp = target_recode.get('LAST_UPDATE_TIMESTAMP')
+        unique_constraint_id = target_record.get('UNIQUE_CONSTRAINT_ID')
+        last_update_timestamp = target_record.get('LAST_UPDATE_TIMESTAMP')
         last_update_date_time = last_update_timestamp.strftime('%Y/%m/%d %H:%M:%S.%f')
         
         # loadTableの呼び出し
@@ -1831,10 +1843,10 @@ def _check_before_registar_validate(objdbca, menu_data, column_data_list):
         
         # シートタイプ一覧情報を取得
         ret = objdbca.table_select(v_menu_sheet_type, 'WHERE DISUSE_FLAG = %s', [0])
-        for recode in ret:
-            check_sheet_type_name = recode.get('SHEET_TYPE_NAME_' + lang.upper())
+        for record in ret:
+            check_sheet_type_name = record.get('SHEET_TYPE_NAME_' + lang.upper())
             if sheet_type_name == check_sheet_type_name:
-                sheet_id = str(recode.get('SHEET_TYPE_NAME_ID'))
+                sheet_id = str(record.get('SHEET_TYPE_NAME_ID'))
         
         # シートタイプが「2: データシート」かつ、登録する項目が無い場合エラー判定
         if sheet_id == "2" and not column_data_list:
@@ -1896,12 +1908,12 @@ def _get_user_list(objdbca):
     return users_list
 
 
-def add_tmp_column_group(column_group_list, col_group_recode_count, column_group_id, col_num, tmp_column_group, column_group_parent_of_child):
+def add_tmp_column_group(column_group_list, col_group_record_count, column_group_id, col_num, tmp_column_group, column_group_parent_of_child):
     """
         カラムグループ管理用配列にカラムグループの親子関係の情報を格納する
         ARGS:
             column_group_list: カラムグループのレコード一覧
-            col_group_recode_count: カラムグループのレコード数
+            col_group_record_count: カラムグループのレコード数
             column_group_id: 対象のカラムグループID
             col_num: カラムの並び順をc1, c2, c3...という名称に変換した値
             tmp_colmn_group: カラムグループ管理用配列
@@ -1919,7 +1931,7 @@ def add_tmp_column_group(column_group_list, col_group_recode_count, column_group
     target_column_group_id = column_group_id
     first_column_group_id = column_group_id
     loop_count = 0
-    max_loop = int(col_group_recode_count) ** 2  # 「カラムグループ作成情報」のレコード数の二乗がループ回数の上限
+    max_loop = int(col_group_record_count) ** 2  # 「カラムグループ作成情報」のレコード数の二乗がループ回数の上限
     while not end_flag:
         for target in column_group_list.values():
             if target.get('column_group_id') == target_column_group_id:

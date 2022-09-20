@@ -123,7 +123,7 @@ class AnsibleExecute():
         # ansible vault password file作成
         with open(strVaultPasswordFileName, 'w') as fd:
             fd.write(vault_password)
-        
+
         # 実行ユーザー確認
         if execute_user:
             execute_user = "-u {}".format(execute_user)
@@ -212,7 +212,8 @@ class AnsibleExecute():
         # ansible-playbook実行 shell作成
         with open(strExecshellName, 'w') as fd:
             fd.write(strShell)
-
+        
+        os.chmod(strExecshellName, 0o777)
         # ansible-playbook 標準エラー出力先
         strSTDERRFileName = "{}/{}/{}".format(execute_path, self.strOutFolderName, self.STDERRLogfile)
         # ansible-playbook 標準出力出力先
@@ -229,7 +230,7 @@ class AnsibleExecute():
         container_base = os.getenv('CONTAINER_BASE')
         if container_base == 'docker':
             ansibleAg = DockerMode()
-        elif container_base == 'kubernetes':
+        else:
             ansibleAg = KubernetesMode()
 
         result = ansibleAg.container_start_up(execute_no, conductor_instance_no, str_shell_command)
@@ -238,7 +239,7 @@ class AnsibleExecute():
         else:
             self.setLastError(result[1])
             return False
-
+        
     def execute_statuscheck(self, driver_id, execute_no):
         """
         作業実行コンテナの実行状態を確認
@@ -270,14 +271,14 @@ class AnsibleExecute():
         container_base = os.getenv('CONTAINER_BASE')
         if container_base == 'docker':
             ansibleAg = DockerMode()
-        elif container_base == 'kubernetes':
+        else:
             ansibleAg = KubernetesMode()
 
         ##########################
         # コンテナの実行状態確認
         #   True: 起動
         #   False: 停止
-        res_is_container_running = ansibleAg.is_container_running(self, execute_no)
+        res_is_container_running = ansibleAg.is_container_running(execute_no)
         if res_is_container_running[0] is True:
             # 緊急停止ファイルの有無確認
             if os.path.isfile(strForcedFileName):
@@ -318,7 +319,7 @@ class AnsibleExecute():
                     retStatus = "6"
             else:
                 # ansible-playbookコマンド実行結果ファイルなし
-                return_code = res_is_container_running[1].return_code
+                return_code = res_is_container_running[1]['return_code']
                 if return_code != 0:
                     # コンテナの起動確認が正しく行えなかった
                     self.setLastError(res_is_container_running[1])

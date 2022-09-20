@@ -20,7 +20,7 @@ from common_libs.loadtable import *  # noqa: F403
 
 
 from common_libs.conductor.classes.util import ConductorCommonLibs  # noqa: F401
-from common_libs.conductor.classes.exec_util import *  # noqa: F401
+from common_libs.conductor.classes.exec_util import *  # noqa: F403
 
 import uuid  # noqa: F401
 
@@ -83,7 +83,6 @@ def conductor_maintenance(objdbca, menu, conductor_data, target_uuid=''):
             parameter.setdefault('parameter', tmp_parameter)
             parameter.setdefault('type', 'Update')
 
-
     except Exception:
         # 499-00801
         status_code = "499-00801"
@@ -113,7 +112,7 @@ def conductor_maintenance(objdbca, menu, conductor_data, target_uuid=''):
         raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
 
     try:
-        objCexec = ConductorExecuteLibs(objdbca, menu, objmenus)
+        objCexec = ConductorExecuteLibs(objdbca, menu, objmenus)  # noqa: F405
         # トランザクション開始
         objdbca.db_transaction_start()
 
@@ -324,7 +323,7 @@ def get_conductor_class_info_data(objdbca, mode=""):
             "objcclass": objcclass
         }
 
-        objCexec = ConductorExecuteLibs(objdbca, '', objmenus)
+        objCexec = ConductorExecuteLibs(objdbca, '', objmenus)  # noqa: F405
         result = objCexec.get_class_info_data(mode)
     
     except Exception:
@@ -384,7 +383,7 @@ def conductor_execute(objdbca, menu, parameter):
     # 実行:パラメータチェック
     try:
         # 入力パラメータ フォーマットチェック
-        objCexec = ConductorExecuteLibs(objdbca, menu, objmenus)
+        objCexec = ConductorExecuteLibs(objdbca, menu, objmenus)  # noqa: F405
         chk_parameter = objCexec.chk_execute_parameter_format(parameter)
         if chk_parameter[0] is not True:
             status_code = '499-00814'
@@ -442,8 +441,8 @@ def conductor_execute(objdbca, menu, parameter):
         # ロールバック トランザクション終了
         objdbca.db_transaction_end(False)
         status_code = "499-00804"
-        log_msg_args = [conductor_class_id, operation_id, schedule_date]
-        api_msg_args = [conductor_class_id, operation_id, schedule_date]
+        log_msg_args = [conductor_class_name, operation_name, schedule_date]
+        api_msg_args = [conductor_class_name, operation_name, schedule_date]
         raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
         
     result = {
@@ -494,7 +493,7 @@ def get_conductor_info(objdbca, menu, conductor_instance_id):
             "objcclass": objcclass
         }
 
-        objCexec = ConductorExecuteLibs(objdbca, '', objmenus)
+        objCexec = ConductorExecuteLibs(objdbca, '', objmenus)  # noqa: F405
         result = objCexec.get_instance_info_data(conductor_instance_id)
 
     except Exception:
@@ -541,7 +540,7 @@ def get_conductor_instance_data(objdbca, menu, conductor_instance_id):
             "objcclass": objcclass
         }
 
-        objCexec = ConductorExecuteLibs(objdbca, '', objmenus)
+        objCexec = ConductorExecuteLibs(objdbca, '', objmenus)  # noqa: F405
         result = objCexec.get_instance_data(conductor_instance_id)
     
     except Exception:
@@ -584,7 +583,7 @@ def conductor_execute_action(objdbca, menu, mode='', conductor_instance_id='', n
             "objconductor": objconductor,
             "objnode": objnode
         }
-        objCexec = ConductorExecuteLibs(objdbca, '', objmenus, 'Update', conductor_instance_id)
+        objCexec = ConductorExecuteLibs(objdbca, '', objmenus, 'Update', conductor_instance_id)  # noqa: F405
     except Exception:
         status_code = "499-00807"
         log_msg_args = [mode, conductor_instance_id, node_instance_id]
@@ -666,7 +665,7 @@ def create_movement_zip(objdbca, menu, data_type, conductor_instance_id):
             "objconductor": objconductor,
             "objnode": objnode,
         }
-        ### 
+        ###
         from random import randint
         if randint(1, 3) == 2:
             raise Exception()
