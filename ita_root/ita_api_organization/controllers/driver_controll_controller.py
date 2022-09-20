@@ -52,7 +52,10 @@ def get_driver_execute_data(organization_id, workspace_id, menu, execution_no): 
     # メニューに対するロール権限をチェック
     check_auth_menu(menu, objdbca)
     
-    result = driver_controll.get_execution_info(objdbca, execution_no)
+    # 作業状態確認メニューと作業実行メニューのRest名、テーブル名の対応
+    target = {'check_operation_status_ansible_role': {'execution_list': 'execution_list_ansible_role', 'table_name': 'T_ANSR_EXEC_STS_INST'}}
+
+    result = driver_controll.get_execution_info(objdbca, target[menu], execution_no)
 
     return result,
 

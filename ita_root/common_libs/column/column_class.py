@@ -626,25 +626,56 @@ class Column():
         msg = ''
         column_list, primary_key_list = self.objdbca.table_columns_get(self.get_table_name())
         if self.col_name not in primary_key_list:
-            where_str = " where `{}` = %s ".format(self.col_name)
-            bind_value_list = [val]
-
-            if 'uuid' in option:
-                if option.get('uuid') is not None:
-                    where_str = where_str + " and `{}` <> %s ".format(primary_key_list[0])
-                    bind_value_list.append(option.get('uuid'))
-
-            result = self.objdbca.table_select(self.table_name, where_str, bind_value_list)
-            tmp_uuids = []
-            if len(result) != 0:
-                for tmp_rows in result:
-                    tmp_uuids.append(tmp_rows.get(primary_key_list[0]))
-                retBool = False
-                status_code = 'MSG-00025'
-                str_uuids = ', '.join(map(str, tmp_uuids))
-                msg_args = [self.rest_key_name, str_uuids]
-                msg = g.appmsg.get_api_message(status_code, msg_args)
-                return retBool, msg
+            if self.col_name == "DATA_JSON":
+                # カラム名がDATA_JSON(メニュー作成機能により作られたメニューのカラム)の場合
+                where_str = " where DISUSE_FLAG = 0"
+                bind_value_list = []
+                if 'uuid' in option:
+                    if option.get('uuid') is not None:
+                        where_str = where_str + " and `{}` <> %s ".format(primary_key_list[0])
+                        bind_value_list.append(option.get('uuid'))
+                
+                result = self.objdbca.table_select(self.table_name, where_str, bind_value_list)
+                if result:
+                    tmp_uuids = []
+                    for tmp_rows in result:
+                        data_json = tmp_rows.get("DATA_JSON")
+                        if data_json:
+                            json_rows = json.loads(data_json)
+                            for jsonkey, jsonval in json_rows.items():
+                                if jsonkey == self.rest_key_name:
+                                    if jsonval == val:
+                                        tmp_uuids.append(tmp_rows.get(primary_key_list[0]))
+                                        retBool = False
+                    
+                    if not retBool:
+                        status_code = 'MSG-00025'
+                        str_uuids = ', '.join(map(str, tmp_uuids))
+                        msg_args = [self.rest_key_name, str_uuids]
+                        msg = g.appmsg.get_api_message(status_code, msg_args)
+                        return retBool, msg
+                        
+            else:
+                # 通常のカラムの場合
+                where_str = " where `{}` = %s ".format(self.col_name)
+                bind_value_list = [val]
+                
+                if 'uuid' in option:
+                    if option.get('uuid') is not None:
+                        where_str = where_str + " and `{}` <> %s ".format(primary_key_list[0])
+                        bind_value_list.append(option.get('uuid'))
+                
+                result = self.objdbca.table_select(self.table_name, where_str, bind_value_list)
+                tmp_uuids = []
+                if len(result) != 0:
+                    for tmp_rows in result:
+                        tmp_uuids.append(tmp_rows.get(primary_key_list[0]))
+                    retBool = False
+                    status_code = 'MSG-00025'
+                    str_uuids = ', '.join(map(str, tmp_uuids))
+                    msg_args = [self.rest_key_name, str_uuids]
+                    msg = g.appmsg.get_api_message(status_code, msg_args)
+                    return retBool, msg
         return retBool,
 
     # [maintenance] 必須バリデーション
