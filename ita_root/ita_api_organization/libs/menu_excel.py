@@ -163,7 +163,7 @@ def collect_excel_all(objdbca, organization_id, workspace_id, menu, menu_record,
     depth = get_col_group_depth(retList_t_common_menu_column_link, dict_column_group_id)
     
     # エクセルに表示するヘッダー項目を二次元配列に構築する
-    excel_header_list, header_order = create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, dict_column_group_id_name, dict_column_group_id)
+    excel_header_list, header_order = create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, dict_column_group_id_name, dict_column_group_id, menu_table_link_list)
     
     # 1行目（項目名）のヘッダーを作成する
     ws = create_excel_header_firstline(ws, excel_header_list, depth, startRow, startClm, font_wh, al_cc, fill_bl, border)
@@ -176,7 +176,7 @@ def collect_excel_all(objdbca, organization_id, workspace_id, menu, menu_record,
     ws = make_template(ws, startRow, font_bl, fill_gr, borderDash, depth)
     
     # エクセルヘッダー部のカラム情報を作成する
-    ws, dataVaridationDict = create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_column_link, name_define_list)
+    ws, dataVaridationDict = create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_column_link, name_define_list, menu_table_link_list)
     
     # 明細部編集
     # 明細1行目編集
@@ -219,7 +219,10 @@ def collect_excel_all(objdbca, organization_id, workspace_id, menu, menu_record,
                         else:
                             value = ''
                     
-                    column_num = header_order.index(key) + 4
+                    if key in header_order:
+                        column_num = header_order.index(key) + 4
+                    else:
+                        continue
                     
                     ws.cell(row=startRow + 7, column=column_num).number_format = openpyxl.styles.numbers.FORMAT_TEXT
                     ws.cell(row=startRow + 7, column=column_num).font = font_bl
@@ -260,9 +263,15 @@ def collect_excel_all(objdbca, organization_id, workspace_id, menu, menu_record,
     msg = g.appmsg.get_api_message('MSG-30006')
     ws_filter['D1'] = msg
     ws_filter['A2'] = datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
-    # 廃止含まず
-    msg = g.appmsg.get_api_message('MSG-30016')
-    ws_filter['D2'] = msg
+    
+    if menu_table_link_list[2] == '0' and menu_table_link_list[3] == '0':
+        # 全レコード
+        msg = g.appmsg.get_api_message('MSG-30018')
+        ws_filter['D2'] = msg
+    else:
+        # 廃止含まず
+        msg = g.appmsg.get_api_message('MSG-30016')
+        ws_filter['D2'] = msg
     
     wb.save(file_path)  # noqa: E303
     
@@ -320,9 +329,13 @@ def make_master_sheet(wb, objdbca, lang, retList_t_common_menu_column_link, menu
     # 実行処理種別
     msg = g.appmsg.get_api_message('MSG-30002')
     ws_master.cell(row=1, column=4, value=msg)
-    # 廃止
-    msg = g.appmsg.get_api_message('MSG-30006')
-    ws_master.cell(row=1, column=5, value=msg)
+    
+    if menu_table_link_list[2] == '0' and menu_table_link_list[3] == '0':
+        startClm_master -= 1
+    else:
+        # 廃止
+        msg = g.appmsg.get_api_message('MSG-30006')
+        ws_master.cell(row=1, column=5, value=msg)
     
     name_define_list = []
     for i, dict_menu_column in enumerate(retList_t_common_menu_column_link):
@@ -557,17 +570,17 @@ def make_template_trace_history(ws, depth):
         alphaOrd = alphaOrd + 1
     
     # 空白
-    ws.cell(row=2, column=1).font = font_wh
-    ws.cell(row=2, column=1).fill = fill_gr
-    ws.cell(row=2, column=1).alignment = al_cc
-    ws.cell(row=2, column=1).border = border
-    ws.cell(row=2, column=1, value='')
+    ws.cell(row=depth + 1, column=1).font = font_wh
+    ws.cell(row=depth + 1, column=1).fill = fill_gr
+    ws.cell(row=depth + 1, column=1).alignment = al_cc
+    ws.cell(row=depth + 1, column=1).border = border
+    ws.cell(row=depth + 1, column=1, value='')
     
-    ws.cell(row=2, column=2).font = font_wh
-    ws.cell(row=2, column=2).fill = fill_gr
-    ws.cell(row=2, column=2).alignment = al_cc
-    ws.cell(row=2, column=2).border = border
-    ws.cell(row=2, column=2, value='')
+    ws.cell(row=depth + 1, column=2).font = font_wh
+    ws.cell(row=depth + 1, column=2).fill = fill_gr
+    ws.cell(row=depth + 1, column=2).alignment = al_cc
+    ws.cell(row=depth + 1, column=2).border = border
+    ws.cell(row=depth + 1, column=2, value='')
     
     return ws
 
@@ -600,13 +613,19 @@ def recursive_get_pa_col_group_id(n, id, dict_group_id):
 
 
 # エクセルに表示するヘッダー項目を二次元配列に構築する
-def create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, dict_column_group_id_name, dict_column_group_id):
+def create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, dict_column_group_id_name, dict_column_group_id, menu_table_link_list):
     # 行を階層分追加する
     if depth > 1:
         ws.insert_rows(1, depth - 1)
     
     excel_header_list = [[] for i in range(depth)]
     header_order = []
+    
+    # 廃止フラグを表示するかしないか
+    # True:表示する　False:表示しない
+    discard_flag = True
+    if menu_table_link_list[2] == '0' and menu_table_link_list[3] == '0':
+        discard_flag = False
     
     # 表示する項目を二次元配列に構築する
     for i in range(depth):
@@ -617,9 +636,12 @@ def create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, 
             # 廃止フラグ
             msg = g.appmsg.get_api_message('MSG-30015')
             if column_name == msg:
-                excel_header_list[depth - 1 - i].insert(0, column_name)
-                header_order.insert(0, column_name_rest)
+                if discard_flag:
+                    excel_header_list[depth - 1 - i].insert(0, column_name)
+                    if i == 0:
+                        header_order.insert(0, column_name_rest)
                 continue
+            
             if i == 0:
                 excel_header_list[depth - 1 - i].append(column_name)
                 header_order.append(column_name_rest)
@@ -627,24 +649,20 @@ def create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, 
                 group_id = dict_menu_column.get('COL_GROUP_ID')
                 if group_id is None:
                     excel_header_list[depth - 1 - i].append(column_name)
-                    header_order.append(column_name_rest)
                 else:
                     column_group_name = dict_column_group_id_name.get(group_id)
                     if column_group_name is None:
                         column_group_name = ''
                     excel_header_list[depth - 1 - i].append(column_group_name)
-                    header_order.append(column_name_rest)
             else:
                 group_id = recursive_get_pa_col_group_id(i - 1, dict_menu_column.get('COL_GROUP_ID'), dict_column_group_id)
                 if group_id is None:
                     excel_header_list[depth - 1 - i].append(column_name)
-                    header_order.append(column_name_rest)
                 else:
                     column_group_name = dict_column_group_id_name.get(group_id)
                     if column_group_name is None:
                         column_group_name = ''
                     excel_header_list[depth - 1 - i].append(column_group_name)
-                    header_order.append(column_name_rest)
     
     # 親が一番上にくるようにリストを整える
     for i in range(len(excel_header_list[0])):
@@ -721,7 +739,7 @@ def create_excel_header_firstline(ws, excel_header_list, depth, startRow, startC
 
 
 # エクセルヘッダー部のカラム情報を作成する
-def create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_column_link, name_define_list):
+def create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_column_link, name_define_list, menu_table_link_list):
     # 文字色
     font_bl = openpyxl.styles.Font(name='メイリオ', size=8, color='000000')
     font_wh = openpyxl.styles.Font(name='メイリオ', size=8, color='FFFFFF')
@@ -740,6 +758,13 @@ def create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_colum
     border = Border(left=side, right=side, top=side, bottom=side)
     borderDash = Border(left=side, right=side, top=sideDash, bottom=sideDash)
     
+    # 廃止フラグを表示するかしないか
+    # True:表示する　False:表示しない
+    discard_flag = True
+    if menu_table_link_list[2] == '0' and menu_table_link_list[3] == '0':
+        discard_flag = False
+        startClm -= 1
+    
     # カラム位置調整用フラグ
     column_flg = False
     dataVaridationDict = {}
@@ -751,8 +776,12 @@ def create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_colum
         # 廃止フラグ
         msg = g.appmsg.get_api_message('MSG-30015')
         if column_name == msg:
-            column_num = 4
-            column_flg = True
+            if discard_flag:
+                column_num = 4
+                column_flg = True
+            else:
+                startClm -= 1
+                continue
         else:
             column_num = startClm + i + 1
             if column_flg:
@@ -856,7 +885,7 @@ def create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_colum
 
 
 # エクセルヘッダー部のカラム情報を作成する(変更履歴ver)
-def create_column_info_trace_history(lang, ws, startRow, startClm, retList_t_common_menu_column_link):
+def create_column_info_trace_history(lang, ws, startRow, startClm, retList_t_common_menu_column_link, menu_table_link_list):
     # 文字色
     font_bl = openpyxl.styles.Font(name='メイリオ', size=8, color='000000')
     font_wh = openpyxl.styles.Font(name='メイリオ', size=8, color='FFFFFF')
@@ -873,6 +902,13 @@ def create_column_info_trace_history(lang, ws, startRow, startClm, retList_t_com
     side = Side(border_style="thin", color="000000")
     border = Border(left=side, right=side, top=side, bottom=side)
     
+    # 廃止フラグを表示するかしないか
+    # True:表示する　False:表示しない
+    discard_flag = True
+    if menu_table_link_list[2] == '0' and menu_table_link_list[3] == '0':
+        discard_flag = False
+        startClm -= 1
+    
     # カラム位置調整用フラグ
     column_flg = False
     # 登録不可の行を記憶しておく
@@ -884,8 +920,12 @@ def create_column_info_trace_history(lang, ws, startRow, startClm, retList_t_com
         # 廃止フラグ
         msg = g.appmsg.get_api_message('MSG-30015')
         if column_name == msg:
-            column_num = 3
-            column_flg = True
+            if discard_flag:
+                column_num = 3
+                column_flg = True
+            else:
+                startClm -= 1
+                continue
         else:
             column_num = startClm + i + 1
             if column_flg:
@@ -967,24 +1007,20 @@ def create_footer(ws, font_wh, al_lt, al_cc, fill_bl):
     return ws
 
 
+# 明細一行目の書式設定
 def detail_first_line_format(ws, startRow, dataVaridationDict):
     # 背景色
     fill_wh = PatternFill(fill_type='solid', fgColor='FFFFFF')
-    fill_bl = PatternFill(fill_type='solid', fgColor='00459D')
     
     # 文字色
     font_bl = openpyxl.styles.Font(name='メイリオ', size=8, color='000000')
-    font_wh = openpyxl.styles.Font(name='メイリオ', size=8, color='FFFFFF')
     
     # Alignmentの設定
     al_cc = Alignment(horizontal='center', vertical='center')
-    al_lt = Alignment(horizontal='left', vertical='top')
     
     # 罫線の設定
     side = Side(border_style="thin", color="000000")
-    sideDash = Side(border_style="dashed", color="000000")
     border = Border(left=side, right=side, top=side, bottom=side)
-    borderDash = Border(left=side, right=side, top=sideDash, bottom=sideDash)
     
     ws.cell(row=startRow + 7, column=1).fill = fill_wh
     ws.cell(row=startRow + 7, column=1, value='')
@@ -1014,8 +1050,37 @@ def detail_first_line_format(ws, startRow, dataVaridationDict):
     return ws, dataVaridationDict
 
 
+# 明細一行目の書式設定(変更履歴ver)
+def detail_first_line_format_trace_history(ws, startRow, dataVaridationDict):
+    # 背景色
+    fill_wh = PatternFill(fill_type='solid', fgColor='FFFFFF')
+    
+    # 文字色
+    font_bl = openpyxl.styles.Font(name='メイリオ', size=8, color='000000')
+    
+    # 罫線の設定
+    side = Side(border_style="thin", color="000000")
+    border = Border(left=side, right=side, top=side, bottom=side)
+    
+    # 入力規則の設定
+    dv = DataValidation(type='list', formula1='FILTER_ROW_EDIT_BY_FILE')
+    dv.add(ws.cell(row=startRow, column=3))
+    ws.add_data_validation(dv)
+    dataVaridationDict[get_column_letter(3)] = 'FILTER_ROW_EDIT_BY_FILE'
+    
+    column_num = ws.max_column + 1
+    for col_i in range(1, column_num):
+        # ws.cell(row=startRow, column=col_i).number_format = openpyxl.styles.numbers.FORMAT_TEXT
+        ws.cell(row=startRow, column=col_i).fill = fill_wh
+        ws.cell(row=startRow, column=col_i).font = font_bl
+        ws.cell(row=startRow, column=col_i).border = border
+        ws.cell(row=startRow, column=col_i, value='')
+    
+    return ws, dataVaridationDict
+
+
 # 空行を作成する
-def create_blank_line(ws, dataVaridationDict, addline):
+def create_blank_line(ws, dataVaridationDict, addline, trace_history_flag=False):
     # 空行追加処理
     min_col = 1
     min_row = ws.max_row
@@ -1033,7 +1098,7 @@ def create_blank_line(ws, dataVaridationDict, addline):
             copyToCoord = copyToCol + str(row + shift_row)
             
             # コピー先に値をコピー
-            if copyToCol == 'C':
+            if not trace_history_flag and copyToCol == 'C':
                 ws[copyToCoord].value = ws[copyFrmCoord].value
             
             if copyToCol in dataVaridationDict:
@@ -1175,7 +1240,7 @@ def collect_excel_format(objdbca, organization_id, workspace_id, menu, menu_reco
     depth = get_col_group_depth(retList_t_common_menu_column_link, dict_column_group_id)
     
     # エクセルに表示するヘッダー項目を二次元配列に構築する
-    excel_header_list, header_order = create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, dict_column_group_id_name, dict_column_group_id)
+    excel_header_list, header_order = create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, dict_column_group_id_name, dict_column_group_id, menu_table_link_list)
     
     # 1行目（項目名）のヘッダーを作成する
     ws = create_excel_header_firstline(ws, excel_header_list, depth, startRow, startClm, font_wh, al_cc, fill_bl, border)
@@ -1188,7 +1253,7 @@ def collect_excel_format(objdbca, organization_id, workspace_id, menu, menu_reco
     ws = make_template(ws, startRow, font_bl, fill_gr, borderDash, depth)
     
     # エクセルヘッダー部のカラム情報を作成する
-    ws, dataVaridationDict = create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_column_link, name_define_list)
+    ws, dataVaridationDict = create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_column_link, name_define_list, menu_table_link_list)
     
     # 明細部編集
     # 明細1行目編集
@@ -1360,7 +1425,7 @@ def collect_excel_journal(objdbca, organization_id, workspace_id, menu, menu_rec
     depth = get_col_group_depth(retList_t_common_menu_column_link, dict_column_group_id)
     
     # エクセルに表示するヘッダー項目を二次元配列に構築する
-    excel_header_list, header_order = create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, dict_column_group_id_name, dict_column_group_id)
+    excel_header_list, header_order = create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, dict_column_group_id_name, dict_column_group_id, menu_table_link_list)
     
     # 1行目（項目名）のヘッダーを作成する
     ws = create_excel_header_firstline(ws, excel_header_list, depth, startRow, startClm, font_wh, al_cc, fill_bl, border)
@@ -1373,12 +1438,12 @@ def collect_excel_journal(objdbca, organization_id, workspace_id, menu, menu_rec
     ws = make_template_trace_history(ws, depth)
     
     # エクセルヘッダー部のカラム情報を作成する
-    ws, gray_column = create_column_info_trace_history(lang, ws, startRow, startClm, retList_t_common_menu_column_link)
+    ws, gray_column = create_column_info_trace_history(lang, ws, startRow, startClm, retList_t_common_menu_column_link, menu_table_link_list)
     
     # 明細部編集
     # 明細1行目編集
     dataVaridationDict = {}
-    ws, dataVaridationDict = detail_first_line_format(ws, startRow, dataVaridationDict)
+    ws, dataVaridationDict = detail_first_line_format_trace_history(ws, startDetailRow, dataVaridationDict)
     
     # ウィンドウ枠の固定
     ws.freeze_panes = ws.cell(row=startDetailRow, column=1).coordinate
@@ -1428,7 +1493,7 @@ def collect_excel_journal(objdbca, organization_id, workspace_id, menu, menu_rec
                 startDetailRow += 1
     
     # 空行追加処理
-    ws = create_blank_line(ws, dataVaridationDict, 10)
+    ws = create_blank_line(ws, dataVaridationDict, 10, True)
     
     # 登録が×の列をグレーにする
     # 明細の数を求める
@@ -1578,7 +1643,7 @@ def collect_excel_filter(objdbca, organization_id, workspace_id, menu, menu_reco
     depth = get_col_group_depth(retList_t_common_menu_column_link, dict_column_group_id)
     
     # エクセルに表示するヘッダー項目を二次元配列に構築する
-    excel_header_list, header_order = create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, dict_column_group_id_name, dict_column_group_id)
+    excel_header_list, header_order = create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, dict_column_group_id_name, dict_column_group_id, menu_table_link_list)
     
     # 1行目（項目名）のヘッダーを作成する
     ws = create_excel_header_firstline(ws, excel_header_list, depth, startRow, startClm, font_wh, al_cc, fill_bl, border)
@@ -1591,7 +1656,7 @@ def collect_excel_filter(objdbca, organization_id, workspace_id, menu, menu_reco
     ws = make_template(ws, startRow, font_bl, fill_gr, borderDash, depth)
     
     # エクセルヘッダー部のカラム情報を作成する
-    ws, dataVaridationDict = create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_column_link, name_define_list)
+    ws, dataVaridationDict = create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_column_link, name_define_list, menu_table_link_list)
     
     # 明細部編集
     # 明細1行目編集
