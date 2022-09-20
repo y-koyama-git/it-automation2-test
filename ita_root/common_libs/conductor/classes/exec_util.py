@@ -456,6 +456,7 @@ class ConductorExecuteLibs():
                     raise Exception()
                 top_conductor_instance_id = tmp_result[1].get('parent_id')
                 top_conductor_instance_name = tmp_result[1].get('parent_name')
+                user_name = tmp_result[1].get('execution_user')
             else:
                 # 通常実行時
                 parent_conductor_instance_id = None
@@ -490,7 +491,7 @@ class ConductorExecuteLibs():
                 "time_book": schedule_date,
                 # "time_start": None,
                 # "time_end": None,
-                # "execution_log": None,
+                "execution_log": [],
                 # "notification_log": None,
                 "remarks": conductor_remarks
                 # "discard": 0,
@@ -1068,7 +1069,7 @@ class ConductorExecuteLibs():
                             "time_book": ci_p.get('time_book'),
                             "time_start": ci_p.get('time_start'),
                             "time_end": ci_p.get('time_end'),
-                            # "execution_log": ci_p.get('execution_log'),
+                            "execution_log": ci_p.get('execution_log'),
                             "remarks": ci_p.get('remarks'),
                         }
 
@@ -1202,8 +1203,10 @@ class ConductorExecuteLibs():
                 retBool = False
             parent_id = tmp_result[1].get('parameter').get('parent_conductor_instance_id')
             parent_name = tmp_result[1].get('parameter').get('parent_conductor_instance_name')
+            execution_user = tmp_result[1].get('parameter').get('execution_user')
             result.setdefault('parent_id', parent_id)
             result.setdefault('parent_name', parent_name)
+            result.setdefault('execution_user', execution_user)
         except Exception as e:
             g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
             type_, value, traceback_ = sys.exc_info()
@@ -1225,6 +1228,7 @@ class ConductorExecuteLibs():
         result = {}
         parent_id = parent_conductor_instance_id
         parent_name = parent_conductor_instance_name
+        execution_user = ""
 
         try:
             while parent_id is not None:
@@ -1232,9 +1236,11 @@ class ConductorExecuteLibs():
                 if tmp_result[0] is True:
                     tmp_parent_id = tmp_result[1].get('parent_id')
                     tmp_parent_name = tmp_result[1].get('parent_name')
+                    execution_user = tmp_result[1].get('execution_user')
                     if tmp_parent_id is None:
                         result.setdefault('parent_id', parent_id)
                         result.setdefault('parent_name', parent_name)
+                        result.setdefault('execution_user', execution_user)
                         break
                     else:
                         parent_id = tmp_parent_id
@@ -2070,7 +2076,8 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                 except Exception:
                     tmp_execution_log_list = [str_msg]
             if len(tmp_execution_log_list) != 0:
-                parameter['parameter']['execution_log'] = json.dumps(tmp_execution_log_list, ensure_ascii=False)
+                # parameter['parameter']['execution_log'] = json.dumps(tmp_execution_log_list, ensure_ascii=False)
+                parameter['parameter']['execution_log'] = tmp_execution_log_list
         except Exception as e:
             g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
             type_, value, traceback_ = sys.exc_info()
@@ -2889,7 +2896,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             conductor_update_status = self.get_conductor_update_status(conductor_instance_id)
             current_status_id = conductor_filter['parameter']['status_id']
             
-            #
+            # execution_log
             if 'execution_log' in conductor_filter['parameter']:
                 execution_logs = self.get_conductor_update_msg(conductor_instance_id, 'execution_log')
                 for execution_log in execution_logs:
