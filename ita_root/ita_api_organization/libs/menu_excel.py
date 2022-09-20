@@ -1475,8 +1475,11 @@ def collect_excel_journal(objdbca, organization_id, workspace_id, menu, menu_rec
                         if i < 3:
                             column_num = i + 1
                         else:
-                            column_num = header_order.index(key) + 3
-
+                            if key in header_order:
+                                column_num = header_order.index(key) + 3
+                            else:
+                                continue
+                        
                         ws.cell(row=startDetailRow, column=column_num).number_format = openpyxl.styles.numbers.FORMAT_TEXT
                         ws.cell(row=startDetailRow, column=column_num).font = font_bl
                         ws.cell(row=startDetailRow, column=column_num).border = border
@@ -1696,8 +1699,10 @@ def collect_excel_filter(objdbca, organization_id, workspace_id, menu, menu_reco
                             value = msg
                         else:
                             value = ''
-                    
-                    column_num = header_order.index(key) + 4
+                    if key in header_order:
+                        column_num = header_order.index(key) + 4
+                    else:
+                        continue
                     
                     ws.cell(row=startRow + 7, column=column_num).number_format = openpyxl.styles.numbers.FORMAT_TEXT
                     ws.cell(row=startRow + 7, column=column_num).font = font_bl
