@@ -16,7 +16,6 @@ from flask import g
 
 
 def menu_define_valid(objdbca, objtable, option):
-    # user_env = g.LANGUAGE.lower()
     retBool = True
     msg = ''
     # 個別処理
