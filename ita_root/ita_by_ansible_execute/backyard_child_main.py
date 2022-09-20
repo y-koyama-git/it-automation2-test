@@ -54,8 +54,7 @@ def backyard_child_main(organization_id, workspace_id):
     # 子プロ用のログモジュール
     g.local_applogger = LocalAppLog(driver_id, execution_no, "debug")
 
-    # v1子プロの開始　[50052] = "[処理]プロシージャ開始 (作業No.:{})";
-    g.local_applogger.debug("child_process 開始")  # "ITAANSIBLEH-STD-50052"
+    g.applogger.debug(g.appmsg.get_log_message("MSG-10720", [execution_no]))
 
     # db instance
     wsDb = DBConnectWs(workspace_id)  # noqa: F405
@@ -67,20 +66,20 @@ def backyard_child_main(organization_id, workspace_id):
         result = main_logic(wsDb, execution_no, driver_id)
         if result[0] is True:
             # 正常終了
-            g.local_applogger.debug("ITAANSIBLEH-STD-50053")
+            g.applogger.debug(g.appmsg.get_log_message("MSG-10721", [execution_no]))
         else:
             if len(result) == 2:
                 g.local_applogger.error(result[1])
             update_status_error(wsDb, execution_no)
-            # 全体でエラーがあったらITAANSIBLEH-STD-50054、警告ならITAANSIBLEH-STD-50055、をだして、終了したい？
-            g.local_applogger.debug("ITAANSIBLEH-STD-50054")
-    except AppException:
-        pass
-    except Exception:
-        t = traceback.format_exc()
-        g.local_applogger.error(arrange_stacktrace_format(t))
+            g.applogger.debug(g.appmsg.get_log_message("MSG-10722", [execution_no]))
+    except AppException as e:
         update_status_error(wsDb, execution_no)
-        g.local_applogger.debug("ITAANSIBLEH-STD-50054")
+        g.applogger.debug(g.appmsg.get_log_message("MSG-10722", [execution_no]))
+        raise Exception(e)
+    except Exception as e:
+        update_status_error(wsDb, execution_no)
+        g.applogger.debug(g.appmsg.get_log_message("MSG-10722", [execution_no]))
+        raise Exception(e)
 
 
 def update_status_error(wsDb: DBConnectWs, execution_no):
@@ -148,7 +147,7 @@ def main_logic(wsDb: DBConnectWs, execution_no, driver_id):
     # ANSIBLEインタフェース情報を取得
     retBool, result = cm.get_ansible_interface_info(wsDb)
     if retBool is False:
-        return False, result
+        return False, g.appmsg.get_log_message(result, [execution_no])
     ans_if_info = result
 
     # # Conductorインタフェース情報を取得
@@ -512,8 +511,7 @@ def instance_checkcondition(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, a
         if execute_data["STATUS_ID"] == ansc_const.PROCESSING and time_limit:
             # 開始時刻(「UNIXタイム.マイクロ秒」)を生成
             rec_time_start = execute_data['TIME_START']
-            utc_time_start = rec_time_start.astimezone(datetime.timezone.utc)
-            starttime_unixtime = utc_time_start.timestamp()
+            starttime_unixtime = rec_time_start.timestamp()
             # 開始時刻(マイクロ秒)＋制限時間(分→秒)＝制限時刻(マイクロ秒)
             limit_unixtime = starttime_unixtime + (time_limit * 60)
             # 現在時刻(「UNIXタイム.マイクロ秒」)を生成
@@ -1152,7 +1150,7 @@ def fileCreateHistoryZIPFile(execution_no, zip_file_name, utn_file_dir):
 
 
 class LocalAppLog():
-    __level = ""
+    __level = "DEBUG"
     __available_log_level = ["ERROR", "INFO", "DEBUG"]
     __output_filename = ""
 
