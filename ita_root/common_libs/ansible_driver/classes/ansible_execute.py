@@ -229,7 +229,7 @@ class AnsibleExecute():
         container_base = os.getenv('CONTAINER_BASE')
         if container_base == 'docker':
             ansibleAg = DockerMode()
-        elif container_base == 'kubernetes':
+        else:
             ansibleAg = KubernetesMode()
 
         result = ansibleAg.container_start_up(execute_no, conductor_instance_no, str_shell_command)
@@ -270,7 +270,7 @@ class AnsibleExecute():
         container_base = os.getenv('CONTAINER_BASE')
         if container_base == 'docker':
             ansibleAg = DockerMode()
-        elif container_base == 'kubernetes':
+        else:
             ansibleAg = KubernetesMode()
 
         ##########################
