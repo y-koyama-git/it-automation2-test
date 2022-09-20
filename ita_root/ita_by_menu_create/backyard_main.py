@@ -28,13 +28,11 @@ def backyard_main(organization_id, workspace_id):
         RETRUN:
             
     """
-    # ####メモ：エラー時の処理などほぼ未実装（とくにログへの出力系）
-    # 例えば必要なデータが無いとかで処理を続けられない場合、その時点で「メニュー作成履歴」のステータスを「完(異常)」に変える処理に飛ばす。
-    # その後、次の対象（メニュー作成履歴の「未実行」レコード）で処理を続けたいので「menu_create_exec」関数の中でそっちに飛ばすようにする。
-    g.applogger.debug("ita_by_menu_create 開始")
+    # メイン処理開始
+    debug_msg = g.appmsg.get_log_message("BKY-20001", [])
+    g.applogger.debug(debug_msg)
     
-    # テーブル/ビュー名
-    t_menu_define = 'T_MENU_DEFINE'  # メニュー定義一覧
+    # テーブル名
     t_menu_create_history = 'T_MENU_CREATE_HISTORY'  # メニュー作成履歴
     
     # DB接続
@@ -45,92 +43,99 @@ def backyard_main(organization_id, workspace_id):
     
     # 0件なら処理を終了
     if not ret:
-        # ####メモ：デバッグ用でメッセージ作る？それともメッセージいらないかも。
-        print("0件なので何もせず終了。")
+        debug_msg = g.appmsg.get_log_message("BKY-20003", [])
+        g.applogger.debug(debug_msg)
         return
-    
-    # ####メモ：メイン処理開始のデバッグログだす？
     
     for recode in ret:
         history_id = str(recode.get('HISTORY_ID'))
         menu_create_id = str(recode.get('MENU_CREATE_ID'))
         create_type = str(recode.get('CREATE_TYPE'))
         
-        # ステータスを「実行中」に更新
+        # 「メニュー作成履歴」ステータスを「2:実行中」に更新
         objdbca.db_transaction_start()
-        data_list = {
-            "HISTORY_ID": history_id,
-            "STATUS_ID": "2",  # 2: 実行中
-            "LAST_UPDATE_USER": g.get('USER_ID')
-        }
-        ret = objdbca.table_update(t_menu_create_history, data_list, 'HISTORY_ID')
-        if ret:
-            objdbca.db_transaction_end(True)
-            # ####メモ：ステータス更新完了のデバッグログ
-        else:
-            # ####メモ：ステータスの更新ができない異常終了
-            # ####メモ：ログにステータスの更新に失敗した旨を出したい。
-            return False
-        
-        # create_typeに応じたレコード登録/更新処理を実行
-        if create_type == "1":  # 1: 新規作成
-            print("新規作成を実行")
-            # ####メモ：デバッグで「新規作成」開始をだす？
-            res, msg = menu_create_exec(objdbca, menu_create_id, 'create_new')
-        
-        elif create_type == "2":  # 2: 初期化
-            print("初期化を実行")
-            # ####メモ：デバッグで「初期化」開始をだす？
-            res, msg = menu_create_exec(objdbca, menu_create_id, 'initialize')
-        
-        elif create_type == "3":  # 3: 編集
-            print("編集を実行")
-            # ####メモ：デバッグで「編集」開始をだす？
-            res, msg = menu_create_exec(objdbca, menu_create_id, 'edit')
-        
-        # 「メニュー定義一覧」の対象レコードの「メニュー作成状態」を「2: 作成済み」に変更
-        if res:
-            t_menu_define_recode = objdbca.table_select(t_menu_define, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
-            target_menu_create_done_status = str(t_menu_define_recode[0].get('MENU_CREATE_DONE_STATUS'))
-            if target_menu_create_done_status == '1':
-                objdbca.db_transaction_start()
-                data_list = {
-                    "MENU_CREATE_ID": menu_create_id,
-                    "MENU_CREATE_DONE_STATUS": "2",  # 2: 作成済み
-                    "LAST_UPDATE_USER": g.get('USER_ID')
-                }
-                ret = objdbca.table_update(t_menu_define, data_list, 'MENU_CREATE_ID')
-                if ret:
-                    objdbca.db_transaction_end(True)
-                else:
-                    # ####メモ：「メニュー作成状態」の更新ができない異常終了
-                    # ####メモ：ログに「メニュー作成状態」の更新に失敗した旨を出したい。
-                    # ####メモ：最終更新ステータスで「4: 完了(異常)」にするためresにFalseを指定
-                    msg = ""
-                    res = False
-        else:
+        status_id = "2"
+        result, msg = _update_t_menu_create_history(objdbca, history_id, status_id)
+        if not result:
             # エラーログ出力
             g.applogger.error(msg)
+            continue
+        objdbca.db_transaction_end(True)
         
-        # 最終更新ステータスを指定(3: 完了, 4: 完了(異常))
+        # トランザクション開始
+        debug_msg = g.appmsg.get_log_message("BKY-20004", [])
+        g.applogger.debug(debug_msg)
         objdbca.db_transaction_start()
-        status_id = 3 if res else 4
-        data_list = {
-            "HISTORY_ID": history_id,
-            "STATUS_ID": status_id,
-            "LAST_UPDATE_USER": g.get('USER_ID')
-        }
-        ret = objdbca.table_update(t_menu_create_history, data_list, 'HISTORY_ID')
-        if ret:
+        
+        # create_typeに応じたレコード登録/更新処理を実行(メイン処理)
+        if create_type == "1":  # 1: 新規作成
+            debug_msg = g.appmsg.get_log_message("BKY-20019", [menu_create_id, 'create_new'])
+            g.applogger.debug(debug_msg)
+            main_func_result, msg = menu_create_exec(objdbca, menu_create_id, 'create_new')
+        
+        elif create_type == "2":  # 2: 初期化
+            debug_msg = g.appmsg.get_log_message("BKY-20019", [menu_create_id, 'initialize'])
+            g.applogger.debug(debug_msg)
+            main_func_result, msg = menu_create_exec(objdbca, menu_create_id, 'initialize')
+        
+        elif create_type == "3":  # 3: 編集
+            debug_msg = g.appmsg.get_log_message("BKY-20019", [menu_create_id, 'edit'])
+            g.applogger.debug(debug_msg)
+            main_func_result, msg = menu_create_exec(objdbca, menu_create_id, 'edit')
+        
+        # メイン処理がFalseの場合、異常系処理
+        if not main_func_result:
+            # エラーログ出力
+            g.applogger.error(msg)
+            
+            # ロールバック/トランザクション終了
+            debug_msg = g.appmsg.get_log_message("BKY-20006", [])
+            g.applogger.debug(debug_msg)
+            objdbca.db_transaction_end(False)
+            
+            # 「メニュー作成履歴」ステータスを「4:完了(異常)」に更新
+            objdbca.db_transaction_start()
+            status_id = 4
+            result, msg = _update_t_menu_create_history(objdbca, history_id, status_id)
+            if not result:
+                # エラーログ出力
+                g.applogger.error(msg)
+                continue
             objdbca.db_transaction_end(True)
-            # ####メモ：ステータス更新完了のデバッグログ
-        else:
-            print("ステータス変更に異常があったのでエラーログ出す。")
-            # ####メモ：ステータスの更新ができない異常終了
-            # ####メモ：ログにステータスの更新に失敗した旨を出したい。
+            
+            continue
+        
+        # 「メニュー定義一覧」の対象レコードの「メニュー作成状態」を「2: 作成済み」に変更
+        menu_create_done_status_id = "2"
+        result, msg = _update_t_menu_define(objdbca, menu_create_id, menu_create_done_status_id)
+        if not result:
+            # ロールバック/トランザクション終了
+            debug_msg = g.appmsg.get_log_message("BKY-20006", [])
+            g.applogger.debug(debug_msg)
+            objdbca.db_transaction_end(False)
+            
+            # エラーログ出力
+            g.applogger.error(msg)
+            continue
+        
+        # コミット/トランザクション終了
+        debug_msg = g.appmsg.get_log_message("BKY-20005", [])
+        g.applogger.debug(debug_msg)
+        objdbca.db_transaction_end(True)
+        
+        # 「メニュー作成履歴」ステータスを「3:完了」に更新
+        objdbca.db_transaction_start()
+        status_id = 3
+        result, msg = _update_t_menu_create_history(objdbca, history_id, status_id)
+        if not result:
+            # エラーログ出力
+            g.applogger.error(msg)
+            continue
+        objdbca.db_transaction_end(True)
     
-    # 処理を終了
-    print("メイン処理終了")
+    # メイン処理終了
+    debug_msg = g.appmsg.get_log_message("BKY-20002", [])
+    g.applogger.debug(debug_msg)
     return
 
 
@@ -149,6 +154,8 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
     
     try:
         # メニュー作成用の各テーブルからレコードを取得
+        debug_msg = g.appmsg.get_log_message("BKY-20007", [])
+        g.applogger.debug(debug_msg)
         result, \
             msg, \
             recode_t_menu_define, \
@@ -220,6 +227,8 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
         
         # 「新規作成」「初期化」の場合のみ、テーブル作成SQLを実行
         if create_type == 'create_new' or create_type == 'initialize':
+            debug_msg = g.appmsg.get_log_message("BKY-20008", [create_table_name, create_table_name_jnl])
+            g.applogger.debug(debug_msg)
             with open(sql_file_path, "r") as f:
                 file = f.read()
                 if sheet_type == "1":  # パラメータシート(ホスト/オペレーションあり)
@@ -241,13 +250,15 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
             raise Exception(msg)
         
         # 「他メニュー連携」を利用する処理に必要な形式にフォーマット
-        dict_t_menu_other_link = _format_other_link(recode_t_menu_other_link)
-        
-        # トランザクション開始
-        objdbca.db_transaction_start()
+        result, msg, dict_t_menu_other_link = _format_other_link(recode_t_menu_other_link)
+        if not result:
+            raise Exception(msg)
         
         # 「初期化」「編集」の場合のみ以下の処理を実施
         if create_type == 'initialize' or create_type == 'edit':
+            debug_msg = g.appmsg.get_log_message("BKY-20009", [])
+            g.applogger.debug(debug_msg)
+            
             # 対象のメニューについて、現在登録されているメニュー用のレコードを廃止する
             result, msg = _disuse_menu_create_recode(objdbca, recode_t_menu_define)
             if not result:
@@ -260,14 +271,25 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
         
         # 対象メニューグループ分だけ処理をループ
         for menu_group_col_name in target_menu_group_list:
+            # デバッグログ用文言
+            target_menu_group_type = "Input"
+            if menu_group_col_name == "MENU_GROUP_ID_SUBST":
+                target_menu_group_type = "Substitution value auto-registration"
+            elif menu_group_col_name == "MENU_GROUP_ID_REF":
+                target_menu_group_type = "Reference"
+            
             # 「新規作成」の場合「メニュー管理」にレコードを登録
             if create_type == 'create_new':
+                debug_msg = g.appmsg.get_log_message("BKY-20010", [target_menu_group_type])
+                g.applogger.debug(debug_msg)
                 result, msg, ret_data = _insert_t_comn_menu(objdbca, recode_t_menu_define, menu_group_col_name)
                 if not result:
                     raise Exception(msg)
             
             # 「初期化」「編集」の場合「メニュー管理」のレコードを更新および登録
             if create_type == 'initialize' or create_type == 'edit':
+                debug_msg = g.appmsg.get_log_message("BKY-20011", [target_menu_group_type])
+                g.applogger.debug(debug_msg)
                 result, msg, ret_data = _update_t_comn_menu(objdbca, recode_t_menu_define, menu_group_col_name)
                 if not result:
                     raise Exception(msg)
@@ -276,17 +298,23 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
             menu_uuid = ret_data[0].get('MENU_ID')
             
             # 「ロール-メニュー紐付管理」にレコードを登録
+            debug_msg = g.appmsg.get_log_message("BKY-20012", [target_menu_group_type])
+            g.applogger.debug(debug_msg)
             result, msg = _insert_t_comn_role_menu_link(objdbca, menu_uuid, recode_t_menu_role)
             if not result:
                 raise Exception(msg)
             
             # 「メニュー-テーブル紐付管理」にレコードを登録
+            debug_msg = g.appmsg.get_log_message("BKY-20013", [target_menu_group_type])
+            g.applogger.debug(debug_msg)
             result, msg = _insert_t_comn_menu_table_link(objdbca, sheet_type, vertical_flag, file_upload_only_flag, create_table_name, create_view_name, menu_uuid, recode_t_menu_define, recode_t_menu_unique_constraint, menu_group_col_name)  # noqa: E501
             if not result:
                 raise Exception(msg)
             
             # 「カラムグループ管理」にレコードを登録(対象メニューグループ「入力用」の場合のみ実施)
             if menu_group_col_name == "MENU_GROUP_ID_INPUT":
+                debug_msg = g.appmsg.get_log_message("BKY-20014", [target_menu_group_type])
+                g.applogger.debug(debug_msg)
                 result, msg = _insert_t_comn_column_group(objdbca, target_column_group_list, dict_t_menu_column_group)
                 if not result:
                     raise Exception(msg)
@@ -306,11 +334,15 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
                     }
             
             # 「メニュー-カラム紐付管理」にレコードを登録
+            debug_msg = g.appmsg.get_log_message("BKY-20015", [target_menu_group_type])
+            g.applogger.debug(debug_msg)
             result, msg = _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uuid, dict_t_comn_column_group, dict_t_menu_column_group, recode_t_menu_column, dict_t_menu_other_link, recode_v_menu_reference_item)  # noqa: E501
             if not result:
                 raise Exception(msg)
             
             # 「メニュー定義-テーブル紐付管理」にレコードを登録
+            debug_msg = g.appmsg.get_log_message("BKY-20016", [target_menu_group_type])
+            g.applogger.debug(debug_msg)
             result, msg = _insert_t_menu_table_link(objdbca, menu_uuid, create_table_name, create_table_name_jnl)
             if not result:
                 raise Exception(msg)
@@ -318,25 +350,23 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
             # 対象メニューグループ「入力用」の場合のみ実施
             if menu_group_col_name == "MENU_GROUP_ID_INPUT":
                 # 「他メニュー連携」にレコードを登録
+                debug_msg = g.appmsg.get_log_message("BKY-20017", [target_menu_group_type])
+                g.applogger.debug(debug_msg)
                 result, msg = _insert_t_menu_other_link(objdbca, menu_uuid, create_table_name, recode_t_menu_column)
                 if not result:
                     raise Exception(msg)
                 
                 # 「参照項目情報」にレコードを登録
+                debug_msg = g.appmsg.get_log_message("BKY-20018", [target_menu_group_type])
+                g.applogger.debug(debug_msg)
                 result, msg = _insert_t_menu_reference_item(objdbca, menu_uuid, create_table_name, recode_t_menu_column)
                 if not result:
                     raise Exception(msg)
-        
-        # コミット/トランザクション終了
-        objdbca.db_transaction_end(True)
         
         # 正常系リターン
         return True, msg
         
     except Exception as msg:
-        # ロールバック/トランザクション終了
-        objdbca.db_transaction_end(False)
-        
         # 異常系リターン
         return False, msg
 
@@ -836,8 +866,6 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "AFTER_VALIDATE_REGISTER": None,
                 "DESCRIPTION_JA": "[元データ]Ansible共通/機器一覧",
                 "DESCRIPTION_EN": "[Original data] Ansible Common/Device list",
-                "DESCRIPTION_JA": "ホストを選択",
-                "DESCRIPTION_EN": "Select host",
                 "DISUSE_FLAG": "0",
                 "LAST_UPDATE_USER": g.get('USER_ID')
             }
@@ -1204,7 +1232,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                         ref_column_name_rest = str(column_name_rest) + "_ref_" + str(ref_count)
                         convert_reference_item_list.append(ref_column_name_rest)
                     str_convert_reference_item_list = json.dumps(convert_reference_item_list)
-                    
+                
             # 「カラムグループ作成情報」のIDから同じフルカラムグループ名の対象を「カラムグループ管理」から探しIDを指定
             col_group_id = None
             tmp_col_group_id = recode.get('CREATE_COL_GROUP_ID')
@@ -1323,7 +1351,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                             
                             # 表示順序を加算
                             disp_seq_num = int(disp_seq_num) + 10
-                    
+        
         # 「メニュー作成機能で作成した項目」が0件の場合、特殊な項目を作成
         if not recode_t_menu_column:
             res_valid, msg = _check_column_validation(objdbca, menu_uuid, "no_item")
@@ -1564,6 +1592,36 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
     return True, None
 
 
+def _update_t_menu_define(objdbca, menu_create_id, menu_create_done_status_id):
+    """
+        「メニュー定義一覧」メニューのレコードを更新する
+        ARGS:
+            objdbca: DB接クラス DBConnectWs()
+            menu_create_id: 対象の「メニュー定義一覧」のレコードのUUID
+            menu_create_done_status_id: 作成状態のID「1:未作成」,「2:作成済み」
+        RETRUN:
+            result, msg
+    """
+    # テーブル名
+    t_menu_define = 'T_MENU_DEFINE'
+    
+    try:
+        t_menu_define_recode = objdbca.table_select(t_menu_define, 'WHERE MENU_CREATE_ID = %s AND DISUSE_FLAG = %s', [menu_create_id, 0])
+        target_menu_create_done_status = str(t_menu_define_recode[0].get('MENU_CREATE_DONE_STATUS'))
+        if target_menu_create_done_status == '1':
+            data_list = {
+                "MENU_CREATE_ID": menu_create_id,
+                "MENU_CREATE_DONE_STATUS": menu_create_done_status_id,
+                "LAST_UPDATE_USER": g.get('USER_ID')
+            }
+            objdbca.table_update(t_menu_define, data_list, 'MENU_CREATE_ID')
+        
+    except Exception as msg:
+        return False, msg
+    
+    return True, None
+
+
 def _insert_t_menu_table_link(objdbca, menu_uuid, create_table_name, create_table_name_jnl):
     """
         「メニュー定義-テーブル紐付管理」メニューのテーブルにレコードを追加する
@@ -1611,7 +1669,7 @@ def _insert_t_menu_other_link(objdbca, menu_uuid, create_table_name, recode_t_me
     # テーブル名
     t_menu_other_link = 'T_MENU_OTHER_LINK'
     
-    try:        
+    try:
         # 他メニュー連携の対象とするカラムクラス一覧(1:SingleTextColumn, 2:MultiTextColumn, 3:NumColumn, 4:FloatColumn, 5:DateTimeColumn, 6:DateColumn, 9:FileUploadColumn, 10:HostInsideLinkTextColumn)  # noqa: E501
         target_column_class_list = ["1", "2", "3", "4", "5", "6", "9", "10"]
         for recode in recode_t_menu_column:
@@ -1638,7 +1696,7 @@ def _insert_t_menu_other_link(objdbca, menu_uuid, create_table_name, recode_t_me
                         "COLUMN_DISP_NAME_EN": column_disp_name_en,
                         'DISUSE_FLAG': "0"
                     }
-                    result = objdbca.table_update(t_menu_other_link, data, "LINK_ID")
+                    objdbca.table_update(t_menu_other_link, data, "LINK_ID")
                     
                 else:
                     # 条件が一致するレコードが無い場合は新規登録
@@ -1729,6 +1787,33 @@ def _insert_t_menu_reference_item(objdbca, menu_uuid, create_table_name, recode_
                     
                     # 表示順序を加算
                     disp_seq_num = int(disp_seq_num) + 10
+        
+    except Exception as msg:
+        return False, msg
+    
+    return True, None
+
+
+def _update_t_menu_create_history(objdbca, history_id, status_id):
+    """
+        「メニュー管理」の対象レコードを更新。対象が無ければレコードを新規登録する。
+        ARGS:
+            objdbca: DB接クラス DBConnectWs()
+            history_id: 「メニュー作成履歴」対象レコードのUUID
+            status_id: ステータスID(1:未実施, 2:実行中, 3:完了, 4:完了(異常))
+        RETRUN:
+            result, msg, ret_data
+    """
+    # テーブル名
+    t_menu_create_history = 'T_MENU_CREATE_HISTORY'
+    try:
+        # 「メニュー作成履歴」の対象レコードのステータスを更新
+        data_list = {
+            "HISTORY_ID": history_id,
+            "STATUS_ID": status_id,
+            "LAST_UPDATE_USER": g.get('USER_ID')
+        }
+        objdbca.table_update(t_menu_create_history, data_list, 'HISTORY_ID')
         
     except Exception as msg:
         return False, msg
