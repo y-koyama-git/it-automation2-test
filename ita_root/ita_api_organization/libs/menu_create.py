@@ -246,7 +246,11 @@ def collect_exist_menu_create_data(objdbca, menu_create):  # noqa: C901
             if column_class_name == "IDColumn":
                 col_detail["pulldown_selection"] = recode.get('OTHER_MENU_LINK_ID')  # プルダウン選択 メニューグループ:メニュー:項目
                 col_detail["pulldown_selection_default_value"] = recode.get('OTHER_MENU_LINK_DEFAULT_VALUE')  # プルダウン選択 初期値
-                col_detail["reference_item"] = ast.literal_eval(recode.get('REFERENCE_ITEM'))  # プルダウン選択 参照項目
+                reference_item = recode.get('REFERENCE_ITEM')
+                if reference_item:
+                    col_detail["reference_item"] = ast.literal_eval(reference_item)  # プルダウン選択 参照項目
+                else:
+                    col_detail["reference_item"] = None  # プルダウン選択 参照項目
             
             # カラムクラス「パスワード」用のパラメータを追加
             if column_class_name == "PasswordColumn":
@@ -1344,7 +1348,15 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
                         if not update_pulldown_selection == current_pulldown_selection:
                             raise Exception("499-00706", [item_name, "pulldown_selection"])  # 「編集」の際は既存項目の対象の設定を変更できません。(項目: {}, 対象: {})
                         
-                        # ####メモ：参照項目に変更がある場合のエラー判定も必要
+                        # 現在設定されているIDのreference_itemを取得
+                        current_reference_item = target_recode.get('REFERENCE_ITEM')
+                        update_reference_item_list = column_data.get('reference_item')
+                        update_reference_item_dump = json.dumps(update_reference_item_list)
+                        update_reference_item = str(update_reference_item_dump)
+                        
+                        # reference_itemが変更されている場合エラー判定
+                        if not current_reference_item == update_reference_item:
+                            raise Exception("499-00706", [item_name, "reference_item"])  # 「編集」の際は既存項目の対象の設定を変更できません。(項目: {}, 対象: {})
                     
                     # カラムクラス「パスワード」の場合のバリデーションチェック
                     if column_class == "PasswordColumn":
