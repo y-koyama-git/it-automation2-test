@@ -1324,7 +1324,7 @@ class loadTable():
                 tmp_rows = self.get_target_rows(target_uuid)
                 
                 if len(tmp_rows) != 1:
-                    status_code = '499-00205'
+                    status_code = 'MSG-00007'
                     msg_args = [target_uuid]
                     msg = g.appmsg.get_api_message(status_code, msg_args)
                     dict_msg = {
@@ -1488,7 +1488,7 @@ class loadTable():
 
             for rest_key in list(entry_parameter.keys()):
                 if self.chk_restkey(rest_key) is not True:
-                    status_code = '499-00209'
+                    status_code = 'MSG-00026'
                     msg_args = [rest_key]
                     msg = g.appmsg.get_api_message(status_code, msg_args)
                     dict_msg = {
@@ -1621,7 +1621,7 @@ class loadTable():
         else:
             # 実行種別エラー
             retBool = False
-            status_code = '499-00210'
+            status_code = 'MSG-00027'
             msg_args = [cmd_type]
             msg = g.appmsg.get_api_message(status_code, msg_args)
             dict_msg = {
@@ -1825,7 +1825,7 @@ class loadTable():
                     for table_count_rows in table_count:
                         list_uuids.append(table_count_rows.get(primary_key_list[0]))
                     
-                    status_code = '499-00204'
+                    status_code = 'MSG-00006'
                     msg_args = [str(dict_bind_kv), str(list_uuids)]
                     msg = g.appmsg.get_api_message(status_code, msg_args)
                     dict_msg = {
@@ -1989,7 +1989,7 @@ class loadTable():
             lastupdatetime_current = current_parameter.get('last_update_date_time')
             lastupdatetime_parameter = entry_parameter.get('last_update_date_time')
             if lastupdatetime_parameter is None:
-                status_code = '499-00211'
+                status_code = 'MSG-00028'
                 msg_args = [lastupdatetime_parameter]
                 msg = g.appmsg.get_api_message(status_code, msg_args)
                 dict_msg = {
@@ -2011,7 +2011,7 @@ class loadTable():
                 # 更新系の追い越し判定
                 if lastupdatetime_current != lastupdatetime_parameter:
                     # if (lastupdatetime_current < lastupdatetime_parameter) is False:
-                    status_code = '499-00203'
+                    status_code = 'MSG-00005'
                     msg_args = [target_uuid]
                     msg = g.appmsg.get_api_message(status_code, msg_args)
                     dict_msg = {
@@ -2021,7 +2021,7 @@ class loadTable():
                     }
                     self.set_message(dict_msg, g.appmsg.get_api_message("MSG-00004", []), MSG_LEVEL_ERROR)
         except ValueError as msg_args:
-            status_code = '499-00211'
+            status_code = 'MSG-00028'
             msg_args = [lastupdatetime_parameter]
             msg = g.appmsg.get_api_message(status_code, msg_args)
             dict_msg = {
@@ -2058,7 +2058,7 @@ class loadTable():
 
                 # 廃止→廃止の場合エラー
                 if cmd_type == CMD_DISCARD and discard_row in ['1', 1] and discard_parameter in ['1', 1]:
-                    status_code = '499-00206'
+                    status_code = 'MSG-00023'
                     msg_args = [target_uuid]
                     msg = g.appmsg.get_api_message(status_code, msg_args)
                     dict_msg = {
@@ -2122,7 +2122,7 @@ class loadTable():
         # 不正なキーがある場合エラー
         if len(err_keys) != 0:
             err_keys = ",".join(map(str, err_keys))
-            status_code = '499-00212'
+            status_code = 'MSG-00029'
             msg_args = [err_keys]
             msg = g.appmsg.get_api_message(status_code, msg_args)
             dict_msg = {
@@ -2148,11 +2148,11 @@ class loadTable():
             if len(required_restkey_list) <= len(parameter):
                 for required_restkey in required_restkey_list:
                     if required_restkey not in parameter:
-                        status_code = '499-00207'
+                        status_code = 'MSG-00024'
                         msg_args = [required_restkey]
                         msg = g.appmsg.get_api_message(status_code, [msg_args])
             else:
-                status_code = '499-00207'
+                status_code = 'MSG-00024'
                 msg_args = [",".join(required_restkey_list)]
                 msg = g.appmsg.get_api_message(status_code, [msg_args])
 

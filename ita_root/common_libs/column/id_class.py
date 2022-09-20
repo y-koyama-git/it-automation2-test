@@ -196,8 +196,8 @@ class IDColumn(Column):
         # 返却値が存在するか確認
         if len(return_values) == 0:
             retBool = False
-            status_code = '499-00218'
-            msg_args = [self.get_rest_key_name(), val]
+            status_code = 'MSG-00032'
+            msg_args = [val]
             msg = g.appmsg.get_api_message(status_code, msg_args)
             return retBool, msg
         
@@ -222,8 +222,8 @@ class IDColumn(Column):
                 val = list(return_values.keys())[0]
             else:
                 retBool = False
-                status_code = '499-00218'
-                msg_args = [self.get_rest_key_name(), val]
+                status_code = 'MSG-00032'
+                msg_args = [val]
                 msg = g.appmsg.get_api_message(status_code, msg_args)
 
         return retBool, msg, val,

@@ -93,7 +93,7 @@ class NumColumn(Column):
                         min_num = dict_valid.get('int_min')
                         # 閾値(最大値)
                         max_num = dict_valid.get('int_max')
-                
+                                        
                 if min_num is None and max_num is None:
                     # 最小値、最大値閾値無し
                     retBool = True
@@ -103,8 +103,8 @@ class NumColumn(Column):
                         retBool = True
                     else:
                         retBool = False
-                        status_code = '499-00214'
-                        msg_args = [self.get_rest_key_name(), min_num, max_num, val]
+                        status_code = 'MSG-00019'
+                        msg_args = [min_num, max_num, val]
                         msg = g.appmsg.get_api_message(status_code, msg_args)
                         return retBool, msg
 
@@ -114,8 +114,8 @@ class NumColumn(Column):
                         retBool = True
                     else:
                         retBool = False
-                        status_code = '499-00215'
-                        msg_args = [self.get_rest_key_name(), min_num, val]
+                        status_code = 'MSG-00020'
+                        msg_args = [min_num, val]
                         msg = g.appmsg.get_api_message(status_code, msg_args)
                         return retBool, msg
                 elif max_num is not None:
@@ -124,14 +124,14 @@ class NumColumn(Column):
                         retBool = True
                     else:
                         retBool = False
-                        status_code = '499-00216'
-                        msg_args = [self.get_rest_key_name(), max_num, val]
+                        status_code = 'MSG-00021'
+                        msg_args = [max_num, val]
                         msg = g.appmsg.get_api_message(status_code, msg_args)
                         return retBool, msg
             except ValueError:
                 retBool = False
-                status_code = '499-00217'
-                msg_args = [self.get_rest_key_name(), val]
+                status_code = 'MSG-00031'
+                msg_args = [val]
                 msg = g.appmsg.get_api_message(status_code, msg_args)
                 return retBool, msg
 
