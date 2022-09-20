@@ -123,7 +123,7 @@ class AnsibleExecute():
         # ansible vault password file作成
         with open(strVaultPasswordFileName, 'w') as fd:
             fd.write(vault_password)
-        
+
         # 実行ユーザー確認
         if execute_user:
             execute_user = "-u {}".format(execute_user)
@@ -212,7 +212,8 @@ class AnsibleExecute():
         # ansible-playbook実行 shell作成
         with open(strExecshellName, 'w') as fd:
             fd.write(strShell)
-
+        
+        os.chmod(strExecshellName, 0o777)
         # ansible-playbook 標準エラー出力先
         strSTDERRFileName = "{}/{}/{}".format(execute_path, self.strOutFolderName, self.STDERRLogfile)
         # ansible-playbook 標準出力出力先
