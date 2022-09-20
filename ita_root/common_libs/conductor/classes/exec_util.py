@@ -311,8 +311,14 @@ class ConductorExecuteLibs():
                         pattern = r'\b\d{4}/\d{2}/\d{2}\b \b\d{2}:\b\d{2}:\b\d{2}'
                         tmp_result = re.findall(pattern, schedule_date)  # noqa: F405
                         if len(tmp_result) != 1:
-                            raise Exception()
-                        tmp_schedule_date = tmp_result[0]
+                            pattern = r'\b\d{4}/\d{2}/\d{2}\b \b\d{2}:\b\d{2}'
+                            tmp_result = re.findall(pattern, schedule_date)  # noqa: F405
+                            if len(tmp_result) != 1:
+                                raise Exception()
+                            else:
+                                tmp_schedule_date = tmp_result[0] + ':00'
+                        else:
+                            tmp_schedule_date = tmp_result[0]
                         datetime.strptime(tmp_schedule_date, '%Y/%m/%d %H:%M:%S')
                     except Exception:
                         retBool = False
@@ -2612,7 +2618,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             # 実行Terminalを判定 + 不使用terminal先のNodeを取得
             node_name = node_options.get('node_name')
             tmp_node_status = node_options.get('instance_info_data').get('dict').get('node_status')
-            tmp_node_status_keys = [k for k, v in tmp_node_status.items() if v == in_node_status_id]
+            tmp_node_status_keys = [k for k, v in tmp_node_status.items() if k == str(in_node_status_id)]
             in_node_status_key = tmp_node_status_keys[0]
 
             node_terminals = node_options.get('instance_data').get('conductor_class').get(node_name).get('terminal')
@@ -3848,10 +3854,6 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                     in_node_info = instance_data.get('node').get(in_node_name)
                     in_node_status_id = in_node_info.get('status_id')
 
-            import random
-            rnum = random.randint(0, len(node_options.get('end_status_list')))
-            in_node_status_id = node_options.get('end_status_list')[rnum]
-            
             tmp_result = self.get_conditional_node_info(node_options, in_node_status_id)
             if tmp_result[0] is False:
                 raise Exception()
