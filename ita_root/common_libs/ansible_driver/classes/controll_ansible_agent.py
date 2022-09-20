@@ -174,11 +174,11 @@ class KubernetesMode(AnsibleAgent):
         _conductor_instance_no = conductor_instance_no if conductor_instance_no else "dummy"
         conductor_path = "{}/{}/driver/conducotr/{}".format(self._organization_id, self._workspace_id, _conductor_instance_no)
 
-        host_mount_path_driver = os.environ.get('HOST_STORAGEPATH') + driver_path
+        host_mount_path_driver = os.environ.get('STORAGEPATH').lstrip("/") + driver_path
         container_mount_path_driver = os.environ.get('STORAGEPATH') + driver_path
         if not os.path.isdir(container_mount_path_driver):
             os.makedirs(container_mount_path_driver)
-        host_mount_path_conductor = os.environ.get('HOST_STORAGEPATH') + conductor_path
+        host_mount_path_conductor = os.environ.get('STORAGEPATH').lstrip("/") + conductor_path
         container_mount_path_conductor = os.environ.get('STORAGEPATH') + conductor_path
         unique_name = self.get_unique_name(execution_no)
         unique_name = re.sub(r'_', '-', unique_name).lower()
