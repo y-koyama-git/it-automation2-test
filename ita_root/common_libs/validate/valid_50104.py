@@ -73,8 +73,6 @@ def menu_column_valid(objdbca, objtable, option):
     # パラメータシート参照/メニューグループ：メニュー：項目
     parameter_sheet_reference = entry_parameter.get("parameter_sheet_reference")
     
-    # メモ 正規表現専用のバリデータクラス　正規表現が不正な文法
-
     # 入力方式が文字列(単一行)の場合
     if column_class == "1":
         # 文字列(単一行)最大バイト数が設定されていない場合、エラー
@@ -678,7 +676,6 @@ def menu_column_valid(objdbca, objtable, option):
             retBool = False
             msg = g.appmsg.get_api_message("MSG-20151", [])
 
-    # 作成中
     # 入力方式がプルダウンの場合
     elif column_class == "7":
         # 文字列(単一行)最大バイト数が設定されている場合、エラー
