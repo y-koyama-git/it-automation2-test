@@ -84,7 +84,7 @@ def collect_excel_all(objdbca, organization_id, workspace_id, menu, menu_record,
     file_path = excel_dir + '/' + file_name
     
     # 『メニュー-カラム紐付管理』テーブルから対象のデータを取得
-    retList_t_common_menu_column_link = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
+    retList_t_common_menu_column_link = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s ORDER BY COLUMN_DISP_SEQ ASC', [menu_id, 0])
     if not retList_t_common_menu_column_link:
         log_msg_args = [menu]
         api_msg_args = [menu]
@@ -264,14 +264,9 @@ def collect_excel_all(objdbca, organization_id, workspace_id, menu, menu_record,
     ws_filter['D1'] = msg
     ws_filter['A2'] = datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
     
-    if menu_table_link_list[2] == '0' and menu_table_link_list[3] == '0':
-        # 全レコード
-        msg = g.appmsg.get_api_message('MSG-30018')
-        ws_filter['D2'] = msg
-    else:
-        # 廃止含まず
-        msg = g.appmsg.get_api_message('MSG-30016')
-        ws_filter['D2'] = msg
+    # 廃止含まず
+    msg = g.appmsg.get_api_message('MSG-30016')
+    ws_filter['D2'] = msg
     
     wb.save(file_path)  # noqa: E303
     
@@ -330,12 +325,9 @@ def make_master_sheet(wb, objdbca, lang, retList_t_common_menu_column_link, menu
     msg = g.appmsg.get_api_message('MSG-30002')
     ws_master.cell(row=1, column=4, value=msg)
     
-    if menu_table_link_list[2] == '0' and menu_table_link_list[3] == '0':
-        startClm_master -= 1
-    else:
-        # 廃止
-        msg = g.appmsg.get_api_message('MSG-30006')
-        ws_master.cell(row=1, column=5, value=msg)
+    # 廃止
+    msg = g.appmsg.get_api_message('MSG-30006')
+    ws_master.cell(row=1, column=5, value=msg)
     
     name_define_list = []
     for i, dict_menu_column in enumerate(retList_t_common_menu_column_link):
@@ -621,12 +613,6 @@ def create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, 
     excel_header_list = [[] for i in range(depth)]
     header_order = []
     
-    # 廃止フラグを表示するかしないか
-    # True:表示する　False:表示しない
-    discard_flag = True
-    if menu_table_link_list[2] == '0' and menu_table_link_list[3] == '0':
-        discard_flag = False
-    
     # 表示する項目を二次元配列に構築する
     for i in range(depth):
         for j, dict_menu_column in enumerate(retList_t_common_menu_column_link):
@@ -636,15 +622,15 @@ def create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, 
             # 廃止フラグ
             msg = g.appmsg.get_api_message('MSG-30015')
             if column_name == msg:
-                if discard_flag:
-                    excel_header_list[depth - 1 - i].insert(0, column_name)
-                    if i == 0:
-                        header_order.insert(0, column_name_rest)
+                excel_header_list[depth - 1 - i].insert(0, column_name)
+                if column_name_rest not in header_order:
+                    header_order.insert(0, column_name_rest)
                 continue
             
             if i == 0:
                 excel_header_list[depth - 1 - i].append(column_name)
-                header_order.append(column_name_rest)
+                if column_name_rest not in header_order:
+                    header_order.append(column_name_rest)
             elif i == 1:
                 group_id = dict_menu_column.get('COL_GROUP_ID')
                 if group_id is None:
@@ -758,13 +744,6 @@ def create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_colum
     border = Border(left=side, right=side, top=side, bottom=side)
     borderDash = Border(left=side, right=side, top=sideDash, bottom=sideDash)
     
-    # 廃止フラグを表示するかしないか
-    # True:表示する　False:表示しない
-    discard_flag = True
-    if menu_table_link_list[2] == '0' and menu_table_link_list[3] == '0':
-        discard_flag = False
-        startClm -= 1
-    
     # カラム位置調整用フラグ
     column_flg = False
     dataVaridationDict = {}
@@ -776,12 +755,8 @@ def create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_colum
         # 廃止フラグ
         msg = g.appmsg.get_api_message('MSG-30015')
         if column_name == msg:
-            if discard_flag:
                 column_num = 4
                 column_flg = True
-            else:
-                startClm -= 1
-                continue
         else:
             column_num = startClm + i + 1
             if column_flg:
@@ -901,13 +876,6 @@ def create_column_info_trace_history(lang, ws, startRow, startClm, retList_t_com
     # 罫線の設定
     side = Side(border_style="thin", color="000000")
     border = Border(left=side, right=side, top=side, bottom=side)
-    
-    # 廃止フラグを表示するかしないか
-    # True:表示する　False:表示しない
-    discard_flag = True
-    if menu_table_link_list[2] == '0' and menu_table_link_list[3] == '0':
-        discard_flag = False
-        startClm -= 1
     
     # カラム位置調整用フラグ
     column_flg = False
@@ -1161,7 +1129,7 @@ def collect_excel_format(objdbca, organization_id, workspace_id, menu, menu_reco
     file_path = excel_dir + '/' + file_name
     
     # 『メニュー-カラム紐付管理』テーブルから対象のデータを取得
-    retList_t_common_menu_column_link = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
+    retList_t_common_menu_column_link = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s ORDER BY COLUMN_DISP_SEQ ASC', [menu_id, 0])
     if not retList_t_common_menu_column_link:
         log_msg_args = [menu]
         api_msg_args = [menu]
@@ -1353,7 +1321,7 @@ def collect_excel_journal(objdbca, organization_id, workspace_id, menu, menu_rec
     file_path = excel_dir + '/' + file_name
     
     # 『メニュー-カラム紐付管理』テーブルから対象のデータを取得
-    retList_t_common_menu_column_link = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
+    retList_t_common_menu_column_link = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s ORDER BY COLUMN_DISP_SEQ ASC', [menu_id, 0])
     if not retList_t_common_menu_column_link:
         log_msg_args = [menu]
         api_msg_args = [menu]
@@ -1567,7 +1535,7 @@ def collect_excel_filter(objdbca, organization_id, workspace_id, menu, menu_reco
     file_path = excel_dir + '/' + file_name
     
     # 『メニュー-カラム紐付管理』テーブルから対象のデータを取得
-    retList_t_common_menu_column_link = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
+    retList_t_common_menu_column_link = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s ORDER BY COLUMN_DISP_SEQ ASC', [menu_id, 0])
     if not retList_t_common_menu_column_link:
         log_msg_args = [menu]
         api_msg_args = [menu]
@@ -1835,8 +1803,10 @@ def execute_excel_maintenance(objdbca, organization_id, workspace_id, menu, menu
         status_code = '499-00402'
         raise AppException(status_code)     # noqa: F405
     
-    ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s', [menu_id, 0])
+    ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s ORDER BY COLUMN_DISP_SEQ ASC', [menu_id, 0])
     
+    # 項目順記憶用
+    column_order = []
     # 登録時に除外する項目リスト
     register_list = []
     for recode in ret:
@@ -1852,20 +1822,15 @@ def execute_excel_maintenance(objdbca, organization_id, workspace_id, menu, menu
         # カラムクラスIDがファイルアップロードのものは除外する
         if column_class_id == '9':
             register_list.append(column_name_rest)
+        
+        if column_name_rest == 'discard':
+            # 廃止フラグは先頭に追加する
+            column_order.insert(0, column_name_rest)
+        else:
+            column_order.append(column_name_rest)
     
     # 先頭のシートを選択する
     ws = wb.worksheets[0]
-    
-    # 項目名記憶用
-    column_name = []
-    param = result[0].get('parameter')
-    
-    for i, key in enumerate(param.keys()):
-        if key == 'discard':
-            # 廃止フラグは先頭に追加する
-            column_name.insert(0, key)
-        else:
-            column_name.append(key)
     
     # C列の実行処理種別を見て対象の行を記憶する
     row_num = ws.max_row
@@ -1906,9 +1871,9 @@ def execute_excel_maintenance(objdbca, organization_id, workspace_id, menu, menu
             # j:項目数の分だけループ
             for col_j in range(len(excel_data[0])):
                 if process_type[row_i] == msg_reg:
-                    if column_name[col_j] in register_list:
+                    if column_order[col_j] in register_list:
                         continue
-                dict_param[column_name[col_j]] = excel_data[row_i][col_j]
+                dict_param[column_order[col_j]] = excel_data[row_i][col_j]
             parameter[row_i]["parameter"] = dict_param
             if process_type[row_i] == msg_reg:
                 process_type[row_i] = "Register"
