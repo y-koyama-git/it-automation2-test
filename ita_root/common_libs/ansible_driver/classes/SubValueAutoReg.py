@@ -98,12 +98,14 @@ class SubValueAutoReg():
         global warning_flag
         global error_flag
         
-        # 処理区分が変数抜出処理
-        if exec_type == '2':
-            template_list = self.getTemplateVarList(WS_DB)
-            host_list = self.getTargetHostList(WS_DB)
-            
-            return True, template_list, host_list
+        # 環境情報設定
+        # 言語情報
+        if 'LANGUAGE' not in g:
+            g.LANGUAGE = 'ja'
+        if 'USER_ID' not in g:
+            g.USER_ID = '20101'
+        if 'ROLES' not in g:
+            g.ROLES = 'JyIkPVx7Wy8KYWJjMTIz'
         
         # インターフェース情報からNULLデータを代入値管理に登録するかのデフォルト値を取得する。
         ret = self.getIFInfoDB(WS_DB)
@@ -141,10 +143,29 @@ class SubValueAutoReg():
         frame = inspect.currentframe().f_back
         g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
         
+        warning_flag = 0
         ret = self.getCMDBdata(lv_tableNameToSqlList, lv_tableNameToMenuIdList, lv_tabColNameToValAssRowList, warning_flag, WS_DB)
         lv_varsAssList = ret[0]
         lv_arrayVarsAssList = ret[1]
         warning_flag = ret[2]
+        
+        # 処理区分が変数抜出処理
+        if exec_type == '2':
+
+            template_list = {} # { MovementID: { TPF変数名: 0 }, … }
+            host_list = {} # { MovementID: { OPERATION_ID: { SYSTEM_ID: 0 }, … }, … }
+            
+            var_extractor = WrappedStringReplaceAdmin()
+            
+            # 一般変数・複数具体値変数を紐付けている紐付メニューの具体値からTPF変数を抽出する
+            for varsAssRecord in lv_varsAssList.values():
+                template_list, host_list = self.extract_tpl_vars(var_extractor, varsAssRecord, template_list, host_list)
+
+            # 多次元変数を紐付けている紐付メニューの具体値からTPF変数を抽出する
+            for varsAssRecord in lv_arrayVarsAssList.values():
+                template_list, host_list = self.extract_tpl_vars(var_extractor, varsAssRecord, template_list, host_list)
+
+            return True, template_list, host_list
         
         # トランザクション開始 
         traceMsg = g.appmsg.get_api_message("MSG-10785")
@@ -663,6 +684,7 @@ class SubValueAutoReg():
         hostid_chk_sql += " ) AS " + AnscConst.DF_ITA_LOCAL_HOST_CNT + ", \n"
         
         # テーブル名+カラム名配列からテーブル名と配列名を取得
+        inout_tableNameToSqlList = {}
         for table_name, col_list in in_tabColNameToValAssRowList.items():
             pkey_name = in_tableNameToPKeyNameList[table_name]
             
@@ -690,7 +712,6 @@ class SubValueAutoReg():
             make_sql += " WHERE DISUSE_FLAG = '0' \n "
             
             # メニューテーブルのSELECT SQL文退避
-            inout_tableNameToSqlList = {}
             inout_tableNameToSqlList[table_name] = make_sql
             
         return inout_tableNameToSqlList
@@ -2407,7 +2428,7 @@ class SubValueAutoReg():
         sql += "     SELECT                                                       \n"
         sql += "       COUNT(*)                                                   \n"
         sql += "     FROM                                                         \n"
-        sql += lv_pattern_link_tbl + "                                            \n"
+        sql += SubValueAutoReg.lv_pattern_link_tbl + "                                            \n"
         sql += "     WHERE                                                        \n"
         sql += "       MOVEMENT_ID  = TBL_A.MOVEMENT_ID AND                       \n"
         sql += "       DISUSE_FLAG = '0'                                          \n"
@@ -2420,7 +2441,7 @@ class SubValueAutoReg():
         sql += "     SELECT                                                       \n"
         sql += "       COUNT(*)                                                   \n"
         sql += "     FROM                                                         \n"
-        sql += lv_ptn_vars_link_tbl + "                                           \n"
+        sql += SubValueAutoReg.lv_ptn_vars_link_tbl + "                                           \n"
         sql += "     WHERE                                                        \n"
         sql += "       MOVEMENT_ID    = TBL_A.MOVEMENT_ID        AND              \n"
         sql += "       MVMT_VAR_LINK_ID  = TBL_A.VAL_MVMT_VAR_LINK_ID  AND        \n"
@@ -2433,13 +2454,13 @@ class SubValueAutoReg():
         sql += "     SELECT                                                       \n"
         sql += "       COL_COMBINATION_MEMBER_ALIAS                               \n"
         sql += "     FROM                                                         \n"
-        sql += lv_member_col_comb_tbl + "                                         \n"
+        sql += SubValueAutoReg.lv_member_col_comb_tbl + "                                         \n"
         sql += "     WHERE                                                        \n"
         sql += "       MVMT_VAR_LINK_ID IN (                                      \n"
         sql += "         SELECT                                                   \n"
         sql += "           VARS_NAME                                              \n"
         sql += "         FROM                                                     \n"
-        sql += lv_ptn_vars_link_tbl + "                                           \n"
+        sql += SubValueAutoReg.lv_ptn_vars_link_tbl + "                                           \n"
         sql += "         WHERE                                                    \n"
         sql += "           MOVEMENT_ID    = TBL_A.MOVEMENT_ID        AND          \n"
         sql += "           MVMT_VAR_LINK_ID  = TBL_A.VAL_MVMT_VAR_LINK_ID  AND    \n"
@@ -2456,13 +2477,13 @@ class SubValueAutoReg():
         sql += "     SELECT                                                       \n"
         sql += "       ASSIGN_SEQ_NEED                                            \n"
         sql += "     FROM                                                         \n"
-        sql += lv_array_member_tbl + "                                            \n"
+        sql += SubValueAutoReg.lv_array_member_tbl + "                                            \n"
         sql += "     WHERE                                                        \n"
         sql += "       MVMT_VAR_LINK_ID IN (                                      \n"
         sql += "         SELECT                                                   \n"
         sql += "           VARS_NAME                                              \n"
         sql += "         FROM                                                     \n"
-        sql += lv_ptn_vars_link_tbl + "                                           \n"
+        sql += SubValueAutoReg.lv_ptn_vars_link_tbl + "                                           \n"
         sql += "         WHERE                                                    \n"
         sql += "           MOVEMENT_ID    = TBL_A.MOVEMENT_ID        AND          \n"
         sql += "           MVMT_VAR_LINK_ID  = TBL_A.VAL_MVMT_VAR_LINK_ID  AND    \n"
@@ -2473,7 +2494,7 @@ class SubValueAutoReg():
         sql += "         SELECT                                                   \n"
         sql += "           ARRAY_MEMBER_ID                                        \n"
         sql += "         FROM                                                     \n"
-        sql += lv_member_col_comb_tbl + "                                         \n"
+        sql += SubValueAutoReg.lv_member_col_comb_tbl + "                                         \n"
         sql += "         WHERE                                                    \n"
         sql += "           COL_SEQ_COMBINATION_ID = TBL_A.KEY_COL_SEQ_COMBINATION_ID AND \n"
         sql += "           DISUSE_FLAG   = '0'                                    \n"
@@ -2488,7 +2509,7 @@ class SubValueAutoReg():
         sql += "     SELECT                                                       \n"
         sql += "       COUNT(*)                                                   \n"
         sql += "     FROM                                                         \n"
-        sql += lv_ptn_vars_link_tbl + "                                           \n"
+        sql += SubValueAutoReg.lv_ptn_vars_link_tbl + "                                           \n"
         sql += "     WHERE                                                        \n"
         sql += "       MOVEMENT_ID    = TBL_A.MOVEMENT_ID        AND              \n"
         sql += "       MVMT_VAR_LINK_ID  = TBL_A.KEY_MVMT_VAR_LINK_ID  AND        \n"
@@ -2501,13 +2522,13 @@ class SubValueAutoReg():
         sql += "     SELECT                                                       \n"
         sql += "       COL_COMBINATION_MEMBER_ALIAS                               \n"
         sql += "     FROM                                                         \n"
-        sql += lv_member_col_comb_tbl + "                                         \n"
+        sql += SubValueAutoReg.lv_member_col_comb_tbl + "                                         \n"
         sql += "     WHERE                                                        \n"
         sql += "       VAL_MVMT_VAR_LINK_ID IN (                                  \n"
         sql += "         SELECT                                                   \n"
         sql += "           VARS_NAME                                              \n"
         sql += "         FROM                                                     \n"
-        sql += lv_ptn_vars_link_tbl + "                                           \n"
+        sql += SubValueAutoReg.lv_ptn_vars_link_tbl + "                                           \n"
         sql += "         WHERE                                                    \n"
         sql += "           MOVEMENT_ID    = TBL_A.MOVEMENT_ID        AND          \n"
         sql += "           MVMT_VAR_LINK_ID  = TBL_A.KEY_MVMT_VAR_LINK_ID  AND    \n"
@@ -2524,13 +2545,13 @@ class SubValueAutoReg():
         sql += "     SELECT                                                       \n"
         sql += "       ASSIGN_SEQ_NEED                                            \n"
         sql += "     FROM                                                         \n"
-        sql += lv_array_member_tbl + "                                            \n"
+        sql += SubValueAutoReg.lv_array_member_tbl + "                                            \n"
         sql += "     WHERE                                                        \n"
         sql += "       MVMT_VAR_LINK_ID IN (                                      \n"
         sql += "         SELECT                                                   \n"
         sql += "           VARS_NAME                                              \n"
         sql += "         FROM                                                     \n"
-        sql += lv_ptn_vars_link_tbl + "                                           \n"
+        sql += SubValueAutoReg.lv_ptn_vars_link_tbl + "                                           \n"
         sql += "         WHERE                                                    \n"
         sql += "           MOVEMENT_ID    = TBL_A.MOVEMENT_ID        AND          \n"
         sql += "           MVMT_VAR_LINK_ID  = TBL_A.KEY_MVMT_VAR_LINK_ID  AND    \n"
@@ -2541,7 +2562,7 @@ class SubValueAutoReg():
         sql += "         SELECT                                                   \n"
         sql += "           ARRAY_MEMBER_ID                                        \n"
         sql += "         FROM                                                     \n"
-        sql += lv_member_col_comb_tbl + "                                         \n"
+        sql += SubValueAutoReg.lv_member_col_comb_tbl + "                                         \n"
         sql += "         WHERE                                                    \n"
         sql += "           COL_SEQ_COMBINATION_ID = TBL_A.KEY_COL_SEQ_COMBINATION_ID AND \n"
         sql += "           DISUSE_FLAG   = '0'                                    \n"
@@ -2551,7 +2572,7 @@ class SubValueAutoReg():
         sql += "   ) AS KEY_ASSIGN_SEQ_NEED,                                      \n"
         sql += "   TBL_D.DISUSE_FLAG AS ANSIBLE_TARGET_TABLE                      \n"
         sql += " FROM                                                             \n"
-        sql += lv_val_assign_tbl + "  TBL_A                                       \n"
+        sql += SubValueAutoReg.lv_val_assign_tbl + "  TBL_A                                       \n"
         sql += "   LEFT JOIN T_COMN_MENU_COLUMN_LINK TBL_B ON                     \n"
         sql += "          (TBL_A.COLUMN_LIST_ID = TBL_B.COLUMN_DEFINITION_ID)     \n"
         sql += "          OR (TBL_B.AUTOREG_ONLY_ITEM = 1)                        \n"
@@ -2781,63 +2802,30 @@ class SubValueAutoReg():
                 return False
         
         return True, inout_vars_attr
-    
-    def getTemplateVarList(self, WS_DB):
-        """
-        代入値自動登録とパラメータシートから具体値に設定されているTPF変数名を抜出す
-        
-        Arguments:
-            WS_DB: WorkspaceDBインスタンス
 
-        Returns:
-            value_list: 抽出した変数リスト
-        """
-        
-        value_list = {}
-        sql = " SELECT "
-        sql += "  MOVEMENT_ID, "
-        sql += "  VAL_MVMT_VAR_LINK_ID "
-        sql += "  FROM T_ANSR_VALUE_AUTOREG "
-        sql += "  WHERE DISUSE_FLAG ='0' "
-        
-        data_list = WS_DB.sql_execute(sql)
-        
-        for row in data_list:
-            ret = row['VAL_MVMT_VAR_LINK_ID'].find('TPF_')
-            if ret == 0:
-                # テンプレート変数が記述されていることを記録
-                value_list['MOVEMENT_ID'] = row['MOVEMENT_ID']
-                value_list['MOVEMENT_ID'] = {}
-                value_list['MOVEMENT_ID']['VAL_MVMT_VAR_LINK_ID'] = row['VAL_MVMT_VAR_LINK_ID']
-        
-        return value_list
-    
-    def getTargetHostList(self, WS_DB):
-        """
-        代入値自動登録とパラメータシートから具体値に設定されている作業対象ホストを抜出す
-        
-        Arguments:
-            WS_DB: WorkspaceDBインスタンス
+    def extract_tpl_vars(self, var_extractor, varsAssRecord, template_list, host_list):
 
-        Returns:
-            value_list: 抽出した変数リスト
-        """
-        
-        value_list = {}
-        
-        sql = " SELECT "
-        sql += "  OPERATION_ID, "
-        sql += "  MOVEMENT_ID, "
-        sql += "  SYSTEM_ID "
-        sql += "  FROM  T_ANSR_TGT_HOST "
-        sql += "  WHERE DISUSE_FLAG ='0' "
-        
-        data_list = WS_DB.sql_execute(sql)
-        
-        for row in data_list:
-            value_list['MOVEMENT_ID'] = row['MOVEMENT_ID']
-            value_list['MOVEMENT_ID'] = {}
-            value_list['MOVEMENT_ID']['OPERATION_ID'] = row['OPERATION_ID']
-            value_list['MOVEMENT_ID']['SYSTEM_ID'] = row['SYSTEM_ID']
-        
-        return value_list
+        # 処理対象外のデータかを判定
+        if len(varsAssRecord) == 0:
+            return template_list, host_list
+        if varsAssRecord['STATUS'] == 0:
+            return template_list, host_list
+
+        movement_id = varsAssRecord['MOVEMENT_ID']
+        vars_line_array = [] # [{行番号:変数名}, ...]
+        is_success, vars_line_array = var_extractor.SimpleFillterVerSearch("TPL_", varsAssRecord['VARS_ENTRY'], vars_line_array, [], [])
+        if len(vars_line_array) == 1:
+            if movement_id not in template_list:
+                template_list[movement_id] = {}
+            row_num, tpf_var_name = vars_line_array[0]
+            template_list[movement_id][tpf_var_name] = 0
+
+        # 作業対象ホストの情報を退避
+        if movement_id not in host_list:
+            host_list[movement_id] = {}
+        operation_id = varsAssRecord['OPERATION_ID']
+        if operation_id not in host_list[movement_id]:
+            host_list[movement_id][operation_id] = {}
+        host_list[movement_id][operation_id][varsAssRecord['SYSTEM_ID']] = 0
+
+        return template_list, host_list
