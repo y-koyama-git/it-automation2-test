@@ -5,11 +5,7 @@ metadata:
   namespace: exastro-it-automation
 rules:
   - apiGroups: [""]
-    resources: ["services"]
-    verbs: ["get", "create", "update", "patch"]
-  - apiGroups: ["apps"]
-    resources: ["pods"]
-    #resourceNames: ["ita-by-ansible-execute"]
+    resources: ["services","pods"]
     verbs: ["get", "create", "update", "patch"]
 ---
 apiVersion: v1
