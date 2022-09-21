@@ -231,7 +231,7 @@ class ConductorExecuteLibs():
                 # conductor_class_name
                 if conductor_class_name is not None:
                     table_name = 'T_COMN_CONDUCTOR_CLASS'
-                    where_str = "where `CONDUCTOR_NAME` in (%s) "
+                    where_str = "where `CONDUCTOR_NAME` in (%s) and `DISUSE_FLAG` = 0 "
                     bind_value_list = [conductor_class_name]
                     tmp_result = self.objdbca.table_select(table_name, where_str, bind_value_list)
                     if len(tmp_result) != 1:
@@ -248,7 +248,7 @@ class ConductorExecuteLibs():
                 # operation_name
                 if operation_name is not None:
                     table_name = 'T_COMN_OPERATION'
-                    where_str = "where `OPERATION_NAME` in (%s) "
+                    where_str = "where `OPERATION_NAME` in (%s) and `DISUSE_FLAG` = 0"
                     bind_value_list = [operation_name]
                     tmp_result = self.objdbca.table_select(table_name, where_str, bind_value_list)
                     if len(tmp_result) != 1:
@@ -270,7 +270,7 @@ class ConductorExecuteLibs():
                 # conductor_class_id
                 if conductor_class_id is not None:
                     table_name = 'T_COMN_CONDUCTOR_CLASS'
-                    where_str = "where `CONDUCTOR_CLASS_ID` in (%s) "
+                    where_str = "where `CONDUCTOR_CLASS_ID` in (%s) and `DISUSE_FLAG` = 0"
                     bind_value_list = [parameter.get('conductor_class_id')]
                     tmp_result = self.objdbca.table_select(table_name, where_str, bind_value_list)
                     if len(tmp_result) != 1:
@@ -331,12 +331,14 @@ class ConductorExecuteLibs():
                     retBool = False
                     tmp_msg_ags = '{}'.format('conductor_data')
                     msg_ags.append(tmp_msg_ags)
-    
+            if len(msg_ags) != 0:
+                raise Exception()
         except Exception:
-            retBool = False
-
-        finally:
             result = [', '.join(msg_ags)]
+            status_code = '499-00814'
+            log_msg_args = result
+            api_msg_args = result
+            raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
 
         return retBool, result, parameter,
 
@@ -416,6 +418,8 @@ class ConductorExecuteLibs():
             # operation_id 簡易チェック
             if operation_id in get_list_data.get('operation'):
                 operation_name = get_list_data.get('operation').get(operation_id).get('OPERATION_NAME')
+            else:
+                raise Exception()
 
             # conductor_class_id 簡易チェック, conductor名, 備考(作業実行画面優先)
             if conductor_class_id in get_list_data.get('conductor'):
@@ -423,6 +427,8 @@ class ConductorExecuteLibs():
                 conductor_remarks = get_list_data.get('conductor').get(conductor_class_id).get('NOTE')
                 if 'note' in conductor_data.get('conductor'):
                     conductor_remarks = conductor_data.get('conductor').get('note')
+            else:
+                raise Exception()
 
             # Conductor初期ステータス設定(未実行,未実行(予約))
             if schedule_date is None:
@@ -630,11 +636,14 @@ class ConductorExecuteLibs():
             type_, value, traceback_ = sys.exc_info()
             msg = traceback.format_exception(type_, value, traceback_)
             g.applogger.error(msg)
-            
-            conductor_class_id = parameter.get('conductor_class_id')
-            operation_id = parameter.get('operation_id')
+            if parameter.get('conductor_class_name') is None:
+                conductor_class_id = parameter.get('conductor_class_name')
+                operation_id = parameter.get('operation_name')
+            else:
+                conductor_class_id = parameter.get('conductor_class_id')
+                operation_id = parameter.get('operation_id')
             schedule_date = parameter.get('schedule_date')
-            status_code = "499-00805"
+            status_code = "499-00804"
             log_msg_args = [conductor_class_id, operation_id, schedule_date]
             api_msg_args = [conductor_class_id, operation_id, schedule_date]
             raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
@@ -1045,6 +1054,10 @@ class ConductorExecuteLibs():
             conductor_status = {}
             class_settings = {}
             node_status = {}
+
+            tmp_result = self.is_conductor_instance_id(conductor_instance_id)
+            if tmp_result is False:
+                raise Exception()
 
             orchestra_info = self.get_orchestra_info()
             # conductor
@@ -2248,9 +2261,12 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
         retBool = True
         result = {}
         try:
+            tmp_result = self.is_conductor_instance_id(conductor_instance_id)
+            if tmp_result is False:
+                raise Exception()
+            
             # 対象MV取得
             tmp_result = self.get_execute_mv_node_list(conductor_instance_id)
-            print(tmp_result)
             if tmp_result[0] is not True:
                 raise Exception()
             
