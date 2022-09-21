@@ -33,7 +33,7 @@ def backyard_main(organization_id, workspace_id):
     main logicのラッパー
     called 実行君
     """
-    g.applogger.debug(g.appmsg.get_log_message("BKY-00001"))
+    g.applogger.info(g.appmsg.get_log_message("BKY-00001"))
 
     # db instance
     wsDb = DBConnectWs(g.get('WORKSPACE_ID'))  # noqa: F405
@@ -41,9 +41,9 @@ def backyard_main(organization_id, workspace_id):
     retBool = main_logic(organization_id, workspace_id, wsDb)
     if retBool is True:
         # 正常終了
-        g.applogger.debug(g.appmsg.get_log_message("BKY-00002"))
+        g.applogger.info(g.appmsg.get_log_message("BKY-00002"))
     else:
-        g.applogger.debug(g.appmsg.get_log_message("BKY-00003"))
+        g.applogger.info(g.appmsg.get_log_message("BKY-00003"))
 
 
 def main_logic(organization_id, workspace_id, wsDb):
@@ -216,7 +216,7 @@ def run_unexecuted(wsDb, num_of_run_instance, organization_id, workspace_id):
 
     # 処理対象レコードが0件の場合は処理終了
     if len(records) == 0:
-        g.applogger.debug(g.appmsg.get_log_message("MSG-10749"))
+        g.applogger.info(g.appmsg.get_log_message("MSG-10749"))
         return True,
 
     # 実行順リストを作成する
