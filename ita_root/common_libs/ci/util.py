@@ -27,8 +27,7 @@ def wrapper_job(main_logic, organization_id=None, workspace_id=None):
     backyard job wrapper
     '''
     common_db = DBConnectCommon()  # noqa: F405
-    if g.is_logging is True:
-        g.applogger.debug("ITA_DB is connected")
+    g.applogger.debug("ITA_DB is connected")
 
     # get organization_info_list
     if organization_id is None:
@@ -37,8 +36,7 @@ def wrapper_job(main_logic, organization_id=None, workspace_id=None):
         organization_info_list = common_db.table_select("T_COMN_ORGANIZATION_DB_INFO", "WHERE `DISUSE_FLAG`=0 AND `ORGANIZATION_ID`=%s", [organization_id])  # noqa: E501
 
     for organization_info in organization_info_list:
-        if g.is_logging is True:
-            g.applogger.set_level("DEBUG")
+        g.applogger.set_level("DEBUG")
 
         organization_id = organization_info['ORGANIZATION_ID']
 
@@ -75,8 +73,7 @@ def organization_job(main_logic, organization_id=None, workspace_id=None):
         organization_id
     '''
     org_db = DBConnectOrg(organization_id)  # noqa: F405
-    if g.is_logging is True:
-        g.applogger.debug("ORG_DB:{} can be connected".format(organization_id))
+    g.applogger.debug("ORG_DB:{} can be connected".format(organization_id))
 
     # get workspace_info_list
     if workspace_id is None:
@@ -85,8 +82,7 @@ def organization_job(main_logic, organization_id=None, workspace_id=None):
         workspace_info_list = org_db.table_select("T_COMN_WORKSPACE_DB_INFO", "WHERE `DISUSE_FLAG`=0 AND `WORKSPACE_ID`=%s", [workspace_id])  # noqa: E501
 
     for workspace_info in workspace_info_list:
-        if g.is_logging is True:
-            g.applogger.set_level("DEBUG")
+        g.applogger.set_level("DEBUG")
 
         workspace_id = workspace_info['WORKSPACE_ID']
 
@@ -98,8 +94,7 @@ def organization_job(main_logic, organization_id=None, workspace_id=None):
         g.db_connect_info["WSDB_DATADBASE"] = workspace_info["DB_DATADBASE"]
 
         ws_db = DBConnectWs(workspace_id)  # noqa: F405
-        if g.is_logging is True:
-            g.applogger.debug("WS_DB:{} can be connected".format(workspace_id))
+        g.applogger.debug("WS_DB:{} can be connected".format(workspace_id))
 
         # set log-level for user setting
         # g.applogger.set_user_setting(ws_db)
@@ -169,5 +164,4 @@ def exception(e):
 
 
 def log_err(msg=""):
-    if g.is_logging is True:
-        g.applogger.error("[error]{}".format(msg))
+    g.applogger.error("[error]{}".format(msg))
