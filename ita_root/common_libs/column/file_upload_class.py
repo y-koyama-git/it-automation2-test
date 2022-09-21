@@ -116,7 +116,6 @@ class FileUploadColumn(Column):
                             return retBool, msg
 
                 # バイト数比較
-                upload_max_size = 2
                 if decode_option and upload_max_size is not None:
                     if len(decode_option) > int(upload_max_size):
                         retBool = False

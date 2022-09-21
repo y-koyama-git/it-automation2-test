@@ -385,11 +385,6 @@ def conductor_execute(objdbca, menu, parameter):
         # 入力パラメータ フォーマットチェック
         objCexec = ConductorExecuteLibs(objdbca, menu, objmenus)  # noqa: F405
         chk_parameter = objCexec.chk_execute_parameter_format(parameter)
-        if chk_parameter[0] is not True:
-            status_code = '499-00814'
-            log_msg_args = chk_parameter[1]
-            api_msg_args = chk_parameter[1]
-            raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
     except Exception as e:
         raise AppException(e)  # noqa: F405
 
@@ -401,12 +396,9 @@ def conductor_execute(objdbca, menu, parameter):
         create_parameter = objCexec.create_execute_register_parameter(parameter)
         if create_parameter[0] != '000-00000':
             raise Exception()
-    except Exception:
-        status_code = "499-00804"
-        log_msg_args = [conductor_class_name, operation_name, schedule_date]
-        api_msg_args = [conductor_class_name, operation_name, schedule_date]
-        raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
-    
+    except Exception as e:
+        raise AppException(e)  # noqa: F405
+
     # 実行:Instance登録 maintenance
     try:
         # conducror_instance_id発番、load_table用パラメータ
