@@ -2778,3 +2778,30 @@ class SubValueAutoReg():
             value_list[row['MOVEMENT_ID']] = {row['OPERATION_ID']: row['SYSTEM_ID']}
         
         return value_list
+
+    def extract_tpl_vars(self, var_extractor, varsAssRecord, template_list, host_list):
+
+        # 処理対象外のデータかを判定
+        if len(varsAssRecord) == 0:
+            return template_list, host_list
+        if varsAssRecord['STATUS'] == 0:
+            return template_list, host_list
+
+        movement_id = varsAssRecord['MOVEMENT_ID']
+        vars_line_array = [] # [{行番号:変数名}, ...]
+        is_success, vars_line_array = var_extractor.SimpleFillterVerSearch("TPL_", varsAssRecord['VARS_ENTRY'], vars_line_array, [], [])
+        if len(vars_line_array) == 1:
+            if movement_id not in template_list:
+                template_list[movement_id] = {}
+            row_num, tpf_var_name = vars_line_array[0]
+            template_list[movement_id][tpf_var_name] = 0
+
+        # 作業対象ホストの情報を退避
+        if movement_id not in host_list:
+            host_list[movement_id] = {}
+        operation_id = varsAssRecord['OPERATION_ID']
+        if operation_id not in host_list[movement_id]:
+            host_list[movement_id][operation_id] = {}
+        host_list[movement_id][operation_id][varsAssRecord['SYSTEM_ID']] = 0
+
+        return template_list, host_list
