@@ -98,15 +98,6 @@ class SubValueAutoReg():
         global warning_flag
         global error_flag
         
-        # 環境情報設定
-        # 言語情報
-        if 'LANGUAGE' not in g:
-            g.LANGUAGE = 'ja'
-        if 'USER_ID' not in g:
-            g.USER_ID = '20101'
-        if 'ROLES' not in g:
-            g.ROLES = 'JyIkPVx7Wy8KYWJjMTIz'
-        
         # インターフェース情報からNULLデータを代入値管理に登録するかのデフォルト値を取得する。
         ret = self.getIFInfoDB(WS_DB)
 
