@@ -43,6 +43,8 @@ def workspace_create(organization_id, workspace_id, body=None):  # noqa: E501
     :rtype: InlineResponse200
     """
     g.ORGANIZATION_ID = organization_id
+    # set log environ format
+    g.applogger.set_env_message()
 
     role_id = check_request_body_key(body, 'role_id')
 
@@ -200,6 +202,8 @@ def workspace_delete(organization_id, workspace_id):  # noqa: E501
     """
     # get organization_id
     g.ORGANIZATION_ID = organization_id
+    # set log environ format
+    g.applogger.set_env_message()
 
     org_db = DBConnectOrg(organization_id)  # noqa: F405
     connect_info = org_db.get_wsdb_connect_info(workspace_id)

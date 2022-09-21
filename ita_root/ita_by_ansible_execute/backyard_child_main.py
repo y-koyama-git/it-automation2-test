@@ -53,6 +53,8 @@ def backyard_child_main(organization_id, workspace_id):
     execution_no = args[3]
     driver_id = args[4]
 
+    g.applogger.set_tag("EXECUTION_NO", execution_no)
+
     g.applogger.debug(g.appmsg.get_log_message("MSG-10720", [execution_no]))
 
     # db instance
@@ -333,10 +335,10 @@ def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if
             zip_input_file_dir)
         if result[0] is False:
             # ZIPファイル作成の作成に失敗しても、ログに出して次に進む
-            g.applogger.info(g.appmsg.get_log_message("BKY-00004", ["fileCreateHistoryZIPFile", result[1]]))
+            g.applogger.warn(g.appmsg.get_log_message("BKY-00004", ["fileCreateHistoryZIPFile", result[1]]))
     else:
         # ZIPファイル作成の作成に失敗しても、ログに出して次に進む
-        g.applogger.info(g.appmsg.get_log_message("BKY-00004", ["fileCreateZIPFile", result[1]]))
+        g.applogger.warn(g.appmsg.get_log_message("BKY-00004", ["fileCreateZIPFile", result[1]]))
 
     # 準備で異常がなければ実行にうつる
     g.applogger.debug(g.appmsg.get_log_message("MSG-10761", [execution_no]))
@@ -511,12 +513,12 @@ def instance_checkcondition(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, a
 
         # ステータスが実行中(3)、かつ制限時間が設定されている場合のみ遅延判定する
         if execute_data["STATUS_ID"] == ansc_const.PROCESSING and time_limit:
-            # 開始時刻(「UNIXタイム.マイクロ秒」)を生成
+            # 開始時刻(「エポック秒.マイクロ秒」)を生成(localタイムでutcタイムではない)
             rec_time_start = execute_data['TIME_START']
             starttime_unixtime = rec_time_start.timestamp()
             # 開始時刻(マイクロ秒)＋制限時間(分→秒)＝制限時刻(マイクロ秒)
             limit_unixtime = starttime_unixtime + (time_limit * 60)
-            # 現在時刻(「UNIXタイム.マイクロ秒」)を生成
+            # 現在時刻(「エポック秒.マイクロ秒」)を生成(localタイムでutcタイムではない)
             now_unixtime = time.time()
 
             # 制限時刻と現在時刻を比較

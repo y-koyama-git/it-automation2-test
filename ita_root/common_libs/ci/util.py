@@ -41,6 +41,9 @@ def wrapper_job(main_logic, organization_id=None, workspace_id=None):
         organization_id = organization_info['ORGANIZATION_ID']
 
         g.ORGANIZATION_ID = organization_id
+        # set log environ format
+        g.applogger.set_env_message()
+
         # database connect info
         g.db_connect_info = {}
         g.db_connect_info["ORGDB_HOST"] = organization_info["DB_HOST"]
@@ -87,6 +90,10 @@ def organization_job(main_logic, organization_id=None, workspace_id=None):
         workspace_id = workspace_info['WORKSPACE_ID']
 
         g.WORKSPACE_ID = workspace_id
+        # set log environ format
+        g.applogger.set_env_message()
+
+        # database connect info
         g.db_connect_info["WSDB_HOST"] = workspace_info["DB_HOST"]
         g.db_connect_info["WSDB_PORT"] = str(workspace_info["DB_PORT"])
         g.db_connect_info["WSDB_USER"] = workspace_info["DB_USER"]
