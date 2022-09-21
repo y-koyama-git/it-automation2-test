@@ -47,7 +47,7 @@ spec:
             name: persistent-storage
       containers:
         - name: ita-api-admin
-          image: exastro/it-automation2-test-ita-api-admin:build.c39041.20220915-113752
+          image: exastro/it-automation2-test-ita-api-admin:Integration-test.9b3983.20220921-113157
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false

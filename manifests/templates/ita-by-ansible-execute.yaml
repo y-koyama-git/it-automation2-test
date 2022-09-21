@@ -34,7 +34,7 @@ metadata:
   name: params-ita-by-ansible-execute
   namespace: exastro-it-automation
 data:
-  EXECUTE_INTERVAL: "1"
+  EXECUTE_INTERVAL: "{{ param01 }}"
   STORAGEPATH: /storage/
   CONTAINER_BASE: "kubernetes"
 ---
@@ -56,15 +56,15 @@ spec:
       serviceAccountName: ita-ansible-execute-sa
       containers:
         - name: ita-by-ansible-execute
-          image: exastro/it-automation2-test-ita-by-ansible-execute:Integration-test.9b3983.20220921-113111
+          image: {{ image }}:{{ image_tag }}
           imagePullPolicy: Always
-          #resources:
-          #  requests:
-          #    memory: "64Mi" #仮決め
-          #    cpu: "250m"    #仮決め
-          #  limits:
-          #    memory: "64Mi" #仮決め
-          #    cpu: "250m"    #仮決め
+          # resources:
+          #   requests:
+          #     memory: "64Mi" #仮決め
+          #     cpu: "250m"    #仮決め
+          #   limits:
+          #     memory: "64Mi" #仮決め
+          #     cpu: "250m"    #仮決め
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

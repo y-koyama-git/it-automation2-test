@@ -25,15 +25,15 @@ spec:
     spec:
       containers:
         - name: ita-by-ansible-towermaster-sync
-          image: exastro/it-automation2-test-ita-by-ansible-towermaster-sync:build.c39041.20220915-113743
+          image: exastro/it-automation2-test-ita-by-ansible-towermaster-sync:Integration-test.9b3983.20220921-113220
           imagePullPolicy: IfNotPresent
-          resources:
-            requests:
-              memory: "64Mi" #仮決め
-              cpu: "250m"    #仮決め
-            limits:
-              memory: "64Mi" #仮決め
-              cpu: "250m"    #仮決め
+          # resources:
+          #   requests:
+          #     memory: "64Mi" #仮決め
+          #     cpu: "250m"    #仮決め
+          #   limits:
+          #     memory: "64Mi" #仮決め
+          #     cpu: "250m"    #仮決め
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

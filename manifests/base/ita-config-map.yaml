@@ -17,7 +17,8 @@ metadata:
   name: params-ita-common
   namespace: exastro-it-automation
 data:
-  DEFAULT_LANGUAGE: "en"
+  DEFAULT_LANGUAGE: "ja"
+  LANGUAGE: "en"
   CONTAINER_BASE: "kubernetes"
   TZ: "Asia/Tokyo"
 ---
