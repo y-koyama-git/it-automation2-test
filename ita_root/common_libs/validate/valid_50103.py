@@ -128,7 +128,6 @@ def menu_column_group_valid(objdbca, objtable, option):
                     ret = objdbca.table_update(table_name, data_list, "CREATE_COL_GROUP_ID", False)
                     if not ret:
                         retBool = False
-                        # msg = 'DBの更新に失敗しました。'
                         msg = g.appmsg.get_api_message("MSG-20015", [])
                         break
                     full_column_group_name_ja = full_column_group_name_ja + "/" + return_values[0].get('COL_GROUP_NAME_JA')

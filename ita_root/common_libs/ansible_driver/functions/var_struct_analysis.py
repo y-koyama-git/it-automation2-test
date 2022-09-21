@@ -45,7 +45,7 @@ def put_var_struct_analysis(objdbca, option, pkey_id, TPF_var_name, var_struct_s
     # 解析結果にエラーがある場合
     if ret[0] is False:
         retBool = False
-        msg = chkObj.GetLastError()
+        msg = chkObj.GetLastError()[0]
     else:
         for vars_info in parent_vars_list:
             var_name = vars_info[1]["VAR_NAME"]

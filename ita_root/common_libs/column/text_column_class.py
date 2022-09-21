@@ -17,6 +17,7 @@ import re
 import os
 import sys
 
+from flask import g
 from .column_class import Column
 
 """
@@ -99,7 +100,7 @@ class TextColumn(Column):
                         retBool = True
                     else:
                         retBool = False
-                        msg = "文字長エラー (閾値:{}<値<{}, 値{})[{}]".format(min_length, max_length, check_val, self.rest_key_name)
+                        msg = g.appmsg.get_api_message('MSG-00008', [max_length, check_val])
                         return retBool, msg
 
             # 正規表現
@@ -110,7 +111,7 @@ class TextColumn(Column):
                     tmp_result = pattern.fullmatch(val)
                     if tmp_result is None:
                         retBool = False
-                        msg = "正規表現エラー (閾値:{},値{})[{}]".format(preg_match, val, self.rest_key_name)
+                        msg = g.appmsg.get_api_message('MSG-00009', [preg_match, val])
                         return retBool, msg
 
         return retBool,

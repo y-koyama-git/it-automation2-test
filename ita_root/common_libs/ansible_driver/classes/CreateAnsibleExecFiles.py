@@ -82,24 +82,7 @@ class CreateAnsibleExecFiles():
         self.LC_ANS_OUTDIR_DIR = "user_files"
         self.LC_ANS_PIONEER_LIBRARY_DIR = "library"
 
-        self.LC_ANS_PROTOCOL_VAR_NAME = "__loginprotocol__"
-        self.LC_ANS_USERNAME_VAR_NAME = "__loginuser__"
-        self.LC_ANS_PASSWD_VAR_NAME = "__loginpassword__"
-        self.LC_ANS_LOGINHOST_VAR_NAME = "__loginhostname__"
-        self.LC_ANS_LOGINIP_VAR_NAME = "__logintarget__"
-
-        self.LC_ANS_OUTDIR_VAR_NAME = "__workflowdir__"
-        self.LC_SYMPHONY_DIR_VAR_NAME = "__symphony_workflowdir__"
-        self.LC_CONDUCTO_DIR_VAR_NAME = "__conductor_workflowdir__"
         self.LC_ANS_UNDEFINE_NAME = "__undefinesymbol__"
-
-        self.LC_OPERATION_VAR_NAME = "__operation__"
-        self.LC_IN_PARAM_DIR_EPC = "__parameters_dir_for_epc__"
-        self.LC_IN_PARAM_FILE_DIR_EPC = "__parameters_file_dir_for_epc__"
-        self.LC_OUT_PARAM_DIR = "__parameter_dir__"
-        self.LC_OUT_PARAM_FILE_DIR = "__parameters_file_dir__"
-        self.LC_MOVEMENT_STS_FILE = "__movement_status_filepath__"
-        self.LC_CONDUCTO_NAME = "__conductor__"
 
         self.LC_ANS_HOSTS_FILE = "hosts"
         self.LC_ANS_PLAYBOOK_FILE = "playbook.yml"
@@ -312,12 +295,12 @@ class CreateAnsibleExecFiles():
             ITA独自変数名リスト
         """
         system_vars = []
-        system_vars.append(self.LC_ANS_PROTOCOL_VAR_NAME)
-        system_vars.append(self.LC_ANS_USERNAME_VAR_NAME)
-        system_vars.append(self.LC_ANS_PASSWD_VAR_NAME)
-        system_vars.append(self.LC_ANS_LOGINHOST_VAR_NAME)
-        system_vars.append(self.LC_ANS_OUTDIR_VAR_NAME)
-        system_vars.append(self.LC_CONDUCTO_DIR_VAR_NAME)
+        system_vars.append(self.AnscObj.ITA_SP_VAR_ANS_PROTOCOL_VAR_NAME)
+        system_vars.append(self.AnscObj.ITA_SP_VAR_ANS_USERNAME_VAR_NAME)
+        system_vars.append(self.AnscObj.ITA_SP_VAR_ANS_PASSWD_VAR_NAME)
+        system_vars.append(self.AnscObj.ITA_SP_VAR_ANS_LOGINHOST_VAR_NAME)
+        system_vars.append(self.AnscObj.ITA_SP_VAR_ANS_OUTDIR_VAR_NAME)
+        system_vars.append(self.AnscObj.ITA_SP_VAR_CONDUCTO_DIR_VAR_NAME)
         return system_vars
 
     def getAnsibleDriverCommonShellPath(self):
@@ -1349,7 +1332,7 @@ class CreateAnsibleExecFiles():
                 continue
 
             # 機器一覧のプロトコルが未登録の場合を判定
-            if var == self.LC_ANS_PROTOCOL_VAR_NAME and val == self.LC_ANS_UNDEFINE_NAME:
+            if var == self.AnscObj.ITA_SP_VAR_ANS_PROTOCOL_VAR_NAME and val == self.LC_ANS_UNDEFINE_NAME:
                 # __loginprotocol__をホスト変数に出力しない
                 continue
             # コピー変数の重複出力防止
@@ -1364,7 +1347,7 @@ class CreateAnsibleExecFiles():
             parent_vars_list[var] = 0
 
             # 機器一覧のパスワードをansible-vaultで暗号化
-            if var == self.LC_ANS_PASSWD_VAR_NAME and val != self.LC_ANS_UNDEFINE_NAME:
+            if var == self.AnscObj.ITA_SP_VAR_ANS_PASSWD_VAR_NAME and val != self.LC_ANS_UNDEFINE_NAME:
                 # ansible-vaultで暗号化された文字列のインデントを調整
                 indento_sp4 = "".ljust(4)
 
@@ -1501,7 +1484,7 @@ class CreateAnsibleExecFiles():
             if not in_exec_playbook_hed_def:
                 # if in_exec_mode == self.AnscObj.DF_EXEC_MODE_ANSIBLE:
                 value = "- hosts: all\n"
-                value += "  remote_user: \"{{ " + self.LC_ANS_USERNAME_VAR_NAME + " }}\"\n"
+                value += "  remote_user: \"{{ " + self.AnscObj.ITA_SP_VAR_ANS_USERNAME_VAR_NAME + " }}\"\n"
                 value += "  gather_facts: no\n"
 
                 # 対象ホストがwindowsか判別。windows以外の場合は become: yes を設定
@@ -2611,20 +2594,20 @@ class CreateAnsibleExecFiles():
             if host_name is not mt_host_vars:
                 mt_host_vars[host_name] = {}
 
-            mt_host_vars[host_name][self.LC_ANS_PROTOCOL_VAR_NAME] = hostinfo['PROTOCOL_ID']
+            mt_host_vars[host_name][self.AnscObj.ITA_SP_VAR_ANS_PROTOCOL_VAR_NAME] = hostinfo['PROTOCOL_ID']
 
-            mt_host_vars[host_name][self.LC_ANS_USERNAME_VAR_NAME] = hostinfo['LOGIN_USER']
+            mt_host_vars[host_name][self.AnscObj.ITA_SP_VAR_ANS_USERNAME_VAR_NAME] = hostinfo['LOGIN_USER']
 
             if hostinfo['LOGIN_PW'] != self.LC_ANS_UNDEFINE_NAME:
-                mt_host_vars[host_name][self.LC_ANS_PASSWD_VAR_NAME] = hostinfo['LOGIN_PW']
+                mt_host_vars[host_name][self.AnscObj.ITA_SP_VAR_ANS_PASSWD_VAR_NAME] = hostinfo['LOGIN_PW']
 
-            mt_host_vars[host_name][self.LC_ANS_LOGINHOST_VAR_NAME] = host_name
-            mt_host_vars[host_name][self.LC_ANS_OUTDIR_VAR_NAME] = self.lv_user_out_Dir
-            mt_host_vars[host_name][self.LC_CONDUCTO_DIR_VAR_NAME] = self.lv_conductor_instance_Dir
+            mt_host_vars[host_name][self.AnscObj.ITA_SP_VAR_ANS_LOGINHOST_VAR_NAME] = host_name
+            mt_host_vars[host_name][self.AnscObj.ITA_SP_VAR_ANS_OUTDIR_VAR_NAME] = self.lv_user_out_Dir
+            mt_host_vars[host_name][self.AnscObj.ITA_SP_VAR_CONDUCTO_DIR_VAR_NAME] = self.lv_conductor_instance_Dir
             if self.lv_conductor_instance_no:
-                mt_host_vars[host_name][self.LC_CONDUCTO_NAME] = self.lv_conductor_instance_no
+                mt_host_vars[host_name][self.AnscObj.ITA_SP_VAR_CONDUCTO_NAME] = self.lv_conductor_instance_no
             else:
-                mt_host_vars[host_name][self.LC_CONDUCTO_NAME] = self.LC_ANS_UNDEFINE_NAME
+                mt_host_vars[host_name][self.AnscObj.ITA_SP_VAR_CONDUCTO_NAME] = self.LC_ANS_UNDEFINE_NAME
             
         return mt_host_vars
 
@@ -3018,22 +3001,22 @@ class CreateAnsibleExecFiles():
                     for no, host_name in ina_hosts:
                         # 変数配列分繰り返し
                         if var_name not in ina_host_vars[host_name]:
-                            if var_name == self.LC_ANS_PROTOCOL_VAR_NAME:
+                            if var_name == self.AnscObj.ITA_SP_VAR_ANS_PROTOCOL_VAR_NAME:
                                 msgstr = g.appmsg.get_api_message("MSG-10267", [rolename, var_name, host_name])
                                 self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                                    str(inspect.currentframe().f_lineno), msgstr)
 
-                            elif var_name == self.LC_ANS_USERNAME_VAR_NAME:
+                            elif var_name == self.AnscObj.ITA_SP_VAR_ANS_USERNAME_VAR_NAME:
                                 msgstr = g.appmsg.get_api_message("MSG-10268", [rolename, var_name, host_name])
                                 self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                                    str(inspect.currentframe().f_lineno), msgstr)
 
-                            elif var_name == self.LC_ANS_PASSWD_VAR_NAME:
+                            elif var_name == self.AnscObj.ITA_SP_VAR_ANS_PASSWD_VAR_NAME:
                                 msgstr = g.appmsg.get_api_message("MSG-10269", [rolename, var_name, host_name])
                                 self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                                    str(inspect.currentframe().f_lineno), msgstr)
 
-                            elif var_name == self.LC_ANS_LOGINHOST_VAR_NAME:
+                            elif var_name == self.AnscObj.ITA_SP_VAR_ANS_LOGINHOST_VAR_NAME:
                                 msgstr = g.appmsg.get_api_message("MSG-10270", [rolename, var_name, host_name])
                                 self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                                    str(inspect.currentframe().f_lineno), msgstr)
@@ -3047,28 +3030,28 @@ class CreateAnsibleExecFiles():
                             # 予約変数を使用している場合に対象システム一覧に該当データが登録されているか判定
                             if ina_host_vars[host_name][var_name] == self.LC_ANS_UNDEFINE_NAME:
                                 # プロトコル未登録
-                                if var_name == self.LC_ANS_PROTOCOL_VAR_NAME:
+                                if var_name == self.AnscObj.ITA_SP_VAR_ANS_PROTOCOL_VAR_NAME:
                                     msgstr = g.appmsg.get_api_message("MSG-10272", [rolename, var_name, host_name])
                                     self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                                        str(inspect.currentframe().f_lineno), msgstr)
                                     result_code = False
 
                                 # ユーザー名未登録
-                                elif var_name == self.LC_ANS_USERNAME_VAR_NAME:
+                                elif var_name == self.AnscObj.ITA_SP_VAR_ANS_USERNAME_VAR_NAME:
                                     msgstr = g.appmsg.get_api_message("MSG-10273", [rolename, var_name, host_name])
                                     self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                                        str(inspect.currentframe().f_lineno), msgstr)
                                     result_code = False
 
                                 # ログインパスワード未登録
-                                elif var_name == self.LC_ANS_PASSWD_VAR_NAME:
+                                elif var_name == self.AnscObj.ITA_SP_VAR_ANS_PASSWD_VAR_NAME:
                                     msgstr = g.appmsg.get_api_message("MSG-10274", [rolename, var_name, host_name])
                                     self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                                        str(inspect.currentframe().f_lineno), msgstr)
                                     result_code = False
 
                                 # ホスト名未登録
-                                elif var_name == self.LC_ANS_LOGINHOST_VAR_NAME:
+                                elif var_name == self.AnscObj.ITA_SP_VAR_ANS_LOGINHOST_VAR_NAME:
                                     msgstr = g.appmsg.get_api_message("MSG-10275", [rolename, var_name, host_name])
                                     self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                                        str(inspect.currentframe().f_lineno), msgstr)
@@ -3956,7 +3939,7 @@ class CreateAnsibleExecFiles():
         varsLineArray = []
         file_vars_list = []
         FillterVars = True  # Fillterを含む変数の抜き出しあり
-        obj = WrappedStringReplaceAdmin()
+        obj = WrappedStringReplaceAdmin(self.lv_objDBCA)
         retAry = obj.SimpleFillterVerSearch(self.AnscObj.DF_HOST_VAR_HED, dataString, varsLineArray, file_vars_list, local_vars, FillterVars)
         # unuse ret = retAry[0]
         file_vars_list = retAry[1]
@@ -3975,25 +3958,25 @@ class CreateAnsibleExecFiles():
         # テンプレートで使用されているITA独自変数が利用可能か判定
         for var_name in file_vars_list:
             if var_name in ina_var_list:
-                if var_name == self.LC_ANS_PROTOCOL_VAR_NAME:
+                if var_name == self.AnscObj.ITA_SP_VAR_ANS_PROTOCOL_VAR_NAME:
                     msgstr = g.appmsg.get_api_message("MSG-10534", [os.path.basename(templatefile), var_name, in_host_name])
                     self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                        str(inspect.currentframe().f_lineno), msgstr)
                     result_code = False
 
-                elif var_name == self.LC_ANS_USERNAME_VAR_NAME:
+                elif var_name == self.AnscObj.ITA_SP_VAR_ANS_USERNAME_VAR_NAME:
                     msgstr = g.appmsg.get_api_message("MSG-10535", [os.path.basename(templatefile), var_name, in_host_name])
                     self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                        str(inspect.currentframe().f_lineno), msgstr)
                     result_code = False
 
-                elif var_name == self.LC_ANS_PASSWD_VAR_NAME:
+                elif var_name == self.AnscObj.ITA_SP_VAR_ANS_PASSWD_VAR_NAME:
                     msgstr = g.appmsg.get_api_message("MSG-10536", [os.path.basename(templatefile), var_name, in_host_name])
                     self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                        str(inspect.currentframe().f_lineno), msgstr)
                     result_code = False
 
-                elif var_name == self.LC_ANS_LOGINHOST_VAR_NAME:
+                elif var_name == self.AnscObj.ITA_SP_VAR_ANS_LOGINHOST_VAR_NAME:
                     msgstr = g.appmsg.get_api_message("MSG-10537", [os.path.basename(templatefile), var_name, in_host_name])
                     self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                        str(inspect.currentframe().f_lineno), msgstr)
@@ -4003,28 +3986,28 @@ class CreateAnsibleExecFiles():
                 # 予約変数を使用している場合に対象システム一覧に該当データが登録されているか判定
                 if ina_var_list[var_name] == self.LC_ANS_UNDEFINE_NAME:
                     # プロトコル未登録
-                    if var_name == self.LC_ANS_PROTOCOL_VAR_NAME:
+                    if var_name == self.AnscObj.ITA_SP_VAR_ANS_PROTOCOL_VAR_NAME:
                         msgstr = g.appmsg.get_api_message("MSG-10539", [os.path.basename(templatefile), var_name, in_host_name])
                         self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                            str(inspect.currentframe().f_lineno), msgstr)
                         result_code = False
 
                     # ユーザー名未登録
-                    elif var_name == self.LC_ANS_USERNAME_VAR_NAME:
+                    elif var_name == self.AnscObj.ITA_SP_VAR_ANS_USERNAME_VAR_NAME:
                         msgstr = g.appmsg.get_api_message("MSG-10540", [os.path.basename(templatefile), var_name, in_host_name])
                         self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                            str(inspect.currentframe().f_lineno), msgstr)
                         result_code = False
 
                     # ログインパスワード未登録
-                    elif var_name == self.LC_ANS_PASSWD_VAR_NAME:
+                    elif var_name == self.AnscObj.ITA_SP_VAR_ANS_PASSWD_VAR_NAME:
                         msgstr = g.appmsg.get_api_message("MSG-10541", [os.path.basename(templatefile), var_name, in_host_name])
                         self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                            str(inspect.currentframe().f_lineno), msgstr)
                         result_code = False
 
                     # ホスト名未登録
-                    elif var_name == self.LC_ANS_LOGINHOST_VAR_NAME:
+                    elif var_name == self.AnscObj.ITA_SP_VAR_ANS_LOGINHOST_VAR_NAME:
                         msgstr = g.appmsg.get_api_message("MSG-10542", [os.path.basename(templatefile), var_name, in_host_name])
                         self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                            str(inspect.currentframe().f_lineno), msgstr)
@@ -4533,7 +4516,7 @@ class CreateAnsibleExecFiles():
         ans_base_dir = self.getAnsibleBaseDir('ANSIBLE_SH_PATH_ANS')
 
         for host_name, hostinfo in ina_hostinfolist.items():
-            host_var_name = self.LC_IN_PARAM_DIR_EPC
+            host_var_name = self.AnscObj.ITA_SP_VAR_IN_PARAM_DIR_EPC
 
             mkdir = "{}/{}/{}/in/_parameters/{}".format(ita_base_dir, driver_list[driver_id], execute_no, host_name)
             scpsrcdir = "{}/{}/{}/in/_parameters".format(ita_base_dir, driver_list[driver_id], execute_no)
@@ -4556,7 +4539,7 @@ class CreateAnsibleExecFiles():
                     mt_pioneer_template_host_vars[host_name] = {}
                 mt_pioneer_template_host_vars[host_name][host_var_name] = host_var_vaule
 
-            host_var_name = self.LC_OUT_PARAM_DIR
+            host_var_name = self.AnscObj.ITA_SP_VAR_OUT_PARAM_DIR
 
             mkdir = "{}/{}/{}/out/_parameters/{}".format(ita_base_dir, driver_list[driver_id], execute_no, host_name)
             host_var_vaule = "{}/{}/{}/out/_parameters".format(ita_base_dir, driver_list[driver_id], execute_no)
@@ -4577,7 +4560,7 @@ class CreateAnsibleExecFiles():
                     mt_pioneer_template_host_vars[host_name] = {}
                 mt_pioneer_template_host_vars[host_name][host_var_name] = host_var_vaule
 
-            host_var_name = self.LC_IN_PARAM_FILE_DIR_EPC
+            host_var_name = self.AnscObj.ITA_SP_VAR_IN_PARAM_FILE_DIR_EPC
 
             mkdir = "{}/{}/{}/in/_parameters_file/{}".format(ita_base_dir, driver_list[driver_id], execute_no, host_name)
             scpsrcdir = "{}/{}/{}/in/_parameters_file".format(ita_base_dir, driver_list[driver_id], execute_no)
@@ -4600,7 +4583,7 @@ class CreateAnsibleExecFiles():
                     mt_pioneer_template_host_vars[host_name] = {}
                 mt_pioneer_template_host_vars[host_name][host_var_name] = host_var_vaule
 
-            host_var_name = self.LC_OUT_PARAM_FILE_DIR
+            host_var_name = self.AnscObj.ITA_SP_VAR_OUT_PARAM_FILE_DIR
 
             mkdir = "{}/{}/{}/out/_parameters_file/{}".format(ita_base_dir, driver_list[driver_id], execute_no, host_name)
             host_var_vaule = "{}/{}/{}/out/_parameters_file".format(ita_base_dir, driver_list[driver_id], execute_no)
@@ -4666,7 +4649,7 @@ class CreateAnsibleExecFiles():
 
         for host_name, hostinfo in ina_hostinfolist.items():
 
-            host_var_name = self.LC_MOVEMENT_STS_FILE
+            host_var_name = self.AnscObj.ITA_SP_VAR_MOVEMENT_STS_FILE
 
             host_var_vaule = "{}/{}/{}/out/MOVEMENT_STATUS_FILE".format(ans_base_dir, driver_list[driver_id], execute_no)
             if self.lv_exec_mode == self.AnscObj.DF_EXEC_MODE_ANSIBLE:
@@ -4737,12 +4720,12 @@ class CreateAnsibleExecFiles():
         for host_name, hostinfo in ina_hostinfolist.items():
             if host_name not in mt_host_vars:
                 mt_host_vars[host_name] = {}
-            mt_host_vars[host_name][self.LC_OPERATION_VAR_NAME] = operationStr
+            mt_host_vars[host_name][self.AnscObj.ITA_SP_VAR_OPERATION_VAR_NAME] = operationStr
 
             # Pioneerの場合の処理
             # switch(self.getAnsibleDriverID()){
             # case DF_PIONEER_DRIVER_ID:
-            #    ina_pioneer_template_host_vars[host_ip][self.LC_OPERATION_VAR_NAME] = operationStr
+            #    ina_pioneer_template_host_vars[host_ip][self.AnscObj.ITA_SP_VAR_OPERATION_VAR_NAME] = operationStr
             #    break
             # }
         return True, mt_host_vars, mt_pioneer_template_host_vars

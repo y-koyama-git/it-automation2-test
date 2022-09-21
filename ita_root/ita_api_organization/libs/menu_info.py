@@ -20,7 +20,7 @@ from common_libs.column import *  # noqa: F403
 from flask import g
 
 
-def collect_menu_info(objdbca, menu, menu_record={}, menu_table_link_record={}, privilege='1'):
+def collect_menu_info(objdbca, menu, menu_record={}, menu_table_link_record={}, privilege='1'):  # noqa: C901
     """
         メニュー情報の取得
         ARGS:
@@ -137,22 +137,22 @@ def collect_menu_info(objdbca, menu, menu_record={}, menu_table_link_record={}, 
     # 『カラムクラスマスタ』テーブルからcolumn_typeの一覧を取得
     ret = objdbca.table_select(t_common_column_class, 'WHERE DISUSE_FLAG = %s', [0])
     column_class_master = {}
-    for recode in ret:
-        column_class_master[recode.get('COLUMN_CLASS_ID')] = recode.get('COLUMN_CLASS_NAME')
+    for record in ret:
+        column_class_master[record.get('COLUMN_CLASS_ID')] = record.get('COLUMN_CLASS_NAME')
     
     # 『カラムグループ管理』テーブルからカラムグループ一覧を取得
     column_group_list = {}
     ret = objdbca.table_select(t_common_column_group, 'WHERE DISUSE_FLAG = %s', [0])
-    col_group_recode_count = len(ret)  # 「カラムグループ管理」のレコード数を格納
+    col_group_record_count = len(ret)  # 「カラムグループ管理」のレコード数を格納
     if ret:
-        for recode in ret:
+        for record in ret:
             add_data = {
-                "column_group_id": recode.get('COL_GROUP_ID'),
-                "column_group_name": recode.get('COL_GROUP_NAME_' + lang.upper()),
-                "full_column_group_name": recode.get('FULL_COL_GROUP_NAME_' + lang.upper()),
-                "parent_column_group_id": recode.get('PA_COL_GROUP_ID')
+                "column_group_id": record.get('COL_GROUP_ID'),
+                "column_group_name": record.get('COL_GROUP_NAME_' + lang.upper()),
+                "full_column_group_name": record.get('FULL_COL_GROUP_NAME_' + lang.upper()),
+                "parent_column_group_id": record.get('PA_COL_GROUP_ID')
             }
-            column_group_list[recode.get('COL_GROUP_ID')] = add_data
+            column_group_list[record.get('COL_GROUP_ID')] = add_data
     
     # 『メニュー-カラム紐付管理』テーブルから対象のデータを取得
     ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s AND DISUSE_FLAG = %s ORDER BY COLUMN_DISP_SEQ ASC', [menu_id, 0])
@@ -167,44 +167,44 @@ def collect_menu_info(objdbca, menu, menu_record={}, menu_table_link_record={}, 
     column_group_info_data = {}
 
     if ret:
-        for count, recode in enumerate(ret, 1):
+        for count, record in enumerate(ret, 1):
 
-            if recode.get('INPUT_ITEM') in ['2'] and recode.get('VIEW_ITEM') in ['0']:
+            if record.get('INPUT_ITEM') in ['2'] and record.get('VIEW_ITEM') in ['0']:
                 continue
 
             # json形式のレコードは改行を削除
-            validate_option = recode.get('VALIDATE_OPTION')
+            validate_option = record.get('VALIDATE_OPTION')
             if type(validate_option) is str:
                 validate_option = validate_option.replace('\n', '')
                 
-            before_validate_register = recode.get('BEFORE_VALIDATE_REGISTER')
+            before_validate_register = record.get('BEFORE_VALIDATE_REGISTER')
             if type(before_validate_register) is str:
                 before_validate_register = before_validate_register.replace('\n', '')
                 
-            after_validate_register = recode.get('AFTER_VALIDATE_REGISTER')
+            after_validate_register = record.get('AFTER_VALIDATE_REGISTER')
             if type(after_validate_register) is str:
                 after_validate_register = after_validate_register.replace('\n', '')
             
             # カラムグループIDがあればカラムグループ名を取得
             column_group_name = None
-            column_group_id = recode.get('COL_GROUP_ID')
+            column_group_id = record.get('COL_GROUP_ID')
             if column_group_id:
                 target_data = column_group_list.get(column_group_id)
                 if target_data:
                     column_group_name = target_data.get('full_column_group_name')
             
             # カラムクラスIDを取得
-            column_class = recode.get('COLUMN_CLASS')
+            column_class = record.get('COLUMN_CLASS')
             
             # カラム名(rest)を取得
-            column_name_rest = recode.get('COLUMN_NAME_REST')
+            column_name_rest = record.get('COLUMN_NAME_REST')
             
             # 初期値(initial_value)を取得
-            initial_value = recode.get('INITIAL_VALUE')
+            initial_value = record.get('INITIAL_VALUE')
             
             # カラムクラスが「7: IDColumn」かつ初期値が設定されている場合、初期値の値(ID)から表示用の値を取得する
             if str(column_class) == "7" and initial_value:
-                objmenu = load_table.loadTable(objdbca, menu)
+                objmenu = load_table.loadTable(objdbca, menu)  # noqa: F405
                 objcolumn = objmenu.get_columnclass(column_name_rest)
                 tmp_exec = objcolumn.convert_value_output(initial_value)
                 if tmp_exec[0] is True:
@@ -227,27 +227,27 @@ def collect_menu_info(objdbca, menu, menu_record={}, menu_table_link_record={}, 
                     initial_value = None
             
             detail = {
-                'column_id': recode.get('COLUMN_DEFINITION_ID'),
-                'column_name': recode.get('COLUMN_NAME_' + lang.upper()),
+                'column_id': record.get('COLUMN_DEFINITION_ID'),
+                'column_name': record.get('COLUMN_NAME_' + lang.upper()),
                 'column_name_rest': column_name_rest,
                 'column_group_id': column_group_id,
                 'column_group_name': column_group_name,
                 'column_type': column_class_master[column_class],
-                'column_disp_seq': recode.get('COLUMN_DISP_SEQ'),
-                'description': recode.get('DESCRIPTION_' + lang.upper()),
-                'ref_table_name': recode.get('REF_TABLE_NAME'),
-                'ref_pkey_name': recode.get('REF_PKEY_NAME'),
-                'ref_col_name': recode.get('REF_COL_NAME'),
-                'ref_sort_conditions': recode.get('REF_SORT_CONDITIONS'),
-                'ref_multi_lang': recode.get('REF_MULTI_LANG'),
-                'col_name': recode.get('COL_NAME'),
-                'button_action': recode.get('BUTTON_ACTION'),
-                'save_type': recode.get('SAVE_TYPE'),
-                'auto_input': recode.get('AUTO_INPUT'),
-                'input_item': recode.get('INPUT_ITEM'),
-                'view_item': recode.get('VIEW_ITEM'),
-                'unique_item': recode.get('UNIQUE_ITEM'),
-                'required_item': recode.get('REQUIRED_ITEM'),
+                'column_disp_seq': record.get('COLUMN_DISP_SEQ'),
+                'description': record.get('DESCRIPTION_' + lang.upper()),
+                'ref_table_name': record.get('REF_TABLE_NAME'),
+                'ref_pkey_name': record.get('REF_PKEY_NAME'),
+                'ref_col_name': record.get('REF_COL_NAME'),
+                'ref_sort_conditions': record.get('REF_SORT_CONDITIONS'),
+                'ref_multi_lang': record.get('REF_MULTI_LANG'),
+                'col_name': record.get('COL_NAME'),
+                'button_action': record.get('BUTTON_ACTION'),
+                'save_type': record.get('SAVE_TYPE'),
+                'auto_input': record.get('AUTO_INPUT'),
+                'input_item': record.get('INPUT_ITEM'),
+                'view_item': record.get('VIEW_ITEM'),
+                'unique_item': record.get('UNIQUE_ITEM'),
+                'required_item': record.get('REQUIRED_ITEM'),
                 'initial_value': initial_value,
                 'validate_option': validate_option,
                 'before_validate_register': before_validate_register,
@@ -259,22 +259,22 @@ def collect_menu_info(objdbca, menu, menu_record={}, menu_table_link_record={}, 
             # カラムグループ利用があれば、カラムグループ管理用配列に追加
             if column_group_id:
                 tmp_column_group, column_group_parent_of_child = add_tmp_column_group(column_group_list,
-                                                                                      col_group_recode_count,
+                                                                                      col_group_record_count,
                                                                                       column_group_id, col_num,
                                                                                       tmp_column_group,
                                                                                       column_group_parent_of_child
                                                                                       )
-                if recode.get('INPUT_ITEM') in ['0', '1']:
+                if record.get('INPUT_ITEM') in ['0', '1']:
                     tmp_column_group_input, column_group_parent_of_child_input = add_tmp_column_group(column_group_list,
-                                                                                                      col_group_recode_count,
+                                                                                                      col_group_record_count,
                                                                                                       column_group_id,
                                                                                                       col_num,
                                                                                                       tmp_column_group_input,
                                                                                                       column_group_parent_of_child_input
                                                                                                       )
-                if recode.get('VIEW_ITEM') in ['1']:
+                if record.get('VIEW_ITEM') in ['1']:
                     tmp_column_group_view, column_group_parent_of_child_view = add_tmp_column_group(column_group_list,
-                                                                                                    col_group_recode_count,
+                                                                                                    col_group_record_count,
                                                                                                     column_group_id,
                                                                                                     col_num,
                                                                                                     tmp_column_group_view,
@@ -303,12 +303,12 @@ def collect_menu_info(objdbca, menu, menu_record={}, menu_table_link_record={}, 
     return info_data
 
 
-def add_tmp_column_group(column_group_list, col_group_recode_count, column_group_id, col_num, tmp_column_group, column_group_parent_of_child):
+def add_tmp_column_group(column_group_list, col_group_record_count, column_group_id, col_num, tmp_column_group, column_group_parent_of_child):
     """
         カラムグループ管理用配列にカラムグループの親子関係の情報を格納する
         ARGS:
             column_group_list: カラムグループのレコード一覧
-            col_group_recode_count: カラムグループのレコード数
+            col_group_record_count: カラムグループのレコード数
             column_group_id: 対象のカラムグループID
             col_num: カラムの並び順をc1, c2, c3...という名称に変換した値
             tmp_colmn_group: カラムグループ管理用配列
@@ -326,7 +326,7 @@ def add_tmp_column_group(column_group_list, col_group_recode_count, column_group
     target_column_group_id = column_group_id
     first_column_group_id = column_group_id
     loop_count = 0
-    max_loop = int(col_group_recode_count) ** 2  # 「カラムグループ作成情報」のレコード数の二乗がループ回数の上限
+    max_loop = int(col_group_record_count) ** 2  # 「カラムグループ作成情報」のレコード数の二乗がループ回数の上限
     while not end_flag:
         for target in column_group_list.values():
             if target.get('column_group_id') == target_column_group_id:
@@ -470,7 +470,7 @@ def collect_parent_sord_order(column_info_data, column_group_parent_of_child, ke
                     columns_view.append(key_to_id[column_group_id])
             continue
 
-    return columns, columns_input, columns_view 
+    return columns, columns_input, columns_view
 
 
 def collect_menu_column_list(objdbca, menu, menu_record):
@@ -497,8 +497,8 @@ def collect_menu_column_list(objdbca, menu, menu_record):
         raise AppException("499-00004", log_msg_args, api_msg_args)  # noqa: F405
     
     column_list = []
-    for recode in ret:
-        column_list.append(recode.get('COLUMN_NAME_REST'))
+    for record in ret:
+        column_list.append(record.get('COLUMN_NAME_REST'))
     
     return column_list
 
@@ -520,8 +520,8 @@ def collect_pulldown_list(objdbca, menu, menu_record):
     # 『カラムクラスマスタ』テーブルからcolumn_typeの一覧を取得
     ret = objdbca.table_select(t_common_column_class, 'WHERE DISUSE_FLAG = %s', [0])
     column_class_master = {}
-    for recode in ret:
-        column_class_master[recode.get('COLUMN_CLASS_ID')] = recode.get('COLUMN_CLASS_NAME')
+    for record in ret:
+        column_class_master[record.get('COLUMN_CLASS_ID')] = record.get('COLUMN_CLASS_NAME')
     
     # メニュー管理から情報取得
     menu_id = menu_record[0].get('MENU_ID')
@@ -532,15 +532,15 @@ def collect_pulldown_list(objdbca, menu, menu_record):
     pulldown_list = {}
     # 7(IDColumn), 11(LinkIDColumn), 18(RoleIDColumn), 21(JsonIDColumn), 22(EnvironmentIDColumn)
     id_column_list = ["7", "11", "18", "21", "22"]
-    for recode in ret:
-        column_class_id = str(recode.get('COLUMN_CLASS'))
+    for record in ret:
+        column_class_id = str(record.get('COLUMN_CLASS'))
         
         if column_class_id not in id_column_list:
             continue
 
-        column_name_rest = str(recode.get('COLUMN_NAME_REST'))
+        column_name_rest = str(record.get('COLUMN_NAME_REST'))
 
-        objmenu = load_table.loadTable(objdbca, menu)
+        objmenu = load_table.loadTable(objdbca, menu)  # noqa: F405
         objcolumn = objmenu.get_columnclass(column_name_rest)
         column_pulldown_list = objcolumn.get_values_by_key()
         pulldown_list[column_name_rest] = column_pulldown_list
@@ -614,18 +614,18 @@ def collect_search_candidates(objdbca, menu, column, menu_record={}, menu_table_
     
     if column_class_id in id_column_list:
         # プルダウンの一覧を取得
-        objmenu = load_table.loadTable(objdbca, menu)
+        objmenu = load_table.loadTable(objdbca, menu)  # noqa: F405
         objcolumn = objmenu.get_columnclass(column)
         column_pulldown_list = objcolumn.get_values_by_key()
 
         # レコードのなかからプルダウンの一覧に合致するデータを抽出
-        for recode in ret:
-            if recode.get(col_name) in column_pulldown_list.keys():
-                convert = column_pulldown_list[recode.get(col_name)]
+        for record in ret:
+            if record.get(col_name) in column_pulldown_list.keys():
+                convert = column_pulldown_list[record.get(col_name)]
                 search_candidates.append(convert)
     else:
-        for recode in ret:
-            target = recode.get(col_name)
+        for record in ret:
+            target = record.get(col_name)
             search_candidates.append(target)
         
     # 重複を削除(元の並び順は維持)

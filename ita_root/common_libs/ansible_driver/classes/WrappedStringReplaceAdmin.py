@@ -12,7 +12,7 @@
 # limitations under the License.
 #
 import re
-
+from common_libs.ansible_driver.classes.AnsrConstClass import AnscConst
 """
   指定文字列からの変数抜出及び変数具体値置き換モジュール
 """
@@ -22,8 +22,17 @@ class WrappedStringReplaceAdmin:
     """
       指定文字列からの変数抜出及び変数具体値置き換えクラス
     """
-    def __init__(self):
+    def __init__(self, objdbca=None):
+        AnscObj = AnscConst()
         self.strReplacedString = ''
+        self.UnmngRows = []
+        if objdbca:
+            # 管理対象外変数取得
+            sql = "SELECT VAR_NAME FROM T_ANSC_UNMANAGED_VARLIST WHERE DISUSE_FLAG='0'"
+            Rows = objdbca.sql_execute(sql, [])
+            for row in Rows:
+                self.UnmngRows.append(row["VAR_NAME"])
+            self.UnmngRows.extend(AnscObj.Unmanaged_ITA_sp_varlist)
 
     def stringReplace(self, strSourceString, aryReplaceSource):
         """
@@ -81,7 +90,7 @@ class WrappedStringReplaceAdmin:
         """
         return self.strReplacedString
 
-    def SimpleFillterVerSearch(self, var_heder_id, strSourceString, mt_varsLineArray, mt_varsArray, arrylocalvars, FillterVars=False):
+    def SimpleFillterVerSearch(self, var_heder_id, strSourceString, mt_varsLineArray, mt_varsArray, arryLocalMnageVars, FillterVars=False):
         """
           指定された文字列から指定された変数を抜出す。
           Arguments:
@@ -91,6 +100,7 @@ class WrappedStringReplaceAdmin:
                                          [{行番号:変数名}, ...]
             mt_varsarray:(out)           抜出した変数リスト       呼出元で空リストで初期化必須
                                          [変数名, .....]
+            arryLocalMnageVars:               管理対象外変数のリストから除外したい変数リスト
             FillterVars:(in)             Fillter設定されている変数抜出有無(bool)
           Returns:
             True(bool)
@@ -134,7 +144,10 @@ class WrappedStringReplaceAdmin:
                     keyFilter = "[\s]" + var_heder_id + "[a-zA-Z0-9_]*" + "[\s]"
                     var_name = re.findall(keyFilter, row)
                     var_name = var_name[0].strip()
-                    match_list.append(var_name)
+                    # 管理対象外変数確認
+                    ret = self.chkUnmanagedVarname(var_heder_id, var_name, [])
+                    if ret is False:
+                        match_list.append(var_name)
             if len(match_list) != 0:
                 # 重複値を除外
                 unique_set = set(match_list)
@@ -151,7 +164,7 @@ class WrappedStringReplaceAdmin:
                     mt_varsArray.append(var_name)
 
             # --- 予約変数　{{ 予約変数 | Fillter function }}　の抜き出し
-            for localvarname in arrylocalvars:
+            for localvarname in arryLocalMnageVars:
                 match_list = []
                 for key in tailmarke:
                     keyFilter = "{{[\s]" + localvarname + key
@@ -184,3 +197,32 @@ class WrappedStringReplaceAdmin:
                         
             # 予約変数　{{ 予約変数 | Fillter function }}　の抜き出し ---
         return True, mt_varsLineArray
+    
+    def chkUnmanagedVarname(self, var_heder_id, var_name, arryLocalMnageVars=[]):
+        """
+          指定された変数名が管理対象外か判定する。
+          Arguments:
+            var_heder_id:(in)  変数名の先頭文字列　VAR_, ""
+            var_name: 変数名
+            arryLocalMnageVars: 管理対象外変数のリストから除外したい変数リスト
+          Returns:
+            True:   除外
+            False:  適用
+        """
+        AnscObj = AnscConst()
+        # VAR変数以外の場合は除外判定はしない
+        if var_heder_id != AnscObj.DF_HOST_VAR_HED:
+            return False
+        # 除外リストに含まれる変数か判定
+        retBool = False
+        for key in self.UnmngRows:
+            keyFilter = "^" + key + "$"
+            match = re.findall(keyFilter, var_name)
+            if len(match) != 0:
+                # 管理対象外変数のリストから除外したい変数か判定
+                if key in arryLocalMnageVars:
+                    retBool = False
+                else:
+                    retBool = True
+                break
+        return retBool

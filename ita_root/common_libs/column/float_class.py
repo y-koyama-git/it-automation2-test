@@ -13,6 +13,7 @@
 #
 import re
 
+from flask import g
 from .column_class import Column
 
 
@@ -78,7 +79,7 @@ class FloatColumn(Column):
                 tmp_result = pattern.fullmatch(str(val))
                 if tmp_result is None:
                     retBool = False
-                    msg = "正規表現エラー (閾値:{},値{})[{}]".format(preg_match, val, self.rest_key_name)
+                    msg = g.appmsg.get_api_message('MSG-00009', [preg_match, val])
                     return retBool, msg
 
         if val is not None:
@@ -104,7 +105,7 @@ class FloatColumn(Column):
                     vlen -= 1
                 if int(max_digit) <= vlen:
                     retBool = False
-                    msg = "上限桁数を超えています。({}<{})[{}]".format(max_digit, vlen, self.rest_key_name)
+                    msg = g.appmsg.get_api_message('MSG-00018', [max_digit, vlen])
                     return retBool, msg
 
             if min_num is None and max_num is None:
@@ -116,7 +117,7 @@ class FloatColumn(Column):
                     retBool = True
                 else:
                     retBool = False
-                    msg = "範囲外({}<{}<{})[{}]".format(min_num, val, max_num, self.rest_key_name)
+                    msg = g.appmsg.get_api_message('MSG-00019', [min_num, max_num, val])
                     return retBool, msg
 
             elif min_num is not None:
@@ -125,7 +126,7 @@ class FloatColumn(Column):
                     retBool = True
                 else:
                     retBool = False
-                    msg = "最小値以下({}<{})[{}]".format(min_num, val, self.rest_key_name)
+                    msg = g.appmsg.get_api_message('MSG-00020', [min_num, val])
                     return retBool, msg
             elif max_num is not None:
                 # 最大値閾値あり
@@ -133,7 +134,7 @@ class FloatColumn(Column):
                     retBool = True
                 else:
                     retBool = False
-                    msg = "最大値以上({}<{})[{}]".format(val, max_num, self.rest_key_name)
+                    msg = g.appmsg.get_api_message('MSG-00021', [max_num, val])
                     return retBool, msg
 
         return retBool,

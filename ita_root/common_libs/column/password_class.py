@@ -15,6 +15,7 @@
 import re
 
 # import text_column_class
+from flask import g
 from .text_column_class import TextColumn
 from common_libs.common import *  # noqa: F403
 
@@ -46,7 +47,7 @@ class PasswordColumn(TextColumn):
         tmp_result = pattern.fullmatch(val)
         if tmp_result is None:
             retBool = False
-            msg = "正規表現エラー (閾値:{},値{})[{}]".format(preg_match, val, self.rest_key_name)
+            msg = g.appmsg.get_api_message('MSG-00009', [preg_match, val])
             return retBool, msg
         return retBool,
 
