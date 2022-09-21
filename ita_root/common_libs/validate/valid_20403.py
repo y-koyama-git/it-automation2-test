@@ -149,4 +149,9 @@ def external_valid_menu_after(objDBCA, objtable, option):
         if retBool is False:
             return retBool, retStrBody, option
 
+    table_name = "T_COMN_PROC_LOADED_LIST"
+    data_list = {"LOADED_FLG": "0", "ROW_ID": "204"}
+    primary_key_name = "ROW_ID"
+    ret = objDBCA.table_update(table_name, data_list, primary_key_name, False)
+
     return retBool, retStrBody, option
