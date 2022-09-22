@@ -3385,9 +3385,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             action_options.setdefault("conductor_name", conductor_name)
 
             execute_flg = False
-            # ##################### 強制SKIP対応 #####################
-            skip = 'True'
-            # ##################### 強制SKIP対応 #####################
+
             # SKIP時
             if skip == bool_master_true:
                 n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('13')
@@ -3568,9 +3566,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('3')
             
             call_execute_flg = False
-            # ##################### 強制SKIP対応 #####################
-            # skip = 'True'
-            # ##################### 強制SKIP対応 #####################
+
             # SKIP時
             if skip == bool_master_true:
                 n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('13')

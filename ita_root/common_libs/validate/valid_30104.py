@@ -16,7 +16,7 @@ def conductor_class_validate(objdbca, objtable, option):
         entry_parameter = option.get('entry_parameter')
         tmp_parameter = entry_parameter.get('parameter')
         conductor_data = json.loads(tmp_parameter.get(target_rest_name))
-        
+        conductor_name = tmp_parameter.get('conductor_name')
         cclibs = ConductorCommonLibs(cmd_type=option.get('cmd_type'))
         result = cclibs.chk_format_all(copy.deepcopy(conductor_data))
         if result[0] is False:
@@ -36,6 +36,7 @@ def conductor_class_validate(objdbca, objtable, option):
             else:
                 conductor_data = result[1]
                 conductor_data['conductor']['id'] = entry_parameter.get('parameter').get('conductor_class_id')
+                conductor_data['conductor']['conductor_name'] = conductor_name
                 option['entry_parameter']['parameter'][target_rest_name] = json.dumps(conductor_data)
                 
             # """
