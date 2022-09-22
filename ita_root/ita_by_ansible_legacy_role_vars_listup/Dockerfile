@@ -22,9 +22,8 @@ ARG APP_PATH
 ENV PYTHONPATH=/exastro/
 ENV USER_ID=20401
 ENV EXECUTE_INTERVAL=1
-ENV DEFAULT_LANGUAGE=ja
+ENV LANGUAGE=en
 ENV STORAGEPATH=/storage/
-ENV CONTAINER_BASE=docker
 
 RUN dnf install -y \
     gcc \
@@ -42,6 +41,7 @@ RUN dnf install -y \
     pytz \
     pymysql \
     python-dotenv \
+    chardet \
 &&  groupadd $GROUPNAME \
 &&  useradd -m -s /bin/bash -g $GROUPNAME $USERNAME
 

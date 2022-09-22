@@ -285,7 +285,7 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
             if create_type == 'create_new':
                 debug_msg = g.appmsg.get_log_message("BKY-20010", [target_menu_group_type])
                 g.applogger.debug(debug_msg)
-                result, msg, ret_data = _insert_t_comn_menu(objdbca, record_t_menu_define, menu_group_col_name)
+                result, msg, ret_data = _insert_t_comn_menu(objdbca, sheet_type, record_t_menu_define, menu_group_col_name, record_t_menu_column)
                 if not result:
                     raise Exception(msg)
             
@@ -293,7 +293,7 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
             if create_type == 'initialize' or create_type == 'edit':
                 debug_msg = g.appmsg.get_log_message("BKY-20011", [target_menu_group_type])
                 g.applogger.debug(debug_msg)
-                result, msg, ret_data = _update_t_comn_menu(objdbca, record_t_menu_define, menu_group_col_name)
+                result, msg, ret_data = _update_t_comn_menu(objdbca, sheet_type, record_t_menu_define, menu_group_col_name, record_t_menu_column)
                 if not result:
                     raise Exception(msg)
             
@@ -437,13 +437,15 @@ def _collect_menu_create_data(objdbca, menu_create_id):
     return True, None, record_t_menu_define, record_t_menu_column_group, record_t_menu_column, record_t_menu_unique_constraint, record_t_menu_role, record_t_menu_other_link, record_v_menu_reference_item  # noqa: E501
 
 
-def _insert_t_comn_menu(objdbca, record_t_menu_define, menu_group_col_name):
+def _insert_t_comn_menu(objdbca, sheet_type, record_t_menu_define, menu_group_col_name, record_t_menu_column):
     """
         「メニュー管理」メニューのテーブルにレコードを追加する
         ARGS:
             objdbca: DB接クラス DBConnectWs()
+            sheet_type: シートタイプ
             record_t_menu_define: 「メニュー定義一覧」の対象のレコード
             menu_group_col_name: 対象メニューグループ名
+            record_t_menu_column: 「メニュー項目作成情報」の対象のレコード一覧
         RETRUN:
             boolean, msg, ret_data
     """
@@ -473,6 +475,17 @@ def _insert_t_comn_menu(objdbca, record_t_menu_define, menu_group_col_name):
             msg = g.appmsg.get_log_message("BKY-20206", [])
             raise Exception(msg)
         
+        # シートタイプ毎にソートキーを生成
+        sort_key = None
+        if sheet_type == "1":
+            # オペレーション、ホスト名の順でソート（後ろに記載したほうが優先される）
+            sort_key = '[{"ASC":"host_name"}, {"ASC":"operation_name_disp"}]'
+        elif sheet_type == "2":
+            # 項目の中でDISP_SEQが一番若い対象をソートキーとする
+            sort_key_target_record = record_t_menu_column[0]
+            sort_key_column_name_rest = sort_key_target_record.get('COLUMN_NAME_REST')
+            sort_key = '[{{"ASC":"{}"}}]'.format(sort_key_column_name_rest)
+        
         # 「メニュー管理」にレコードを登録
         data_list = {
             "MENU_GROUP_ID": target_menu_group_id,
@@ -482,6 +495,7 @@ def _insert_t_comn_menu(objdbca, record_t_menu_define, menu_group_col_name):
             "DISP_SEQ": record_t_menu_define.get('DISP_SEQ'),
             "AUTOFILTER_FLG": "0",
             "INITIAL_FILTER_FLG": "0",
+            "SORT_KEY": sort_key,
             "DISUSE_FLAG": "0",
             "LAST_UPDATE_USER": g.get('USER_ID')
         }
@@ -494,13 +508,14 @@ def _insert_t_comn_menu(objdbca, record_t_menu_define, menu_group_col_name):
     return True, None, ret_data
 
 
-def _update_t_comn_menu(objdbca, record_t_menu_define, menu_group_col_name):
+def _update_t_comn_menu(objdbca, sheet_type, record_t_menu_define, menu_group_col_name, record_t_menu_column):
     """
         「メニュー管理」の対象レコードを更新。対象が無ければレコードを新規登録する。
         ARGS:
             objdbca: DB接クラス DBConnectWs()
             record_t_menu_define: 「メニュー定義一覧」の対象のレコード
             menu_group_col_name: 対象メニューグループ名
+            record_t_menu_column: 「メニュー項目作成情報」の対象のレコード一覧
         RETRUN:
             result, msg, ret_data
     """
@@ -517,6 +532,17 @@ def _update_t_comn_menu(objdbca, record_t_menu_define, menu_group_col_name):
         # 対象メニューグループIDを取得
         target_menu_group_id = record_t_menu_define.get(menu_group_col_name)
         
+        # シートタイプ毎にソートキーを生成
+        sort_key = None
+        if sheet_type == "1":
+            # オペレーション、ホスト名の順でソート（後ろに記載したほうが優先される）
+            sort_key = '[{"ASC":"host_name"}, {"ASC":"operation_name_disp"}]'
+        elif sheet_type == "2":
+            # 項目の中でDISP_SEQが一番若い対象をソートキーとする
+            sort_key_target_record = record_t_menu_column[0]
+            sort_key_column_name_rest = sort_key_target_record.get('COLUMN_NAME_REST')
+            sort_key = '[{{"ASC":"{}"}}]'.format(sort_key_column_name_rest)
+        
         # 更新対象のレコードを特定
         ret = objdbca.table_select(t_comn_menu, 'WHERE MENU_GROUP_ID = %s AND MENU_NAME_REST = %s AND DISUSE_FLAG = %s', [target_menu_group_id, menu_name_rest, 0])  # noqa: E501
         if ret:
@@ -530,13 +556,14 @@ def _update_t_comn_menu(objdbca, record_t_menu_define, menu_group_col_name):
                 "DISP_SEQ": record_t_menu_define.get('DISP_SEQ'),
                 "AUTOFILTER_FLG": "0",
                 "INITIAL_FILTER_FLG": "0",
+                "SORT_KEY": sort_key,
                 "DISUSE_FLAG": "0",
                 "LAST_UPDATE_USER": g.get('USER_ID')
             }
             ret_data = objdbca.table_update(t_comn_menu, data_list, 'MENU_ID')
         else:
             # 更新対象が無い場合はFalseをReturnし、レコードの新規登録
-            result, msg, ret_data = _insert_t_comn_menu(objdbca, record_t_menu_define, menu_group_col_name)
+            result, msg, ret_data = _insert_t_comn_menu(objdbca, sheet_type, record_t_menu_define, menu_group_col_name, record_t_menu_column)
             if not result:
                 raise Exception(msg)
         
@@ -768,7 +795,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             menu_uuid: メニュー作成の対象となる「メニュー管理」のレコードのID
             dict_t_comn_column_group: 「カラムグループ管理」のレコードのidをkeyにしたdict
             dict_t_menu_column_group: 「カラムグループ作成情報」のレコードのidをkeyにしたdict
-            record_t_menu_column：「メニュー項目作成情報」の対象のレコード一覧
+            record_t_menu_column:「メニュー項目作成情報」の対象のレコード一覧
             dict_t_menu_other_link: 「他メニュー連携」のレコードのidをkeyにしたdict
             record_v_menu_reference_item: 「参照項目情報」のレコード一覧
         RETRUN:

@@ -12,12 +12,10 @@
 # limitations under the License.
 #
 from flask import g
-import traceback
 import os
 import sys
 import re
 import time
-import datetime
 import json
 import yaml
 import glob
@@ -25,8 +23,8 @@ import shutil
 
 from common_libs.common.dbconnect import DBConnectWs
 from common_libs.common.exception import AppException, ValidationException
-from common_libs.common.util import get_timestamp, arrange_stacktrace_format
-# from common_libs.ci.util import app_exception, exception, log_err
+from common_libs.common.util import get_timestamp
+from common_libs.ci.util import log_err
 
 from common_libs.ansible_driver.classes.AnsrConstClass import AnscConst, AnsrConst
 from common_libs.ansible_driver.classes.ansible_execute import AnsibleExecute
@@ -45,14 +43,17 @@ ansr_const = AnsrConst()
 
 
 def backyard_child_main(organization_id, workspace_id):
+    """
+    [ita_by_ansible_executeの作業実行の子プロセス]
+    main logicのラッパー
+    """
     # コマンドラインから引数を受け取る["自身のファイル名", "organization_id", "workspace_id", …, …]
     args = sys.argv
     # print(args)
     execution_no = args[3]
     driver_id = args[4]
 
-    # 子プロ用のログモジュール
-    g.local_applogger = LocalAppLog(driver_id, execution_no, "debug")
+    g.applogger.set_tag("EXECUTION_NO", execution_no)
 
     g.applogger.debug(g.appmsg.get_log_message("MSG-10720", [execution_no]))
 
@@ -66,24 +67,32 @@ def backyard_child_main(organization_id, workspace_id):
         result = main_logic(wsDb, execution_no, driver_id)
         if result[0] is True:
             # 正常終了
-            g.applogger.debug(g.appmsg.get_log_message("MSG-10721", [execution_no]))
+            g.applogger.info(g.appmsg.get_log_message("MSG-10721", [execution_no]))
         else:
             if len(result) == 2:
-                g.local_applogger.error(result[1])
+                log_err(result[1])
             update_status_error(wsDb, execution_no)
-            g.applogger.debug(g.appmsg.get_log_message("MSG-10722", [execution_no]))
+            g.applogger.info(g.appmsg.get_log_message("MSG-10722", [execution_no]))
     except AppException as e:
         update_status_error(wsDb, execution_no)
-        g.applogger.debug(g.appmsg.get_log_message("MSG-10722", [execution_no]))
-        raise Exception(e)
+        g.applogger.info(g.appmsg.get_log_message("MSG-10722", [execution_no]))
+        raise AppException(e)
     except Exception as e:
         update_status_error(wsDb, execution_no)
-        g.applogger.debug(g.appmsg.get_log_message("MSG-10722", [execution_no]))
+        g.applogger.info(g.appmsg.get_log_message("MSG-10722", [execution_no]))
         raise Exception(e)
 
 
 def update_status_error(wsDb: DBConnectWs, execution_no):
-    # 異常終了としてステータス更新
+    """
+    異常終了と判定した場合のステータス更新
+    
+    Arguments:
+        wsDb: DBConnectWs
+        execution_no: 作業実行番号
+    Returns:
+        
+    """
     timestamp = get_timestamp()
     wsDb.db_transaction_start()
     data = {
@@ -95,15 +104,26 @@ def update_status_error(wsDb: DBConnectWs, execution_no):
     result = cm.update_execution_record(wsDb, data)
     if result[0] is True:
         wsDb.db_commit()
+        g.applogger.info(g.appmsg.get_log_message("MSG-10735", [execution_no]))
 
 
 def main_logic(wsDb: DBConnectWs, execution_no, driver_id):
+    """
+    main logic
+    
+    Arguments:
+        wsDb: DBConnectWs
+        execution_no: 作業実行番号
+        driver_id: ドライバ識別子（AnscConst）
+    Returns:
+        bool
+        err_msg
+    """
     # 処理対象の作業インスタンス情報取得
     retBool, execute_data = cm.get_execution_process_info(wsDb, execution_no)
     if retBool is False:
         return False, execute_data
     execution_no = execute_data["EXECUTION_NO"]
-    # conductor_instance_no = execute_data["CONDUCTOR_INSTANCE_NO"]
     run_mode = execute_data['RUN_MODE']
 
     # ディレクトリを生成
@@ -126,9 +146,7 @@ def main_logic(wsDb: DBConnectWs, execution_no, driver_id):
     try:
         sub_value_auto_reg.GetDataFromParameterSheet("1", execute_data["OPERATION_ID"], execute_data["MOVEMENT_ID"], execution_no, wsDb)
     except ValidationException as e:
-        result_code, log_msg_args = e.args
-        log_msg = g.appmsg.get_log_message(result_code, log_msg_args)
-        return False, log_msg
+        return False, e
 
     # 実行モードが「パラメータ確認」の場合は終了
     if run_mode == ansc_const.CHK_PARA:
@@ -141,7 +159,7 @@ def main_logic(wsDb: DBConnectWs, execution_no, driver_id):
         result = cm.update_execution_record(wsDb, data)
         if result[0] is True:
             wsDb.db_commit()
-        g.local_applogger.debug("ITAANSIBLEH-STD-50052")
+            g.applogger.info(g.appmsg.get_log_message("MSG-10735", [execution_no]))
         return True,
 
     # ANSIBLEインタフェース情報を取得
@@ -153,14 +171,15 @@ def main_logic(wsDb: DBConnectWs, execution_no, driver_id):
     # # Conductorインタフェース情報を取得
     # retBool, result = cm.get_conductor_interface_info(wsDb)
     # if retBool is False:
-    #     return False, result
+    #     return False, g.appmsg.get_log_message(result, [execution_no])
     # conductor_interface_info = result
 
     # 投入オペレーションの最終実施日を更新する
     wsDb.db_transaction_start()
     result = operation_LAST_EXECUTE_TIMESTAMP_update(wsDb, execute_data["OPERATION_ID"])
-    if result[0] is False:
+    if result[0] is True:
         wsDb.db_commit()
+        g.applogger.info(g.appmsg.get_log_message("BKY-10003", [execution_no]))
 
     # ansible実行に必要なファイル群を生成するクラス
     ansdrv = CreateAnsibleExecFiles(driver_id, ans_if_info, execution_no, execute_data['I_ENGINE_VIRTUALENV_NAME'], execute_data['I_ANSIBLE_CONFIG_FILE'], wsDb)  # noqa: E501
@@ -174,18 +193,20 @@ def main_logic(wsDb: DBConnectWs, execution_no, driver_id):
         result = cm.update_execution_record(wsDb, execute_data)
         if result[0] is True:
             wsDb.db_commit()
+            g.applogger.info(g.appmsg.get_log_message("BKY-10004", [execute_data["STATUS_ID"], execution_no]))
     else:
         # 失敗
         return False, result_data
     
     # ステータスが実行中以外は終了
     if execute_data["STATUS_ID"] != ansc_const.PROCESSING:
-        return False, "def instance_execution is failed"
+        return False, g.appmsg.get_log_message("BKY-10005", [execute_data["STATUS_ID"], execution_no])
 
     # 実行結果から取得
     tower_host_list = result_data
 
-    g.applogger.debug("ITAANSIBLEH-STD-50069")  # ary[50069] = "[処理]処理対象インスタンス 作業確認開始(作業No.:{})";
+    # [処理]処理対象インスタンス 作業確認の開始(作業No.:{})
+    g.applogger.info(g.appmsg.get_log_message("MSG-10737", [execution_no]))
 
     status_update = True
     check_interval = 3
@@ -213,21 +234,24 @@ def main_logic(wsDb: DBConnectWs, execution_no, driver_id):
             result = cm.update_execution_record(wsDb, clone_execute_data)
             if result[0] is True:
                 wsDb.db_commit()
+                g.applogger.info(g.appmsg.get_log_message("BKY-10004", [clone_execute_data["STATUS_ID"], execution_no]))
 
         if clone_execute_data['STATUS_ID'] in [ansc_const.COMPLETE, ansc_const.FAILURE, ansc_const.EXCEPTION, ansc_const.SCRAM]:
             break
 
-    g.applogger.debug("ITAANSIBLEH-STD-50070")
+    # [処理]処理対象インスタンス 作業確認の終了(作業No.:{})
+    g.applogger.info(g.appmsg.get_log_message("MSG-10738", [execution_no]))
 
     return True,
 
 
 def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if_info, execute_data, driver_id):
-    g.applogger.debug("ITAANSIBLEH-STD-51070")  # ITAANSIBLEH-STD-51070
-
     execution_no = execute_data["EXECUTION_NO"]
     pattern_id = execute_data["PATTERN_ID"]
     run_mode = execute_data['RUN_MODE']  # 処理対象のドライランモードのリスト
+
+    # [処理]処理対象インスタンス 作業実行開始(作業No.:{})
+    g.applogger.info(g.appmsg.get_log_message("MSG-10763", [execution_no]))
 
     # 処理対象の並列実行数のリストを格納 (pioneer)
     tgt_exec_count = execute_data['I_ANS_PARALLEL_EXE']
@@ -242,7 +266,7 @@ def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if
     ans_exec_user = ans_if_info['ANSIBLE_EXEC_USER']
     ans_exec_mode = ans_if_info['ANSIBLE_EXEC_MODE']
 
-    if len(str(ans_exec_user).strip()) == 0:
+    if len(ans_exec_user.strip()) == 0:
         ans_exec_user = 'root'
 
     winrm_id = ""
@@ -282,10 +306,9 @@ def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if
         if result[0] is False:
             err_msg_ary = result[1]
             for err_msg in err_msg_ary:
-                # LocalLogPrint
-                g.local_applogger.error(err_msg)
-            return False, execute_data, "getAnsiblePlaybookOptionParameter is failed[{}]".format(",".join(err_msg_ary))
-        
+                ansdrv.LocalLogPrint(err_msg)
+            return False, execute_data, g.appmsg.get_log_message("BKY-00004", ["getAnsiblePlaybookOptionParameter", ",".join(err_msg_ary)])
+
         retBool, err_msg_ary, JobTemplatePropertyParameterAry, JobTemplatePropertyNameAry, param_arry_exc = result
 
     # ansible-playbookコマンド実行時のオプションパラメータを共有ディレクトリのファイルに出力
@@ -308,22 +331,19 @@ def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if
 
         # 投入データ用ZIP 履歴ファイル作成
         result = fileCreateHistoryZIPFile(
-            execution_no,
             zip_input_file,
             zip_input_file_dir)
         if result[0] is False:
             # ZIPファイル作成の作成に失敗しても、ログに出して次に進む
-            g.local_applogger.info()
-    
+            g.applogger.warn(g.appmsg.get_log_message("BKY-00004", ["fileCreateHistoryZIPFile", result[1]]))
     else:
         # ZIPファイル作成の作成に失敗しても、ログに出して次に進む
-        g.local_applogger.info()
+        g.applogger.warn(g.appmsg.get_log_message("BKY-00004", ["fileCreateZIPFile", result[1]]))
 
     # 準備で異常がなければ実行にうつる
+    g.applogger.debug(g.appmsg.get_log_message("MSG-10761", [execution_no]))
     # 実行エンジンを判定
     if ans_exec_mode == ansc_const.DF_EXEC_MODE_ANSIBLE:
-        g.local_applogger.debug("ITAANSIBLEH-STD-51066")
-
         ansible_execute = AnsibleExecute()
         retBool = ansible_execute.execute_construct(driver_id, execution_no, "", "", ans_if_info['ANSIBLE_CORE_PATH'], ans_if_info['ANSIBLE_VAULT_PASSWORD'], run_mode, "")  # noqa: E501
 
@@ -332,11 +352,9 @@ def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if
             execute_data["TIME_START"] = get_timestamp()
         else:
             err_msg = ansible_execute.getLastError()
-            ansdrv.LocalLogPrint()
+            ansdrv.LocalLogPrint(err_msg)
             return False, execute_data, err_msg
     else:
-        g.local_applogger.debug("ITAANSIBLEH-STD-51068")
-
         uiexec_log_path = ansdrv.getAnsible_out_Dir() + "/exec.log"
         uierror_log_path = ansdrv.getAnsible_out_Dir() + "/error.log"
         multiple_log_mark = ""
@@ -390,19 +408,8 @@ def instance_checkcondition(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, a
     zip_temp_save_dir = getAnsibleExecutDirPath(driver_id, execution_no) + '/.tmp'
 
     # ANSIBLEインタフェース情報をローカル変数に格納
-    # ans_storage_path_ans = ans_if_info['ANSIBLE_STORAGE_PATH_ANS']
-    # ans_protocol = ans_if_info['ANSIBLE_PROTOCOL']
-    # ans_hostname = ans_if_info['ANSIBLE_HOSTNAME']
-    # ans_port = ans_if_info['ANSIBLE_PORT']
-    # ans_access_key_id = ans_if_info['ANSIBLE_ACCESS_KEY_ID']
-    # ans_secret_access_key = ky_decrypt(ans_if_info['ANSIBLE_SECRET_ACCESS_KEY'])
-
     ans_exec_user = ans_if_info['ANSIBLE_EXEC_USER']
     ans_exec_mode = ans_if_info['ANSIBLE_EXEC_MODE']
-
-    # proxySetting = {}
-    # proxySetting['address'] = ans_if_info["ANSIBLE_PROXY_ADDRESS"]
-    # proxySetting['port'] = ans_if_info["ANSIBLE_PROXY_PORT"]
 
     if len(str(ans_exec_user).strip()) == 0:
         ans_exec_user = 'root'
@@ -411,9 +418,9 @@ def instance_checkcondition(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, a
     zip_data_source_dir = tmp_array_dirs[4]
 
     # 実行エンジンを判定
+    g.applogger.debug(g.appmsg.get_log_message("MSG-10741", [execution_no]))
+    error_flag = 0
     if ans_exec_mode == ansc_const.DF_EXEC_MODE_ANSIBLE:
-        g.local_applogger.debug("ITAANSIBLEH-STD-50071")
-
         ansible_execute = AnsibleExecute()
         status = ansible_execute.execute_statuscheck(driver_id, execution_no)
 
@@ -422,8 +429,6 @@ def instance_checkcondition(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, a
             ansdrv.LocalLogPrint(ansible_execute.getLastError())
             sql_exec_flag = 1
     else:
-        g.local_applogger.debug("ITAANSIBLEH-STD-50071")
-
         uiexec_log_path = ansdrv.getAnsible_out_Dir() + "/exec.log"
         uierror_log_path = ansdrv.getAnsible_out_Dir() + "/error.log"
         multiple_log_mark = ""
@@ -461,16 +466,18 @@ def instance_checkcondition(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, a
             status = -1
 
     # 状態をログに出力
-    g.local_applogger.debug("ExecutionNo:{}  Status:{}".format(execution_no, status))
+    g.applogger.debug(g.appmsg.get_log_message("BKY-10006", [execution_no, status]))
 
     # 5:正常終了時
     # 6:完了(異常)
     # 7:想定外エラー
     # 8:緊急停止
     if status in [ansc_const.COMPLETE, ansc_const.FAILURE, ansc_const.EXCEPTION, ansc_const.SCRAM] or error_flag != 0:
-        # 実行結果ファイルをTowerから転送
         # 実行エンジンを判定
-        if ans_exec_mode != ansc_const.DF_EXEC_MODE_ANSIBLE:
+        if ans_exec_mode == ansc_const.DF_EXEC_MODE_ANSIBLE:
+            pass
+        else:
+            # 実行結果ファイルをTowerから転送
             # 戻り値は確認しない
             multiple_log_mark = ""
             multiple_log_file_json_ary = ""
@@ -509,30 +516,29 @@ def instance_checkcondition(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, a
 
         # ステータスが実行中(3)、かつ制限時間が設定されている場合のみ遅延判定する
         if execute_data["STATUS_ID"] == ansc_const.PROCESSING and time_limit:
-            # 開始時刻(「UNIXタイム.マイクロ秒」)を生成
+            # 開始時刻(「エポック秒.マイクロ秒」)を生成(localタイムでutcタイムではない)
             rec_time_start = execute_data['TIME_START']
             starttime_unixtime = rec_time_start.timestamp()
             # 開始時刻(マイクロ秒)＋制限時間(分→秒)＝制限時刻(マイクロ秒)
             limit_unixtime = starttime_unixtime + (time_limit * 60)
-            # 現在時刻(「UNIXタイム.マイクロ秒」)を生成
+            # 現在時刻(「エポック秒.マイクロ秒」)を生成(localタイムでutcタイムではない)
             now_unixtime = time.time()
 
             # 制限時刻と現在時刻を比較
             if limit_unixtime < now_unixtime:
                 delay_flag = 1
-                g.local_applogger.debug("ITAANSIBLEH-STD-50030  ExecutionNo:{}".format(execution_no))
+                g.applogger.info(g.appmsg.get_log_message("MSG-10707", [execution_no]))
             else:
-                g.local_applogger.debug("ITAANSIBLEH-STD-50031  ExecutionNo:{}".format(execution_no))
+                g.applogger.info(g.appmsg.get_log_message("MSG-10708", [execution_no]))
 
         if delay_flag == 1:
             sql_exec_flag = 1
             # ステータスを「実行中(遅延)」とする
-            execute_data["STATUS_ID"] = 4
+            execute_data["STATUS_ID"] = ansc_const.PROCESS_DELAYED
 
     # 遅延中以外の場合に結果データ用ZIP 履歴ファイル作成
-    if sql_exec_flag == 1 and execute_data["STATUS_ID"] == 4:
+    if sql_exec_flag == 1 and execute_data["STATUS_ID"] == ansc_const.PROCESS_DELAYED:
         fileCreateHistoryZIPFile(
-            execution_no,
             zip_result_file,
             zip_result_file_dir)
         execute_data['FILE_RESULT'] = zip_result_file
@@ -544,9 +550,9 @@ def instance_checkcondition(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, a
         # 7:想定外エラー
         # 8:緊急停止
         if status in [ansc_const.COMPLETE, ansc_const.FAILURE, ansc_const.EXCEPTION, ansc_const.SCRAM]:
-            g.local_applogger.debug("ITAANSIBLEH-STD-50075  ExecutionNo:{}".format(execution_no))
+            # [処理]Ansible Automation Controller クリーニング 開始(作業No.:{})
+            g.applogger.debug(g.appmsg.get_log_message("MSG-10743", [execution_no]))
 
-            # AnsibleTower ゴミ掃除 戻り値は確認しない
             # 戻り値は確認しない
             retBool,
             tower_host_list,
@@ -565,7 +571,8 @@ def instance_checkcondition(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, a
                 multiple_log_file_json_ary,
                 status)
 
-            g.local_applogger.debug("ITAANSIBLEH-STD-50076  ExecutionNo:{}".format(execution_no))
+            # [処理]Ansible Automation Controller クリーニング 終了(作業No.:{})
+            g.applogger.debug(g.appmsg.get_log_message("MSG-10744", [execution_no]))
 
     return True, execute_data, db_update_need
 
@@ -622,11 +629,11 @@ def call_CreateAnsibleExecFiles(ansdrv: CreateAnsibleExecFiles, execute_data, dr
 
     retBool, role_rolenamelist, role_rolevarslist, role_roleglobalvarslist, role_rolepackage_id, def_vars_list, def_array_vars_list = result
     if retBool is False:
-        return False, "ITAANSIBLEH-ERR-50003" "00010004"
+        return False, g.appmsg.get_log_message("BKY-00004", ["CreateAnsibleExecFiles.CreateAnsibleWorkingDir", "error occured"])
 
     result = ansdrv.AnsibleEnginVirtualenvPathCheck()
     if result is False:
-        return False, "AnsibleEnginVirtualenvPathCheck is failed"
+        return False, g.appmsg.get_log_message("BKY-00004", ["CreateAnsibleExecFiles.AnsibleEnginVirtualenvPathCheck", "error occured"])
 
     result = ansdrv.getDBHostList(
         execution_no,
@@ -638,7 +645,7 @@ def call_CreateAnsibleExecFiles(ansdrv: CreateAnsibleExecFiles, execute_data, dr
         winrm_id)
     retBool, hostlist, hostostypelist, hostinfolist = result
     if retBool is False:
-        return False, "ITAANSIBLEH-ERR-50003" "00010000"
+        return False, g.appmsg.get_log_message("BKY-00004", ["CreateAnsibleExecFiles.getDBHostList", "error occured"])
 
     if driver_id == ansc_const.DF_LEGACY_DRIVER_ID:
         # データベースからPlayBookファイルを取得
@@ -647,7 +654,7 @@ def call_CreateAnsibleExecFiles(ansdrv: CreateAnsibleExecFiles, execute_data, dr
         result = ansdrv.getDBLegacyPlaybookList(pattern_id, playbooklist)
         retBool, playbooklist = result
         if retBool is False:
-            return False, "ITAANSIBLEH-ERR-50003" "00010001"
+            return False, g.appmsg.get_log_message("BKY-00004", ["CreateAnsibleExecFiles.getDBLegacyPlaybookList", "error occured"])
     elif driver_id == ansc_const.DF_PIONEER_DRIVER_ID:
         # データベースから対話ファイルを取得
         #    dialogfilelist:     子PlayBookファイル返却配列
@@ -655,7 +662,7 @@ def call_CreateAnsibleExecFiles(ansdrv: CreateAnsibleExecFiles, execute_data, dr
         result = ansdrv.getDBPioneerDialogFileList(pattern_id, operation_id, dialogfilelist, hostostypelist)
         retBool, dialogfilelist = result
         if retBool is False:
-            return False, "ITAANSIBLEH-ERR-50003" "00010002"
+            return False, g.appmsg.get_log_message("BKY-00004", ["CreateAnsibleExecFiles.getDBPioneerDialogFileList", "error occured"])
     elif driver_id == ansc_const.DF_LEGACY_ROLE_DRIVER_ID:
         # データベースからロール名を取得
         #    rolenamelist:     ロール名返却配列
@@ -663,7 +670,7 @@ def call_CreateAnsibleExecFiles(ansdrv: CreateAnsibleExecFiles, execute_data, dr
         result = ansdrv.getDBLegactRoleList(pattern_id, rolenamelist)
         retBool, rolenamelist = result
         if retBool is False:
-            return False, "ITAANSIBLEH-ERR-50003" "00010001"
+            return False, g.appmsg.get_log_message("BKY-00004", ["CreateAnsibleExecFiles.getDBLegactRoleList", "error occured"])
 
     # Legacy-Role 多次元配列　恒久版対応
     if driver_id == ansc_const.DF_LEGACY_DRIVER_ID or driver_id == ansc_const.DF_PIONEER_DRIVER_ID:
@@ -679,7 +686,7 @@ def call_CreateAnsibleExecFiles(ansdrv: CreateAnsibleExecFiles, execute_data, dr
             DB_child_vars_master)
         retBool, host_vars, pioneer_template_host_vars, vault_vars, vault_host_vars_file_list, host_child_vars, DB_child_vars_master = result
         if retBool is False:
-            return False, "ITAANSIBLEH-ERR-50003" "00010003"
+            return False, g.appmsg.get_log_message("BKY-00004", ["CreateAnsibleExecFiles.getDBVarList", "error occured"])
     elif driver_id == ansc_const.DF_LEGACY_ROLE_DRIVER_ID:
         # データベースから変数情報を取得する。
         #   $host_vars:        変数一覧返却配列
@@ -687,7 +694,7 @@ def call_CreateAnsibleExecFiles(ansdrv: CreateAnsibleExecFiles, execute_data, dr
         result = ansdrv.getDBRoleVarList(execution_no, pattern_id, operation_id, host_vars, MultiArray_vars_list, All_vars_list)
         retBool, host_vars, MultiArray_vars_list, All_vars_list = result
         if retBool is False:
-            return False, "ITAANSIBLEH-ERR-50003" "00010003"
+            return False, g.appmsg.get_log_message("BKY-00004", ["CreateAnsibleExecFiles.getDBRoleVarList", "error occured"])
 
     host_vars = ansdrv.addSystemvars(host_vars, hostinfolist)
 
@@ -715,7 +722,7 @@ def call_CreateAnsibleExecFiles(ansdrv: CreateAnsibleExecFiles, execute_data, dr
         exec_playbook_hed_def,
         exec_option)
     if retBool is False:
-        return False, "ITAANSIBLEH-ERR-50003" "00010005"
+        return False, g.appmsg.get_log_message("BKY-00004", ["CreateAnsibleExecFiles.CreateAnsibleWorkingFiles", "error occured"])
 
     return True, ""
 
@@ -727,7 +734,7 @@ def getMovementAnsibleExecOption(wsDb, pattern_id):
     return records[0]['ANS_EXEC_OPTIONS']
 
 
-def getAnsiblePlaybookOptionParameter(wsDb, option_parameter):
+def getAnsiblePlaybookOptionParameter(wsDb, option_parameter):  # noqa: C901
     res_retBool = True
     JobTemplatePropertyParameterAry = {}
     JobTemplatePropertyNameAry = {}
@@ -913,6 +920,8 @@ def getAnsiblePlaybookOptionParameter(wsDb, option_parameter):
                 JobTemplatePropertyParameterAry,
                 param_arry_exc,
                 verbose_cnt)
+            if retBool is False:
+                res_retBool = False
         if len(job_template_property_record['SHORT_KEY_NAME'].strip()) != 0:
             retBool, JobTemplatePropertyParameterAry = makeJobTemplatePropertyParameterAry(
                 job_template_property_record['SHORT_KEY_NAME'],
@@ -921,6 +930,8 @@ def getAnsiblePlaybookOptionParameter(wsDb, option_parameter):
                 JobTemplatePropertyParameterAry,
                 param_arry_exc,
                 verbose_cnt)
+            if retBool is False:
+                res_retBool = False
 
     return res_retBool, err_msg_arr, JobTemplatePropertyParameterAry, JobTemplatePropertyNameAry, param_arry_exc
 
@@ -952,20 +963,20 @@ def makeJobTemplateProperty(key_string, property_type, param_arr, err_msg_arr, e
         chk_param_string = '-' + param_string + ' '
         if re.match(key_string, chk_param_string):
             property_arr = re.split(r'^{}'.format(key_string), chk_param_string)
-            # 6000001 = "値が設定されていないオプションパラメータがあります。(パラメータ: {})"
-            # 6000002 = "重複しているオプションパラメータがあります。(パラメータ: {})"
-            # 6000003 = "不正なオプションパラメータがあります。(パラメータ: {})"
+            # MSG-10553 = "値が設定されていないオプションパラメータがあります。(パラメータ: {})"
+            # MSG-10554 = "重複しているオプションパラメータがあります。(パラメータ: {})"
+            # MSG-10555 = "不正なオプションパラメータがあります。(パラメータ: {})"
 
             # chk_param_stringを除外リストに設定(追加)
             excist_list.append(param_string)
 
             if property_type == ansc_const.DF_JobTemplateKeyValueProperty:
                 if len(property_arr[1].strip()) == 0:
-                    err_msg_arr.append()  # "ITAANSIBLEH-ERR-6000001" chk_param_string
+                    err_msg_arr.append(g.appmsg.get_log_message("MSG-10553", [chk_param_string]))
                     res_retBool = False
                 elif re.search(r'-f', key_string):
                     if str.isdecimal(property_arr[1].strip()):
-                        err_msg_arr.append()  # "ITAANSIBLEH-ERR-6000003" chk_param_string
+                        err_msg_arr.append(g.appmsg.get_log_message("MSG-10555", [chk_param_string]))
                         res_retBool = False
                 # tags skipの対応
                 elif key_string == r'--tags=' or key_string == r'-t(\s)+' or key_string == r'--skip-tags=':
@@ -974,25 +985,25 @@ def makeJobTemplateProperty(key_string, property_type, param_arr, err_msg_arr, e
             elif property_type == ansc_const.DF_JobTemplateVerbosityProperty:
                 property_arr = re.split(r'^(v)*', param_string)
                 if len(property_arr[1].strip()) != 0:
-                    err_msg_arr.append()  # "ITAANSIBLEH-ERR-6000003" chk_param_string
+                    err_msg_arr.append(g.appmsg.get_log_message("MSG-10555", [chk_param_string]))
                     res_retBool = False
                 else:
                     verbose_cnt = verbose_cnt + len(param_string.strip())
 
             elif property_type == ansc_const.DF_JobTemplatebooleanTrueProperty:
                 if len(property_arr[1]).strip() != 0:
-                    err_msg_arr.append()  # "ITAANSIBLEH-ERR-6000003" chk_param_string
+                    err_msg_arr.append(g.appmsg.get_log_message("MSG-10555", [chk_param_string]))
                     res_retBool = False
 
             elif property_type == ansc_const.DF_JobTemplateExtraVarsProperty:
                 if len(property_arr[1]).strip() == 0:
-                    err_msg_arr.append()  # "ITAANSIBLEH-ERR-6000001" chk_param_string
+                    err_msg_arr.append(g.appmsg.get_log_message("MSG-10553", [chk_param_string]))
                     res_retBool = False
                 else:
                     ext_var_string = property_arr[1].strip()
                     ret = makeExtraVarsParameter(ext_var_string)
                     if ret is False:
-                        err_msg_arr.append()  # "ITAANSIBLEH-ERR-6000003" chk_param_string
+                        err_msg_arr.append(g.appmsg.get_log_message("MSG-10555", [chk_param_string]))
                         res_retBool = False
 
     return res_retBool, err_msg_arr, excist_list, tag_skip_value_key, verbose_cnt
@@ -1090,26 +1101,31 @@ def fileCreateZIPFile(execution_no, zip_data_source_dir, exe_ins_input_file_dir,
             # ここ(UTNのdir)だけは再帰的に作成する
             try:
                 os.makedirs(utn_file_dir)
+            except Exception as e:
+                False, g.appmsg.get_log_message("MSG-10250", [zip_file_pfx, utn_file_dir, e])
+            try:
                 os.chmod(utn_file_dir, 0o777)
             except Exception as e:
-                False, "[fileCreateZIPFile] {}".format(e)
+                False, g.appmsg.get_log_message("MSG-10251", [zip_file_pfx, utn_file_dir, e])
 
         # zipファイルを正式な置き場に移動
         os.rename(zip_temp_save_dir + "/" + zip_file_name, utn_file_dir + "/" + zip_file_name)
 
         # zipファイルの存在を確認
         if not os.path.exists(utn_file_dir + "/" + zip_file_name):
-            False, "[fileCreateZIPFile] file({}) not exists".format(utn_file_dir + "/" + zip_file_name), zip_file_name, utn_file_dir
+            err_msg = g.appmsg.get_log_message("MSG-10252", [zip_file_pfx, utn_file_dir + "/" + zip_file_name])
+            False, err_msg, zip_file_name, utn_file_dir
 
+    # [処理]結果ディレクトリを圧縮(圧縮ファイル:{})
+    g.applogger.debug(g.appmsg.get_log_message("MSG-10783", [zip_file_pfx, utn_file_dir + "/" + zip_file_name]))
     return True, err_msg, zip_file_name, utn_file_dir
 
 
-def fileCreateHistoryZIPFile(execution_no, zip_file_name, utn_file_dir):
+def fileCreateHistoryZIPFile(zip_file_name, utn_file_dir):
     ########################################
     # 処理内容
     #  履歴用入力/結果ZIPファイル作成
     # パラメータ
-    #  execution_no:               作業実行番号
     #  zip_file_name:           ZIPファイル名返却
     #  utn_file_dir:            ZIPファイル格納ディレクトリ
     #                                  exe_ins_input_file_dir/作業実行番号
@@ -1131,107 +1147,20 @@ def fileCreateHistoryZIPFile(execution_no, zip_file_name, utn_file_dir):
             os.makedirs(tmp_jnl_file_dir_trunk)
             os.chmod(tmp_jnl_file_dir_trunk, 0o777)
         except Exception:
-            False, "ITAANSIBLEH-ERR-59851"
+            False, g.appmsg.get_log_message("MSG-10253", [zip_file_name])
 
     if not os.path.exists(tmp_jnl_file_dir_focus):
         try:
             os.makedirs(tmp_jnl_file_dir_focus)
             os.chmod(tmp_jnl_file_dir_focus, 0o777)
-        except Exception:
-            False, "ITAANSIBLEH-ERR-59852"
+        except Exception as e:
+            False, g.appmsg.get_log_message("MSG-10254", [zip_file_name, e])
 
     try:
         shutil.copy(utn_file_dir + "/" + zip_file_name, tmp_jnl_file_dir_focus + "/" + zip_file_name)
     except Exception:
-        False, "ITAANSIBLEH-ERR-59853"
+        False, g.appmsg.get_log_message("MSG-10255", [zip_file_name])
 
-    g.local_applogger.debug("ITAANSIBLEH-STD-59801")
+    # [処理]履歴ファイル作成(作業No.:{} ファイル名:{})
+    g.applogger.debug(g.appmsg.get_log_message("MSG-10784", [zip_file_name]))
     return True, ""
-
-
-class LocalAppLog():
-    __level = "DEBUG"
-    __available_log_level = ["ERROR", "INFO", "DEBUG"]
-    __output_filename = ""
-
-    def __init__(self, driver_id, execution_no, level):
-        """
-        constructor
-        """
-        execute_path = getAnsibleExecutDirPath(driver_id, execution_no)
-        self.__output_filename = "{}/out/error.log".format(execute_path)
-
-        self.set_level(level)
-
-    def set_level(self, level):
-        """
-        set log level
-
-        Arguments:
-            level: (str) "ERROR" | "INFO" | "DEBUG"
-        """
-        if level not in self.__available_log_level:
-            return
-
-        self.__level = level
-
-    def error(self, message):
-        """
-        output error log
-
-        Arguments:
-            message: message for output
-        """
-        self.out(message)
-
-    def info(self, message):
-        """
-        output info log
-
-        Arguments:
-            message: message for output
-        """
-        level_index = self.__available_log_level.index(self.__level)
-        if level_index <= 0:
-            return
-        self.out(message)
-
-    def debug(self, message):
-        """
-        output debug log
-
-        Arguments:
-            message: message for output
-        """
-        level_index = self.__available_log_level.index(self.__level)
-        if level_index <= 1:
-            return
-        self.out(message)
-
-    def __env_message(self):
-        """
-        make environ info message
-
-        Arguments:
-            msg: (str)
-        """
-        msg = ""
-
-        if "ORGANIZATION_ID" not in g:
-            return msg
-        msg += "[ORGANIZATION_ID:{}]".format(g.ORGANIZATION_ID)
-
-        if "WORKSPACE_ID" not in g:
-            return msg + " "
-        msg += "[WORKSPACE_ID:{}]".format(g.WORKSPACE_ID)
-
-        if "USER_ID" not in g:
-            return msg + " "
-        msg += "[USER_ID:{}]".format(g.USER_ID)
-
-        return msg + " "
-
-    def out(self, message):
-        message = self.__env_message() + str(message)
-        with open(self.__output_filename, "a") as fd:
-            fd.write(message)

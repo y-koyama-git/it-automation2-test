@@ -38,10 +38,15 @@ class AppLog:
 
     __available_log_level = ["ERROR", "INFO", "DEBUG"]
 
+    __env_message = ""
+    __tag_message = ""
+
     def __init__(self):
         """
         constructor
         """
+        self.set_env_message()
+
         # is no-container-app or not(bool)
         isMyapp = True if os.getenv('IS_MYAPP') == "1" else False
 
@@ -77,7 +82,7 @@ class AppLog:
         logging.config.dictConfig(self._config)
         # set instance
         self.__logger_obj = logging.getLogger(self.__name__)
-        self.__logger_obj.info("AppLog instance({}) is created".format(self.__name__))
+        self.info("AppLog instance({}) is created".format(self.__name__))
 
     def set_user_setting(self, wsdb_instance):
         """
@@ -116,7 +121,7 @@ class AppLog:
         Arguments:
             message: message for output
         """
-        self.__logger_obj.critical(self.__env_message() + str(message))
+        self.__logger_obj.critical(self.__env_message + str(message))
 
     def exception(self, message):
         """
@@ -125,7 +130,7 @@ class AppLog:
         Arguments:
             message: message for output
         """
-        self.__logger_obj.exception(self.__env_message() + str(message))
+        self.__logger_obj.exception(self.__env_message + str(message))
 
     def error(self, message):
         """
@@ -134,7 +139,7 @@ class AppLog:
         Arguments:
             message: message for output
         """
-        self.__logger_obj.error(self.__env_message() + str(message))
+        self.__logger_obj.error(self.__env_message + str(message))
 
     def warning(self, message):
         """
@@ -143,7 +148,7 @@ class AppLog:
         Arguments:
             message: message for output
         """
-        self.__logger_obj.warning(self.__env_message() + str(message))
+        self.__logger_obj.warning(self.__env_message + str(message))
 
     def info(self, message):
         """
@@ -152,7 +157,7 @@ class AppLog:
         Arguments:
             message: message for output
         """
-        self.__logger_obj.info(self.__env_message() + str(message))
+        self.__logger_obj.info(self.__env_message + str(message))
 
     def debug(self, message):
         """
@@ -161,27 +166,33 @@ class AppLog:
         Arguments:
             message: message for output
         """
-        self.__logger_obj.debug(self.__env_message() + str(message))
+        self.__logger_obj.debug(self.__env_message + str(message))
 
-    def __env_message(self):
+    def set_env_message(self):
         """
-        make environ info message
+        set env info message
 
-        Arguments:
-            msg: (str)
         """
         msg = ""
 
-        if "ORGANIZATION_ID" not in g:
-            return msg
-        msg += "[ORGANIZATION_ID:{}]".format(g.ORGANIZATION_ID)
+        if "ORGANIZATION_ID" in g:
+            msg += "[ORGANIZATION_ID:{}]".format(g.ORGANIZATION_ID)
 
-        if "WORKSPACE_ID" not in g:
-            return msg + " "
-        msg += "[WORKSPACE_ID:{}]".format(g.WORKSPACE_ID)
+        if "WORKSPACE_ID" in g:
+            msg += "[WORKSPACE_ID:{}]".format(g.WORKSPACE_ID)
 
-        if "USER_ID" not in g:
-            return msg + " "
-        msg += "[USER_ID:{}]".format(g.USER_ID)
+        if "USER_ID" in g:
+            msg += "[USER_ID:{}]".format(g.USER_ID)
 
-        return msg + " "
+        if self.__tag_message:
+            msg += self.__tag_message
+
+        self.__env_message = msg + " "
+
+    def set_tag(self, tag_name, tag_val):
+        """
+        set tag message
+
+        """
+        self.__tag_message = "[%s=%s]" % (tag_name, tag_val)
+        self.set_env_message()

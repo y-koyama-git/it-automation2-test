@@ -11,17 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+import subprocess
+import time
+import re
+import os
+
 from flask import g
 from common_libs.common.dbconnect import DBConnectWs
 from common_libs.common.util import get_timestamp
 from common_libs.ci.util import log_err
 from common_libs.ansible_driver.classes.AnsrConstClass import AnscConst
-
+from common_libs.ansible_driver.classes.controll_ansible_agent import DockerMode, KubernetesMode
 from libs import common_functions as cm
-
-import subprocess
-import time
-import re
 
 # ansible共通の定数をロード
 ansc_const = AnscConst()
@@ -33,7 +35,7 @@ def backyard_main(organization_id, workspace_id):
     main logicのラッパー
     called 実行君
     """
-    g.applogger.debug(g.appmsg.get_log_message("BKY-00001"))
+    g.applogger.info(g.appmsg.get_log_message("BKY-00001"))
 
     # db instance
     wsDb = DBConnectWs(g.get('WORKSPACE_ID'))  # noqa: F405
@@ -41,9 +43,9 @@ def backyard_main(organization_id, workspace_id):
     retBool = main_logic(organization_id, workspace_id, wsDb)
     if retBool is True:
         # 正常終了
-        g.applogger.debug(g.appmsg.get_log_message("BKY-00002"))
+        g.applogger.info(g.appmsg.get_log_message("BKY-00002"))
     else:
-        g.applogger.debug(g.appmsg.get_log_message("BKY-00003"))
+        g.applogger.info(g.appmsg.get_log_message("BKY-00003"))
 
 
 def main_logic(organization_id, workspace_id, wsDb):
@@ -112,31 +114,46 @@ def child_process_exist_check(wsDb):
                 if re.search(command_args, r_child_process) is not None:
                     is_running = True
 
+        # DBのステータスが実行中なのに、子プロセスが存在しない
         if is_running is False:
             log_err(g.appmsg.get_log_message("MSG-10056", [driver_name, execution_no]))
 
-            # 想定外エラーにする
-            # 情報を再取得
+            # 情報を再取得して、想定外エラーにする
             result = cm.get_execution_process_info(wsDb, execution_no)
             if result[0] is False:
-                log_err(result[1])
+                log_err(g.appmsg.get_log_message(result[1], [execution_no]))
                 return False
             execute_data = result[1]
 
-            # 更新
-            wsDb.db_transaction_start()
-            time_stamp = get_timestamp()
-            data = {
-                "EXECUTION_NO": execution_no,
-                "STATUS_ID": ansc_const.EXCEPTION,
-                "TIME_END": time_stamp,
-            }
-            if execute_data["TIME_START"] is None:
-                data["TIME_START"] = time_stamp
-            result = cm.update_execution_record(wsDb, data)
-            if result[0] is True:
-                wsDb.db_commit()
-                g.applogger.debug(g.appmsg.get_log_message("MSG-10060", [driver_name, execution_no]))
+            # 実行中か再確認
+            status_id_list = [ansc_const.PREPARE, ansc_const.PROCESSING, ansc_const.PROCESS_DELAYED]
+            if execute_data["STATUS_ID"] in status_id_list:
+                # 更新
+                wsDb.db_transaction_start()
+                time_stamp = get_timestamp()
+                data = {
+                    "EXECUTION_NO": execution_no,
+                    "STATUS_ID": ansc_const.EXCEPTION,
+                    "TIME_END": time_stamp,
+                }
+                if execute_data["TIME_START"] is None:
+                    data["TIME_START"] = time_stamp
+                result = cm.update_execution_record(wsDb, data)
+                if result[0] is True:
+                    wsDb.db_commit()
+                    g.applogger.debug(g.appmsg.get_log_message("MSG-10060", [driver_name, execution_no]))
+
+            # コンテナが残っている場合に備えて掃除
+            container_base = os.getenv('CONTAINER_BASE')
+            if container_base == 'docker':
+                ansibleAg = DockerMode()
+            else:
+                ansibleAg = KubernetesMode()
+
+            result = ansibleAg.container_clean(execution_no)
+            if result[0] is False:
+                # ゴミ掃除に失敗しても処理は続ける
+                log_err(g.appmsg.get_log_message("BKY-10007", [result[1], execution_no]))
 
     return True
 
@@ -216,7 +233,7 @@ def run_unexecuted(wsDb, num_of_run_instance, organization_id, workspace_id):
 
     # 処理対象レコードが0件の場合は処理終了
     if len(records) == 0:
-        g.applogger.debug(g.appmsg.get_log_message("MSG-10749"))
+        g.applogger.info(g.appmsg.get_log_message("MSG-10749"))
         return True,
 
     # 実行順リストを作成する
