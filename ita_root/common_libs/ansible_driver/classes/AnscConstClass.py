@@ -217,4 +217,3 @@ class AnscConst:
                                 ITA_SP_VAR_CPF_VAR_NAME,
                                 ITA_SP_VAR_TPF_VAR_NAME,
                                 ITA_SP_VAR_GBL_VAR_NAME]
-
