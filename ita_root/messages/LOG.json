@@ -150,6 +150,7 @@
     "BKY-10004": "[Process] Change the status. (status:{} Execution No.:{})",
     "BKY-10005": "Preparation of execution is not completed(status:{} Execution No.:{})",
     "BKY-10006": "ExecutionNo:{}  Status:{}",
+    "BKY-10007": "Failed to clean up exited container(Execution No.:{})",
     "BKY-20001": "Process start.",
     "BKY-20002": "Process end.",
     "BKY-20003": "No menu creation target.",

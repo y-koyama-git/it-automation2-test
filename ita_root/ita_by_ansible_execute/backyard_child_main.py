@@ -419,6 +419,7 @@ def instance_checkcondition(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, a
 
     # 実行エンジンを判定
     g.applogger.debug(g.appmsg.get_log_message("MSG-10741", [execution_no]))
+    error_flag = 0
     if ans_exec_mode == ansc_const.DF_EXEC_MODE_ANSIBLE:
         ansible_execute = AnsibleExecute()
         status = ansible_execute.execute_statuscheck(driver_id, execution_no)
@@ -472,9 +473,11 @@ def instance_checkcondition(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, a
     # 7:想定外エラー
     # 8:緊急停止
     if status in [ansc_const.COMPLETE, ansc_const.FAILURE, ansc_const.EXCEPTION, ansc_const.SCRAM] or error_flag != 0:
-        # 実行結果ファイルをTowerから転送
         # 実行エンジンを判定
-        if ans_exec_mode != ansc_const.DF_EXEC_MODE_ANSIBLE:
+        if ans_exec_mode == ansc_const.DF_EXEC_MODE_ANSIBLE:
+            pass
+        else:
+            # 実行結果ファイルをTowerから転送
             # 戻り値は確認しない
             multiple_log_mark = ""
             multiple_log_file_json_ary = ""
@@ -531,10 +534,10 @@ def instance_checkcondition(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, a
         if delay_flag == 1:
             sql_exec_flag = 1
             # ステータスを「実行中(遅延)」とする
-            execute_data["STATUS_ID"] = 4
+            execute_data["STATUS_ID"] = ansc_const.PROCESS_DELAYED
 
     # 遅延中以外の場合に結果データ用ZIP 履歴ファイル作成
-    if sql_exec_flag == 1 and execute_data["STATUS_ID"] == 4:
+    if sql_exec_flag == 1 and execute_data["STATUS_ID"] == ansc_const.PROCESS_DELAYED:
         fileCreateHistoryZIPFile(
             zip_result_file,
             zip_result_file_dir)
@@ -731,7 +734,7 @@ def getMovementAnsibleExecOption(wsDb, pattern_id):
     return records[0]['ANS_EXEC_OPTIONS']
 
 
-def getAnsiblePlaybookOptionParameter(wsDb, option_parameter):
+def getAnsiblePlaybookOptionParameter(wsDb, option_parameter):  # noqa: C901
     res_retBool = True
     JobTemplatePropertyParameterAry = {}
     JobTemplatePropertyNameAry = {}
@@ -1113,7 +1116,7 @@ def fileCreateZIPFile(execution_no, zip_data_source_dir, exe_ins_input_file_dir,
             err_msg = g.appmsg.get_log_message("MSG-10252", [zip_file_pfx, utn_file_dir + "/" + zip_file_name])
             False, err_msg, zip_file_name, utn_file_dir
 
-    # [処理]結果ディレクトリを圧縮(圧縮ファイル:{}) 
+    # [処理]結果ディレクトリを圧縮(圧縮ファイル:{})
     g.applogger.debug(g.appmsg.get_log_message("MSG-10783", [zip_file_pfx, utn_file_dir + "/" + zip_file_name]))
     return True, err_msg, zip_file_name, utn_file_dir
 

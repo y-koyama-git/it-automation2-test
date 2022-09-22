@@ -43,7 +43,9 @@ class AnsibleAgent(ABC):
     def get_unique_name(self, execution_no):
         return "%s_%s_%s" % (self._organization_id, self._workspace_id, execution_no)
 
-    # 定期巡回して、completeのコンテナを消すやつが必要（dockerもkubernetesも）
+    @abstractclassmethod
+    def container_clean(self, execution_no):
+        pass
 
 
 class DockerMode(AnsibleAgent):
@@ -120,7 +122,7 @@ class DockerMode(AnsibleAgent):
         # 戻りをjsonデコードして、runningのものが一つだけ存在しているか確認
         result_obj = json.loads(cp.stdout)
         if len(result_obj) > 0 and result_obj[0]['State'] == "running":
-            return True,
+            return True, result_obj
 
         return False, {"return_code": cp.returncode, "stderr": "not running"}
 
@@ -138,6 +140,40 @@ class DockerMode(AnsibleAgent):
         if cp.returncode != 0:
             # cp.check_returncode()  # 例外を発生させたい場合
             return False, {"return_code": cp.returncode, "stderr": cp.stderr}
+
+        # docker-compose -p project rm -f
+        docker_compose_command = ["/usr/local/bin/docker-compose", "-p", project_name, "rm", "-f"]
+        command = ["sudo"] + docker_compose_command
+
+        cp = subprocess.run(command, capture_output=True, text=True)
+        if cp.returncode != 0:
+            # cp.check_returncode()  # 例外を発生させたい場合
+            return False, {"return_code": cp.returncode, "stderr": cp.stderr}
+
+        return True, cp.stdout
+
+    def container_clean(self, execution_no):
+        '''
+        '''
+        # docker-compose -p project ps
+        project_name = self.get_unique_name(execution_no)
+        docker_compose_command = ["/usr/local/bin/docker-compose", "-p", project_name, "ps", "--format", "json"]
+        command = ["sudo"] + docker_compose_command
+
+        cp = subprocess.run(command, capture_output=True, text=True)
+        if cp.returncode != 0:
+            return True, "already not exists"
+
+        # exitedでないものは、まずはstopする
+        result_obj = json.loads(cp.stdout)
+        if len(result_obj) > 0 and "exited" not in result_obj[0]['State']:
+            # docker-compose -p project stop
+            docker_compose_command = ["/usr/local/bin/docker-compose", "-p", project_name, "stop"]
+            command = ["sudo"] + docker_compose_command
+
+            cp = subprocess.run(command, capture_output=True, text=True)
+            if cp.returncode != 0:
+                return False, {"return_code": cp.returncode, "stderr": cp.stderr}
 
         # docker-compose -p project rm -f
         docker_compose_command = ["/usr/local/bin/docker-compose", "-p", project_name, "rm", "-f"]
@@ -257,3 +293,8 @@ class KubernetesMode(AnsibleAgent):
             return False, {"return_code": cp.returncode, "stderr": cp.stderr}
 
         return True, cp.stdout
+
+    def container_clean(self, execution_no):
+        '''
+        '''
+        return "bool", "err_msg"
