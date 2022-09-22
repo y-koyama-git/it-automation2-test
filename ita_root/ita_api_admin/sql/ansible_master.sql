@@ -324,7 +324,7 @@ INSERT INTO T_COMN_MENU_COLUMN_LINK_JNL (JOURNAL_SEQ_NO,JOURNAL_REG_DATETIME,JOU
 }',NULL,NULL,NULL,'ssh秘密鍵ファイルに設定されているパスフレーズを入力します。','Enter the passphrase set in the ssh private key file.',NULL,'0',_____DATE_____,1);
 INSERT INTO T_COMN_MENU_COLUMN_LINK (COLUMN_DEFINITION_ID,MENU_ID,COLUMN_NAME_JA,COLUMN_NAME_EN,COLUMN_NAME_REST,COL_GROUP_ID,COLUMN_CLASS,COLUMN_DISP_SEQ,REF_TABLE_NAME,REF_PKEY_NAME,REF_COL_NAME,REF_SORT_CONDITIONS,REF_MULTI_LANG,REFERENCE_ITEM,SENSITIVE_COL_NAME,FILE_UPLOAD_PLACE,BUTTON_ACTION,COL_NAME,SAVE_TYPE,AUTO_INPUT,INPUT_ITEM,VIEW_ITEM,UNIQUE_ITEM,REQUIRED_ITEM,AUTOREG_HIDE_ITEM,AUTOREG_ONLY_ITEM,INITIAL_VALUE,VALIDATE_OPTION,VALIDATE_REG_EXP,BEFORE_VALIDATE_REGISTER,AFTER_VALIDATE_REGISTER,DESCRIPTION_JA,DESCRIPTION_EN,NOTE,DISUSE_FLAG,LAST_UPDATE_TIMESTAMP,LAST_UPDATE_USER) VALUES('2010111','20101','認証方式','Authentication method','authentication_method','2010104','7',110,'T_ANSC_LOGIN_AUTH_TYPE','LOGIN_AUTH_TYPE_ID','LOGIN_AUTH_TYPE_NAME',NULL,'1',NULL,NULL,NULL,NULL,'LOGIN_AUTH_TYPE',NULL,'0','1','1','0','0','1','0',NULL,NULL,NULL,NULL,NULL,'Ansibleから機器へ接続する際の認証方式を選択します。
 ・パスワード認証
-　ログインパスワードの管理で●の選択と、ログインパスワードの入力が必須です。
+　ログインパスワードの入力が必須です。
 ・鍵認証（パスフレーズなし）
 　ssh秘密鍵ファイルのアップロードが必須です。
 ・鍵認証（パスフレーズあり）
@@ -336,7 +336,7 @@ INSERT INTO T_COMN_MENU_COLUMN_LINK (COLUMN_DEFINITION_ID,MENU_ID,COLUMN_NAME_JA
 尚、パスワード認証（winrm)以外の認証方式の場合、機器側に以下の設定が必要です。
 ログインユーザの sudo 権限を NOPASSWD付で /etc/sudoers に設定する必要があります。','Select the authentication method when connecting to the device from Ansible.
 -Password authentication
- Select ● in the login password management and enter the login password.
+ login password is required.
 -Key authentication (no passphrase)
  Uploading the ssh private key file is required.
 -Key authentication (with passphrase)
@@ -349,7 +349,7 @@ For authentication methods other than password authentication (winrm), the follo
 The login user sudo privileges must be set to / etc / sudoers with his NOPASSWD.',NULL,'0',_____DATE_____,1);
 INSERT INTO T_COMN_MENU_COLUMN_LINK_JNL (JOURNAL_SEQ_NO,JOURNAL_REG_DATETIME,JOURNAL_ACTION_CLASS,COLUMN_DEFINITION_ID,MENU_ID,COLUMN_NAME_JA,COLUMN_NAME_EN,COLUMN_NAME_REST,COL_GROUP_ID,COLUMN_CLASS,COLUMN_DISP_SEQ,REF_TABLE_NAME,REF_PKEY_NAME,REF_COL_NAME,REF_SORT_CONDITIONS,REF_MULTI_LANG,REFERENCE_ITEM,SENSITIVE_COL_NAME,FILE_UPLOAD_PLACE,BUTTON_ACTION,COL_NAME,SAVE_TYPE,AUTO_INPUT,INPUT_ITEM,VIEW_ITEM,UNIQUE_ITEM,REQUIRED_ITEM,AUTOREG_HIDE_ITEM,AUTOREG_ONLY_ITEM,INITIAL_VALUE,VALIDATE_OPTION,VALIDATE_REG_EXP,BEFORE_VALIDATE_REGISTER,AFTER_VALIDATE_REGISTER,DESCRIPTION_JA,DESCRIPTION_EN,NOTE,DISUSE_FLAG,LAST_UPDATE_TIMESTAMP,LAST_UPDATE_USER) VALUES(2010111,_____DATE_____,'INSERT','2010111','20101','認証方式','Authentication method','authentication_method','2010104','7',110,'T_ANSC_LOGIN_AUTH_TYPE','LOGIN_AUTH_TYPE_ID','LOGIN_AUTH_TYPE_NAME',NULL,'1',NULL,NULL,NULL,NULL,'LOGIN_AUTH_TYPE',NULL,'0','1','1','0','0','1','0',NULL,NULL,NULL,NULL,NULL,'Ansibleから機器へ接続する際の認証方式を選択します。
 ・パスワード認証
-　ログインパスワードの管理で●の選択と、ログインパスワードの入力が必須です。
+　ログインパスワードの入力が必須です。
 ・鍵認証（パスフレーズなし）
 　ssh秘密鍵ファイルのアップロードが必須です。
 ・鍵認証（パスフレーズあり）
@@ -361,7 +361,7 @@ INSERT INTO T_COMN_MENU_COLUMN_LINK_JNL (JOURNAL_SEQ_NO,JOURNAL_REG_DATETIME,JOU
 尚、パスワード認証（winrm)以外の認証方式の場合、機器側に以下の設定が必要です。
 ログインユーザの sudo 権限を NOPASSWD付で /etc/sudoers に設定する必要があります。','Select the authentication method when connecting to the device from Ansible.
 -Password authentication
- Select ● in the login password management and enter the login password.
+ login password is required.
 -Key authentication (no passphrase)
  Uploading the ssh private key file is required.
 -Key authentication (with passphrase)
