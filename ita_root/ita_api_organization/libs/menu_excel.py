@@ -1716,11 +1716,11 @@ def collect_excel_filter(objdbca, organization_id, workspace_id, menu, menu_reco
         tmp = list(value.values())[0]
         ws_filter.cell(row=1, column=4 + i, value=key)
         if key.lower() == 'discard':
-            if tmp == 0:
+            if tmp == '0':
                 # 廃止含まず
                 msg = g.appmsg.get_api_message('MSG-30016')
                 ws_filter.cell(row=2, column=4 + i, value=msg)
-            elif tmp == 1:
+            elif tmp == '1':
                 # 廃止のみ
                 msg = g.appmsg.get_api_message('MSG-30019')
                 ws_filter.cell(row=2, column=4 + i, value=msg)
@@ -1729,8 +1729,11 @@ def collect_excel_filter(objdbca, organization_id, workspace_id, menu, menu_reco
                 msg = g.appmsg.get_api_message('MSG-30018')
                 ws_filter.cell(row=2, column=4 + i, value=msg)
         else:
-            ws_filter.cell(row=2, column=4 + i, value=list(value.values())[0])
-    
+            if len(list(value.values())[0]) > 1:
+                for j, val in enumerate(list(value.values())[0]):
+                    ws_filter.cell(row=2 + j, column=4 + i, value=list(value.values())[0][j])
+            else:
+                ws_filter.cell(row=2, column=4 + i, value=list(value.values())[0][0])
     
     wb.save(file_path)  # noqa: E303
     
