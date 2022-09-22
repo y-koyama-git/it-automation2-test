@@ -23,6 +23,24 @@
 class CommonUi {
 /*
 ##################################################
+   UI mode
+##################################################
+*/
+static setUiMode() {
+    const container = document.getElementById('container');
+    if ( window.parent === window ) {
+        container.classList.add('windowMode');
+    } else {
+        container.classList.add('iframeMode');
+        
+        const iframeMode = fn.getParams().iframeMode;
+        if ( iframeMode ) {
+            container.setAttribute('data-iframeMode', iframeMode );
+        }
+    }
+}
+/*
+##################################################
    Constructor
 ##################################################
 */
@@ -59,91 +77,133 @@ setUi() {
     // Set common events
     fn.setCommonEvents();
     
-    // REST API URLs
-    const restApiUrls = [
-        '/user/',
-        '/user/menus/',
-        '/user/menus/panels/'
-    ];
-    if ( ui.params.menuNameRest && ui.params.menuNameRest !== ui.debugModeName ) {
-        restApiUrls.push(`/menu/${ui.params.menuNameRest}/info/`);
-    }
+    // 結果を入れる
+    ui.rest = {};
     
-    fn.fetch( restApiUrls ).then(function( result ){
-        if ( result ) {
-            ui.$.container.addClass('ready');
-            
-            ui.rest = {};
-            ui.rest.user = result[0],
-            ui.rest.menuGroups = result[1].menu_groups,
-            ui.rest.panel = result[2];
-            
-            ui.sideMenu();
-            ui.header();
-            
-            if ( result[3] ) {
-                ui.rest.info = result[3];
-                
-                // 権限フラグ
-                ui.flag = fn.editFlag( ui.rest.info.menu_info );
-                
-                // sheet_typeによって分ける
-                switch ( ui.rest.info.menu_info.sheet_type ) {
-                    case undefined:
-                    break;
-                    // 0 - 4 : 標準メニュー
-                    case '0': case '1': case '2': case '3': case '4':
-                        ui.$.content.addClass('tabContent');
-                        ui.defaultMenu('standard');
-                    break;
-                    // 5 - 6 : 参照用メニュー
-                    case '5': case '6':
-                        ui.$.content.addClass('tabContent');
-                        ui.defaultMenu('reference');
-                    break;
-                    // 11 : 作業実行
-                    case '11':
-                        ui.$.content.addClass('defaultContent');
-                        ui.executeMenu();
-                    break;
-                    // 12 : 作業状態確認
-                    case '12':
-                    break;
-                    // 13 : メニュー定義・作成
-                    case '13':
-                        ui.createMenu();
-                    break;
-                    // 14 : Conductorクラス編集
-                    case '14':
-                        ui.condcutor('edit');
-                    break;
-                    // 16 : Conductor作業確認
-                    case '16':
-                        ui.condcutor('confirmation');
-                    break;
-                    // 17 : 比較実行
-                    // 19 : メニュー作成実行
-                    default:
-                    // メインメニュー
-                    ui.mainMenu();
-                }
-            } else {
-                if ( ui.params.menuNameRest === ui.debugModeName ) {
-                    // デバッグ用メニュー
-                    ui.debugMenu();
-                } else {
-                    // メインメニュー
-                    ui.mainMenu();
-                }
+    // iframeで読み込まれていないか？
+    if ( window.parent === window ) {
+        ui.mode = 'window';
+    
+        // REST API URLs
+        const restApiUrls = [
+            '/user/',
+            '/user/menus/',
+            '/user/menus/panels/'
+        ];
+        if ( ui.params.menuNameRest && ui.params.menuNameRest !== ui.debugModeName ) {
+            restApiUrls.push(`/menu/${ui.params.menuNameRest}/info/`);
+        }
+
+        fn.fetch( restApiUrls ).then(function( result ){
+            if ( result ) {            
+                ui.rest.user = result[0],
+                ui.rest.menuGroups = result[1].menu_groups,
+                ui.rest.panel = result[2];
+
+                ui.sideMenu();
+                ui.header();
+
+                ui.sheetType( result[3] );
             }
+        }).catch(function( e ){
+            console.error( e );
+            if ( e.message !== 'Failed to fetch') {
+                fn.gotoErrPage( e.message );
+            } else {
+                window.console.error( e.message );
+            }
+        });
+    } else {
+        ui.mode = 'iframe';
+        ui.iframeMode = ui.$.container.attr('data-iframeMode');
+        
+        fn.fetch(`/menu/${ui.params.menuNameRest}/info/`).then(function( result ){
+            if ( result ) {
+                ui.sheetType( result );
+            }
+        }).catch(function( e ){
+            console.error( e );
+            if ( e.message !== 'Failed to fetch') {
+                fn.gotoErrPage( e.message );
+            } else {
+                window.console.error( e.message );
+            }
+        });
+        
+    }
+}
+/*
+##################################################
+   シートタイプごとにページを表示する
+##################################################
+*/
+sheetType( info ) {
+    const ui = this;
+    if ( info ) {
+        ui.rest.info = info;
+
+        // 権限フラグ
+        ui.flag = fn.editFlag( ui.rest.info.menu_info );
+
+        // sheet_typeによって分ける
+        switch ( ui.rest.info.menu_info.sheet_type ) {
+            case undefined:
+            break;
+            // 0 - 4 : 標準メニュー
+            case '0': case '1': case '2': case '3': case '4':
+                ui.$.content.addClass('tabContent');
+                ui.defaultMenu('standard');
+            break;
+            // 5 - 6 : 参照用メニュー
+            case '5': case '6':
+                ui.$.content.addClass('tabContent');
+                ui.defaultMenu('reference');
+            break;
+            // 11 : 作業実行
+            case '11':
+                ui.$.content.addClass('defaultContent');
+                ui.executeMenu();
+            break;
+            // 12 : 作業状態確認
+            case '12':
+                ui.$.content.addClass('tabContent');
+                ui.operationStatusMenu();
+            break;
+            // 13 : メニュー定義・作成
+            case '13':
+                ui.createMenu();
+            break;
+            // 14 : Conductorクラス編集
+            case '14':
+                ui.condcutor('edit');
+            break;
+            // 16 : Conductor作業確認
+            case '16':
+                ui.condcutor('confirmation');
+            break;
+            // 17 : 比較実行
+            // 19 : メニュー作成実行
+            default:
+            // メインメニュー
+            ui.mainMenu();
         }
-    }).catch(function( e ){
-        if ( e.message !== 'Failed to fetch') {
-            fn.gotoErrPage( e.message );
+    } else {
+        if ( ui.params.menuNameRest === ui.debugModeName ) {
+            // デバッグ用メニュー
+            ui.debugMenu();
         } else {
-            window.console.error( e.message );
+            // メインメニュー
+            ui.mainMenu();
         }
-    });
+    }
+}
+/*
+##################################################
+   Ready
+##################################################
+*/
+onReady() {
+    this.$.container.addClass('ready');
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -167,7 +227,7 @@ topicPath() {
     const ui = this;
     const topics = [],
           title = [ ui.currentPage.title ];
-    if ( ui.currentGroup ) {
+    if ( ui.currentGroup.link ) {
         topics.push({ href: ui.params.path, title: WD.UI.MainMenu });
         topics.push({ href: `${ui.params.path}?menu=${ui.currentGroup.link}`, title: ui.currentGroup.title });
         title.push( ui.currentGroup.title );
@@ -364,17 +424,6 @@ checkVersion( version ) {
 sideMenu() {
     const ui = this;
     
-    const menus = [
-        { name: 'menuMain', icon: 'menuList'},
-        { name: 'menuGroup', icon: 'menuGroup'},
-        { name: 'menuFavorite', icon: 'star'},
-        { name: 'menuHistory', icon: 'history'}
-    ];
-    
-    // Menu tab
-    ui.menuTab = fn.storage.get('menuTab');
-    if ( !ui.menuTab || ui.menuTab === '#menuGroup') ui.menuTab = '#menuMain';
-    
     // Secondary(Child) menu
     ui.menuSecondaryToggleSpeed = 300;
     ui.menuSecondary = fn.storage.get('subMenuOpen');
@@ -383,11 +432,22 @@ sideMenu() {
     // メニュー構造作成
     ui.createMenuGroupList();
     
+    const menus = [
+        { name: 'menuGroup', icon: 'menuGroup', title: 'メニューグループ'},
+        { name: 'menuMain', icon: 'menuList', title: ui.currentGroup.title },
+        /*{ name: 'menuFavorite', icon: 'star'},
+        { name: 'menuHistory', icon: 'history'}*/
+    ];
+    
+    // Menu tab
+    ui.menuTab = fn.storage.get('menuTab');
+    if ( !ui.menuTab || ui.menuTab === '#menuGroup') ui.menuTab = '#menuMain';
+    
     const tab = [],
           body = [];
     
     for ( const menu of menus ) {
-        tab.push(`<li class="menuTabItem"><a class="menuTabLink" href="#${menu.name}"><span class="icon icon-${menu.icon}"></span></a></li>`);
+        tab.push(`<li class="menuTabItem"><a class="menuTabLink popup" title="${menu.title}" href="#${menu.name}"><span class="icon icon-${menu.icon}"></span></a></li>`);
         body.push(`<div class="menuBlock" id="${menu.name}">${ui[ menu.name ]()}</div>`);
     }
     
@@ -424,10 +484,10 @@ sideMenu() {
     
     // Menu toggle
     ui.$.menu.find('.menuToggleButton').on('click', function( e ){
-        if ( !ui.$.menu.is('.close') ) {
-            ui.$.menu.addClass('close');
+        if ( !ui.$.container.is('.menuClose') ) {
+            ui.$.container.addClass('menuClose');
         } else {
-            ui.$.menu.removeClass('close');
+            ui.$.container.removeClass('menuClose');
         }
     });
     
@@ -442,14 +502,53 @@ sideMenu() {
         if ( $button.is('.open') ) {
             $button.removeClass('open');
             $menu.stop(0,0).slideUp( ui.menuSecondaryToggleSpeed );
-            ui.menuSecondary.splice( ui.menuSecondary.indexOf( menuId ), 1 );
+            if ( ui.menuSecondary.indexOf( menuId ) !== -1 ) {
+                ui.menuSecondary.splice( ui.menuSecondary.indexOf( menuId ), 1 );
+            }
         } else {
             $button.addClass('open');
             $menu.stop(0,0).slideDown( ui.menuSecondaryToggleSpeed );
-            ui.menuSecondary.push( menuId );
+            if ( ui.menuSecondary.indexOf( menuId ) === -1 ) {
+                ui.menuSecondary.push( menuId );
+            }
         }
         fn.storage.set('subMenuOpen', ui.menuSecondary );
     });
+    
+    // メニューグループクリック時、メニュー一覧表示
+    ui.$.menu.find('.menuGroupLink').on('click', function( e ){
+        e.preventDefault();
+        
+        const $link = $( this ),
+              num = $link.attr('data-num'),
+              id = $link.attr('data-id'),
+              list = ui.menuGroupList[ num ],
+              width = ui.$.menu.outerWidth();
+        
+        if ( list.id === id && !$link.is('.subGroupMenuOpen') ) {
+            $link.addClass('subGroupMenuOpen');
+        
+            const $html = $(`<div class="menuGroupSub" style="left:${width}px">`
+            + `<div class="menuHeader"></div>`
+            + `<div class="menuBody">`
+                +`<div class="menuBlock">`
+                    + ui.sideMenuBody( list.menu_group_name, 'unknown', ui.menuSub( list.menus ), ui.rest.panel[ id ] )
+                + `</div>`
+            + `</div></div>`);
+            
+            ui.$.container.append( $html );
+            ui.$.window.on('mousedown.groupSub', function( e ){
+                if ( !$( e.target ).closest('.menuGroupSub, .subGroupMenuOpen').length ) {
+                    ui.$.menu.find('.subGroupMenuOpen').removeClass('subGroupMenuOpen');
+                    $html.animate({ left: '-100%'}, 300, function(){
+                        $( this ).remove();
+                    });
+                    ui.$.window.off('mousedown.groupSub');
+                }
+            });
+        }
+    });
+
 }
 /*
 ##################################################
@@ -486,10 +585,11 @@ createMenuGroupList() {
                     if ( child.menus[0].menu_name_rest ) {
                          child.main_menu_rest = child.menus[0].menu_name_rest;
                     }
+                    if ( ui.menuSecondary.indexOf( child.id ) !== -1 ) {
+                        child.secondary_open_flag = true;
+                    }
                     for ( const menu of child.menus ) {
-                        if ( ui.menuSecondary.indexOf( menu.menu_name_rest ) !== -1 ) {
-                            child.secondary_open_flag = true;
-                        } else if ( ui.params.menuNameRest === menu.menu_name_rest ) {
+                        if ( ui.params.menuNameRest === menu.menu_name_rest ) {
                             child.secondary_open_flag = true;
                             ui.currentMenuGroupList = parent;
                         }
@@ -515,8 +615,32 @@ createMenuGroupList() {
         if ( !parent.main_menu_rest && subRest ) parent.main_menu_rest = subRest;
     }
     ui.dispSeqSort( ui.menuGroupList );
+    
+    if ( ui.currentMenuGroupList ) {
+        const menuGroupName = fn.cv( ui.currentMenuGroupList.menu_group_name, '', true ),
+              menuGroupPanel = fn.cv( ui.rest.panel[ ui.currentMenuGroupList.id ], ''),
+              menuGroupLink = fn.cv( ui.currentMenuGroupList.main_menu_rest, '');
+        ui.currentGroup = {
+            title: menuGroupName,
+            panel: menuGroupPanel,
+            link: menuGroupLink
+        };
+    } else {
+        ui.currentGroup = {
+            title: 'メインメニュー'
+        };
+    }
 }
-
+/*
+##################################################
+   panel image
+##################################################
+*/
+getPanelImage( title, icon, panel ) {
+    return ( fn.cv( panel, false ) )?
+    `<img class="menuTitleIconImage" src="data:;base64,${panel}" alt="${title}">`:
+    `<span class="icon icon-${icon}"></span>`;
+}
 /*
 ##################################################
    Side menu body
@@ -525,9 +649,7 @@ createMenuGroupList() {
 sideMenuBody( title, icon, list, panel ) {
     const ui = this;
     
-    const iconImage = ( fn.cv( panel, false ) )?
-        `<img class="menuTitleIconImage" src="data:;base64,${panel}" alt="${title}">`:
-        `<span class="icon icon-${icon}"></span>`;
+    const iconImage = ui.getPanelImage( title, icon, panel );
     
     return `
     <div class="menuTitle">
@@ -554,14 +676,6 @@ menuMain() {
     const ui = this;    
     
     if ( ui.params.menuNameRest && ui.currentMenuGroupList ) {
-        const menuGroupName = fn.cv( ui.currentMenuGroupList.menu_group_name, '', true ),
-              menuGroupPanel = fn.cv( ui.rest.panel[ ui.currentMenuGroupList.id ], ''),
-              menuGroupLink = fn.cv( ui.currentMenuGroupList.main_menu_rest, '');
-        ui.currentGroup = {
-            title: menuGroupName,
-            panel: menuGroupPanel,
-            link: menuGroupLink
-        };
         const item = function( m, secondary ){
             const menuName = fn.cv( m.menu_name, '', true ),
                   menuRest = fn.cv( m.menu_name_rest, ''),
@@ -615,7 +729,7 @@ menuMain() {
             return htmlArray.join('');
         };
 
-        return ui.sideMenuBody( menuGroupName, 'unknown', list( ui.currentMenuGroupList.menus ), menuGroupPanel );
+        return ui.sideMenuBody( ui.currentGroup.title, 'unknown', list( ui.currentMenuGroupList.menus ), ui.currentGroup.panel );
     } else {
         // メインメニュー用リスト
         const dashboard = `<li class="menuItem"><a class="menuLink current" href="${ui.params.path}">DashBoard</a></li>`;
@@ -627,17 +741,75 @@ menuMain() {
 }
 /*
 ##################################################
+   Sub main list
+##################################################
+*/
+menuSub( subMenuList ) {
+    const ui = this;    
+    
+
+    const item = function( m, secondary ){
+        const menuName = fn.cv( m.menu_name, '', true ),
+              menuRest = fn.cv( m.menu_name_rest, ''),
+              attr = [`href="${ui.params.path}?menu=${menuRest}"`],
+              className = ['menuLink'];
+        if ( secondary ) className.push('menuSecondaryLink');
+        return `<li class="menuItem"><a class="${className.join(' ')}" ${attr.join(' ')}>${menuName}</a></li>`;
+    };
+
+    const list = function( menus, secondary ) {
+        const htmlArray = [];
+        for ( const menu of menus ) {
+            if ( menu.menus ) {
+                // Secondary
+                const secondaryGroupName = fn.cv( menu.menu_group_name, '', true ),
+                      secondaryGroupLink = fn.cv( menu.main_menu_rest, ''),
+                      secondaryClassName = ['menuSecondaryToggleButton'],
+                      listStyle = [],
+                      menuID = fn.cv( menu.id, '');
+                if ( menu.secondary_open_flag ) {
+                    secondaryClassName.push('open');
+                    listStyle.push('display:block');
+                }
+                const secondaryHTML = ``
+                + `<li class="menuItem">`
+                    + `<div class="menuSecondary">`
+                        +`<button class="${secondaryClassName.join(' ')}" data-id="${menuID}">`
+                            + `${secondaryGroupName}<span class="menuSecondaryToggleIcon"></span>`
+                        + `</button>`
+                        + `<ul class="menuList menuSecondaryList" style="${listStyle.join(';')}">`
+                            + list( menu.menus, { title: secondaryGroupName, link: secondaryGroupLink })
+                        + `</ul>`
+                    + `</div>`
+                + `</li>`;
+                htmlArray.push( secondaryHTML );
+            } else {
+                htmlArray.push( item( menu, secondary ) );
+            }
+        }
+        return htmlArray.join('');
+    };
+
+    return list( subMenuList );
+}
+/*
+##################################################
    Menu group
 ##################################################
 */
-menuGroup(){
+menuGroup() {
     const ui = this;
     
-    const list = [];
-    for ( const menuGroup of ui.menuGroupList ) {
+    const list = [],
+          length = ui.menuGroupList.length;
+    
+    for ( let i = 0; i < length; i++ ) {
+        const menuGroup = ui.menuGroupList[i];
         if ( menuGroup.parent_id === null ) {
-            const title = fn.cv( menuGroup.menu_group_name, '', true );
-            list.push(`<li class="menuItem"><a class="menuLink" href="${ui.params.path}?menu=${menuGroup.main_menu_rest}">${title}</a></li>`);
+            const title = fn.cv( menuGroup.menu_group_name, '', true ),
+                  id =  fn.cv( menuGroup.id, ''),
+                  panel = ui.getPanelImage( title, 'unkown', ui.rest.panel[ id ] );
+            list.push(`<li class="menuItem"><a class="menuGroupLink menuLink" data-id="${id}" data-num="${i}" href="${ui.params.path}?menu=${menuGroup.main_menu_rest}"><span class="menuGroupPanel">${panel}</span><span class="menuGroupTitle">${title}</span></a></li>`);
         }
     }
     
@@ -666,9 +838,9 @@ menuHistory(){
 */
 serachBlock() {
     return `
-    <div class="menuSearch">
+    <!--<div class="menuSearch">
         <input class="menuSearchText" data-search="menuMain" placeholder="${WD.UI.MenuSearch}">
-    </div>`;
+    </div>-->`;
 }
 /*
 ##################################################
@@ -707,18 +879,20 @@ dispSeqSort( data ) {
    Common container
 ##################################################
 */
-commonContainer( title, info, body ) {
+commonContainer( title, info, body, menuFlag = true ) {
     return `
-    <div class="contentHeader">
-        <h1 class="contentTitle"><span class="contentTitleInner">${title}</span></h1>
-        <p class="contentMenuInfo">
-            <span class="contentMenuInfoInner">${info}</span>
-            <button class="contentMenuInfoButton button popup" title="メニュー情報表示">
-                <span class="inner">${fn.html.icon('ellipsis_v')}<span></button>
-        </p>
-    </div>
-    <div class="contentBody">
-        ${body}
+    <div class="contentInner">
+        <div class="contentHeader">
+            <h1 class="contentTitle"><span class="contentTitleInner">${title}</span></h1>
+            <p class="contentMenuInfo">
+                <span class="contentMenuInfoInner">${info}</span>${( menuFlag )? `
+                <button class="contentMenuInfoButton button popup" title="メニュー情報表示">
+                    <span class="inner">${fn.html.icon('ellipsis_v')}<span></button>`: ``}
+            </p>
+        </div>
+        <div class="contentBody">
+            ${body}
+        </div>
     </div>`;
 }
 /*
@@ -753,7 +927,7 @@ contentTab( list ) {
 ##################################################
 */
 contentSection( body, id ) {
-    return `<section class="section"${( id )?` id="${id}"`: ``}><div class="sectionBody">${body}</div></section>`;
+    return `<section class="section"${( id )?` id="${id}"`: ``}><div class="sectionBody">${(body)?body:``}</div></section>`;
 }
 /*
 ##################################################
@@ -796,6 +970,27 @@ contentTabOpen( openTab ) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 mainMenu() {
+    const ui = this;
+    
+    const list = [],
+          length = ui.menuGroupList.length;
+    
+    for ( let i = 0; i < length; i++ ) {
+        const menuGroup = ui.menuGroupList[i];
+        if ( menuGroup.parent_id === null ) {
+            const title = fn.cv( menuGroup.menu_group_name, '', true ),
+                  id =  fn.cv( menuGroup.id, ''),
+                  panel = ui.getPanelImage( title, 'unkown', ui.rest.panel[ id ] );
+            
+            list.push(`<li class="dashboardMenuGroupItem"><a class="dashboardMenuGroupLink" href="${ui.params.path}?menu=${menuGroup.main_menu_rest}"><span class="dashboardMenuGroupPanel">${panel}</span><span class="dashboardMenuGroupTitle">${title}</span></a></li>`);
+        }
+    }
+    
+    const html = `<ul class="dashboardMenuGroupList">${list.join('')}</ul>`;
+    
+    ui.$.content.html( ui.commonContainer( 'DashBoard', 'ようそこIT Automationへ', html, false ) );  
+    
+    ui.onReady();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -829,6 +1024,8 @@ debugMenu() {
             $('#getResult').val( result );
         });
      });
+     
+     ui.onReady();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -847,8 +1044,8 @@ defaultMenu( mode ) {
     }
     contentTab.push({ name: 'dataDownload', title: WD.UI.AllDownload });
 
-    const title = ui.currentPage.title,
-          menuInfo = fn.cv( ui.rest.info.menu_info.menu_info, '');
+    const title = fn.cv( ui.rest.info.menu_info.menu_name, '', true ),
+          menuInfo = fn.cv( ui.rest.info.menu_info.menu_info, '', true );
     
     ui.$.content.html( ui.commonContainer( title, menuInfo, ui.contentTab( contentTab ) ) );
     ui.contentTabEvent('#dataList');
@@ -935,6 +1132,7 @@ defaultMenu( mode ) {
     });
     
     ui.setCommonEvents();
+    ui.onReady();
 }
 /*
 ##################################################
@@ -1075,10 +1273,48 @@ executeMenu() {
         };
 
         ui.mainTable = new DataTable('MT', 'execute', result.movement_list_ansible_role, ui.params, option );
-        ui.$.content.find('.sectionBody').html( ui.mainTable.setup() ).show();        
+        ui.$.content.find('.sectionBody').html( ui.mainTable.setup() ).show();
+        
+        ui.onReady();
     }).catch(function( error ){
         fn.gotoErrPage( error.message );
     });  
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//   作業状態確認メニュー
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+operationStatusMenu() {
+    const ui = this;
+    
+    const contentTab = [
+        { name: 'operationStatus', title: '作業状態確認', type: 'blank' },
+        { name: 'executeLog', title: '実行ログ', type: 'blank' },
+        { name: 'errorLog', title: 'エラーログ', type: 'blank' }
+    ];
+    
+    const title = ui.currentPage.title,
+          menuInfo = fn.cv( ui.rest.info.menu_info.menu_info, '');
+    
+    ui.$.content.html( ui.commonContainer( title, menuInfo, ui.contentTab( contentTab ) ) );
+    ui.setCommonEvents();
+    ui.contentTabEvent('#operationStatus');
+    
+    const assets = [
+        { type: 'js', url: '/_/ita/js/operation_status.js'},
+        { type: 'css', url: '/_/ita/css/conductor.css'},
+        { type: 'css', url: '/_/ita/css/operation_status.css'},
+    ];
+    
+    fn.loadAssets( assets ).then(function(){
+        const id = fn.getParams().execution_no;
+        fn.createCheckOperation( ui.params.menuNameRest, id );
+        
+        ui.onReady();
+    });
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1097,8 +1333,10 @@ createMenu( mode ) {
     ];
     
     fn.loadAssets( assets ).then(function(){
-        const createMenu = new CreateMenu('#content', ui.rest.user);
+        const createMenu = new CreateMenu('#content');
         createMenu.setup();
+        
+        ui.onReady();
     });
 }
 
@@ -1117,9 +1355,21 @@ condcutor( mode ) {
         { type: 'css', url: '/_/ita/css/conductor.css'}
     ];
     
+    const getId = function(){
+        if ( mode === 'confirmation') {
+            return fn.getParams().conductor_instance_id;
+        } else {
+            return fn.getParams().conductor_class_id;
+        }
+    }
+    const id = getId();
+    if ( mode === 'edit' && id ) mode = 'view';
+    
     fn.loadAssets( assets ).then(function(){
-        const conductor = new Conductor('#content', mode );
+        const conductor = fn.createConductor( ui.params.menuNameRest, '#content', mode, id );
         conductor.setup();
+        
+        ui.onReady();
     });
 }
 
@@ -1157,3 +1407,10 @@ setCommonEvents() {
 }
 
 }
+
+/*
+##################################################
+   読み込み時にclass追加
+##################################################
+*/
+CommonUi.setUiMode();
