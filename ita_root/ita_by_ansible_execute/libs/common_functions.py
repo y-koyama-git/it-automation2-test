@@ -23,7 +23,7 @@ def get_ansible_interface_info(wsDb):
         WsDb: db instance
     Returns:
         result: bool
-        record or err_msg: 
+        record or err_msg:
     """
     condition = 'WHERE `DISUSE_FLAG`=0'
     records = wsDb.table_select('T_ANSC_IF_INFO', condition)

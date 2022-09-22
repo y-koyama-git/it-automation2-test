@@ -235,6 +235,7 @@ class AnsibleExecute():
 
         result = ansibleAg.container_start_up(execute_no, conductor_instance_no, str_shell_command)
         if result[0] is True:
+            g.applogger.debug(result[1])
             return True
         else:
             self.setLastError(result[1])
@@ -328,6 +329,12 @@ class AnsibleExecute():
                     msgstr = g.appmsg.get_api_message("MSG-10890", [])
                     self.setLastError(msgstr)
                 retStatus = "7"
+
+            # 終了済みコンテナの削除
+            res_is_container_clean = ansibleAg.container_clean(execute_no)
+            if res_is_container_clean[0] is False:
+                # ステータス 想定外エラー
+                self.setLastError(res_is_container_clean[1])
 
         # ansible-playbook 標準出力出力先
         strorgSTDOUTFileName = "{}/{}/{}".format(execute_path, self.strOutFolderName, self.orgSTDOUTLogfile)
