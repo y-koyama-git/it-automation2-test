@@ -4,7 +4,7 @@ metadata:
   name: ita-ansible-execute-sa-role
   namespace: exastro-it-automation
 rules:
-  - apiGroups: [""]
+  - apiGroups: ["*"]
     resources: ["services","pods"]
     verbs: ["get", "create", "update", "patch"]
 ---
@@ -58,13 +58,13 @@ spec:
         - name: ita-by-ansible-execute
           image: exastro/it-automation2-test-ita-by-ansible-execute:build.c39041.20220915-113901
           imagePullPolicy: Always
-          #resources:
-          #  requests:
-          #    memory: "64Mi" #仮決め
-          #    cpu: "250m"    #仮決め
-          #  limits:
-          #    memory: "64Mi" #仮決め
-          #    cpu: "250m"    #仮決め
+          resources:
+            requests:
+              memory: "64Mi" #仮決め
+              cpu: "250m"    #仮決め
+            limits:
+              memory: "64Mi" #仮決め
+              cpu: "250m"    #仮決め
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
