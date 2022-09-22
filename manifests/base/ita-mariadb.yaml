@@ -81,7 +81,10 @@ spec:
             - containerPort: 3306
           env:
             - name: TZ
-              value: Asia/Tokyo
+              valueFrom:
+                configMapKeyRef:
+                  name: params-ita-common
+                  key: TZ
             - name: MARIADB_ALLOW_EMPTY_ROOT_PASSWORD
               value: "0" # if it is 1 and root_password is set, root_password takes precedance
             - name: MARIADB_ROOT_PASSWORD
