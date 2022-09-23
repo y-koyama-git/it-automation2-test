@@ -1,1 +1,1 @@
-from .load_table import loadTable # noqa: F401
+from .load_table import loadTable  # noqa: F401

@@ -22,7 +22,8 @@ import glob
 
 from common_libs.common.dbconnect import DBConnectWs
 from common_libs.common.exception import AppException, ValidationException
-from common_libs.common.util import get_timestamp
+from common_libs.common.util import get_timestamp, file_encode
+from common_libs.loadtable import load_table
 from common_libs.ci.util import log_err
 
 from common_libs.ansible_driver.classes.AnsrConstClass import AnscConst, AnsrConst
@@ -106,7 +107,7 @@ def update_status_error(wsDb: DBConnectWs, execution_no):
         g.applogger.info(g.appmsg.get_log_message("MSG-10735", [execution_no]))
 
 
-def main_logic(wsDb: DBConnectWs, execution_no, driver_id):
+def main_logic(wsDb: DBConnectWs, execution_no, driver_id):  # noqa: C901
     """
     main logic
     
@@ -201,7 +202,8 @@ def main_logic(wsDb: DBConnectWs, execution_no, driver_id):
             wsDb.db_commit()
             g.applogger.info(g.appmsg.get_log_message("BKY-10004", [execute_data["STATUS_ID"], execution_no]))
         else:
-            g.applogger.error(result[1])
+            wsDb.db_rollback()
+            log_err("InstanceRecodeUpdate", result[1])
     else:
         # 失敗
         return False, result_data
@@ -250,6 +252,9 @@ def main_logic(wsDb: DBConnectWs, execution_no, driver_id):
             if result[0] is True:
                 wsDb.db_commit()
                 g.applogger.info(g.appmsg.get_log_message("BKY-10004", [clone_execute_data["STATUS_ID"], execution_no]))
+            else:
+                wsDb.db_rollback()
+                log_err("InstanceRecodeUpdate", result[1])
 
         if clone_execute_data['STATUS_ID'] in [ansc_const.COMPLETE, ansc_const.FAILURE, ansc_const.EXCEPTION, ansc_const.SCRAM]:
             break
@@ -1053,7 +1058,8 @@ def createTmpZipFile(execution_no, zip_data_source_dir, zip_type, zip_file_pfx):
     ########################################
     # 処理内容
     #  入力/結果ZIPファイル作成
-    # パラメータ
+    #
+    # Arugments:
     #  execution_no:               作業実行番号
     #  zip_data_source_dir:        zipファイルの[圧縮元]の資材ディレクトリ
     #  zip_type:                   入力/出力の区分
@@ -1061,7 +1067,7 @@ def createTmpZipFile(execution_no, zip_data_source_dir, zip_type, zip_file_pfx):
     #  zip_file_pfx:               zipファイル名のプレフィックス
     #                                 入力:InputData_   出力:ResultData_
     #
-    # 戻り値
+    # Returns:
     #   true:正常　false:異常
     #   zip_file_name:           ZIPファイル名返却
     ########################################
@@ -1091,5 +1097,97 @@ def createTmpZipFile(execution_no, zip_data_source_dir, zip_type, zip_file_pfx):
     return True, err_msg, zip_file_name
 
 
-def InstanceRecodeUpdate(wsDb, driver_id, execution_no, execute_data, zip_type, zip_file_name, zip_tmp_save_path):
-    pass
+def InstanceRecodeUpdate(wsDb, driver_id, execution_no, execute_data, update_column_name, zip_file_name, zip_tmp_save_path):
+    """
+    作業管理更新
+
+    ARGS:
+        wsDb:DB接クラス  DBConnectWs()
+        driver_id: ドライバ区分　AnscConst().DF_LEGACY_ROLE_DRIVER_ID
+        execution_no: 作業番号
+        execute_data: 更新内容配列
+        update_column_name: 更新対象のFileUpLoadColumn名
+        zip_file_name: zipファイル名
+        zip_tmp_save_path: zipファイルのパス
+    RETRUN:
+        True/False, errormsg
+    """
+    TableDict = {}
+    TableDict["MENU_REST"] = {}
+    TableDict["MENU_REST"][AnscConst.DF_LEGACY_DRIVER_ID] = "Not supported"
+    TableDict["MENU_REST"][AnscConst.DF_PIONEER_DRIVER_ID] = "Not supported"
+    TableDict["MENU_REST"][AnscConst.DF_LEGACY_ROLE_DRIVER_ID] = "execution_list_ansible_role"
+    TableDict["MENU_ID"] = {}
+    TableDict["MENU_ID"][AnscConst.DF_LEGACY_DRIVER_ID] = "Not supported"
+    TableDict["MENU_ID"][AnscConst.DF_PIONEER_DRIVER_ID] = "Not supported"
+    TableDict["MENU_ID"][AnscConst.DF_LEGACY_ROLE_DRIVER_ID] = "20412"
+    TableDict["TABLE"] = {}
+    TableDict["TABLE"][AnscConst.DF_LEGACY_DRIVER_ID] = "Not supported"
+    TableDict["TABLE"][AnscConst.DF_PIONEER_DRIVER_ID] = "Not supported"
+    TableDict["TABLE"][AnscConst.DF_LEGACY_ROLE_DRIVER_ID] = "T_ANSR_EXEC_STS_INST"
+    MenuName = TableDict["MENU_REST"][driver_id]
+    TableName = TableDict["TABLE"][driver_id]
+    MenuId = TableDict["MENU_ID"][driver_id]
+
+    # loadtyable.pyで使用するCOLUMN_NAME_RESTを取得
+    RestNameConfig = {}
+    sql = "SELECT COL_NAME,COLUMN_NAME_REST FROM T_COMN_MENU_COLUMN_LINK WHERE MENU_ID = %s and DISUSE_FLAG = '0'"
+    restcolnamerow = wsDb.sql_execute(sql, [MenuId])
+    for row in restcolnamerow:
+        RestNameConfig[row["COL_NAME"]] = row["COLUMN_NAME_REST"]
+
+    # 更新対象レコードの最終更新日時をと取得
+    sql = "SELECT DATE_FORMAT(LAST_UPDATE_TIMESTAMP, '%%Y/%%m/%%d %%H:%%i:%%s.%%f') AS LAST_UPDATE_TIMESTAMP FROM "
+    + TableName + " WHERE EXECUTION_NO = %s"
+    # print(sql)
+    InstanceRows = wsDb.sql_execute(sql, [execution_no])
+    # マスタなので件数チェックしない
+    InstanceRow = InstanceRows[0]
+
+    ExecStsInstTableConfig = {}
+
+    # 作業番号
+    ExecStsInstTableConfig[RestNameConfig["EXECUTION_NO"]] = execution_no
+
+    # ステータス
+    if g.LANGUAGE == 'ja':
+        sql = "SELECT EXEC_STATUS_NAME_JA AS NAME FROM T_ANSC_EXEC_STATUS WHERE EXEC_STATUS_ID = '%s' AND DISUSE_FLAG = '0'"
+    else:
+        sql = "SELECT EXEC_STATUS_NAME_EN AS NAME FROM T_ANSC_EXEC_STATUS WHERE EXEC_STATUS_ID = '%s' AND DISUSE_FLAG = '0'"
+    rows = wsDb.sql_execute(sql, [execute_data["STATUS_ID"]])
+    # マスタなので件数チェックしない
+    row = rows[0]
+    ExecStsInstTableConfig[RestNameConfig["STATUS_ID"]] = row["NAME"]
+
+    # 入力データ/投入データ／出力データ/結果データ用zipデータ
+    uploadfiles = {}
+    ZipDataData = file_encode(zip_tmp_save_path)
+    if ZipDataData is False:
+        # エンコード失敗
+        msgstr = g.appmsg.get_api_message("499-00909", [])
+        return False, msgstr
+    uploadfiles = {RestNameConfig[update_column_name]: ZipDataData}
+
+    # 入力データ/投入データ／出力データ/結果データ
+    ExecStsInstTableConfig[RestNameConfig[update_column_name]] = zip_file_name
+
+    # 作業状況/終了日時
+    if update_column_name == "FILE_RESULT":
+        ExecStsInstTableConfig[RestNameConfig["TIME_END"]] = execute_data["TIME_END"]
+
+    # 最終更新日時
+    ExecStsInstTableConfig[RestNameConfig["LAST_UPDATE_TIMESTAMP"]] = InstanceRow['LAST_UPDATE_TIMESTAMP']
+
+    parameters = {
+        "parameter": ExecStsInstTableConfig,
+        "file": uploadfiles,
+        "type": "Update"
+    }
+
+    objmenu = load_table.loadTable(wsDb, MenuName)
+    retAry = objmenu.exec_maintenance(parameters, execution_no, "", False, False)
+    result = retAry[0]
+    if result is False:
+        return False, str(retAry)
+    else:
+        return True, ""
