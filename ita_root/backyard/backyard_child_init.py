@@ -37,6 +37,9 @@ def main():
 
     with flask_app.app_context():
         try:
+            g.ORGANIZATION_ID = organization_id
+            g.WORKSPACE_ID = workspace_id
+
             g.USER_ID = os.environ.get("USER_ID")
             g.LANGUAGE = os.environ.get("LANGUAGE")
             # create app log instance and message class instance

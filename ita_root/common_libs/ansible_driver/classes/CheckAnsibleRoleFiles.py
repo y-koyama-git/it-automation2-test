@@ -33,7 +33,7 @@ from common_libs.ansible_driver.classes.VarStructAnalJsonConvClass import VarStr
 from common_libs.ansible_driver.classes.AnsibleMakeMessage import AnsibleMakeMessage
 from common_libs.ansible_driver.classes.YamlParseClass import YamlParse
 from common_libs.ansible_driver.functions.util import get_AnsibleDriverTmpPath, getFileupLoadColumnPath
-
+from common_libs.ansible_driver.classes.WrappedStringReplaceAdmin import WrappedStringReplaceAdmin
 
 #################################################################################
 # rolesディレクトリ解析
@@ -3317,6 +3317,15 @@ class DefaultVarsFileAnalysis():
           true:   正常
           false:  異常
         """
+        # 変数定義で除外変数をチェックする為の前準備
+        objdbca = DBConnectWs()
+        chkobj = WrappedStringReplaceAdmin(objdbca)
+        objdbca.db_disconnect()
+        # テンプレート管理の変数定義で除外変数チェックでGBL変数を除外対象外に設定
+        if self.GetRunModeVarFile() == AnscConst.LC_RUN_MODE_VARFILE:
+            local_vars = [AnscConst.ITA_SP_VAR_GBL_VAR_NAME]
+        else:
+            local_vars = []
 
         in_f_name = os.path.basename(inspect.currentframe().f_code.co_filename)
         out_errmsg = ""
@@ -3374,11 +3383,14 @@ class DefaultVarsFileAnalysis():
             #        # USER変数
             #        var_type = self.LC_VAR_TYPE_USER
 
-            parent_vars_list[ParentVarName] = {
-                'VAR_NAME': ParentVarName,
-                'VAR_TYPE': var_type,
-                'VAR_STRUCT': VarStruct
-            }
+            # 除外変数かチェック
+            ret = chkobj.chkUnmanagedVarname(AnscConst.DF_HOST_VAR_HED,ParentVarName,local_vars)
+            if ret is False:
+                parent_vars_list[ParentVarName] = {
+                    'VAR_NAME': ParentVarName,
+                    'VAR_TYPE': var_type,
+                    'VAR_STRUCT': VarStruct
+                }
 
         return True, parent_vars_list, out_errmsg, in_f_name, in_f_line
 

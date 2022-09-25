@@ -182,3 +182,38 @@ class AnscConst:
     TOWER_VER35 = 1        # Towerバージョン3.5(以下)
     TOWER_VER36 = 2        # Towerバージョン3.6(以上)
     
+    # ITA独自変数名
+    ITA_SP_VAR_ANS_PROTOCOL_VAR_NAME = "__loginprotocol__"
+    ITA_SP_VAR_ANS_USERNAME_VAR_NAME = "__loginuser__"
+    ITA_SP_VAR_ANS_PASSWD_VAR_NAME = "__loginpassword__"
+    ITA_SP_VAR_ANS_LOGINHOST_VAR_NAME = "__loginhostname__"
+    ITA_SP_VAR_ANS_OUTDIR_VAR_NAME = "__workflowdir__"
+    ITA_SP_VAR_CONDUCTO_DIR_VAR_NAME = "__conductor_workflowdir__"
+    ITA_SP_VAR_OPERATION_VAR_NAME = "__operation__"
+    ITA_SP_VAR_IN_PARAM_DIR_EPC = "__parameters_dir_for_epc__"
+    ITA_SP_VAR_IN_PARAM_FILE_DIR_EPC = "__parameters_file_dir_for_epc__"
+    ITA_SP_VAR_OUT_PARAM_DIR = "__parameter_dir__"
+    ITA_SP_VAR_OUT_PARAM_FILE_DIR = "__parameters_file_dir__"
+    ITA_SP_VAR_MOVEMENT_STS_FILE = "__movement_status_filepath__"
+    ITA_SP_VAR_CONDUCTOR_ID = "__conductor_id__"
+    ITA_SP_VAR_CPF_VAR_NAME = "CPF_[0-9a-zA-Z_]*"
+    ITA_SP_VAR_TPF_VAR_NAME = "TPF_[0-9a-zA-Z_]*"
+    ITA_SP_VAR_GBL_VAR_NAME = "GBL_[0-9a-zA-Z_]*"
+
+    # 変数抜出から除外するITA独自変数リスト
+    Unmanaged_ITA_sp_varlist = [ITA_SP_VAR_ANS_PROTOCOL_VAR_NAME,
+                                ITA_SP_VAR_ANS_USERNAME_VAR_NAME,
+                                ITA_SP_VAR_ANS_PASSWD_VAR_NAME,
+                                ITA_SP_VAR_ANS_LOGINHOST_VAR_NAME,
+                                ITA_SP_VAR_ANS_OUTDIR_VAR_NAME,
+                                ITA_SP_VAR_CONDUCTO_DIR_VAR_NAME,
+                                ITA_SP_VAR_OPERATION_VAR_NAME,
+                                ITA_SP_VAR_IN_PARAM_DIR_EPC,
+                                ITA_SP_VAR_IN_PARAM_FILE_DIR_EPC,
+                                ITA_SP_VAR_OUT_PARAM_DIR,
+                                ITA_SP_VAR_OUT_PARAM_FILE_DIR,
+                                ITA_SP_VAR_MOVEMENT_STS_FILE,
+                                ITA_SP_VAR_CONDUCTOR_ID,
+                                ITA_SP_VAR_CPF_VAR_NAME,
+                                ITA_SP_VAR_TPF_VAR_NAME,
+                                ITA_SP_VAR_GBL_VAR_NAME]

@@ -80,7 +80,14 @@ class FileUploadColumn(Column):
         if val is not None:
             if option.get("file_data") is not None:
                 # デコード値
-                decode_option = base64.b64decode(option["file_data"].encode())
+                try:
+                    decode_option = base64.b64decode(option["file_data"].encode())
+                except Exception:
+                    retBool = False
+                    msg = g.appmsg.get_api_message('MSG-00011')
+                    # msg = "base64decodeに失敗しました"
+                    return retBool, msg
+
                 # 禁止拡張子
                 forbidden_extension_arry = self.objdbca.table_select("T_COMN_SYSTEM_CONFIG", "WHERE CONFIG_ID = %s", bind_value_list=['FORBIDDEN_UPLOAD'])
                 
@@ -121,10 +128,6 @@ class FileUploadColumn(Column):
                         retBool = False
                         msg = g.appmsg.get_api_message('MSG-00010', [upload_max_size, len(decode_option)])
                         return retBool, msg
-                else:
-                    retBool = False
-                    msg = g.appmsg.get_api_message('MSG-00011', [upload_max_size, decode_option])
-                    return retBool, msg
 
                 # 禁止拡張子チェック
                 if forbidden_extension is not None:

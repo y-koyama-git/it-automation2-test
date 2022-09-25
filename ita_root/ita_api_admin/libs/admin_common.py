@@ -49,6 +49,9 @@ def before_request_handler():
         g.USER_ID = user_id
         g.ROLES = roles
 
+        # set log environ format
+        g.applogger.set_env_message()
+
         debug_args = [request.method + ":" + request.url]
         g.applogger.info("[ts={}][api-start]url: {}".format(get_api_timestamp(), *debug_args))
 

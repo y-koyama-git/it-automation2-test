@@ -126,7 +126,7 @@ def get_execution_info(objdbca, target, execution_no):
             data
     """
     
-    # 該当の作業実行取得(ID変換のためloadTableで取得)
+    # 該当の作業管理を取得(ID変換のためloadTableで取得)
     objmenu = load_table.loadTable(objdbca, target['execution_list'])
     filter_parameter = {
         "execution_no": {"LIST": [execution_no]}
@@ -139,7 +139,7 @@ def get_execution_info(objdbca, target, execution_no):
         api_msg_args = [execution_no]
         raise AppException("499-00903", log_msg_args, api_msg_args)
 
-    # 隠しカラムを取得するためにSQLでも検索
+    # 隠しカラムを取得するために作業管理をSQLでも検索
     where = "WHERE EXECUTION_NO = %s"
     data_list = objdbca.table_select(target['table_name'], where, [execution_no])
     # 該当する作業管理が存在しない
@@ -151,7 +151,10 @@ def get_execution_info(objdbca, target, execution_no):
     table_row = data_list[0]
 
     execution_info = {}
+    # 作業管理
     execution_info['execution_list'] = tmp_result[1][0]
+    # ステータスIDはコード値も返却
+    execution_info['status_id'] = table_row['STATUS_ID']
 
     # ログ情報
     execution_info['progress'] = {}

@@ -72,7 +72,7 @@ constructor( tableId, mode, info, params, option = {}) {
     // JSON download
     tb.rest.jsonDownload = ( tb.params.restJsonDownload )?
         tb.params.restJsonDownload:
-        `/menu/${tb.params.menuNameRest}/json/`;
+        `/menu/${tb.params.menuNameRest}/filter/`;
     
     // Maintenance
     tb.rest.maintenance = ( tb.params.restMaintenance )?
@@ -200,7 +200,7 @@ setup() {
         <div class="tableHeader">
         </div>
         <div class="tableBody">
-            <table class="table">
+            <table class="table mainTable">
             </table>
         </div>
         <div class="tableFooter">
@@ -359,13 +359,12 @@ setTable( mode ) {
                 ]
             };
             if ( tb.mode === 'select') {
-                tableHeaderMenuList.Main.push({ name: 'tableSelect', icon: 'check', title: '選択', action: 'default', width: '160px'});
-                tableHeaderMenuList.Main.push({ name: 'tableCancel', icon: 'cross', title: 'キャンセル', action: 'negative', width: '160px'});
+                tableHeaderMenuList.Main.push({ message: '選択してください。', action: 'message'});
             }
             if ( tb.mode === 'execute') {
-                tableHeaderMenuList.Main.push({ name: 'tableRun', icon: 'check', title: '実行', action: 'positive', width: '160px'});
-                tableHeaderMenuList.Main.push({ name: 'tableDryrun', icon: 'check', title: 'ドライラン', action: 'default', width: '160px'});
-                tableHeaderMenuList.Main.push({ name: 'tableParameter', icon: 'check', title: 'パラメータ確認', action: 'default', width: '160px'});
+                tableHeaderMenuList.Main.push({ className: 'tablePositive', name: 'tableRun', icon: 'square_next', title: '作業実行', action: 'positive', width: '160px', disabled: true });
+                tableHeaderMenuList.Main.push({ className: 'tablePositive', name: 'tableDryrun', icon: 'square_next', title: 'ドライラン', action: 'positive', width: '160px', disabled: true });
+                tableHeaderMenuList.Main.push({ className: 'tablePositive', name: 'tableParameter', icon: 'detail', title: 'パラメータ確認', action: 'positive', width: '160px', disabled: true });
             }
             if ( tb.mode === 'view') {
                 // 権限チェック
@@ -604,9 +603,11 @@ tableHeaderMenuHtml( headerList ) {
         html.push(`<ul class="tableHeader${type}MenuList">`);
         for ( const item of headerList[ type ] ) {
             const attr = {},
-                  itemClassName = [`tableHeader${type}MenuItem`];
+                  itemClassName = [`tableHeader${type}MenuItem`],
+                  buttonClassName = ['itaButton', `tableHeader${type}MenuButton`];
             let title = item.title;
             let toggle;
+            if ( item.className ) buttonClassName.push( item.className );
             if ( item.separate ) itemClassName.push(`tableHeader${type}MenuItemSeparate`)
             if ( item.name ) attr['type'] = item.name;
             if ( item.action && item.action !== 'input') attr['action'] = item.action;
@@ -624,8 +625,7 @@ tableHeaderMenuHtml( headerList ) {
                     html.push(`<li class="tableHeaderMessage">${item.message}</li>`);
                 break;
                 default:
-                    html.push(`<li class="${itemClassName.join(' ')}">${fn.html.button( title,
-                        ['itaButton', `tableHeader${type}MenuButton`], attr, toggle )}</li>`);
+                    html.push(`<li class="${itemClassName.join(' ')}">${fn.html.button( title, buttonClassName, attr, toggle )}</li>`);
             }
         }
         html.push(`</ul>`);
@@ -1009,7 +1009,7 @@ filterDownloadButtonCheck() {
     
     const excelLimit = tb.info.menu_info.xls_print_limit;
     
-    if ( excelLimit === null || tb.data.count <= excelLimit ) {
+    if ( ( excelLimit === null || tb.data.count <= excelLimit ) && tb.data.count >= 1 ) {
         $excel.removeClass('popup').prop('disabled', false ).removeAttr('title');
     } else if ( excelLimit !== null ) {
         $excel.addClass('popup').attr('title', `Excel出力最大行数（${excelLimit}行）を超過しているためダウンロードできません。`).prop('disabled', true );
@@ -1017,7 +1017,7 @@ filterDownloadButtonCheck() {
         $excel.prop('disabled', true );
     }
     
-    if ( tb.data.count >= 0 ) {
+    if ( tb.data.count >= 1 ) {
         $json.prop('disabled', false );
     } else {
         $json.prop('disabled', true );
@@ -1051,7 +1051,7 @@ setTableEvents() {
             
             $button.prop('disabled', true );
             
-            //filter
+            // filter
             fn.fetch( url, null, 'POST', tb.filterParams ).then(function( result ){
                 fn.download( type, result, fileName );
             }).catch(function( error ){
@@ -1303,9 +1303,6 @@ setTableEvents() {
                 }
             });
         });
-
-        // textareaの幅と高さを調整する
-        tb.$.tbody.on('input', '.textareaAdjustment', tb.textareaAdjustment );
         
         // 変更があるときの離脱確認
         tb.$.window.on('beforeunload', function( e ){
@@ -1426,10 +1423,25 @@ setTableEvents() {
     }
     /*
     ------------------------------
-    SELECT モード
+    SELECT or EXECUTEモード
     ------------------------------
     */
     if ( tb.mode === 'select' || tb.mode === 'execute') {
+        // 行選択ラジオボタンの外がクリックされても変更する
+        tb.$.tbody.on('click', '.tBodyRowRadioSelect', function( e ){
+            if ( !tb.checkWork ) {
+                const $radio = $( this ).find('.tBodyRowRadio'),
+                      checked = $radio.prop('checked');
+                      
+                if ( !checked ) {
+                    if ( !$( e.target ).closest('.tBodyRowRadio').length ) {
+                        $radio.focus().prop('checked', true ).change();
+                    }
+                } else {
+                    $radio.focus();
+                }
+            }
+        });
         // 行選択ラジオ
         tb.$.tbody.on('change', '.tBodyRowRadio', function(){
             if ( !tb.checkWork ) {
@@ -1442,7 +1454,7 @@ setTableEvents() {
                     id: id,
                     name: name
                 };
-                console.log(tb.select[tb.mode])
+                tb.selectModeMenuCheck();
             }
         });
     }
@@ -1619,6 +1631,22 @@ addRowInputDataDelete() {
 }
 /*
 ##################################################
+   選択、実行時のメニューボタン活性・非活性
+##################################################
+*/
+selectModeMenuCheck() {
+    const tb = this;
+    
+    const $button = tb.$.header.find('.tablePositive');
+    
+    if ( tb.select[ tb.mode ].length ) {
+        $button.prop('disabled', false );
+    } else {
+        $button.prop('disabled', true );
+    }
+}
+/*
+##################################################
    編集モードのメニューボタン活性・非活性
 ##################################################
 */
@@ -1664,33 +1692,6 @@ editModeMenuCheck() {
 
     $button.filter('[data-type="tableDiscard"]').prop('disabled', discardFlag );
     $button.filter('[data-type="tableRestore"]').prop('disabled', restoreFlag );
-}
-
-/*
-##################################################
-   textareaの幅と高さを調整する
-##################################################
-*/
-textareaAdjustment() {
-    const $text = $( this ),
-          $parent = $text.parent('.textareaAdjustmentWrap'),
-          $width = $parent.find('.textareaWidthAdjustmentText'),
-          $height = $parent.find('.textareaHeightAdjustmentText');
-    
-    // 空の場合、高さを求めるためダミー文字を入れる
-    let value = fn.escape( $text.val() ).replace(/\n/g, '<br>').replace(/<br>$/g, '<br>!');
-    if ( value === '') value = '!';
-
-    $width.add( $height ).html( value );
-    
-    if ( $width.get(0).scrollWidth > 632 ) {
-        $parent.addClass('textareaOverWrap');
-    } else {
-        $parent.removeClass('textareaOverWrap');
-    }
-    
-    $parent.css('height', $height.outerHeight() + 1 );
-
 }
 /*
 ##################################################
@@ -2040,11 +2041,13 @@ setTbody() {
     tb.updateFooterStatus();
     tb.$.body.scrollTop(0);
     tb.workEnd();
+    
+    tb.$.table.addClass('tableReady');
 
     if ( tb.mode !== 'edit') {
         tb.tableMaxWidthCheck('tbody');
     } else {
-        tb.$.tbody.find('.textareaAdjustment').each( tb.textareaAdjustment );
+        tb.$.tbody.find('.textareaAdjustment').each( fn.textareaAdjustment );
     }
     
     if ( tb.mode === 'edit' || tb.mode === 'view') {
@@ -2053,7 +2056,6 @@ setTbody() {
     
     tb.filterDownloadButtonCheck();
     tb.stickyWidth();
-    
 }
 /*
 ##################################################
@@ -2074,6 +2076,7 @@ setInitFilterStandBy() {
     + `表示するにはフィルタしてください。</div>`);
     
     tb.workEnd();
+    tb.$.table.addClass('tableReady');
     
     tb.$.table.ready(function(){
         tb.stickyWidth();
@@ -2928,6 +2931,7 @@ changeViewMode() {
     
     tb.$.window.off('beforeunload');
     tb.$.container.removeClass('tableError');
+    tb.$.table.removeClass('tableReady');
     tb.$.errorMessage.empty();
     
     tb.$.container.addClass('viewTable');
@@ -3154,19 +3158,22 @@ execute( type ) {
     };
     
     const executeConfig = setConfig();
+    executeConfig.itemName = 'Movement';
+    executeConfig.selectName = tb.select.execute[0].name;
+    executeConfig.selectId = tb.select.execute[0].id;
     executeConfig.operation = tb.params.operation;
     
     tb.workStart( type );
-    fn.executeModalOpen( tb.id + '_' + type, tb.params.menuNameRest, executeConfig ).then(function( result ){console.log(tb.select.execute)
+    fn.executeModalOpen( tb.id + '_' + type, tb.params.menuNameRest, executeConfig ).then(function( result ){
         if ( result !== 'cancel') {
             const postData = {
-              movement_name: tb.select.execute[0].name,
+              movement_name: result.selectName,
               operation_name: result.name,
               schedule_date: result.schedule
             };
             // 作業実行開始
             fn.fetch( executeConfig.rest, null, 'POST', postData ).then(function( result ){
-                console.log(result);
+                window.location.href = `?menu=check_operation_status_ansible_role&execution_no=${result.execution_no}`;
             }).catch(function( error ){
                 fn.gotoErrPage( error.message );
             }).then(function(){
@@ -3213,27 +3220,39 @@ editError( error ) {
         for ( const error in errorMessage[item] ) {
             const name = fn.cv( tb.data.restNames[ error ], error, true ),
                   body = fn.cv( errorMessage[item][error].join(''), '?', true );
-                              //編集項目か否か
+            // 編集項目か否か
             if(param[item] != null) {
                 editRowNum = param[item];
-                errorHtml.push(`<tr class="tBodyTr tr">${fn.html.cell(auto_input, ['tBodyTh', 'tBodyLeftSticky'], 'th')}${fn.html.cell( editRowNum , 'tBodyTd')}${fn.html.cell( name, 'tBodyTd')}${fn.html.cell( body, 'tBodyTd' )}</tr>`);
+                errorHtml.push(`<tr class="tBodyTr tr">`
+                    + fn.html.cell( auto_input, ['tBodyTh', 'tBodyLeftSticky'], 'th')
+                    + fn.html.cell( editRowNum, ['tBodyTh', 'tBodyErrorId'], 'th')
+                    + fn.html.cell( name, 'tBodyTh', 'th')
+                    + fn.html.cell( body, 'tBodyTd')
+                + `</tr>`);
             }else{
                 editRowNum = '<span class="tBodyAutoInput"></span>';
-                errorHtml.push(`<tr class="tBodyTr tr">${fn.html.cell(newRowNum + 1, ['tBodyTh', 'tBodyLeftSticky'], 'th')}${fn.html.cell( editRowNum , 'tBodyTd')}${fn.html.cell( name, 'tBodyTd')}${fn.html.cell( body, 'tBodyTd' )}</tr>`);
+                errorHtml.push(`<tr class="tBodyTr tr">`
+                    + fn.html.cell( newRowNum + 1, ['tBodyTh', 'tBodyLeftSticky'], 'th')
+                    + fn.html.cell( editRowNum, ['tBodyTh', 'tBodyErrorId'], 'th')
+                    + fn.html.cell( name, 'tBodyTh', 'th')
+                    + fn.html.cell( body, 'tBodyTd')
+                + `</tr>`);
             }
         }
     }
     
     tb.$.container.addClass('tableError');
     tb.$.errorMessage.html(`
+    <div class="errorBorder"></div>
     <div class="errorTableContainer">
+        <div class="errorTitle"><span class="errorTitleInner">${fn.html.icon('circle_exclamation')}バリデーションエラー</span></div>
         <table class="table errorTable">
             <thead class="thead">
                 <tr class="tHeadTr tr">
                 <th class="tHeadTh tHeadLeftSticky th"><div class="ci">${WD.TABLE.insert}</div></th>
-                <th class="tHeadTh th"><div class="ci">${id_name}</div></th>
-                <th class="tHeadTh th"><div class="ci">${WD.TABLE.err_row}</div></th>
-                <th class="tHeadTh th"><div class="ci">${WD.TABLE.err_details}</div></th>
+                <th class="tHeadTh tHeadLeftSticky th"><div class="ci">${id_name}</div></th>
+                <th class="tHeadTh th tHeadErrorColumn"><div class="ci">${WD.TABLE.err_row}</div></th>
+                <th class="tHeadTh th tHeadErrorBody"><div class="ci">${WD.TABLE.err_details}</div></th>
                 </tr>
             </thead>
             <tbody class="tbody">

@@ -28,8 +28,13 @@
 const fn = ( function() {
     'use strict';
     
-    // モーダルインスタンス用
-    const modalInstance = {};
+    // インスタンス管理用
+    const modalInstance = {},
+          operationInstance = {},
+          conductorInstance = {};
+    
+    // Contentローディングフラグ
+    let contentLoadingFlag = false;
 
     // windowオブジェクトがあるかどうか
     const windowCheck = function() {
@@ -63,7 +68,7 @@ const fn = ( function() {
         
         for ( const key in attrs ) {
             if ( attrs[key] !== undefined ) {
-                const attrName = ['checked', 'disabled', 'title', 'placeholder', 'style']; // dataをつけない
+                const attrName = ['checked', 'disabled', 'title', 'placeholder', 'style', 'class']; // dataをつけない
                 if ( attrName.indexOf( key ) !== -1) {
                     attr.push(`${key}="${attrs[key]}"`);
                 } else {
@@ -185,7 +190,12 @@ fetch: function( url, token, method = 'GET', json ) {
                   'Content-Type': 'application/json'
                 }
             };
+            
             if ( ( method === 'POST' || method === 'PATCH' ) && json !== undefined ) {
+                console.group( method );
+                console.log( json )
+                console.groupEnd( method );
+            
                 try {
                     init.body = JSON.stringify( json );
                 } catch ( e ) {
@@ -347,6 +357,14 @@ escape: function( value, br, space ) {
         value = '';
     }
     return value;
+},
+/*
+##################################################
+   正規表現文字列エスケープ
+##################################################
+*/
+regexpEscape: function( value ) {
+    return value.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
 },
 /*
 ##################################################
@@ -860,7 +878,15 @@ datePicker: function( timeFlag, className, date, start, end ) {
     }
     
     let placeholder = 'yyyy/MM/dd';
-    if ( timeFlag ) placeholder += ' HH:mm:ss';
+    if ( timeFlag ) {
+        if ( timeFlag === 'hm') {
+            placeholder += ' HH:mm';
+        } else if  ( timeFlag === 'h') {
+            placeholder += ' HH';
+        } else {
+            placeholder += ' HH:mm:ss';
+        }
+    }
     
     if ( className === 'datePickerFromDateText' && !end ) {
         end = date;
@@ -898,7 +924,15 @@ datePicker: function( timeFlag, className, date, start, end ) {
     const setInputDate = function( changeFlag = true ) {
         inputDate = `${year}/${fn.zeroPadding( month + 1, 2 )}/${fn.zeroPadding( day, 2 )}`;
         if ( timeFlag ) {
-            $date.val(`${inputDate} ${fn.zeroPadding( hour, 2 )}:${fn.zeroPadding( min, 2 )}:${fn.zeroPadding( sec, 2 )}`);
+            let timeValue;
+            if ( timeFlag === 'hm') {
+                timeValue = `${inputDate} ${fn.zeroPadding( hour, 2 )}:${fn.zeroPadding( min, 2 )}`;
+            } else if  ( timeFlag === 'h') {
+                timeValue = `${inputDate} ${fn.zeroPadding( hour, 2 )}`;
+            } else {
+                timeValue = `${inputDate} ${fn.zeroPadding( hour, 2 )}:${fn.zeroPadding( min, 2 )}:${fn.zeroPadding( sec, 2 )}`;
+            }
+            $date.val( timeValue );
         } else {
             $date.val( inputDate );
         }
@@ -966,11 +1000,17 @@ datePicker: function( timeFlag, className, date, start, end ) {
     
     // 時間
     if ( timeFlag ) {
+        const datePickerTime = [`<div class="datePickerHour">${cmn.html.inputFader('datePickerHourInput', hour, null, { min: 0, max: 23 }, { after: '時'} )}</div>`];
+        if ( timeFlag === true || timeFlag === 'hms' || timeFlag === 'hm') {
+            datePickerTime.push(`<div class="datePickerMin">${cmn.html.inputFader('datePickerMinInput', min, null, { min: 0, max: 59 }, { after: '分'} )}</div>`);
+        }
+        if ( timeFlag === true || timeFlag === 'hms') {
+            datePickerTime.push(`<div class="datePickerSec">${cmn.html.inputFader('datePickerSecInput', sec, null, { min: 0, max: 59 }, { after: '秒'} )}</div>`);
+        }
+        
         $datePicker.append(`
         <div class="datePickerTime">
-            <div class="datePickerHour">${cmn.html.inputFader('datePickerHourInput', hour, null, { min: 0, max: 23 }, { after: '時'} )}</div>
-            <div class="datePickerMin">${cmn.html.inputFader('datePickerMinInput', min, null, { min: 0, max: 59 }, { after: '分'} )}</div>
-            <div class="datePickerSec">${cmn.html.inputFader('datePickerSecInput', sec, null, { min: 0, max: 59 }, { after: '秒'} )}</div>
+            ${datePickerTime.join('')}            
         </div>`);
         
         $datePicker.find('.inputFaderWrap').each(function(){
@@ -1146,11 +1186,12 @@ datePickerDialog: function( type, timeFlag, title, date ){
 */
 setDatePickerEvent: function( $target, title ) {
     const $container = $target.closest('.inputDateContainer'),
-          $button = $container.find('.inputDateCalendarButton');
+          $button = $container.find('.inputDateCalendarButton'),
+          timeFlag = $button.attr('data-timeflag');
     
     $button.on('click', function(){
         const value = $target.val();
-        fn.datePickerDialog('date', true, title, value ).then(function( result ){
+        fn.datePickerDialog('date', timeFlag, title, value ).then(function( result ){
             if ( result !== 'cancel') {
                 $target.val( result.date ).change().focus().trigger('input');
             }
@@ -1282,8 +1323,9 @@ faderEvent: function( $item ) {
 ##################################################
 */
 html: {
-    icon: function( type ) {
-        return `<span class="icon icon-${type}"></span>`;
+    icon: function( type, className ) {
+        className = classNameCheck( className );
+        return `<span class="icon icon-${type} ${className.join(' ')}"></span>`;
     },
     button: function( element, className, attrs = {}, toggle ) {
         const attr = inputCommon( null, null, attrs );
@@ -1302,6 +1344,11 @@ html: {
         } else { 
             return `<button ${attr.join(' ')}><span class="inner">${element}</span></button>`;
         }
+    },
+    iconButton: function( icon, element, className, attrs = {}, toggle ) {
+        const html = `${cmn.html.icon( icon, 'iconButtonIcon')}<span class="iconButtonBody">${element}</span>`;
+        className = classNameCheck( className, 'iconButton');
+        return cmn.html.button( html, className, attrs, toggle );
     },
     inputHidden: function( className, value, name, attrs = {}) {
         const attr = inputCommon( value, name, attrs );
@@ -1447,7 +1494,7 @@ html: {
         return ``
         + `<div class="checkboxWrap">`
             + `<input type="checkbox" ${attr.join(' ')}>`
-            + `<label for="${name}" class="checkboxLabel"></label>`
+            + `<label for="${id}" class="checkboxLabel"></label>`
         + `</div>`;
     },
     checkboxText: function( className, value, name, id, attrs = {}) {
@@ -1457,7 +1504,7 @@ html: {
         return ``
         + `<div class="checkboxTextWrap">`
             + `<input type="checkbox" ${attr.join(' ')}>`
-            + `<label for="${name}" class="checkboxTextLabel"><span class="checkboxTextMark"></span>${value}</label>`
+            + `<label for="${id}" class="checkboxTextLabel"><span class="checkboxTextMark"></span>${value}</label>`
         + `</div>`;
     },
     radio: function( className, value, name, id, attrs = {}) {
@@ -1467,7 +1514,7 @@ html: {
         return ``
         + `<div class="radioWrap">`
             + `<input type="radio" ${attr.join(' ')}>`
-            + `<label for="${name}" class="radioLabel"></label>`
+            + `<label for="${id}" class="radioLabel"></label>`
         + `</div>`;
     },
     'select': function( list, className, value, name, attrs = {}) {
@@ -1540,11 +1587,20 @@ html: {
     dateInput: function( timeFlag, className, value, name, attrs = {} ) {
         className = classNameCheck( className, 'inputDate');
         
-        const placeholder = ( timeFlag )? 'yyyy/MM/dd HH:mm:ss': 'yyyy/MM/dd';
+        let placeholder = 'yyyy/MM/dd';
+        if ( timeFlag ) {
+            if ( timeFlag === 'hm') {
+                placeholder += ' HH:mm';
+            } else if  ( timeFlag === 'h') {
+                placeholder += ' HH';
+            } else {
+                placeholder += ' HH:mm:ss';
+            }
+        }
         attrs.timeFlag = timeFlag;
         attrs.placeholder = placeholder;
         
-        const buttonAttrs = { action: 'default'};
+        const buttonAttrs = { action: 'default', timeFlag: timeFlag };
         if ( attrs.disabled ) {
             buttonAttrs.disabled = 'disabled';
         }
@@ -1560,6 +1616,64 @@ html: {
     },
     required: function() {
         return `<span class="required">必須</span>`;
+    },
+    operationItem: function( item ){
+        const itemHtml = [],
+              itemStyle = [],
+              itemClass = ['operationMenuItem'],
+              itemAttr = {};
+
+        // item
+        if ( item.separate ) itemClass.push('operationMenuSeparate');
+        if ( item.display ) itemStyle.push(`display:${item.display}`);
+        if ( itemStyle.length ) itemAttr.style = itemStyle.join(';');
+        itemAttr.class = itemClass.join(' ');
+        
+        const itemAttrs = bindAttrs( itemAttr ); 
+        
+        // button
+        if ( item.button ) {
+            const button = item.button,
+                  buttonClass = ['itaButton', 'operationMenuButton'],
+                  buttonStyle = [],
+                  buttonAttr = { action: button.action, type: button.type };
+            if ( button.width ) buttonStyle.push(`width:${button.width}`);
+            if ( button.className ) buttonClass.push( button.className );
+            if ( buttonStyle.length ) buttonAttr.style = buttonStyle.join(';');
+            itemHtml.push( cmn.html.iconButton( button.icon, button.text, buttonClass, buttonAttr ) );
+        }
+
+        // input
+        if ( item.input ) {
+            const input = item.input,
+                  inputClass = ['operationMenuInput'],
+                  inputOption = { widthAdjustment: true, before: input.before, after: input.after };
+            itemHtml.push( cmn.html.inputText( inputClass, input.value, null, null, inputOption ) );            
+        }
+
+        return `<li ${itemAttrs}>${itemHtml.join('')}</li>`;
+    },
+    operationMenu: function( menu, className ) {
+        className = classNameCheck( className, 'operationMenuList');
+        
+        const html = [];
+        const list = {
+            Main: [],
+            Sub: []
+        };
+                
+        for ( const menuType in list ) {
+            for ( const item of menu[ menuType ] ) {
+                list[ menuType ].push( cmn.html.operationItem( item ) );
+            }
+            className.push(`operationMenu${menuType}`);
+            if ( menu[ menuType ].length ) html.push(`<ul class="${className.join(' ')}">${list[ menuType ].join('')}</ul>`)
+        }        
+        
+        return `<div class="operationMenu">${html.join('')}</div>`;
+    },
+    content: function( type, tabs ) {
+        
     }
 },
 /*
@@ -1701,12 +1815,15 @@ setCommonEvents: function() {
     const $window = $( window ),
           $body = $('body');
     
-    // input text, textarea の幅を入力に合わせる
+    // input textの幅を入力に合わせる
     $body.on('input.textWidthAdjustment', '.inputTextWidthAdjustment', function(){
         const $text = $( this ),
               value = $text.val();
         $text.next('.inputTextWidthAdjustmentText').text( value );
     });
+    
+    // textareaの幅と高さを調整する
+    $body.on('input.textareaWidthAdjustment', '.textareaAdjustment', cmn.textareaAdjustment );
     
     // パスワード表示・非表示切替
     $body.on('click', '.inputPasswordToggleButton', function(){
@@ -1849,38 +1966,66 @@ setCommonEvents: function() {
 },
 /*
 ##################################################
+   textareaの幅と高さを調整する
+##################################################
+*/
+textareaAdjustment: function() {
+    const $text = $( this ),
+          $parent = $text.parent('.textareaAdjustmentWrap'),
+          $width = $parent.find('.textareaWidthAdjustmentText'),
+          $height = $parent.find('.textareaHeightAdjustmentText');
+    
+    // 空の場合、高さを求めるためダミー文字を入れる
+    let value = fn.escape( $text.val() ).replace(/\n/g, '<br>').replace(/<br>$/g, '<br>!');
+    if ( value === '') value = '!';
+
+    $width.add( $height ).html( value );
+    
+    if ( $width.get(0).scrollWidth > 632 ) {
+        $parent.addClass('textareaOverWrap');
+    } else {
+        $parent.removeClass('textareaOverWrap');
+    }
+    
+    $parent.css('height', $height.outerHeight() + 1 );
+
+},
+/*
+##################################################
   選択用モーダル
+  config: {
+      title: モーダルタイトル、ボタンテキスト
+      selectNameKey: 選択で返す名称Key
+      info: Table構造info URL
+      infoData: Table構造infoが取得済みの場合はこちらに
+      filter: Filter URL
+      filterPulldown: Filter pulldown URL
+      sub: infoに複数のTable構造がある場合のKey
+  }
 ##################################################
 */
 selectModalOpen: function( modalId, title, menu, config ) {
     return new Promise(function( resolve, reject ){
-        const setClickEvent = function() {
-            const button = '.tableHeaderMainMenuButton[data-type="tableSelect"], .tableHeaderMainMenuButton[data-type="tableCancel"]';
-            modalInstance[ modalId ].table.$.header.one('click', button, function(){
+        const modalFuncs = {
+            ok: function() {
+                modalInstance[ modalId ].modal.hide();   
+                const selectId = modalInstance[ modalId ].table.select.select;
+                resolve( selectId );
+            },
+            cancel: function() {
                 modalInstance[ modalId ].modal.hide();
-                
-                const $button = $( this ),
-                      buttonType = $button.attr('data-type');
-                switch ( buttonType ) {
-                    case 'tableSelect': {
-                        const selectId = modalInstance[ modalId ].table.select.select;
-                        resolve( selectId );
-                    } break;
-                    case 'tableCancel':
-                        resolve( null );
-                    break;
-                }
-            });
+                resolve( null );
+            }
         };
         
         if ( !modalInstance[ modalId ] ) {
-            fn.initSelectModal( title, menu, config ).then(function( modal ){
-                modalInstance[ modalId ] = modal;
-                setClickEvent();
+            fn.initSelectModal( title, menu, config ).then(function( modalAndTable ){
+                modalInstance[ modalId ] = modalAndTable;
+                modalInstance[ modalId ].modal.btnFn = modalFuncs;
             });
         } else {
             modalInstance[ modalId ].modal.show();
-            setClickEvent();
+            modalInstance[ modalId ].modal.btnFn = modalFuncs;
         }
     });
 },
@@ -1895,13 +2040,19 @@ initSelectModal: function( title, menu, selectConfig ) {
     return new Promise(function( resolve, reject ) {
         const modalConfig = {
             mode: 'modeless',
-            width: 'auto',
-            minWidth: '640px',
+            width: '100%',
             height: '100%',
             header: {
                 title: title
+            },
+            footer: {
+                button: {
+                    ok:  { text: '選択決定', action: 'default'},
+                    cancel: { text: 'キャンセル', action: 'normal'}
+                }
             }
         };
+        
         const modal = new Dialog( modalConfig );
         modal.open();
         
@@ -1918,14 +2069,12 @@ initSelectModal: function( title, menu, selectConfig ) {
             const tableId = `SE_${menu.toUpperCase()}${( selectConfig.sub )? `_${selectConfig.sub}`: ``}`,
                   table = new DataTable( tableId, 'select', info, params );
             modal.setBody( table.setup() );
+            
             resolve({
                 modal: modal,
                 table: table
             });
         };
-        
-        console.log(menu)
-        console.log(selectConfig)
         
         // Table info確認
         if ( selectConfig.infoData ) {
@@ -1949,6 +2098,8 @@ executeModalOpen: function( modalId, menu, executeConfig ) {
             ok: function(){
                 modalInstance[ modalId ].hide();
                 resolve({
+                    selectName: executeConfig.selectName,
+                    selectId: executeConfig.selectId,
                     id: modalInstance[ modalId ].$.dbody.find('.executeOperetionId').text(),
                     name: modalInstance[ modalId ].$.dbody.find('.executeOperetionName').text(),
                     schedule:  modalInstance[ modalId ].$.dbody.find('.executeSchedule').val()
@@ -1964,18 +2115,41 @@ executeModalOpen: function( modalId, menu, executeConfig ) {
             const html = `
             <div class="dialogContentContainer">
                 <div class="dialogContentBlock">
-                    <div class="dialogContentTitle">オペレーション</div>
+                    <div class="dialogContentTitle">${executeConfig.title} ${executeConfig.itemName}</div>
                     <div class="dialogContentBody">
-                        ${fn.html.button('オペレーション選択', 'executeOperetionSelectButton')}
-                        <div class="executeOperetionId"></div>
-                        <div class="executeOperetionName"></div>
+                        <dl class="dialogContentDef" style="display:none;">
+                            <dt class="dialogContentDefTerm">ID</dt>
+                            <dd class="dialogContentDefDesc executeSelectId">${executeConfig.selectId}</dd>
+                        </dl>
+                        <dl class="dialogContentDef">
+                            <dt class="dialogContentDefTerm">名称</dt>
+                            <dd class="dialogContentDefDesc executeSelectName">${executeConfig.selectName}</dd>
+                        </dl>
+                    </div>
+                </div>
+                <div class="dialogContentBlock">
+                    <div class="dialogContentTitle">オペレーション ${cmn.html.required()}</div>
+                    <div class="dialogContentBody">
+                        <dl class="dialogContentDef" style="display:none;">
+                            <dt class="dialogContentDefTerm">ID</dt>
+                            <dd class="dialogContentDefDesc executeOperetionId"></dd>
+                        </dl>
+                        <dl class="dialogContentDef">
+                            <dt class="dialogContentDefTerm">名称</dt>
+                            <dd class="dialogContentDefDesc executeOperetionName"></dd>
+                        </dl>
+                        <div class="dialogContentInputArea">
+                            ${fn.html.button( fn.html.icon('menuList') + ' オペレーション選択', ['itaButton', 'executeOperetionSelectButton'], { action: 'default', style: `width:200px`})}
+                        </div>
                     </div>
                 </div>
                 <div class="dialogContentBlock">
                     <div class="dialogContentTitle">スケジュール</div>
                     <div class="dialogContentBody">
-                        ${fn.html.dateInput( true, 'executeSchedule', '')}
-                        <p>予約日時を指定する場合は、日時フォーマット(YYYY/MM/DD HH:II)で入力して下さい。<br>ブランクの場合は即時実行となります。</p>
+                        <div class="dialogContentInputArea">
+                            ${fn.html.dateInput('hm', 'executeSchedule', '')}
+                        </div>
+                        <p class="dialogContentParagraph">予約日時を指定する場合は、日時フォーマット(yyyy/MM/dd HH:mm)で入力して下さい。<br>ブランクの場合は即時実行となります。</p>
                     </div>
                 </div>
             </div>`;
@@ -1984,12 +2158,12 @@ executeModalOpen: function( modalId, menu, executeConfig ) {
                 mode: 'modeless',
                 position: 'center',
                 header: {
-                    title: executeConfig.title
+                    title: executeConfig.title + '設定'
                 },
                 width: '480px',
                 footer: {
                     button: {
-                        ok: { text: executeConfig.title, action: 'positive'},
+                        ok: { text: executeConfig.title, action: 'positive', className: 'dialogPositive',  style: `width:200px`},
                         cancel: { text: '閉じる', action: 'normal'}
                     }
                 }
@@ -1997,13 +2171,16 @@ executeModalOpen: function( modalId, menu, executeConfig ) {
             modalInstance[ modalId ] = new Dialog( config, funcs );
             
             modalInstance[ modalId ].open( html );
-            cmn.setDatePickerEvent( modalInstance[ modalId ].$.dbody.find('.executeSchedule') );
+            cmn.setDatePickerEvent( modalInstance[ modalId ].$.dbody.find('.executeSchedule'), 'スケジュール');
             
+            // オペレーション選択
             modalInstance[ modalId ].$.dbody.find('.executeOperetionSelectButton').on('click', function(){
                 cmn.selectModalOpen( 'operation', 'オペレーション選択', menu, executeConfig.operation ).then(function( selectResult ){
                     if ( selectResult ) {
                         modalInstance[ modalId ].$.dbody.find('.executeOperetionId').text( selectResult[0].id );
                         modalInstance[ modalId ].$.dbody.find('.executeOperetionName').text( selectResult[0].name );
+                        
+                        modalInstance[ modalId ].buttonPositiveDisabled( false );
                     }
                 });
             });
@@ -2046,9 +2223,184 @@ gotoErrPage: function( message ) {
             console.error('Unknown error.');
         }
     }
+},
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//   Contentローディング
+// 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+contentLoadingStart() {
+    contentLoadingFlag = true;
+},
+contentLoadingEnd() {
+    contentLoadingFlag = false;
+},
+checkContentLoading() {
+    return contentLoadingFlag;
+},
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//   iframeモーダル
+// 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+modalIframe: function( menu, title, option ){
+    if ( !modalInstance[ menu ] ) {
+        const modalFuncs = {
+            cancel: function() {
+                modalInstance[ menu ] = null;
+                modal.close();
+            }
+        };
+        const modalConfig = {
+            mode: 'modeless',
+            width: '100%',
+            height: '100%',
+            header: {
+                title: title
+            },
+            footer: {
+                button: {
+                    cancel: { text: '閉じる', action: 'normal'}
+                }
+            }
+        };
+        
+        const filterEncode = function( json ) {
+            try {
+                return encodeURIComponent( JSON.stringify( json ) );
+            } catch( error ) {
+                return '';
+            }
+        };
+        
+        const url = [`?menu=${menu}`];
+        if ( option.filter ) {
+            url.push(`&filter=${filterEncode( option.filter )}`);
+        }
+        if ( option.iframeMode ) {
+            url.push(`&iframeMode=${option.iframeMode}`);
+        }
+        
+        // モーダル作成
+        modalInstance[ menu ] = new Dialog( modalConfig, modalFuncs );
+        
+        const modal = modalInstance[ menu ];
+        modal.open(`<iframe class="iframe" src="${url.join('')}"></iframe>`);
+    }
+},
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//   作業状態確認管理
+// 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/*
+##################################################
+   新しい作業状態確認を作成する
+##################################################
+*/
+createCheckOperation: function( menu, operationId ) {
+    if ( !operationInstance[ operationId ] ) {
+        operationInstance[ operationId ] = new Status( menu, operationId );
+        operationInstance[ operationId ].setup();
+        return operationInstance[ operationId ];
+    }    
+},
+/*
+##################################################
+   作業状態確認をクリアする
+##################################################
+*/
+clearCheckOperation: function( operationId ) {
+    if ( operationInstance[ operationId ] ) {
+        operationInstance[ operationId ] = null;
+    }
+},
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//   Conductor管理
+// 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/*
+##################################################
+   新しいConductorを作成する
+##################################################
+*/
+createConductor: function( menu, target, mode, conductorId, option ) {
+    if ( !conductorInstance[ conductorId ] ) {
+        conductorInstance[ conductorId ] = new Conductor( menu, target, mode, conductorId, option );
+        return conductorInstance[ conductorId ];
+    } else {
+        alert('指定のConductorはすでに開いています。');
+    }
+},
+/*
+##################################################
+   Conductorを削除する
+##################################################
+*/
+removeConductor: function( conductorId ) {
+    if ( conductorInstance[ conductorId ] ) {
+        $(`.conductor[data-conductor="${conductorId}"]`).remove();
+        conductorInstance[ conductorId ] = null;
+    } else {
+        alert('指定のConductorは作成されていません。');
+    }
+},
+/*
+##################################################
+   新しいConductorをモーダルで表示する
+##################################################
+*/
+modalConductor: function( menu, mode, conductorId, option ) {
+    if ( !conductorInstance[ conductorId ] ) {
+        const modalFuncs = {
+            cancel: function() {
+                modalInstance[ conductorId ] = null;
+                conductorInstance[ conductorId ] = null;
+                modal.close();
+            }
+        };
+        const modalConfig = {
+            mode: 'modeless',
+            width: '100%',
+            height: '100%',
+            header: {
+                title: 'Conductor'
+            },
+            footer: {
+                button: {
+                    cancel: { text: '閉じる', action: 'normal'}
+                }
+            }
+        };
+        const target = `cd-${conductorId}-area`;
+        
+        // モーダル作成
+        modalInstance[ conductorId ] = new Dialog( modalConfig, modalFuncs );
+        const modal = modalInstance[ conductorId ];
+        modal.open(`<div id="${target}" class="modalConductor"></div>`);
+        
+        // Conductor作成
+        conductorInstance[ conductorId ] = new Conductor( menu, '#' + target, mode, conductorId, option );
+        const cd = conductorInstance[ conductorId ];
+        cd.setup();
+
+    } else {
+        alert('指定のConductorはすでに開いています。');
+    }
 }
 
-};
+}; // end cmn
+
+
 
     // 共通パラメーター
     const commonParams = {};

@@ -4,7 +4,7 @@ metadata:
   name: params-ita-by-ansible-legacy-role-vars-listup
   namespace: exastro-it-automation
 data:
-  EXECUTE_INTERVAL: "1"
+  EXECUTE_INTERVAL: "{{ param01 }}"
   STORAGEPATH: "/storage/"
   CONTAINER_BASE: "kubernetes"
 ---
@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
         - name: ita-by-ansible-legacy-role-vars-listup
-          image: exastro/it-automation2-test-ita-by-ansible-legacy-role-vars-listup:Integration-test.9b3983.20220921-113108
+          image: {{ image }}:{{ image_tag }}
           imagePullPolicy: IfNotPresent
           # resources:
           #   requests:

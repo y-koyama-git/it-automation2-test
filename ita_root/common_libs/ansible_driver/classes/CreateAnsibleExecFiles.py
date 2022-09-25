@@ -16,6 +16,7 @@ import shutil
 import re
 import inspect
 import json
+import sys
 from flask import g
 
 from common_libs.ansible_driver.classes.AnscConstClass import AnscConst
@@ -382,13 +383,15 @@ class CreateAnsibleExecFiles():
         # /{storage}/{organization_id}/{workspace_id}/driver/ansible/{legacy / pioneer / legacy_role}/作業番号
         # 作業番号作成
         c_dir = aryRetAnsibleWorkingDir[2]
-        os.mkdir(c_dir)
+        if os.path.isdir(c_dir) is False:
+            os.mkdir(c_dir)
         os.chmod(c_dir, 0o777)
         
         # /{storage}/{organization_id}/{workspace_id}/driver/ansible/{legacy / pioneer / legacy_role}/作業番号/out
         # outディレクトリ作成
         c_outdir = aryRetAnsibleWorkingDir[4]
-        os.mkdir(c_outdir)
+        if os.path.isdir(c_outdir) is False:
+            os.mkdir(c_outdir)
         os.chmod(c_outdir, 0o777)
 
         # outディレクトリ名を記憶
@@ -440,7 +443,8 @@ class CreateAnsibleExecFiles():
         # /{storage}/{organization_id}/{workspace_id}/driver/ansible/{legacy / pioneer / legacy_role}/作業番号/in
         # inディレクトリ作成
         c_indir = aryRetAnsibleWorkingDir[3]
-        os.mkdir(c_indir)
+        if os.path.isdir(c_indir) is False:
+            os.mkdir(c_indir)
         # ansible.cfgを配置した場合の考慮
         os.chmod(c_indir, 0o755)
 
@@ -780,7 +784,8 @@ class CreateAnsibleExecFiles():
 
         # tmpディレクトリ作成
         c_tmpdir = "{}/{}".format(c_dir, self.LC_ANS_TMP_DIR)
-        os.mkdir(c_tmpdir)
+        if os.path.isdir(c_tmpdir) is False:
+            os.mkdir(c_tmpdir)
         os.chmod(c_tmpdir, 0o777)
 
         # tmpディレクトリ名を記憶
@@ -2235,7 +2240,6 @@ class CreateAnsibleExecFiles():
         #       'HOST_NAME': 'SYSTEM01'}
         # rows = []
         # rows.append(ary)
-        
         for row in rows:
             ret = self.setFileUploadCloumnFileEnv(self.lv_ans_if_info, row)
             if ret is not True:
@@ -2351,7 +2355,7 @@ class CreateAnsibleExecFiles():
             varerror_flg = retAry[0]
             mt_MultiArray_vars_list = retAry[1]
 
-        return varerror_flg, mt_host_vars, mt_MultiArray_vars_list
+        return varerror_flg, mt_host_vars, mt_MultiArray_vars_list, mt_All_vars_list
 
     def getDBVarList(self,
                      in_pattern_id,
@@ -2526,22 +2530,25 @@ class CreateAnsibleExecFiles():
                 mt_MultiArray_vars_list[row['VARS_NAME']][row['HOST_NAME']] = {}
 
                 if not row['ASSIGN_SEQ']:
-                    var_type = 1
+                    var_type = AnscConst.GC_VARS_ATTR_STD
                 else:
-                    var_type = 2
+                    var_type = AnscConst.GC_VARS_ATTR_LIST
 
                 var_path_array = []
                 # 多次元配列のメンバー変数へのパス配列を生成
                 retAry = self.makeHostVarsPath(row['COL_COMBINATION_MEMBER_ALIAS'], var_path_array)
-                var_path_array = retAry[0]
+                var_path_array = retAry
 
+                # Noneを空白に設定 host_varsにNoneと出力される為
+                if not row['VARS_ENTRY']:
+                    row['VARS_ENTRY'] = ""
                 # 多次元配列の具体値情報をホスト変数ファイルに戻す為の配列作成
-                self.makeHostVarsArray(var_path_array,
-                                       0,
-                                       mt_MultiArray_vars_list[row['VARS_NAME']][row['IP_ADDRESS']],
-                                       var_type, row['VARS_ENTRY'],
-                                       row['ASSIGN_SEQ'])
-
+                ret = self.makeHostVarsArray(var_path_array,
+                                            0,
+                                            mt_MultiArray_vars_list[row['VARS_NAME']][row['HOST_NAME']],
+                                            var_type, row['VARS_ENTRY'],
+                                            row['ASSIGN_SEQ'])
+                mt_MultiArray_vars_list[row['VARS_NAME']][row['HOST_NAME']] = ret
             elif row['PTN_VARS_LINK_DISUSE_FLAG']:
                 msgstr = g.appmsg.get_api_message("MSG-10187", [row['ASSIGN_ID']])
                 self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
@@ -2550,7 +2557,6 @@ class CreateAnsibleExecFiles():
             else:
                 # DISUSE_FLAG = '1'は読み飛ばし
                 continue
-
         return True, mt_MultiArray_vars_list
 
     def getDBLegacyPlaybookList(self, in_pattern_id, mt_child_playbooks):
@@ -2591,7 +2597,7 @@ class CreateAnsibleExecFiles():
         """
         for host_name, hostinfo in ina_hostinfolist.items():
 
-            if host_name is not mt_host_vars:
+            if host_name not in mt_host_vars:
                 mt_host_vars[host_name] = {}
 
             mt_host_vars[host_name][self.AnscObj.ITA_SP_VAR_ANS_PROTOCOL_VAR_NAME] = hostinfo['PROTOCOL_ID']
@@ -2605,9 +2611,9 @@ class CreateAnsibleExecFiles():
             mt_host_vars[host_name][self.AnscObj.ITA_SP_VAR_ANS_OUTDIR_VAR_NAME] = self.lv_user_out_Dir
             mt_host_vars[host_name][self.AnscObj.ITA_SP_VAR_CONDUCTO_DIR_VAR_NAME] = self.lv_conductor_instance_Dir
             if self.lv_conductor_instance_no:
-                mt_host_vars[host_name][self.AnscObj.ITA_SP_VAR_CONDUCTO_NAME] = self.lv_conductor_instance_no
+                mt_host_vars[host_name][self.AnscObj.ITA_SP_VAR_CONDUCTOR_ID] = self.lv_conductor_instance_no
             else:
-                mt_host_vars[host_name][self.AnscObj.ITA_SP_VAR_CONDUCTO_NAME] = self.LC_ANS_UNDEFINE_NAME
+                mt_host_vars[host_name][self.AnscObj.ITA_SP_VAR_CONDUCTOR_ID] = self.LC_ANS_UNDEFINE_NAME
             
         return mt_host_vars
 
@@ -3320,9 +3326,8 @@ class CreateAnsibleExecFiles():
 
             # 末端の変数か判定
             if len(in_key_array) == in_idx:
-
                 # 具体値を埋め込む
-                if in_var_type == '1':
+                if in_var_type == AnscConst.GC_VARS_ATTR_STD:
                     # Key-Value変数の場合
                     mt_out_array = in_var_val
                 else:
@@ -3334,7 +3339,7 @@ class CreateAnsibleExecFiles():
                     mt_out_array.clear()
                     mt_out_array.update(sortdic)
                     
-            return   # mt_out_array
+            return mt_out_array
 
         # 該当階層の変数名を取得
         var_name = in_key_array[in_idx]
@@ -3352,8 +3357,10 @@ class CreateAnsibleExecFiles():
 
         in_idx += 1
         # 次の階層へ
-        self.makeHostVarsArray(in_key_array, in_idx, mt_out_array[var_name], in_var_type, in_var_val, in_ass_no)
-
+        ret = self.makeHostVarsArray(in_key_array, in_idx, mt_out_array[var_name], in_var_type, in_var_val, in_ass_no)
+        mt_out_array[var_name] = ret
+        return mt_out_array
+    
     def MultiArrayVarsToYamlFormatSub(self,
                                       ina_host_vars_array,
                                       mt_str_hostvars,
@@ -3395,7 +3402,7 @@ class CreateAnsibleExecFiles():
         else:
             indent = in_indent
 
-        for var, val in ina_host_vars_array:
+        for var, val in ina_host_vars_array.items():
             # 繰返数設定
             idx = idx + 1
 
@@ -4029,6 +4036,8 @@ class CreateAnsibleExecFiles():
         vars_list = {}
         var_type = ""
 
+        if not in_var_val:
+            return True, mt_legacy_Role_cpf_vars_list, mt_legacy_Role_tpf_vars_list
         # ファイル管理変数　{{ CPF_[a-zA-Z0-9_] }} を取出す
         keyFilter = r"{{[\s]CPF_[a-zA-Z0-9_]*[\s]}}"
         var_match = re.findall(keyFilter, in_var_val)
@@ -4391,6 +4400,8 @@ class CreateAnsibleExecFiles():
         Returns:
             複数行複数具体値にインデントを設定した文字列
         """
+        if not val:
+            return val
         strpad = "".ljust(NumPadding)
         if len(val.split("\n")) > 1:
             val = val.replace("\n", "\n" + strpad)
@@ -4417,6 +4428,8 @@ class CreateAnsibleExecFiles():
         Returns:
             複数行の扱いの記号を付加した具体値
         """
+        if not val:
+            return val
         if len(val.split("\n")) > 1:
             val = "|-\n" + val
         return val
@@ -4474,9 +4487,11 @@ class CreateAnsibleExecFiles():
             True/False
         """
         try:
-            json.loads(json_str)
+            ret = json.loads(json_str)
+            if isinstance(ret, list) is False:
+                return False
             return True
-        except Exception:
+        except Exception as e:
             return False
 
     def getAnsible_vault_host_var_file(self, in_hostname):

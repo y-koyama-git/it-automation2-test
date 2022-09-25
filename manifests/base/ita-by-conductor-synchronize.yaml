@@ -25,15 +25,15 @@ spec:
     spec:
       containers:
         - name: ita-by-conductor-synchronize
-          image: exastro/it-automation2-test-ita-by-conductor-synchronize:build.c39041.20220915-113836
+          image: exastro/it-automation2-test-ita-by-conductor-synchronize:Integration-test.9b3983.20220921-113107
           imagePullPolicy: IfNotPresent
-          resources:
-            requests:
-              memory: "64Mi" #仮決め
-              cpu: "250m" #仮決め
-            limits:
-              memory: "64Mi" #仮決め
-              cpu: "250m" #仮決め
+          # resources:
+          #   requests:
+          #     memory: "64Mi" #仮決め
+          #     cpu: "250m" #仮決め
+          #   limits:
+          #     memory: "64Mi" #仮決め
+          #     cpu: "250m" #仮決め
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -52,7 +52,11 @@ spec:
           volumeMounts:
             - name: persistent-storage
               mountPath: /storage
+            - name: contaier-volume
+              mountPath: /tmp
       volumes:
         - name: persistent-storage
           persistentVolumeClaim:
             claimName: ita-pvc
+        - name: contaier-volume
+          emptyDir: {}

@@ -5,11 +5,7 @@ metadata:
   namespace: exastro-it-automation
 rules:
   - apiGroups: [""]
-    resources: ["services"]
-    verbs: ["get", "create", "update", "patch"]
-  - apiGroups: ["apps"]
-    resources: ["pods"]
-    #resourceNames: ["ita-by-ansible-execute"]
+    resources: ["services","pods"]
     verbs: ["get", "create", "update", "patch"]
 ---
 apiVersion: v1
@@ -60,15 +56,15 @@ spec:
       serviceAccountName: ita-ansible-execute-sa
       containers:
         - name: ita-by-ansible-execute
-          image: exastro/it-automation2-test-ita-by-ansible-execute:build.c39041.20220915-113901
+          image: exastro/it-automation2-test-ita-by-ansible-execute:Integration-test.9b3983.20220921-113111
           imagePullPolicy: Always
-          resources:
-            requests:
-              memory: "64Mi" #仮決め
-              cpu: "250m"    #仮決め
-            limits:
-              memory: "64Mi" #仮決め
-              cpu: "250m"    #仮決め
+          #resources:
+          #  requests:
+          #    memory: "64Mi" #仮決め
+          #    cpu: "250m"    #仮決め
+          #  limits:
+          #    memory: "64Mi" #仮決め
+          #    cpu: "250m"    #仮決め
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -91,8 +87,11 @@ spec:
           volumeMounts:
             - name: persistent-storage
               mountPath: /storage
+            - name: contaier-volume
+              mountPath: /tmp
       volumes:
         - name: persistent-storage
           persistentVolumeClaim:
             claimName: ita-pvc
-
+        - name: contaier-volume
+          emptyDir: {}
