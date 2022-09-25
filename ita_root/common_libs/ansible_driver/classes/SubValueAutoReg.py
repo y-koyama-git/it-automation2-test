@@ -97,7 +97,7 @@ class SubValueAutoReg():
         global g_null_data_handling_def
         global warning_flag
         global error_flag
-        
+
         # インターフェース情報からNULLデータを代入値管理に登録するかのデフォルト値を取得する。
         ret = self.getIFInfoDB(WS_DB)
 
@@ -601,20 +601,11 @@ class SubValueAutoReg():
                 "file": {},
                 "type": "Update"
             }
-            status_code, result, msg = objmenu.exec_maintenance(parameters, tgt_row['PHO_LINK_ID'], "", False, False)
+            retAry = objmenu.exec_maintenance(parameters, tgt_row['PHO_LINK_ID'], "", False, False)
             
-            if status_code != '000-00000':
-                if status_code is None:
-                    status_code = '999-99999'
-                elif len(status_code) == 0:
-                    status_code = '999-99999'
-                if isinstance(msg, list):
-                    log_msg_args = msg
-                    api_msg_args = msg
-                else:
-                    log_msg_args = [msg]
-                    api_msg_args = [msg]
-                raise AppException(status_code, log_msg_args, api_msg_args)
+            result = retAry[0]
+            if result is False:
+                raise AppException("499-00701", [retAry], [retAry])
             
             return True
     
@@ -1506,7 +1497,7 @@ class SubValueAutoReg():
 
             parameters = {
                 "parameter": parameter,
-                "type":"Update"
+                "type": "Update"
             }
             
             if not tgt_row['VARS_ENTRY_FILE'] == "":
@@ -1600,20 +1591,11 @@ class SubValueAutoReg():
                 parameter["file"] = "VARS_ENTRY_FILE"
                 parameters["file"] = {"vars_entry_file": tgt_row['VARS_ENTRY_FILE']}
             
-            status_code, result, msg = objmenu.exec_maintenance(parameters, tgt_row['ASSIGN_ID'], "", False, False)
+            retAry = objmenu.exec_maintenance(parameters, tgt_row['ASSIGN_ID'], "", False, False)
             
-            if status_code != '000-00000':
-                if status_code is None:
-                    status_code = '999-99999'
-                elif len(status_code) == 0:
-                    status_code = '999-99999'
-                if isinstance(msg, list):
-                    log_msg_args = msg
-                    api_msg_args = msg
-                else:
-                    log_msg_args = [msg]
-                    api_msg_args = [msg]
-                raise AppException(status_code, log_msg_args, api_msg_args)
+            result = retAry[0]
+            if result is False:
+                raise AppException("499-00701", [retAry], [retAry])
         
         return True
     
@@ -1966,21 +1948,21 @@ class SubValueAutoReg():
         """
         
         # オペレーション名
-        sql = "SELECT OPERATION_NAME FROM T_COMN_OPERATION WHERE OPERATION_ID = " + row['OPERATION_ID']
+        sql = "SELECT OPERATION_NAME FROM T_COMN_OPERATION WHERE OPERATION_ID = '" + row['OPERATION_ID'] + "'"
 
         data_list = WS_DB.sql_execute(sql, [])
         for data in data_list:
             row['OPERATION_NAME'] = data['OPERATION_NAME']
         
         # Movement名
-        sql = "SELECT MOVEMENT_NAME FROM V_ANSR_MOVEMENT WHERE MOVEMENT_ID = " + row['MOVEMENT_ID']
+        sql = "SELECT MOVEMENT_NAME FROM V_ANSR_MOVEMENT WHERE MOVEMENT_ID = '" + row['MOVEMENT_ID'] + "'"
 
         data_list = WS_DB.sql_execute(sql, [])
         for data in data_list:
             row['MOVEMENT_NAME'] = data['MOVEMENT_NAME']
         
         # ホスト名
-        sql = "SELECT HOST_NAME FROM T_ANSC_DEVICE WHERE SYSTEM_ID = " + row['SYSTEM_ID']
+        sql = "SELECT HOST_NAME FROM T_ANSC_DEVICE WHERE SYSTEM_ID = '" + row['SYSTEM_ID'] + "'"
 
         data_list = WS_DB.sql_execute(sql, [])
         for data in data_list:
@@ -1989,14 +1971,14 @@ class SubValueAutoReg():
         # 代入値管理用のデータ取得
         if exe_flag == 1: 
             # 変数名
-            sql = "SELECT VARS_NAME FROM V_ANSR_NESTVAR_MOVEMENT WHERE MVMT_VAR_LINK_ID = " + row['MVMT_VAR_LINK_ID']
+            sql = "SELECT VARS_NAME FROM V_ANSR_NESTVAR_MOVEMENT WHERE MVMT_VAR_LINK_ID = '" + row['MVMT_VAR_LINK_ID'] + "'"
 
             data_list = WS_DB.sql_execute(sql, [])
             for data in data_list:
                 row['VARS_NAME'] = data['VARS_NAME']
             
             if not row['COL_SEQ_COMBINATION_ID'] == "":
-                sql = "SELECT COL_COMBINATION_MEMBER_ALIAS FROM V_ANSR_COL_SEQ_COMBINATION WHERE COL_SEQ_COMBINATION_ID = " + row['COL_SEQ_COMBINATION_ID']
+                sql = "SELECT COL_COMBINATION_MEMBER_ALIAS FROM V_ANSR_COL_SEQ_COMBINATION WHERE COL_SEQ_COMBINATION_ID = '" + row['COL_SEQ_COMBINATION_ID'] + "'"
                 data_list = WS_DB.sql_execute(sql, [])
                 for data in data_list:
                     row['COL_COMBINATION_MEMBER_ALIAS'] = data['COL_COMBINATION_MEMBER_ALIAS']
@@ -2008,7 +1990,7 @@ class SubValueAutoReg():
                 row['COL_COMBINATION_MEMBER_ALIAS'] = data['COL_COMBINATION_MEMBER_ALIAS']
             
             # Sensitive設定
-            sql = "SELECT FLAG_NAME FROM T_COMN_BOOLEAN_FLAG WHERE FLAG_ID = " + row['SENSITIVE_FLAG']
+            sql = "SELECT FLAG_NAME FROM T_COMN_BOOLEAN_FLAG WHERE FLAG_ID = '" + row['SENSITIVE_FLAG'] + "'"
 
             data_list = WS_DB.sql_execute(sql, [])
             for data in data_list:
@@ -2353,7 +2335,7 @@ class SubValueAutoReg():
         sql += "     SELECT                                                       \n"
         sql += "       COUNT(*)                                                   \n"
         sql += "     FROM                                                         \n"
-        sql += SubValueAutoReg.lv_pattern_link_tbl + "                                            \n"
+        sql += lv_pattern_link_tbl + "                                            \n"
         sql += "     WHERE                                                        \n"
         sql += "       MOVEMENT_ID  = TBL_A.MOVEMENT_ID AND                       \n"
         sql += "       DISUSE_FLAG = '0'                                          \n"
@@ -2366,7 +2348,7 @@ class SubValueAutoReg():
         sql += "     SELECT                                                       \n"
         sql += "       COUNT(*)                                                   \n"
         sql += "     FROM                                                         \n"
-        sql += SubValueAutoReg.lv_ptn_vars_link_tbl + "                                           \n"
+        sql += lv_ptn_vars_link_tbl + "                                           \n"
         sql += "     WHERE                                                        \n"
         sql += "       MOVEMENT_ID    = TBL_A.MOVEMENT_ID        AND              \n"
         sql += "       MVMT_VAR_LINK_ID  = TBL_A.MVMT_VAR_LINK_ID  AND            \n"
@@ -2379,13 +2361,13 @@ class SubValueAutoReg():
         sql += "     SELECT                                                       \n"
         sql += "       COL_COMBINATION_MEMBER_ALIAS                               \n"
         sql += "     FROM                                                         \n"
-        sql += SubValueAutoReg.lv_member_col_comb_tbl + "                                         \n"
+        sql += lv_member_col_comb_tbl + "                                         \n"
         sql += "     WHERE                                                        \n"
         sql += "       MVMT_VAR_LINK_ID IN (                                      \n"
         sql += "         SELECT                                                   \n"
-        sql += "           VARS_NAME                                              \n"
+        sql += "           MVMT_VAR_LINK_ID                                       \n"
         sql += "         FROM                                                     \n"
-        sql += SubValueAutoReg.lv_ptn_vars_link_tbl + "                                           \n"
+        sql += lv_ptn_vars_link_tbl + "                                           \n"
         sql += "         WHERE                                                    \n"
         sql += "           MOVEMENT_ID    = TBL_A.MOVEMENT_ID        AND          \n"
         sql += "           MVMT_VAR_LINK_ID  = TBL_A.MVMT_VAR_LINK_ID  AND        \n"
@@ -2402,13 +2384,13 @@ class SubValueAutoReg():
         sql += "     SELECT                                                       \n"
         sql += "       ASSIGN_SEQ_NEED                                            \n"
         sql += "     FROM                                                         \n"
-        sql += SubValueAutoReg.lv_array_member_tbl + "                                            \n"
+        sql += lv_array_member_tbl + "                                            \n"
         sql += "     WHERE                                                        \n"
         sql += "       MVMT_VAR_LINK_ID IN (                                      \n"
         sql += "         SELECT                                                   \n"
-        sql += "           VARS_NAME                                              \n"
+        sql += "           MVMT_VAR_LINK_ID                                       \n"
         sql += "         FROM                                                     \n"
-        sql += SubValueAutoReg.lv_ptn_vars_link_tbl + "                                           \n"
+        sql += lv_ptn_vars_link_tbl + "                                           \n"
         sql += "         WHERE                                                    \n"
         sql += "           MOVEMENT_ID    = TBL_A.MOVEMENT_ID        AND          \n"
         sql += "           MVMT_VAR_LINK_ID  = TBL_A.MVMT_VAR_LINK_ID  AND        \n"
@@ -2419,7 +2401,7 @@ class SubValueAutoReg():
         sql += "         SELECT                                                   \n"
         sql += "           ARRAY_MEMBER_ID                                        \n"
         sql += "         FROM                                                     \n"
-        sql += SubValueAutoReg.lv_member_col_comb_tbl + "                                         \n"
+        sql += lv_member_col_comb_tbl + "                                         \n"
         sql += "         WHERE                                                    \n"
         sql += "           COL_SEQ_COMBINATION_ID = TBL_A.COL_SEQ_COMBINATION_ID AND \n"
         sql += "           DISUSE_FLAG   = '0'                                    \n"
@@ -2434,7 +2416,7 @@ class SubValueAutoReg():
         sql += "     SELECT                                                       \n"
         sql += "       COUNT(*)                                                   \n"
         sql += "     FROM                                                         \n"
-        sql += SubValueAutoReg.lv_ptn_vars_link_tbl + "                                           \n"
+        sql += lv_ptn_vars_link_tbl + "                                           \n"
         sql += "     WHERE                                                        \n"
         sql += "       MOVEMENT_ID    = TBL_A.MOVEMENT_ID        AND              \n"
         sql += "       MVMT_VAR_LINK_ID  = TBL_A.MVMT_VAR_LINK_ID  AND            \n"
@@ -2447,13 +2429,13 @@ class SubValueAutoReg():
         sql += "     SELECT                                                       \n"
         sql += "       COL_COMBINATION_MEMBER_ALIAS                               \n"
         sql += "     FROM                                                         \n"
-        sql += SubValueAutoReg.lv_member_col_comb_tbl + "                                         \n"
+        sql += lv_member_col_comb_tbl + "                                         \n"
         sql += "     WHERE                                                        \n"
         sql += "       MVMT_VAR_LINK_ID IN (                                      \n"
         sql += "         SELECT                                                   \n"
-        sql += "           VARS_NAME                                              \n"
+        sql += "           MVMT_VAR_LINK_ID                                       \n"
         sql += "         FROM                                                     \n"
-        sql += SubValueAutoReg.lv_ptn_vars_link_tbl + "                                           \n"
+        sql += lv_ptn_vars_link_tbl + "                                           \n"
         sql += "         WHERE                                                    \n"
         sql += "           MOVEMENT_ID    = TBL_A.MOVEMENT_ID        AND          \n"
         sql += "           MVMT_VAR_LINK_ID  = TBL_A.MVMT_VAR_LINK_ID  AND        \n"
@@ -2470,13 +2452,13 @@ class SubValueAutoReg():
         sql += "     SELECT                                                       \n"
         sql += "       ASSIGN_SEQ_NEED                                            \n"
         sql += "     FROM                                                         \n"
-        sql += SubValueAutoReg.lv_array_member_tbl + "                                            \n"
+        sql += lv_array_member_tbl + "                                            \n"
         sql += "     WHERE                                                        \n"
         sql += "       MVMT_VAR_LINK_ID IN (                                      \n"
         sql += "         SELECT                                                   \n"
-        sql += "           VARS_NAME                                              \n"
+        sql += "           MVMT_VAR_LINK_ID                                       \n"
         sql += "         FROM                                                     \n"
-        sql += SubValueAutoReg.lv_ptn_vars_link_tbl + "                                           \n"
+        sql += lv_ptn_vars_link_tbl + "                                           \n"
         sql += "         WHERE                                                    \n"
         sql += "           MOVEMENT_ID    = TBL_A.MOVEMENT_ID        AND          \n"
         sql += "           MVMT_VAR_LINK_ID  = TBL_A.MVMT_VAR_LINK_ID  AND        \n"
@@ -2487,7 +2469,7 @@ class SubValueAutoReg():
         sql += "         SELECT                                                   \n"
         sql += "           ARRAY_MEMBER_ID                                        \n"
         sql += "         FROM                                                     \n"
-        sql += SubValueAutoReg.lv_member_col_comb_tbl + "                                         \n"
+        sql += lv_member_col_comb_tbl + "                                         \n"
         sql += "         WHERE                                                    \n"
         sql += "           COL_SEQ_COMBINATION_ID = TBL_A.COL_SEQ_COMBINATION_ID AND \n"
         sql += "           DISUSE_FLAG   = '0'                                    \n"
@@ -2497,7 +2479,7 @@ class SubValueAutoReg():
         sql += "   ) AS KEY_ASSIGN_SEQ_NEED,                                      \n"
         sql += "   TBL_D.DISUSE_FLAG AS ANSIBLE_TARGET_TABLE                      \n"
         sql += " FROM                                                             \n"
-        sql += SubValueAutoReg.lv_val_assign_tbl + "  TBL_A                                       \n"
+        sql += lv_val_assign_tbl + "  TBL_A                                       \n"
         sql += "   LEFT JOIN T_COMN_MENU_COLUMN_LINK TBL_B ON                     \n"
         sql += "          (TBL_A.COLUMN_LIST_ID = TBL_B.COLUMN_DEFINITION_ID)     \n"
         sql += "          OR (TBL_B.AUTOREG_ONLY_ITEM = 1)                        \n"
