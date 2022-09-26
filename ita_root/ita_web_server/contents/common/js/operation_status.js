@@ -97,16 +97,56 @@ setup() {
             op.info = info;
             op.operationStatusInit();
             op.operationStatus();
+            op.errorLogInit();
+            
+            // status_monitoring_cycleごとに更新
+            op.monitoring();
+            
         }).catch(function( error ){
             op.operationStatusInit();
             op.operationMessage();
+            op.errorLogInit();
+            console.error( error )
             alert( error.message );
         });
     } else {
         history.replaceState( null, null, `?menu=${op.menu}`);
         op.operationStatusInit();
         op.operationMessage();
+        op.errorLogInit();
     }
+}
+/*
+##################################################
+   一定間隔で画面更新
+##################################################
+*/
+monitoring() {
+    const op = this;
+    
+    const cycle = fn.cv( op.info.status_monitoring_cycle, 3000 );
+    
+    setTimeout( function(){
+        fn.fetch( op.rest.info ).then(function( info ){
+            op.info = info;
+
+            // 更新
+            op.operationStatusUpdate();
+            op.executeLogUpdate();
+            op.errorLogUpdate();
+            
+            // 完了、完了(異常)、想定外エラー、緊急停止、予約取消の場合は更新しない
+            const stopId = [ 5, 6, 7, 8, 10 ];
+
+            if ( stopId.indexOf( op.info.status_id ) === -1 ) {
+                op.monitoring();
+            }
+        }).catch(function( error ){
+            console.error( error )
+            alert( error.message );
+        });
+        
+    }, cycle );
 }
 /*
 ##################################################
@@ -194,94 +234,94 @@ operationStatus() {
     const op = this;
     
     const html = `
-    <div class="operationStatusSection">
-        <div class="operationStatusBlock">
-            <div class="operationStatusTitle">作業ステータス</div>
-            <div class="operationStatusBody">
-                <table class="operationStatusTable">
-                    <tbody class="operationStatusTbody">
-                        <tr class="operationStatusTr">
-                            <th class="operationStatusTh">作業No.</th>
-                            <td class="operationStatusTd"><span class="operationStatusData" data-type="execution_no"></span></td>
+    <div class="commonSection">
+        <div class="commonBlock">
+            <div class="commonTitle">作業ステータス</div>
+            <div class="commonBody">
+                <table class="commonTable">
+                    <tbody class="commonTbody">
+                        <tr class="commonTr">
+                            <th class="commonTh">作業No.</th>
+                            <td class="commonTd"><span class="operationStatusData" data-type="execution_no"></span></td>
                         </tr>
-                        <tr class="operationStatusTr">
-                            <th class="operationStatusTh">実行種別</th>
-                            <td class="operationStatusTd"><span class="operationStatusData" data-type="execution_type"></span></td>
+                        <tr class="commonTr">
+                            <th class="commonTh">実行種別</th>
+                            <td class="commonTd"><span class="operationStatusData" data-type="execution_type"></span></td>
                         </tr>
-                        <tr class="operationStatusTr">
-                            <th class="operationStatusTh">ステータス</th>
-                            <td class="operationStatusTd"><span class="operationStatusData" data-type="status"></span></td>
+                        <tr class="commonTr">
+                            <th class="commonTh">ステータス</th>
+                            <td class="commonTd"><span class="operationStatusData" data-type="status"></span></td>
                         </tr>
-                        <tr class="operationStatusTr">
-                            <th class="operationStatusTh">実行エンジン</th>
-                            <td class="operationStatusTd"><span class="operationStatusData" data-type="execution_engine"></span></td>
+                        <tr class="commonTr">
+                            <th class="commonTh">実行エンジン</th>
+                            <td class="commonTd"><span class="operationStatusData" data-type="execution_engine"></span></td>
                         </tr>
-                        <tr class="operationStatusTr">
-                            <th class="operationStatusTh">呼出元Conductor</th>
-                            <td class="operationStatusTd"><span class="operationStatusData" data-type="caller_conductor"></span></td>
+                        <tr class="commonTr">
+                            <th class="commonTh">呼出元Conductor</th>
+                            <td class="commonTd"><span class="operationStatusData" data-type="caller_conductor"></span></td>
                         </tr>
-                        <tr class="operationStatusTr">
-                            <th class="operationStatusTh">実行ユーザ</th>
-                            <td class="operationStatusTd"><span class="operationStatusData" data-type="execution_user"></span></td>
+                        <tr class="commonTr">
+                            <th class="commonTh">実行ユーザ</th>
+                            <td class="commonTd"><span class="operationStatusData" data-type="execution_user"></span></td>
                         </tr>
-                        <tr class="operationStatusTr">
-                            <th class="operationStatusTh">投入データ</th>
-                            <td class="operationStatusTd"><span class="operationStatusData" data-type="populated_data"></span></td>
+                        <tr class="commonTr">
+                            <th class="commonTh">投入データ</th>
+                            <td class="commonTd"><span class="operationStatusData" data-type="populated_data"></span></td>
                         </tr>
-                        <tr class="operationStatusTr">
-                            <th class="operationStatusTh">結果データ</th>
-                            <td class="operationStatusTd"><span class="operationStatusData" data-type="result_data"></span></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <div class="operationStatusSubTitle">作業状況</div>
-            <div class="operationStatusBody">
-                <table class="operationStatusTable">
-                    <tbody class="operationStatusTbody">
-                        <tr class="operationStatusTr">
-                            <th class="operationStatusTh">予約日時</th>
-                            <td class="operationStatusTd"><span class="operationStatusData" data-type="scheduled_date_time"></span></td>
-                        </tr>
-                        <tr class="operationStatusTr">
-                            <th class="operationStatusTh">開始日時</th>
-                            <td class="operationStatusTd"><span class="operationStatusData" data-type="start_date_time"></span></td>
-                        </tr>
-                        <tr class="operationStatusTr">
-                            <th class="operationStatusTh">終了日時</th>
-                            <td class="operationStatusTd"><span class="operationStatusData" data-type="end_date_time"></span></td>
+                        <tr class="commonTr">
+                            <th class="commonTh">結果データ</th>
+                            <td class="commonTd"><span class="operationStatusData" data-type="result_data"></span></td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-            <div class="operationStatusTitle">オペレーション</div>
-            <div class="operationStatusBody">
-                <table class="operationStatusTable">
-                    <tbody class="operationStatusTbody">
-                        <tr class="operationStatusTr">
-                            <th class="operationStatusTh">ID</th>
-                            <td class="operationStatusTd"><span class="operationStatusData" data-type="operation_id"></span></td>
+            <div class="commonSubTitle">作業状況</div>
+            <div class="commonBody">
+                <table class="commonTable">
+                    <tbody class="commonTbody">
+                        <tr class="commonTr">
+                            <th class="commonTh">予約日時</th>
+                            <td class="commonTd"><span class="operationStatusData" data-type="scheduled_date_time"></span></td>
                         </tr>
-                        <tr class="operationStatusTr">
-                            <th class="operationStatusTh">名称</th>
-                            <td class="operationStatusTd"><span class="operationStatusData" data-type="operation_name"></span></td>
+                        <tr class="commonTr">
+                            <th class="commonTh">開始日時</th>
+                            <td class="commonTd"><span class="operationStatusData" data-type="start_date_time"></span></td>
+                        </tr>
+                        <tr class="commonTr">
+                            <th class="commonTh">終了日時</th>
+                            <td class="commonTd"><span class="operationStatusData" data-type="end_date_time"></span></td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-            <div class="operationStatusBody">
-                <ul class="operationStatusMenuList">
-                    <li class="operationStatusMenuItem">
-                        ${fn.html.iconButton('detail', '作業対象ホスト確認', 'operationStatusButton itaButton', { type: 'host', action: 'default', style: 'width:100%'})}
+            <div class="commonTitle">オペレーション</div>
+            <div class="commonBody">
+                <table class="commonTable">
+                    <tbody class="commonTbody">
+                        <tr class="commonTr">
+                            <th class="commonTh">ID</th>
+                            <td class="commonTd"><span class="operationStatusData" data-type="operation_id"></span></td>
+                        </tr>
+                        <tr class="commonTr">
+                            <th class="commonTh">名称</th>
+                            <td class="commonTd"><span class="operationStatusData" data-type="operation_name"></span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="commonBody">
+                <ul class="commonMenuList">
+                    <li class="commonMenuItem">
+                        ${fn.html.iconButton('detail', '作業対象ホスト確認', 'hostButton commonButton itaButton', { type: 'host', action: 'default', style: 'width:100%', disabled: 'disabled'})}
                     </li>
-                    <li class="operationStatusMenuItem">
-                        ${fn.html.iconButton('detail', '代入値確認', 'operationStatusButton itaButton', { type: 'value', action: 'default', style: 'width:100%'})}
+                    <li class="commonMenuItem">
+                        ${fn.html.iconButton('detail', '代入値確認', 'valueButton commonButton itaButton', { type: 'value', action: 'default', style: 'width:100%', disabled: 'disabled'})}
                     </li>
                 </ul>
             </div>
         </div>
-        <div class="operationStatusBlock">
-            <div class="operationStatusTitle">Movement</div>
+        <div class="commonBlock">
+            <div class="commonTitle">Movement</div>
             <div class="movementArea" data-mode="">
                 <div class="movementAreaInner">
                     <div class="node ${Status.string[op.menu].movementClassName}">
@@ -317,68 +357,68 @@ operationStatus() {
                     </div>
                 </div>
             </div>
-            <div class="operationStatusBody">
-                <table class="operationStatusTable">
-                    <tbody class="operationStatusTbody">
-                        <tr class="operationStatusTr">
-                            <th class="operationStatusTh">ID</th>
-                            <td class="operationStatusTd"><span class="operationStatusData" data-type="movement_id"></span></td>
+            <div class="commonBody">
+                <table class="commonTable">
+                    <tbody class="commonTbody">
+                        <tr class="commonTr">
+                            <th class="commonTh">ID</th>
+                            <td class="commonTd"><span class="operationStatusData" data-type="movement_id"></span></td>
                         </tr>
-                        <tr class="operationStatusTr">
-                            <th class="operationStatusTh">名称</th>
-                            <td class="operationStatusTd"><span class="operationStatusData" data-type="movement_name"></span></td>
+                        <tr class="commonTr">
+                            <th class="commonTh">名称</th>
+                            <td class="commonTd"><span class="operationStatusData" data-type="movement_name"></span></td>
                         </tr>
-                        <tr class="operationStatusTr">
-                            <th class="operationStatusTh">遅延タイマー（分）</th>
-                            <td class="operationStatusTd"><span class="operationStatusData" data-type="delay_timer"></span></td>
+                        <tr class="commonTr">
+                            <th class="commonTh">遅延タイマー（分）</th>
+                            <td class="commonTd"><span class="operationStatusData" data-type="delay_timer"></span></td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-            <div class="operationStatusBody">
-                <ul class="operationStatusMenuList">
-                    <li class="operationStatusMenuItem">
-                        ${fn.html.iconButton('detail', 'Movement詳細確認', 'operationStatusButton itaButton', { type: 'movement', action: 'default', style: 'width:100%'})}
+            <div class="commonBody">
+                <ul class="commonMenuList">
+                    <li class="commonMenuItem">
+                        ${fn.html.iconButton('detail', 'Movement詳細確認', 'commonButton itaButton', { type: 'movement', action: 'default', style: 'width:100%'})}
                     </li>
                 </ul>
             </div>
-            <div class="operationStatusSubTitle">Ansible利用情報</div>
-            <div class="operationStatusBody">
-                <table class="operationStatusTable">
-                    <tbody class="operationStatusTbody">
-                        <tr class="operationStatusTr">
-                            <th class="operationStatusTh">ホスト指定形式</th>
-                            <td class="operationStatusTd"><span class="operationStatusData" data-type="host_specific_format"></span></td>
+            <div class="commonSubTitle">Ansible利用情報</div>
+            <div class="commonBody">
+                <table class="commonTable">
+                    <tbody class="commonTbody">
+                        <tr class="commonTr">
+                            <th class="commonTh">ホスト指定形式</th>
+                            <td class="commonTd"><span class="operationStatusData" data-type="host_specific_format"></span></td>
                         </tr>
-                        <tr class="operationStatusTr">
-                            <th class="operationStatusTh">WinRM接続</th>
-                            <td class="operationStatusTd"><span class="operationStatusData" data-type="winrm_connection"></span></td>
+                        <tr class="commonTr">
+                            <th class="commonTh">WinRM接続</th>
+                            <td class="commonTd"><span class="operationStatusData" data-type="winrm_connection"></span></td>
                         </tr>
-                        <tr class="operationStatusTr">
-                            <th class="operationStatusTh">ansible.cfg</th>
-                            <td class="operationStatusTd"><span class="operationStatusData" data-type="ansible_cfg"></span></td>
+                        <tr class="commonTr">
+                            <th class="commonTh">ansible.cfg</th>
+                            <td class="commonTd"><span class="operationStatusData" data-type="ansible_cfg"></span></td>
                         </tr>
                      </tbody>
                 </table>
             </div>
-            <div class="operationStatusSubTitle">Ansible Core利用情報</div>
-            <div class="operationStatusBody">
-                <table class="operationStatusTable">
-                    <tbody class="operationStatusTbody">
-                        <tr class="operationStatusTr">
-                            <th class="operationStatusTh">virtualenv</th>
-                            <td class="operationStatusTd"><span class="operationStatusData" data-type="ansible_core_virtualenv"></span></td>
+            <div class="commonSubTitle">Ansible Core利用情報</div>
+            <div class="commonBody">
+                <table class="commonTable">
+                    <tbody class="commonTbody">
+                        <tr class="commonTr">
+                            <th class="commonTh">virtualenv</th>
+                            <td class="commonTd"><span class="operationStatusData" data-type="ansible_core_virtualenv"></span></td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-            <div class="operationStatusSubTitle">Ansible Automation Controller利用情報</div>
-            <div class="operationStatusBody">
-                <table class="operationStatusTable">
-                    <tbody class="operationStatusTbody">
-                        <tr class="operationStatusTr">
-                            <th class="operationStatusTh">実行環境</th>
-                            <td class="operationStatusTd"><span class="operationStatusData" data-type="execution_environment"></span></td>
+            <div class="commonSubTitle">Ansible Automation Controller利用情報</div>
+            <div class="commonBody">
+                <table class="commonTable">
+                    <tbody class="commonTbody">
+                        <tr class="commonTr">
+                            <th class="commonTh">実行環境</th>
+                            <td class="commonTd"><span class="commonData" data-type="execution_environment"></span></td>
                         </tr>
                     </tbody>
                 </table>
@@ -388,8 +428,11 @@ operationStatus() {
     
     op.$.operationContainer.html( html );
     
+    op.$.movementArea = op.$.operationContainer.find('.movementArea');
+    op.$.node = op.$.operationContainer.find('.node');
+    
     // コンテンツボタン
-    op.$.operation.find('.operationStatusButton').on('click', function(){
+    op.$.operationContainer.find('.commonButton').on('click', function(){
         const $button = $( this ),
               type = $button.attr('data-type'),
               target = { iframeMode: 'tableViewOnly'};
@@ -414,6 +457,13 @@ operationStatus() {
         fn.modalIframe( target.menu, target.title, { filter: target.filter, iframeMode: target.iframeMode });
     });
     
+    // ノードのアニメーション完了時
+    op.$.node.find('.node-result').on('animationend', function(){
+        if ( op.$.node.is('.complete') ) {
+            $( this ).off('animationend').addClass('animationEnd');
+        }
+    });
+    
     if ( op.info ) {
         op.operationStatusUpdate();
     }
@@ -423,50 +473,100 @@ operationStatus() {
    Operation status 更新
 ##################################################
 */
-operationStatusUpdate( updateData ) {
+operationStatusUpdate() {
     const op = this;
     
+    // 値を更新する
     for( const key in op.info.execution_list.parameter ) {
         const value = op.info.execution_list.parameter[ key ];
         if ( value ) {
             const $data = op.$.operationContainer.find(`.operationStatusData[data-type="${key}"]`),
-                  currentValue = $data.text();
+                  currentValue = $data.eq(0).text();
             // 変更がある場合のみ内容を更新する
-            if ( currentValue !== value ) {
+            if ( $data.length && currentValue !== value ) {
                 $data.text( value );
             }
         }
     }
-    /*
-    op.info.execution_list.parameter
     
-    op.$.operation.find('.node');
+    /* ステータス
+    01 未実行
+    02 準備中
+    03 実行中
+    04 実行中(遅延)
+    05 完了
+    06 完了(異常)
+    07 想定外エラー
+    08 緊急停止
+    09 未実行(予約)
+    10 予約取消
     */
+    
+    // ホスト確認、代入値確認ボタン
+    if ( ['1', '2', '10'].indexOf( op.info.status_id ) === -1 ) {
+        op.$.operationContainer.find('.hostButton, .valueButton').prop('disabled', false );
+    } else {
+        op.$.operationContainer.find('.hostButton, .valueButton').prop('disabled', true );
+    }
+    
+    // ノードの状態を更新する
+    switch ( op.info.status_id ) {
+        case '3': case '4':
+            op.$.node.addClass('running');
+        break;
+        // 正常終了
+        case '5':
+            op.$.movementArea.attr('data-result', 'done');
+            op.$.node.addClass('complete').find('.node-result').attr('data-result-text', 'DONE');
+        break;
+        // エラー終了
+        case '6':
+        case '7':
+            op.$.movementArea.attr('data-result', 'error');
+            op.$.node.addClass('complete').find('.node-result').attr('data-result-text', 'ERROR');
+        break;
+        // 緊急停止
+        case '8':
+            op.$.node.addClass('complete').find('.node-result').attr('data-result-text', 'STOP');
+        break;
+        // 予約取消
+        case '10':
+            op.$.node.addClass('complete').find('.node-result').attr('data-result-text', 'CANCEL');
+        break;
+    }
+    
 }
 /*
 ##################################################
    Execute log
 ##################################################
 */
-executeLog() {
-    const menu = {
-        Main: [
-            { input: { className: 'operationId', value: op.id, before: 'ログ検索' } },
-            { button: { icon: 'check', text: '作業状態確認', type: 'check', action: 'default', width: '200px'} },
-            { button: { icon: 'cal_off', text: '予約取消', type: 'cansel', action: 'default', width: '200px'}, display: 'none', separate: true },
-            { button: { icon: 'stop', text: '緊急停止', type: 'scram', action: 'danger', width: '200px'}, display: 'none', separate: true }
-        ],
-        Sub: []
-    };
-    op.$.operation.html( fn.html.operationMenu( menu ) + html );
+executeLogInit() {
+    const op = this;
+    op.execute = new Log();
+    op.$.executeLog.html( op.execute.setup() );
+}
+executeLogUpdate() {
+    
 }
 /*
 ##################################################
    Error log
 ##################################################
 */
-errorLog() {
-
+errorLogInit() {
+    const op = this;    
+    op.errorLog = new Log( );
+    op.$.errorLog.html( op.errorLog.setup() );
+    op.errorLogUpdate();
+}
+errorLogUpdate() {
+    const op = this;
+    
+    // エラーログがあるか？
+    if ( op.info.execution_log && op.info.execution_log.error_log ) {
+        op.errorLog.update( op.info.execution_log.error_log );
+    }
 }
 
 }

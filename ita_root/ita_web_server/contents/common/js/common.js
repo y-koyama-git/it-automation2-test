@@ -47,6 +47,9 @@ const fn = ( function() {
     };
     const windowFlag = windowCheck();
     
+    // iframeフラグ
+    const iframeFlag = windowFlag? ( window.parent !== window ): false;
+    
     const organization_id = ( windowFlag )? CommonAuth.getRealm(): null,
           workspace_id =  ( windowFlag )? window.location.pathname.split('/')[3]: null;
     
@@ -240,8 +243,12 @@ fetch: function( url, token, method = 'GET', json ) {
                                 console.log( result );
                                 console.groupEnd('Fetch response');
                                 
-                                alert(result.message);
-                                location.replace('/' + organization_id + '/workspaces/' + workspace_id + '/ita/');
+                                if ( !iframeFlag ) {
+                                    alert(result.message);
+                                    location.replace('/' + organization_id + '/workspaces/' + workspace_id + '/ita/');
+                                } else {
+                                    cmn.iframeMessage( result.message );
+                                }
                             }).catch(function( e ) {
                                 cmn.systemErrorAlert();
                             });
@@ -339,10 +346,7 @@ escape: function( value, br, space ) {
         ['\'', 'apos'],
         ['<', 'lt'],
         ['>', 'gt'],
-        ['\\(', '#040'],
-        ['\\)', '#041'],
-        ['\\[', '#091'],
-        ['\\]', '#093']
+        /*['\\(', '#040'],['\\)', '#041'],['\\[', '#091'],['\\]', '#093']*/
     ];
     const type = typeofValue( value );
 
@@ -567,7 +571,7 @@ fileSelect: function( type = 'base64', limitFileSize, accept ){
 
                 reader.onload = function(){
                     resolve({
-                        base64: reader.result.replace(/^data:.*\/.*;base64,/, ''),
+                        base64: reader.result.replace(/^data:.*\/.*;base64,|^data:$/, ''),
                         name: file.name,
                         size: file.size
                     });
@@ -1001,10 +1005,10 @@ datePicker: function( timeFlag, className, date, start, end ) {
     // 時間
     if ( timeFlag ) {
         const datePickerTime = [`<div class="datePickerHour">${cmn.html.inputFader('datePickerHourInput', hour, null, { min: 0, max: 23 }, { after: '時'} )}</div>`];
-        if ( timeFlag === true || timeFlag === 'hms' || timeFlag === 'hm') {
+        if ( timeFlag === 'true' || timeFlag === true || timeFlag === 'hms' || timeFlag === 'hm') {
             datePickerTime.push(`<div class="datePickerMin">${cmn.html.inputFader('datePickerMinInput', min, null, { min: 0, max: 59 }, { after: '分'} )}</div>`);
         }
-        if ( timeFlag === true || timeFlag === 'hms') {
+        if ( timeFlag === 'true' || timeFlag === true || timeFlag === 'hms') {
             datePickerTime.push(`<div class="datePickerSec">${cmn.html.inputFader('datePickerSecInput', sec, null, { min: 0, max: 59 }, { after: '秒'} )}</div>`);
         }
         
@@ -1554,7 +1558,7 @@ html: {
         + `</${type}>`;
     },
     table: function( tableData, className, thNumber ) {
-        className = classNameCheck( className, 'table');
+        className = classNameCheck( className, 'commonTable');
  
         const table = [];
         for ( const type in tableData ) {
@@ -1566,17 +1570,17 @@ html: {
                 for ( let i = 0; i < cellLength; i++ ) {
                     const cellData = cells[i];
                     if ( type === 'thead') {
-                        cell.push( cmn.html.cell( cellData, ['tHeadTh', 'th'], 'th') );
+                        cell.push(`<th class="commonTh">${cellData}</th>`);
                     } else {
                         if ( i < thNumber ) {
-                            cell.push( cmn.html.cell( cellData, ['tBodyTh', 'th'], 'th') );
+                            cell.push(`<th class="commonTh">${cellData}</th>`);
                         } else {
-                            cell.push( cmn.html.cell( cellData, ['tBodyTd', 'td'], 'td') );
+                            cell.push(`<td class="commonTd">${cellData}</td>`);
                         }
                     }
                 }
-                const rowClass = ( type === 'thead')? 'tHeadTr': 'tBodyTr';
-                row.push( cmn.html.row( cell.join(''), [ rowClass, 'tr'] ) )
+                const rowClass = ( type === 'thead')? 'tHeadTr': 'commonTr';
+                row.push(`<tr class="commonTr">${cell.join('')}</tr>`);
             }
             table.push( row.join('') );
             table.push(`</${type}>`);
@@ -2113,44 +2117,48 @@ executeModalOpen: function( modalId, menu, executeConfig ) {
 
         if ( !modalInstance[ modalId ] ) {
             const html = `
-            <div class="dialogContentContainer">
-                <div class="dialogContentBlock">
-                    <div class="dialogContentTitle">${executeConfig.title} ${executeConfig.itemName}</div>
-                    <div class="dialogContentBody">
-                        <dl class="dialogContentDef" style="display:none;">
-                            <dt class="dialogContentDefTerm">ID</dt>
-                            <dd class="dialogContentDefDesc executeSelectId">${executeConfig.selectId}</dd>
-                        </dl>
-                        <dl class="dialogContentDef">
-                            <dt class="dialogContentDefTerm">名称</dt>
-                            <dd class="dialogContentDefDesc executeSelectName">${executeConfig.selectName}</dd>
-                        </dl>
-                    </div>
+            <div class="commonSection">
+                <div class="commonTitle">${executeConfig.title} ${executeConfig.itemName}</div>
+                <div class="commonBody">
+                    <table class="commonTable">
+                        <tbody class="commonTbody">
+                            <tr class="commonTr">
+                                <th class="commonTh">ID</th>
+                                <td class="commonTd">${executeConfig.selectId}</td>
+                            </tr>
+                            <tr class="commonTr">
+                                <th class="commonTh">名称</th>
+                                <td class="commonTd">${executeConfig.selectName}</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-                <div class="dialogContentBlock">
-                    <div class="dialogContentTitle">オペレーション ${cmn.html.required()}</div>
-                    <div class="dialogContentBody">
-                        <dl class="dialogContentDef" style="display:none;">
-                            <dt class="dialogContentDefTerm">ID</dt>
-                            <dd class="dialogContentDefDesc executeOperetionId"></dd>
-                        </dl>
-                        <dl class="dialogContentDef">
-                            <dt class="dialogContentDefTerm">名称</dt>
-                            <dd class="dialogContentDefDesc executeOperetionName"></dd>
-                        </dl>
-                        <div class="dialogContentInputArea">
-                            ${fn.html.button( fn.html.icon('menuList') + ' オペレーション選択', ['itaButton', 'executeOperetionSelectButton'], { action: 'default', style: `width:200px`})}
-                        </div>
-                    </div>
+                <div class="commonTitle">オペレーション ${cmn.html.required()}</div>
+                <div class="commonBody">
+                    <table class="commonTable">
+                        <tbody class="commonTbody">
+                            <tr class="commonTr">
+                                <th class="commonTh">ID</th>
+                                <td class="commonTd executeOperetionId"></td>
+                            </tr>
+                            <tr class="commonTr">
+                                <th class="commonTh">名称</th>
+                                <td class="commonTd executeOperetionName"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <ul class="commonMenuList">
+                        <li class="commonMenuItem">
+                            ${fn.html.button( fn.html.icon('menuList') + ' オペレーション選択', ['itaButton', 'commonButton executeOperetionSelectButton'], { action: 'default', style: `width:100%`})}
+                        </li>
+                    </ul>
                 </div>
-                <div class="dialogContentBlock">
-                    <div class="dialogContentTitle">スケジュール</div>
-                    <div class="dialogContentBody">
-                        <div class="dialogContentInputArea">
-                            ${fn.html.dateInput('hm', 'executeSchedule', '')}
-                        </div>
-                        <p class="dialogContentParagraph">予約日時を指定する場合は、日時フォーマット(yyyy/MM/dd HH:mm)で入力して下さい。<br>ブランクの場合は即時実行となります。</p>
+                <div class="commonTitle">スケジュール</div>
+                <div class="commonBody">
+                    <div class="commonInputArea">
+                        ${fn.html.dateInput( true, 'executeSchedule', '')}
                     </div>
+                    <p class="commonParagraph">予約日時を指定する場合は、日時フォーマット(yyyy/MM/dd HH:mm:ss)で入力して下さい。<br>ブランクの場合は即時実行となります。</p>
                 </div>
             </div>`;
 
@@ -2247,7 +2255,7 @@ checkContentLoading() {
 // 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-modalIframe: function( menu, title, option ){
+modalIframe: function( menu, title, option = {}){
     if ( !modalInstance[ menu ] ) {
         const modalFuncs = {
             cancel: function() {
@@ -2291,6 +2299,15 @@ modalIframe: function( menu, title, option ){
         const modal = modalInstance[ menu ];
         modal.open(`<iframe class="iframe" src="${url.join('')}"></iframe>`);
     }
+},
+
+iframeMessage( message ) {
+    const html = `<div class="iframeMessage">
+        <div class="contentMessage">
+            <div class="contentMessageInner">${message}</div>
+        </div>
+    </div>`
+    $('#container').html( html );
 },
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2415,6 +2432,64 @@ modalConductor: function( menu, mode, conductorId, option ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+//   Log
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////
+class Log {
+/*
+##################################################
+   Constructor
+##################################################
+*/
+constructor( log, max ) {
+    const lg = this;
+    
+    lg.log = log;
+    lg.max = max;
+}
+/*
+##################################################
+   Setup
+##################################################
+*/
+setup() {
+    const lg = this;
+    
+    const menu = {
+        Main: [
+            { input: { className: '', before: 'ログ検索' } }
+        ],
+        Sub: []
+    };
+    
+    const $log = $(`
+    <div class="operationLogContainer">
+        ${fn.html.operationMenu( menu )}
+        <div class="operationLogBody">
+            <div class="operationLog"></div>
+        </div>
+    </div>`);
+    
+    lg.$ = {};
+    lg.$.log = $log.find('.operationLog');
+    
+    return $log;
+}
+/*
+##################################################
+   Update
+##################################################
+*/
+update( log ) {
+    const lg = this;
+    
+    lg.$.log( log );
+}
+
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
 //   Message
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2471,12 +2546,14 @@ open() {
     ms.$.message = $(`<div class="messageItem" data-message="${ms.type}">${html.join('')}</div>`);
     
     ms.$.container.append( ms.$.message );
-    ms.timerId = setTimeout(function(){
-        ms.close();
-    }, ms.closeTime );
+    if ( ms.closeTime !== 0 ) {
+        ms.timerId = setTimeout(function(){
+            ms.close();
+        }, ms.closeTime );
+    }
     
     ms.$.message.find('.messageCloseButton').on('click', function(){
-        clearTimeout( ms.timerId );
+        if ( ms.timerId ) clearTimeout( ms.timerId );
         ms.close();
     });
 }
