@@ -113,6 +113,9 @@ class WrappedStringReplaceAdmin:
         else:
             tailmarke.append("[\s]}}")
 
+        if strSourceString is None:
+            strSourceString = ""
+
         # 入力データを行単位に分解
         arry_list = strSourceString.split("\n")
         line = 0
