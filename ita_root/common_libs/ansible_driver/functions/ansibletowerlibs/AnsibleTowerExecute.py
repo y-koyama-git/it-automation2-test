@@ -16,19 +16,22 @@
 from flask import g
 
 from common_libs.ansible_driver.classes.AnscConstClass import AnscConst
-from common_libs.ansible_driver.classes.AnsrConstClass import AnsrConst
+# from common_libs.ansible_driver.classes.AnsrConstClass import AnsrConst
 from common_libs.ansible_driver.classes.gitlab import GitLabAgent
 from common_libs.ansible_driver.classes.ansibletowerlibs.RestApiCaller import RestApiCaller
 from common_libs.ansible_driver.classes.ansibletowerlibs.ExecuteDirector import ExecuteDirector
 from common_libs.ansible_driver.classes.ansibletowerlibs.restapi_command.AnsibleTowerRestApiConfig import AnsibleTowerRestApiConfig
 from common_libs.ansible_driver.functions.ansibletowerlibs import AnsibleTowerCommonLib as FuncCommonLib
 
+
 def AnsibleTowerExecution(
     function, ansibleTowerIfInfo, TowerHostList, toProcessRow, exec_out_dir,
     UIExecLogPath, UIErrorLogPath, MultipleLogMark, MultipleLogFileJsonAry,
     status='', JobTemplatePropertyParameterAry=None, JobTemplatePropertyNameAry=None,
-    TowerProjectsScpPath={}, TowerInstanceDirPath={}, error_flag=0, warning_flag=0, dbAccess=None
+    TowerProjectsScpPath={}, TowerInstanceDirPath={}, dbAccess=None
 ):
+    error_flag = 0
+    warning_flag = 0
 
     # 業務処理開始
     restApiCaller = None
@@ -245,7 +248,7 @@ def AnsibleTowerExecution(
                 MultipleLogFileJsonAry = director.getMultipleLogFileJsonAry()
 
                 ################################################################
-                # 遅延チェック 
+                # 遅延チェック
                 ################################################################
                 if status not in [AnscConst.PROCESSING, AnscConst.COMPLETE, AnscConst.FAILURE, AnscConst.SCRAM, AnscConst.EXCEPTION]:
                     error_flag = 1

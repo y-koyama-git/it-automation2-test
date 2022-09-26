@@ -19,18 +19,18 @@ import time
 import json
 import yaml
 import glob
-import shutil
 
 from common_libs.common.dbconnect import DBConnectWs
 from common_libs.common.exception import AppException, ValidationException
-from common_libs.common.util import get_timestamp
+from common_libs.common.util import get_timestamp, file_encode
+from common_libs.loadtable import load_table
 from common_libs.ci.util import log_err
 
 from common_libs.ansible_driver.classes.AnsrConstClass import AnscConst, AnsrConst
 from common_libs.ansible_driver.classes.ansible_execute import AnsibleExecute
 from common_libs.ansible_driver.classes.SubValueAutoReg import SubValueAutoReg
 from common_libs.ansible_driver.classes.CreateAnsibleExecFiles import CreateAnsibleExecFiles
-from common_libs.ansible_driver.functions.util import getAnsibleExecutDirPath
+from common_libs.ansible_driver.functions.util import getAnsibleExecutDirPath, get_AnsibleDriverTmpPath
 from common_libs.ansible_driver.functions.ansibletowerlibs.AnsibleTowerExecute import AnsibleTowerExecution
 from common_libs.driver.functions import operation_LAST_EXECUTE_TIMESTAMP_update
 
@@ -107,7 +107,7 @@ def update_status_error(wsDb: DBConnectWs, execution_no):
         g.applogger.info(g.appmsg.get_log_message("MSG-10735", [execution_no]))
 
 
-def main_logic(wsDb: DBConnectWs, execution_no, driver_id):
+def main_logic(wsDb: DBConnectWs, execution_no, driver_id):  # noqa: C901
     """
     main logic
     
@@ -190,10 +190,20 @@ def main_logic(wsDb: DBConnectWs, execution_no, driver_id):
     # 実行結果から、処理対象の作業インスタンスのステータス更新
     if retBool is True:
         wsDb.db_transaction_start()
-        result = cm.update_execution_record(wsDb, execute_data)
+        if execute_data['FILE_INPUT']:
+            zip_file_name = execute_data['FILE_INPUT']
+            zip_tmp_save_path = get_AnsibleDriverTmpPath() + "/" + zip_file_name
+        else:
+            zip_file_name = ''
+            zip_tmp_save_path = ''
+        result = InstanceRecodeUpdate(wsDb, driver_id, execution_no, execute_data, 'FILE_INPUT', zip_file_name, zip_tmp_save_path)
+        # result = cm.update_execution_record(wsDb, execute_data)
         if result[0] is True:
             wsDb.db_commit()
             g.applogger.info(g.appmsg.get_log_message("BKY-10004", [execute_data["STATUS_ID"], execution_no]))
+        else:
+            wsDb.db_rollback()
+            log_err("InstanceRecodeUpdate", result[1])
     else:
         # 失敗
         return False, result_data
@@ -231,10 +241,20 @@ def main_logic(wsDb: DBConnectWs, execution_no, driver_id):
             status_update = True
 
             wsDb.db_transaction_start()
-            result = cm.update_execution_record(wsDb, clone_execute_data)
+            if execute_data['FILE_RESULT']:
+                zip_file_name = execute_data['FILE_RESULT']
+                zip_tmp_save_path = get_AnsibleDriverTmpPath() + "/" + zip_file_name
+            else:
+                zip_file_name = ''
+                zip_tmp_save_path = ''
+            result = InstanceRecodeUpdate(wsDb, driver_id, execution_no, execute_data, 'FILE_RESULT', zip_file_name, zip_tmp_save_path)
+            # result = cm.update_execution_record(wsDb, clone_execute_data)
             if result[0] is True:
                 wsDb.db_commit()
                 g.applogger.info(g.appmsg.get_log_message("BKY-10004", [clone_execute_data["STATUS_ID"], execution_no]))
+            else:
+                wsDb.db_rollback()
+                log_err("InstanceRecodeUpdate", result[1])
 
         if clone_execute_data['STATUS_ID'] in [ansc_const.COMPLETE, ansc_const.FAILURE, ansc_const.EXCEPTION, ansc_const.SCRAM]:
             break
@@ -258,9 +278,6 @@ def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if
     if len(tgt_exec_count.strip()) == 0:
         tgt_exec_count = '0'
 
-    file_subdir_zip_input = 'FILE_INPUT'
-    zip_temp_save_dir = getAnsibleExecutDirPath(driver_id, execution_no) + '/.tmp'
-
     # ANSIBLEインタフェース情報をローカル変数に格納
     ansible_exec_options = ans_if_info['ANSIBLE_EXEC_OPTIONS']
     ans_exec_user = ans_if_info['ANSIBLE_EXEC_USER']
@@ -281,10 +298,6 @@ def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if
 
     if result[0] is False:
         return False, execute_data, result[1]
-
-    tmp_array_dirs = ansdrv.getAnsibleWorkingDirectories(ansr_const.vg_OrchestratorSubId_dir, execution_no)
-    # print(tmp_array_dirs)
-    zip_data_source_dir = tmp_array_dirs[3]
 
     # ansible-playbookのオプションパラメータを確認
     movement_ansible_exec_option = getMovementAnsibleExecOption(wsDb, pattern_id)
@@ -311,34 +324,26 @@ def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if
 
         retBool, err_msg_ary, JobTemplatePropertyParameterAry, JobTemplatePropertyNameAry, param_arry_exc = result
 
+    tmp_array_dirs = ansdrv.getAnsibleWorkingDirectories(ansr_const.vg_OrchestratorSubId_dir, execution_no)
+    # print(tmp_array_dirs)
+    zip_data_source_dir = tmp_array_dirs[3]
+
     # ansible-playbookコマンド実行時のオプションパラメータを共有ディレクトリのファイルに出力
     with open(zip_data_source_dir + "/AnsibleExecOption.txt", "w") as f:
         f.write(option_parameter)
 
     # 投入データ用ZIPファイル作成
-    vg_exe_ins_input_file_dir = ansdrv.getTowerProjectsScpPath()
-    retBool, err_msg, zip_input_file, zip_input_file_dir = fileCreateZIPFile(
+    retBool, err_msg, zip_input_file = createTmpZipFile(
         execution_no,
         zip_data_source_dir,
-        vg_exe_ins_input_file_dir,
-        zip_temp_save_dir,
-        file_subdir_zip_input,
+        'FILE_INPUT',
         'InputData_')
 
-    # 投入データ用ZIP 履歴ファイル作成
     if retBool is True:
         execute_data["FILE_INPUT"] = zip_input_file
-
-        # 投入データ用ZIP 履歴ファイル作成
-        result = fileCreateHistoryZIPFile(
-            zip_input_file,
-            zip_input_file_dir)
-        if result[0] is False:
-            # ZIPファイル作成の作成に失敗しても、ログに出して次に進む
-            g.applogger.warn(g.appmsg.get_log_message("BKY-00004", ["fileCreateHistoryZIPFile", result[1]]))
     else:
         # ZIPファイル作成の作成に失敗しても、ログに出して次に進む
-        g.applogger.warn(g.appmsg.get_log_message("BKY-00004", ["fileCreateZIPFile", result[1]]))
+        g.applogger.warn(g.appmsg.get_log_message("BKY-00004", ["createTmpZipFile", err_msg]))
 
     # 準備で異常がなければ実行にうつる
     g.applogger.debug(g.appmsg.get_log_message("MSG-10761", [execution_no]))
@@ -355,8 +360,8 @@ def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if
             ansdrv.LocalLogPrint(err_msg)
             return False, execute_data, err_msg
     else:
-        uiexec_log_path = ansdrv.getAnsible_out_Dir() + "/exec.log"
-        uierror_log_path = ansdrv.getAnsible_out_Dir() + "/error.log"
+        uiexec_log_path = ansdrv.getAnsible_out_Dir() + "/exec.log"  # 使ってる？
+        uierror_log_path = ansdrv.getAnsible_out_Dir() + "/error.log"  # 使ってる？
         multiple_log_mark = ""
         multiple_log_file_json_ary = ""
 
@@ -371,8 +376,8 @@ def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if
                 ans_if_info,
                 [],
                 execute_data,
-                Ansible_out_Dir, uiexec_log_path,
-                uierror_log_path,
+                Ansible_out_Dir,
+                uiexec_log_path, uierror_log_path,
                 multiple_log_mark, multiple_log_file_json_ary,
                 "",
                 JobTemplatePropertyParameterAry,
@@ -386,8 +391,8 @@ def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if
                 ansc_const.DF_DELETERESOURCE_FUNCTION, ans_if_info,
                 [],
                 execute_data,
-                Ansible_out_Dir, uiexec_log_path,
-                uierror_log_path,
+                Ansible_out_Dir,
+                uiexec_log_path, uierror_log_path,
                 multiple_log_mark, multiple_log_file_json_ary)
             raise Exception(e)
 
@@ -400,12 +405,8 @@ def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if
 
 def instance_checkcondition(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if_info, execute_data, driver_id, tower_host_list):
     db_update_need = False
-    sql_exec_flag = 0
 
     execution_no = execute_data["EXECUTION_NO"]
-
-    file_subdir_zip_result = 'FILE_RESULT'
-    zip_temp_save_dir = getAnsibleExecutDirPath(driver_id, execution_no) + '/.tmp'
 
     # ANSIBLEインタフェース情報をローカル変数に格納
     ans_exec_user = ans_if_info['ANSIBLE_EXEC_USER']
@@ -413,9 +414,6 @@ def instance_checkcondition(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, a
 
     if len(str(ans_exec_user).strip()) == 0:
         ans_exec_user = 'root'
-
-    tmp_array_dirs = ansdrv.getAnsibleWorkingDirectories(ansr_const.vg_OrchestratorSubId_dir, execution_no)
-    zip_data_source_dir = tmp_array_dirs[4]
 
     # 実行エンジンを判定
     g.applogger.debug(g.appmsg.get_log_message("MSG-10741", [execution_no]))
@@ -427,10 +425,9 @@ def instance_checkcondition(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, a
         # 想定外エラーはログを出す
         if status == ansc_const.ansc_const.EXCEPTION:
             ansdrv.LocalLogPrint(ansible_execute.getLastError())
-            sql_exec_flag = 1
     else:
-        uiexec_log_path = ansdrv.getAnsible_out_Dir() + "/exec.log"
-        uierror_log_path = ansdrv.getAnsible_out_Dir() + "/error.log"
+        uiexec_log_path = ansdrv.getAnsible_out_Dir() + "/exec.log"  # 使ってる？
+        uierror_log_path = ansdrv.getAnsible_out_Dir() + "/error.log"  # 使ってる？
         multiple_log_mark = ""
         multiple_log_file_json_ary = ""
         Ansible_out_Dir = ansdrv.getAnsible_out_Dir()
@@ -441,10 +438,15 @@ def instance_checkcondition(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, a
             ans_if_info,
             tower_host_list,
             execute_data,
-            Ansible_out_Dir, uiexec_log_path,
-            uierror_log_path,
+            Ansible_out_Dir,
+            uiexec_log_path, uierror_log_path,
             multiple_log_mark, multiple_log_file_json_ary,
-            status)
+            status,
+            None,
+            None,
+            {},
+            {},
+            wsDb)
 
         # マルチログか判定
         if multiple_log_mark and execute_data['MULTIPLELOG_MODE'] != multiple_log_mark:
@@ -460,8 +462,7 @@ def instance_checkcondition(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, a
         # 7:想定外エラー
         # 8:緊急停止
         if status in [ansc_const.COMPLETE, ansc_const.FAILURE, ansc_const.EXCEPTION, ansc_const.SCRAM]:
-            # SQL(UPDATE)をEXECUTEする
-            sql_exec_flag = 1
+            pass
         else:
             status = -1
 
@@ -491,21 +492,24 @@ def instance_checkcondition(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, a
                 multiple_log_mark, multiple_log_file_json_ary,
                 status)
 
+        tmp_array_dirs = ansdrv.getAnsibleWorkingDirectories(ansr_const.vg_OrchestratorSubId_dir, execution_no)
+        zip_data_source_dir = tmp_array_dirs[4]
+
         # 結果データ用ZIPファイル作成
-        vg_exe_ins_result_file_dir = ansdrv.getTowerInstanceDirPath()
-        retBool, err_msg, zip_result_file, zip_result_file_dir = fileCreateZIPFile(
+        retBool, err_msg, zip_result_file = createTmpZipFile(
             execution_no,
             zip_data_source_dir,
-            vg_exe_ins_result_file_dir,
-            zip_temp_save_dir,
-            file_subdir_zip_result,
+            'FILE_RESULT',
             'ResultData_')
+
+        if retBool is True:
+            execute_data['FILE_RESULT'] = zip_result_file
+        else:
+            # ZIPファイル作成の作成に失敗しても、ログに出して次に進む
+            g.applogger.warn(g.appmsg.get_log_message("BKY-00004", ["createTmpZipFile", err_msg]))
 
     # statusによって処理を分岐
     if status != -1:
-        # SQL(UPDATE)をEXECUTEする
-        sql_exec_flag = 1
-
         execute_data["STATUS_ID"] = status
         execute_data["TIME_END"] = get_timestamp()
     else:
@@ -532,16 +536,8 @@ def instance_checkcondition(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, a
                 g.applogger.info(g.appmsg.get_log_message("MSG-10708", [execution_no]))
 
         if delay_flag == 1:
-            sql_exec_flag = 1
             # ステータスを「実行中(遅延)」とする
             execute_data["STATUS_ID"] = ansc_const.PROCESS_DELAYED
-
-    # 遅延中以外の場合に結果データ用ZIP 履歴ファイル作成
-    if sql_exec_flag == 1 and execute_data["STATUS_ID"] == ansc_const.PROCESS_DELAYED:
-        fileCreateHistoryZIPFile(
-            zip_result_file,
-            zip_result_file_dir)
-        execute_data['FILE_RESULT'] = zip_result_file
 
     # 実行エンジンを判定
     if ans_exec_mode != ansc_const.DF_EXEC_MODE_ANSIBLE:
@@ -1058,109 +1054,140 @@ def makeExtraVarsParameter(ext_var_string):
     return False
 
 
-def fileCreateZIPFile(execution_no, zip_data_source_dir, exe_ins_input_file_dir, zip_temp_save_dir, zip_subdir, zip_file_pfx):
+def createTmpZipFile(execution_no, zip_data_source_dir, zip_type, zip_file_pfx):
     ########################################
     # 処理内容
     #  入力/結果ZIPファイル作成
-    # パラメータ
+    #
+    # Arugments:
     #  execution_no:               作業実行番号
-    #  zip_data_source_dir:     inディレクトリ
-    #  exe_ins_input_file_dir:  ZIPファイル格納ホームディレクトリ
-    #                               root_dir_path . "/uploadfiles/21000xxxxx";
-    #  zip_temp_save_dir:       作業ディレクトリ      = root_dir_path . '/temp';
-    #  zip_subdir:              入力/出力ディレクトリ
-    #                                 入力:FILE_INPUT   出力:FILE_RESULT
-    #  zip_file_pfx:            入力/出力ファイルブラフィックス
+    #  zip_data_source_dir:        zipファイルの[圧縮元]の資材ディレクトリ
+    #  zip_type:                   入力/出力の区分
+    #                                   入力:FILE_INPUT   出力:FILE_RESULT
+    #  zip_file_pfx:               zipファイル名のプレフィックス
     #                                 入力:InputData_   出力:ResultData_
     #
-    #  ZIPファイルディレクトリ構成
-    #   /uploadfiles/21000xxxxx/FILE_INPUT/作業番号(10桁)/InputData_0000000001.zip
-    #   /uploadfiles/21000xxxxx/FILE_INPUT/作業番号(10桁)/old/履歴通番/InputData_0000000001.zip
-    #
-    # 戻り値
+    # Returns:
     #   true:正常　false:異常
     #   zip_file_name:           ZIPファイル名返却
-    #   utn_file_dir:            ZIPファイル格納ディレクトリ
-    #                                  exe_ins_input_file_dir/FILE_INPUT/作業実行番号
     ########################################
     err_msg = ""
     zip_file_name = ""
-    utn_file_dir = ""
+    zip_temp_save_dir = ""
 
     if len(glob(zip_data_source_dir + "/*")) > 0:
         # ----ZIPファイルを作成する
         zip_file_name = zip_file_pfx + execution_no + '.zip'
+        # 圧縮先
+        zip_temp_save_dir = get_AnsibleDriverTmpPath()
 
         # OSコマンドでzip圧縮する
         tmp_str_command = "cd " + zip_data_source_dir + "; zip -r " + zip_temp_save_dir + "/" + zip_file_name + " . -x ssh_key_files/* -x winrm_ca_files/*"  # noqa: E501
 
         os.system(tmp_str_command)
 
-        utn_file_dir = exe_ins_input_file_dir + "/" + zip_subdir + "/" + execution_no
-        if not os.path.isdir(utn_file_dir):
-            # ここ(UTNのdir)だけは再帰的に作成する
-            try:
-                os.makedirs(utn_file_dir)
-            except Exception as e:
-                False, g.appmsg.get_log_message("MSG-10250", [zip_file_pfx, utn_file_dir, e])
-            try:
-                os.chmod(utn_file_dir, 0o777)
-            except Exception as e:
-                False, g.appmsg.get_log_message("MSG-10251", [zip_file_pfx, utn_file_dir, e])
-
-        # zipファイルを正式な置き場に移動
-        os.rename(zip_temp_save_dir + "/" + zip_file_name, utn_file_dir + "/" + zip_file_name)
-
         # zipファイルの存在を確認
-        if not os.path.exists(utn_file_dir + "/" + zip_file_name):
-            err_msg = g.appmsg.get_log_message("MSG-10252", [zip_file_pfx, utn_file_dir + "/" + zip_file_name])
-            False, err_msg, zip_file_name, utn_file_dir
+        zip_temp_save_path = zip_temp_save_dir + "/" + zip_file_name
+        if not os.path.exists(zip_temp_save_path):
+            err_msg = g.appmsg.get_log_message("MSG-10252", [zip_type, zip_temp_save_path])
+            False, err_msg, zip_file_name, zip_temp_save_dir
 
-    # [処理]結果ディレクトリを圧縮(圧縮ファイル:{})
-    g.applogger.debug(g.appmsg.get_log_message("MSG-10783", [zip_file_pfx, utn_file_dir + "/" + zip_file_name]))
-    return True, err_msg, zip_file_name, utn_file_dir
+        # [処理]結果ディレクトリを圧縮(圧縮ファイル:{})
+        g.applogger.debug(g.appmsg.get_log_message("MSG-10783", [zip_temp_save_path]))
+    return True, err_msg, zip_file_name
 
 
-def fileCreateHistoryZIPFile(zip_file_name, utn_file_dir):
-    ########################################
-    # 処理内容
-    #  履歴用入力/結果ZIPファイル作成
-    # パラメータ
-    #  zip_file_name:           ZIPファイル名返却
-    #  utn_file_dir:            ZIPファイル格納ディレクトリ
-    #                                  exe_ins_input_file_dir/作業実行番号
-    #
-    #  ZIPファイルディレクトリ構成
-    #  　/uploadfiles/21000xxxxx/FILE_RESULT/作業番号(10桁)/ResultData_0000000001.zip
-    #  　/uploadfiles/21000xxxxx/FILE_RESULT/作業番号(10桁)/old/履歴通番(10桁)/ResultData_0000000001.zip
-    #
-    # 戻り値
-    #   true:正常　false:異常
-    ########################################
+def InstanceRecodeUpdate(wsDb, driver_id, execution_no, execute_data, update_column_name, zip_file_name, zip_tmp_save_path):
+    """
+    作業管理更新
 
-    tmp_jnl_file_dir_trunk = utn_file_dir + "/old"
-    tmp_jnl_file_dir_focus = tmp_jnl_file_dir_trunk + "/" + ""
+    ARGS:
+        wsDb:DB接クラス  DBConnectWs()
+        driver_id: ドライバ区分　AnscConst().DF_LEGACY_ROLE_DRIVER_ID
+        execution_no: 作業番号
+        execute_data: 更新内容配列
+        update_column_name: 更新対象のFileUpLoadColumn名
+        zip_file_name: zipファイル名
+        zip_tmp_save_path: zipファイルのパス
+    RETRUN:
+        True/False, errormsg
+    """
+    TableDict = {}
+    TableDict["MENU_REST"] = {}
+    TableDict["MENU_REST"][AnscConst.DF_LEGACY_DRIVER_ID] = "Not supported"
+    TableDict["MENU_REST"][AnscConst.DF_PIONEER_DRIVER_ID] = "Not supported"
+    TableDict["MENU_REST"][AnscConst.DF_LEGACY_ROLE_DRIVER_ID] = "execution_list_ansible_role"
+    TableDict["MENU_ID"] = {}
+    TableDict["MENU_ID"][AnscConst.DF_LEGACY_DRIVER_ID] = "Not supported"
+    TableDict["MENU_ID"][AnscConst.DF_PIONEER_DRIVER_ID] = "Not supported"
+    TableDict["MENU_ID"][AnscConst.DF_LEGACY_ROLE_DRIVER_ID] = "20412"
+    TableDict["TABLE"] = {}
+    TableDict["TABLE"][AnscConst.DF_LEGACY_DRIVER_ID] = "Not supported"
+    TableDict["TABLE"][AnscConst.DF_PIONEER_DRIVER_ID] = "Not supported"
+    TableDict["TABLE"][AnscConst.DF_LEGACY_ROLE_DRIVER_ID] = "T_ANSR_EXEC_STS_INST"
+    MenuName = TableDict["MENU_REST"][driver_id]
+    TableName = TableDict["TABLE"][driver_id]
+    MenuId = TableDict["MENU_ID"][driver_id]
 
-    # 履歴フォルダへコピー
-    if not os.path.exists(tmp_jnl_file_dir_trunk):
-        try:
-            os.makedirs(tmp_jnl_file_dir_trunk)
-            os.chmod(tmp_jnl_file_dir_trunk, 0o777)
-        except Exception:
-            False, g.appmsg.get_log_message("MSG-10253", [zip_file_name])
+    # loadtyable.pyで使用するCOLUMN_NAME_RESTを取得
+    RestNameConfig = {}
+    sql = "SELECT COL_NAME,COLUMN_NAME_REST FROM T_COMN_MENU_COLUMN_LINK WHERE MENU_ID = %s and DISUSE_FLAG = '0'"
+    restcolnamerow = wsDb.sql_execute(sql, [MenuId])
+    for row in restcolnamerow:
+        RestNameConfig[row["COL_NAME"]] = row["COLUMN_NAME_REST"]
 
-    if not os.path.exists(tmp_jnl_file_dir_focus):
-        try:
-            os.makedirs(tmp_jnl_file_dir_focus)
-            os.chmod(tmp_jnl_file_dir_focus, 0o777)
-        except Exception as e:
-            False, g.appmsg.get_log_message("MSG-10254", [zip_file_name, e])
+    # 更新対象レコードの最終更新日時をと取得
+    sql = "SELECT DATE_FORMAT(LAST_UPDATE_TIMESTAMP, '%%Y/%%m/%%d %%H:%%i:%%s.%%f') AS LAST_UPDATE_TIMESTAMP FROM "
+    + TableName + " WHERE EXECUTION_NO = %s"
+    # print(sql)
+    InstanceRows = wsDb.sql_execute(sql, [execution_no])
+    # マスタなので件数チェックしない
+    InstanceRow = InstanceRows[0]
 
-    try:
-        shutil.copy(utn_file_dir + "/" + zip_file_name, tmp_jnl_file_dir_focus + "/" + zip_file_name)
-    except Exception:
-        False, g.appmsg.get_log_message("MSG-10255", [zip_file_name])
+    ExecStsInstTableConfig = {}
 
-    # [処理]履歴ファイル作成(作業No.:{} ファイル名:{})
-    g.applogger.debug(g.appmsg.get_log_message("MSG-10784", [zip_file_name]))
-    return True, ""
+    # 作業番号
+    ExecStsInstTableConfig[RestNameConfig["EXECUTION_NO"]] = execution_no
+
+    # ステータス
+    if g.LANGUAGE == 'ja':
+        sql = "SELECT EXEC_STATUS_NAME_JA AS NAME FROM T_ANSC_EXEC_STATUS WHERE EXEC_STATUS_ID = '%s' AND DISUSE_FLAG = '0'"
+    else:
+        sql = "SELECT EXEC_STATUS_NAME_EN AS NAME FROM T_ANSC_EXEC_STATUS WHERE EXEC_STATUS_ID = '%s' AND DISUSE_FLAG = '0'"
+    rows = wsDb.sql_execute(sql, [execute_data["STATUS_ID"]])
+    # マスタなので件数チェックしない
+    row = rows[0]
+    ExecStsInstTableConfig[RestNameConfig["STATUS_ID"]] = row["NAME"]
+
+    # 入力データ/投入データ／出力データ/結果データ用zipデータ
+    uploadfiles = {}
+    ZipDataData = file_encode(zip_tmp_save_path)
+    if ZipDataData is False:
+        # エンコード失敗
+        msgstr = g.appmsg.get_api_message("499-00909", [])
+        return False, msgstr
+    uploadfiles = {RestNameConfig[update_column_name]: ZipDataData}
+
+    # 入力データ/投入データ／出力データ/結果データ
+    ExecStsInstTableConfig[RestNameConfig[update_column_name]] = zip_file_name
+
+    # 作業状況/終了日時
+    if update_column_name == "FILE_RESULT":
+        ExecStsInstTableConfig[RestNameConfig["TIME_END"]] = execute_data["TIME_END"]
+
+    # 最終更新日時
+    ExecStsInstTableConfig[RestNameConfig["LAST_UPDATE_TIMESTAMP"]] = InstanceRow['LAST_UPDATE_TIMESTAMP']
+
+    parameters = {
+        "parameter": ExecStsInstTableConfig,
+        "file": uploadfiles,
+        "type": "Update"
+    }
+
+    objmenu = load_table.loadTable(wsDb, MenuName)
+    retAry = objmenu.exec_maintenance(parameters, execution_no, "", False, False)
+    result = retAry[0]
+    if result is False:
+        return False, str(retAry)
+    else:
+        return True, ""
