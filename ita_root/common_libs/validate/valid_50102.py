@@ -32,9 +32,6 @@ def menu_define_valid(objdbca, objtable, option):
         if menu_name_ja == disabled_menu_name or menu_name_en == disabled_menu_name:
             retBool = False
             msg = g.appmsg.get_api_message("MSG-20002", [])
-    else:
-        retBool = False
-        msg = g.appmsg.get_api_message("MSG-20003", [])
     
     # 更新時のみ。メニュー作成状態が2（作成済み）の場合、メニュー名(rest)が変更されていないことをチェック。
     menu_name_rest = entry_parameter.get('menu_name_rest')

@@ -22,6 +22,11 @@ def menu_unique_constraint_valid(objdbca, objtable, option):
     entry_parameter = option.get('entry_parameter').get('parameter')
     menu_name = entry_parameter.get("menu_name")
     unique_constraint_item = entry_parameter.get("unique_constraint_item")
+    cmd_type = option.get('cmd_type')
+    
+    # 廃止/復活の場合はチェックをスキップする
+    if cmd_type == "Discard" or cmd_type == "Restore":
+        return retBool, msg, option
 
     # 値をリスト形式にフォーマット
     try:
