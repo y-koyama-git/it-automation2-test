@@ -15,7 +15,7 @@ version: '3.1'
 services:
   platform-auth:
     user: 1000:1000
-    image: exastro/exastro-common-auth-platform-auth:Integration-test.611f69.20220920-161954
+    image: exastro/exastro-common-auth-platform-auth:Integration-test.64653e.20220922-181308
     environment:
       - TZ=Asia/Tokyo
       - LISTEN_PORT=38000
@@ -55,7 +55,7 @@ services:
       - "0.0.0.0:38000:38000"
       - "0.0.0.0:38001:38001"
   keycloak:
-    image: exastro/exastro-common-auth-keycloak:Integration-test.611f69.20220920-161951
+    image: exastro/exastro-common-auth-keycloak:Integration-test.64653e.20220922-181417
     environment:
       - TZ=Asia/Tokyo
       - KEYCLOAK_USER=admin
@@ -70,7 +70,7 @@ services:
       platform-db:
         condition: service_healthy
   platform-db:
-    image: exastro/exastro-common-auth-platform-db:Integration-test.611f69.20220920-162107
+    image: exastro/exastro-common-auth-platform-db:Integration-test.64653e.20220922-181307
     healthcheck:
       test: mysqladmin ping --silent && mysql -u $${KEYCLOAK_DB_USER} -p$${KEYCLOAK_DB_PASSWORD} -D $${KEYCLOAK_DB_DATABASE} -e 'select 1;'
     volumes:
@@ -83,14 +83,14 @@ services:
       - KEYCLOAK_DB_PASSWORD=password
   platform-web:
     user: 1000:1000
-    image: exastro/exastro-common-auth-platform-web:Integration-test.611f69.20220920-161956
+    image: exastro/exastro-common-auth-platform-web:Integration-test.64653e.20220922-181307
     environment:
       - TZ=Asia/Tokyo
       - LISTEN_PORT=80
 
   platform-api:
     user: 1000:1000
-    image: exastro/exastro-common-auth-platform-api:Integration-test.611f69.20220920-161954
+    image: exastro/exastro-common-auth-platform-api:Integration-test.64653e.20220922-181431
     environment:
       - TZ=Asia/Tokyo
       - LISTEN_PORT=8000
