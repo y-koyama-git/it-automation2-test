@@ -50,6 +50,9 @@ class WrappedStringReplaceAdmin:
         strTailPattern = " }}"
         self.strReplacedString = ""
 
+        if strSourceString is None:
+            strSourceString = ""
+
         # 入力データを行単位に分解
         arry_list = strSourceString.split("\n")
         for lineString in arry_list:
