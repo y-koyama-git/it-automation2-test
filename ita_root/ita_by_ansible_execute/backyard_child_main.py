@@ -414,7 +414,7 @@ def instance_checkcondition(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, a
     ans_exec_user = ans_if_info['ANSIBLE_EXEC_USER']
     ans_exec_mode = ans_if_info['ANSIBLE_EXEC_MODE']
 
-    if len(str(ans_exec_user).strip()) == 0:
+    if not ans_exec_user or len(ans_exec_user.strip()) == 0:
         ans_exec_user = 'root'
 
     # 実行エンジンを判定
@@ -747,18 +747,18 @@ def getAnsiblePlaybookOptionParameter(wsDb, option_parameter):  # noqa: C901
     param_arr = re.split(r'((\s)-)', param)
     # 無効なオプションパラメータが設定されていないか判定
     for param_string in param_arr:
-        if param_string.strip() == '-__dummy__':
+        if param_string and param_string.strip() == '-__dummy__':
             continue
 
         hit = False
         chk_param_string = '-' + param_string + ' '
         for job_template_property_record in job_template_property_info:
-            key_string = job_template_property_record['KEY_NAME'].strip()
+            key_string = job_template_property_record['KEY_NAME'].strip() if job_template_property_record['KEY_NAME'] else ''
             if key_string != "":
                 if re.match(key_string, chk_param_string):
                     hit = True
                     break
-            key_string = job_template_property_record['SHORT_KEY_NAME'].strip()
+            key_string = job_template_property_record['SHORT_KEY_NAME'].strip() if job_template_property_record['SHORT_KEY_NAME'] else ''
             if key_string != "":
                 if re.match(key_string, chk_param_string):
                     hit = True
@@ -910,7 +910,7 @@ def getAnsiblePlaybookOptionParameter(wsDb, option_parameter):  # noqa: C901
                 n = n + 1
 
         # JobTemplatePropertyParameterAryの作成
-        if len(job_template_property_record['KEY_NAME'].strip()) != 0:
+        if job_template_property_record['KEY_NAME'] and len(job_template_property_record['KEY_NAME'].strip()) != 0:
             retBool, JobTemplatePropertyParameterAry = makeJobTemplatePropertyParameterAry(
                 job_template_property_record['KEY_NAME'],
                 job_template_property_record['PROPERTY_TYPE'],
@@ -920,7 +920,7 @@ def getAnsiblePlaybookOptionParameter(wsDb, option_parameter):  # noqa: C901
                 verbose_cnt)
             if retBool is False:
                 res_retBool = False
-        if len(job_template_property_record['SHORT_KEY_NAME'].strip()) != 0:
+        if job_template_property_record['SHORT_KEY_NAME'] and len(job_template_property_record['SHORT_KEY_NAME'].strip()) != 0:
             retBool, JobTemplatePropertyParameterAry = makeJobTemplatePropertyParameterAry(
                 job_template_property_record['SHORT_KEY_NAME'],
                 job_template_property_record['PROPERTY_TYPE'],
@@ -969,7 +969,7 @@ def makeJobTemplateProperty(key_string, property_type, param_arr, err_msg_arr, e
             excist_list.append(param_string)
 
             if property_type == ansc_const.DF_JobTemplateKeyValueProperty:
-                if len(property_arr[1].strip()) == 0:
+                if not property_arr[1] or len(property_arr[1].strip()) == 0:
                     err_msg_arr.append(g.appmsg.get_log_message("MSG-10553", [chk_param_string]))
                     res_retBool = False
                 elif re.search(r'-f', key_string):
@@ -982,19 +982,19 @@ def makeJobTemplateProperty(key_string, property_type, param_arr, err_msg_arr, e
 
             elif property_type == ansc_const.DF_JobTemplateVerbosityProperty:
                 property_arr = re.split(r'^(v)*', param_string)
-                if len(property_arr[1].strip()) != 0:
+                if property_arr[1] and len(property_arr[1].strip()) != 0:
                     err_msg_arr.append(g.appmsg.get_log_message("MSG-10555", [chk_param_string]))
                     res_retBool = False
                 else:
                     verbose_cnt = verbose_cnt + len(param_string.strip())
 
             elif property_type == ansc_const.DF_JobTemplatebooleanTrueProperty:
-                if len(property_arr[1]).strip() != 0:
+                if property_arr[1] and len(property_arr[1]).strip() != 0:
                     err_msg_arr.append(g.appmsg.get_log_message("MSG-10555", [chk_param_string]))
                     res_retBool = False
 
             elif property_type == ansc_const.DF_JobTemplateExtraVarsProperty:
-                if len(property_arr[1]).strip() == 0:
+                if not property_arr[1] or len(property_arr[1]).strip() == 0:
                     err_msg_arr.append(g.appmsg.get_log_message("MSG-10553", [chk_param_string]))
                     res_retBool = False
                 else:
@@ -1016,6 +1016,8 @@ def makeJobTemplatePropertyParameterAry(key_string, property_type, property_name
             continue
 
         proper_ary = re.split(r'^{}'.format(key_string), chk_param_string)
+        if not proper_ary[1]:
+            proper_ary[1] = ''
 
         if property_type == ansc_const.DF_JobTemplateKeyValueProperty:
             JobTemplatePropertyParameterAry[property_name] = proper_ary[1].strip()
