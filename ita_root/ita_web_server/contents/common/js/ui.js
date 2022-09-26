@@ -122,9 +122,14 @@ setUi() {
                 ui.sheetType( result );
             }
         }).catch(function( e ){
-            console.error( e );
+            console.error(e)
+            ui.onReady();
             if ( e.message !== 'Failed to fetch') {
-                fn.gotoErrPage( e.message );
+                if ( window.parent === window ) {
+                    fn.gotoErrPage( e.message );
+                } else {
+                    fn.iframeMessage( e.message );
+                }
             } else {
                 window.console.error( e.message );
             }
@@ -1333,7 +1338,7 @@ createMenu( mode ) {
     ];
     
     fn.loadAssets( assets ).then(function(){
-        const createMenu = new CreateMenu('#content');
+        const createMenu = new CreateMenu('#content', ui.rest.user );
         createMenu.setup();
         
         ui.onReady();

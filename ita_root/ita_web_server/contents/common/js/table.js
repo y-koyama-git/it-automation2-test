@@ -734,7 +734,7 @@ tableHtml() {
                 let name = fn.cv( column.column_name, '', true );
                            
                 // selectモードの場合ボタンカラムは非表示
-                if ( ( tb.mode === 'select' || tb.mode === 'execute' ) && column.column_type === 'ButtonColumn') {
+                if ( ( tb.mode === 'select' || tb.mode === 'execute' || tb.mode === 'history') && column.column_type === 'ButtonColumn') {
                     continue;
                 }
                 // ソート
@@ -1892,7 +1892,7 @@ filterSelectBoxHtml( list, name, rest ) {
     const select = [];
     for ( const item of list ) {
         const value = fn.cv( item, '', true );
-        select.push(`<option val="${value}">${value}</option>`)
+        select.push(`<option value="${value}">${value}</option>`)
     }
     return `<select class="filterSelect filterInput" name="${name}" data-type="select" data-rest="${rest}" multiple="multiple">${select.join('')}</select>`;
 }
@@ -2255,8 +2255,9 @@ cellHtml( parameter, columnKey, journal ) {
           columnName = columnInfo.column_name_rest,
           columnType = columnInfo.column_type;
     
-    // Button column
-    if ( columnInfo.column_type === 'ButtonColumn' && ['select', 'edit'].indexOf( tb.mode ) !== -1 ) {
+    // 一部のモードではボタンカラムを表示しない
+    const buttonColumnHide = ['select', 'edit', 'history'];
+    if ( columnInfo.column_type === 'ButtonColumn' && buttonColumnHide.indexOf( tb.mode ) !== -1 ) {
         return '';
     }
     
@@ -2426,6 +2427,10 @@ buttonAction( columnInfo, parameter ) {
                 }
                 buttonAttrs.action = 'positive';
                 buttonAttrs.redirect += item[1] + parameter[ item[2] ];
+            break;
+            case 'download':
+                buttonAttrs.action = 'default';
+                buttonAttrs.id = fn.cv( parameter[ item[3][0] ], '');
             break;
         }
     }
@@ -2697,14 +2702,8 @@ rowMenuHtml( list ) {
             { type: item.type, action: item.action, id: item.id });
         html.push(`<li class="tableRowMenuItem">${button}</li>`);
     }
-    return `
-    ${fn.html.icon('ellipsis_v')}
-    <div class="tableRowMenu">
-        <ul class="tableRowMenuList">
-            ${html.join('')}
-        </ul>
-    </div>
-    `;
+    return `${fn.html.icon('ellipsis_v')}
+    <div class="tableRowMenu"><ul class="tableRowMenuList">${html.join('')}</ul></div>`;
 }
 /*
 ##################################################
