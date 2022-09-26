@@ -5,126 +5,15 @@
 overflow: auto;
 height: calc( 100% - 48px );
 }
-.operationStatusSection {
-display: flex;
-flex-wrap: wrap;
-column-gap: 24px;
-row-gap: 8px;
+.operationStatusContainer .commonSection {
 max-width: 1280px; min-width: 800px;
-margin-bottom: 24px;
+margin-bottom: 24px; padding: 0;
 }
-.operationStatusTitle {
-position: sticky;
-top: 0;
-z-index: 20;
-display: flex;
-align-items: center;
-width: 100%;
-margin-top: 16px; padding: 8px 16px 8px 12px;
-background-color: var(--mainColor80);
-background-image: linear-gradient(rgba(255,255,255,.075), rgba(255,255,255,0));
-border: 1px solid var(--mainColor100);
-box-shadow: 0 1px 1px rgb(255 255 255 / 20%) inset;
-letter-spacing: 1px;
-text-shadow: 1px 1px 1px rgb(0 0 0 / 20%);
-font-size: 14px;
-color: var(--white100);
-}
-.operationStatusTitle::before {
-content: '';
-display: inline-block;
-width: 2px;
-height: 14px;
-margin-right: 12px;
-background-color: var(--accentColor100);
-box-shadow: 1px 1px 0 rgb(0 0 0 / 20%);
-}
-.operationStatusTitle:first-child {
-margin-top: 0;
-}
-.operationStatusSubTitle {
-position: relative;
-z-index: 0;
-margin-top: 8px; padding: 8px 16px 8px 32px;
-background-image: linear-gradient( var(--mainColor10), var(--mainColor15) );
-border: 1px solid var(--mainColor40);
-box-shadow: 0 1px 1px rgb(255 255 255 / 60%) inset;
-letter-spacing: 1px;
-color: var(--mainColor100);
-}
-.operationStatusSubTitle::before,
-.operationStatusSubTitle::after {
-content: '';
-display: block;
-position: absolute;
-left: 8px; top: 50%;
-transform: translateY(-50%);
-z-index: -1;
-width: 16px; height: 16px;
-}
-.operationStatusSubTitle::before {
-background-color: var(--mainColor40);
-}
-.operationStatusSubTitle::after {
-background-image: linear-gradient( transparent 6px, var(--mainColor10) 6px, var(--mainColor10) 10px, transparent 10px ),
-linear-gradient( 90deg, transparent 6px, var(--mainColor10) 6px, var(--mainColor10) 10px, transparent 10px );
-}
-.operationStatusBody {
-width: 100%;
-}
-.operationStatusBlock {
-display: flex;
-flex-direction: column;
-column-gap: 16px;
-row-gap: 8px;
-width: calc( 50% - 12px );
-}
-
-
-.operationStatusTable {
-width: 100%;
-border-collapse: collapse;
-}
-.operationStatusTh,
-.operationStatusTd {
-padding: 4px 12px;
-border: 1px solid var(--black40);
-vertical-align: middle;
-line-height: 1.5;
-letter-spacing: 1px;
-font-size: 12px;
-font-family: "Osaka-mono", "MS Gothic", "monospace";
-color: var(--black90);
-}
-.operationStatusTh {
+.operationStatusContainer .commonTh {
 width: 160px;
-background-color: #DDD;
-white-space: nowrap;
-text-align: left;
 }
-.operationStatusTd {
-background-color: var(--white100);
-white-space: pre-wrap;
-word-break: break-all;
-}
-.operationStatusMenuList {
-display: flex;
-justify-content: flex-end;
-gap: 16px;
-}
-.operationStatusMenuItem {
-flex: 1 1 100%; 
-max-width: 50%;
-}
-.operationStatusButton {
-height: 28px;
-line-height: 28px;
-font-size: 12px;
-}
-
-
 .movementArea {
-overflow: auto;
+overflow: hidden;
 position: relative;
 z-index: 0;
 height: 100px;
@@ -146,6 +35,14 @@ background-image: linear-gradient( rgba( 255,255,255,0 ), rgba( 255,255,255,.5 )
 border-top: 4px solid #EEE;
 border-bottom: 4px solid #EEE;
 }
+.movementArea[data-result="done"] {
+background-color: #EEF8E7;
+border-color: #58B60C;
+}
+.movementArea[data-result="error"] {
+background-color: #FCE6E6;
+border-color: #D00;
+}
 .node {
 left: 50%; top: 50%;
 z-index: 10;
@@ -162,4 +59,18 @@ width: 160px;
 overflow: hidden;
 white-space: nowrap;
 text-overflow: ellipsis;
+}
+.node-result[data-result-text="ERROR"]::before {
+background-color: #D00;
+}
+.node-result[data-result-text="DONE"]::before {
+background-color: #58B60C;
+}
+.node-result[data-result-text="STOP"]::before {
+background-color: #FD0;
+text-shadow: none;
+color: #000;
+}
+.animationEnd.node-result::before {
+animation: none!important;
 }
