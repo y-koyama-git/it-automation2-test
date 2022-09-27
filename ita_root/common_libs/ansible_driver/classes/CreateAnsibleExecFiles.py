@@ -11,6 +11,141 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
+#############################################################
+# __init__
+# getAnsibleWorkingDirectories
+# lineno
+# setITALocalVars
+# getAnsibleDriverCommonShellPath
+# CreateAnsibleWorkingDir
+# CreateAnsibleWorkingFiles
+# CreateHostsfile
+# DeleteUnuseData
+# InventryFileAddOptionCheckFormat
+# CreateRoleHostvarsfiles
+# CreateRoleHostvarsfile
+# CreatePlaybookfile
+# setAnsibleDriverID
+# getAnsibleDriverID
+# setAnsibleBaseDir
+# getAnsibleBaseDir
+# setAnsible_in_Dir
+# getAnsible_in_Dir
+# setAnsible_child_playbooks_Dir
+# getAnsible_child_playbooks_Dir
+# setPlaybook_child_playbooks_Dir
+# getPlaybook_child_playbooks_Dir
+# setAnsible_dialog_files_Dir
+# getAnsible_dialog_files_Dir
+# setAnsible_host_vars_Dir
+# getAnsible_host_vars_Dir
+# setAnsible_out_Dir
+# getAnsible_out_Dir
+# setAnsible_tmp_Dir
+# getAnsible_tmp_Dir
+# setAnsible_original_dialog_files_Dir
+# getAnsible_original_dialog_files_Dir
+# setAnsible_in_original_dialog_files_Dir
+# getAnsible_in_original_dialog_files_Dir
+# setAnsible_original_hosts_vars_Dir
+# getAnsible_original_hosts_vars_Dir
+# setAnsible_vault_hosts_vars_Dir
+# getAnsible_vault_hosts_vars_Dir
+# setAnsible_pioneer_template_hosts_vars_Dir
+# getAnsible_pioneer_template_hosts_vars_Dir
+# getAnsible_hosts_file
+# getAnsible_playbook_file
+# getAnsible_pioneer_template_host_var_file
+# getAnsible_host_var_file
+# getAnsible_org_host_var_file
+# LocalLogPrint
+# getDBHostList
+# getDBRoleVarList
+# getDBVarList
+# MultiArrayVarsToYamlFormatMain
+# getDBVarMultiArrayVarsList
+# getDBLegacyPlaybookList
+# getDBPioneerDialogFileList
+# addSystemvars
+# getDBTemplateMaster
+# setHostvarsfile_template_file_Dir
+# getHostvarsfile_template_file_Dir
+# setTemporary_file_Dir
+# getTemporary_file_Dir
+# setAnsible_template_files_Dir
+# getAnsible_template_files_Dir
+# getITA_template_file
+# getHostvarsfile_template_file_path
+# getAnsible_template_file
+# CreateTemplatefiles
+# getDBPatternList
+# getDBRolePackage
+# getDBLegactRoleList
+# CreateLegacyRolePlaybookfiles
+# CheckLegacyRolePlaybookfilesrs):
+# getAnsible_RolePlaybook_file
+# getRolePackageFile
+# getAnsible_RolePackage_file
+# setHostvarsfile_copy_file_Dir
+# getHostvarsfile_copy_file_Dir
+# setAnsible_copy_files_Dir
+# getAnsible_copy_files_Dir
+# getITA_copy_file
+# getHostvarsfile_copy_file_value
+# getAnsible_copy_file
+# CreateCopyfiles
+# getDBCopyMaster
+# makeHostVarsPath
+# makeHostVarsArray
+# MultiArrayVarsToYamlFormatSub
+# is_assoc
+# getDBGlobalVarsMaster
+# CreateLegacyRoleCopyFiles
+# setAnsible_upload_files_Dir
+# getAnsible_upload_files_Dir
+# setAnsible_ssh_key_files_Dir
+# getAnsible_ssh_key_files_Dir
+# getITA_ssh_key_file
+# getIN_ssh_key_file
+# CreateSSH_key_file
+# setAnsible_win_ca_files_Dir
+# getAnsible_win_ca_files_Dir
+# getITA_win_ca_file
+# getIN_win_ca_file
+# CreateWIN_cs_file
+# LegacyRoleCheckConcreteValueIsVarTemplatefile
+# LegacyRoleCheckConcreteValueIsVar
+# CreateLegacyRoleTemplateFiles
+# makeAnsibleVaultPassword
+# makeAnsibleVaultValue
+# getAnsibleExecuteUser
+# setAnsibleExecuteUser
+# HostVarEdit
+# MultilineValueEdit
+# chkMultilineValue
+# makeMultilineValue
+# ArrayTypeValue_encode
+# MultiValueEdit
+# isJsonString
+# getAnsible_vault_host_var_file
+# CreateDirectoryForCollectionProcess
+# makeDir
+# CreateMovementStatusFileVariables
+# CreatePioneerLANGVariables
+# CreateOperationVariables
+# CreateSSHAgentConfigInfoFile
+# setFileUploadCloumnFileEnv
+# AnsibleEnginVirtualenvPathCheck
+# getTowerProjectDirPath
+# getTowerInstanceDirPath
+# setTowerProjectDirPath
+# setAnsibleSideFilePath
+# setAnsibleTowerSideFilePath
+# setTowerProjectsScpPath
+# getTowerProjectsScpPath
+# CopyAnsibleConfigFile
+# CopysshAgentExpectfile
+#############################################################
 import os
 import shutil
 import re
@@ -27,6 +162,7 @@ from common_libs.ansible_driver.classes.AnsibleVaultClass import AnsibleVault
 from common_libs.ansible_driver.classes.VarStructAnalJsonConvClass import VarStructAnalJsonConv
 from common_libs.ansible_driver.classes.CheckAnsibleRoleFiles import CheckAnsibleRoleFiles, DefaultVarsFileAnalysis
 from common_libs.ansible_driver.classes.WrappedStringReplaceAdmin import WrappedStringReplaceAdmin
+
 from common_libs.ansible_driver.functions.util import getMovementAnsibleCnfUploadDirPath
 from common_libs.ansible_driver.functions.util import getRolePackageContentUploadDirPath
 from common_libs.ansible_driver.functions.util import getFileContentUploadDirPath
@@ -479,7 +615,7 @@ class CreateAnsibleExecFiles():
         os.mkdir(c_dirwk)
         os.chmod(c_dirwk, 0o777)
         self.setAnsible_copy_files_Dir(c_dirwk)
-
+        
         self.setHostvarsfile_copy_file_Dir(c_dirwk)
 
         # upload_filesディレクトリ作成
@@ -545,7 +681,8 @@ class CreateAnsibleExecFiles():
                 return False, mt_rolenames, mt_rolevars, mt_roleglobalvars, mt_role_rolepackage_id, mt_def_vars_list, mt_def_array_vars_list
 
             # inディレクトリにロールパッケージファイル(ZIP)展開
-            if roleObj.ZipextractTo(zipfile, self.getAnsible_in_Dir()) is False:
+            del_flag = False
+            if roleObj.ZipextractTo(zipfile, self.getAnsible_in_Dir(), del_flag) is False:
                 arryErrMsg = roleObj.getlasterror()
                 self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                    str(inspect.currentframe().f_lineno), arryErrMsg[0])
@@ -1445,7 +1582,7 @@ class CreateAnsibleExecFiles():
                 var_str += "{}: {}\n".format(var, val)
 
             # 変数の具体値に使用しているテンプレート変数の情報をホスト変数ファイルに出力
-            for var, val in self.lv_legacy_Role_tpf_vars_list[in_host_name]:
+            for var, val in self.lv_legacy_Role_tpf_vars_list[in_host_name].items():
                 # 変数名: 具体値
                 var_str += "{}: {}\n".format(var, val)
 
@@ -2317,7 +2454,8 @@ class CreateAnsibleExecFiles():
                         if row['SENSITIVE_FLAG'] == self.AnscObj.DF_SENSITIVE_ON:
                             indento_sp = ""
                             valut_value = ""
-                            make_vaultvalue = self.makeAnsibleVaultValue(row['VARS_ENTRY'], valut_value, indento_sp, row['ASSIGN_ID'])
+                            value = ky_decrypt(row['VARS_ENTRY'])
+                            make_vaultvalue = self.makeAnsibleVaultValue(value, valut_value, indento_sp, row['ASSIGN_ID'])
                             if make_vaultvalue is False:
                                 return False, mt_host_vars, mt_MultiArray_vars_list, mt_All_vars_list
 
@@ -2340,7 +2478,7 @@ class CreateAnsibleExecFiles():
                             # 複数行具体値をjson形式で収める
                             retAry = self.ArrayTypeValue_encode(mt_host_vars[row['HOST_NAME']][row['VARS_NAME']], row['VARS_ENTRY'])
                             mt_host_vars[row['HOST_NAME']][row['VARS_NAME']] = retAry[1]
-
+                            
             elif row['PTN_VARS_LINK_DISUSE_FLAG']:
                 # test-ok
                 msgstr = g.appmsg.get_api_message("MSG-10187", [row['ASSIGN_ID']])
@@ -2472,7 +2610,8 @@ class CreateAnsibleExecFiles():
             if row['SENSITIVE_FLAG'] == self.AnscObj.DF_SENSITIVE_ON:
                 indento_sp = ""
                 valut_value = ""
-                make_vaultvalue = self.makeAnsibleVaultValue(row['VARS_ENTRY'], valut_value, indento_sp, row['ASSIGN_ID'])
+                value = ky_decrypt(row['VARS_ENTRY'])
+                make_vaultvalue = self.makeAnsibleVaultValue(value, valut_value, indento_sp, row['ASSIGN_ID'])
                 if make_vaultvalue is False:
                     return False, mt_MultiArray_vars_list
 
@@ -2636,6 +2775,7 @@ class CreateAnsibleExecFiles():
 
         if len(rows) < 1:
             # テンプレートが未登録の場合のエラー処理は呼び側にまかせる。
+            # Pioneer/Legacy チェック確認
             return False, mt_tpf_key, mt_tpf_file_name, mt_tpf_role_only, mt_tpf_vars_struct
 
         row = rows[0]
@@ -3276,7 +3416,8 @@ class CreateAnsibleExecFiles():
         rows = self.lv_objDBCA.sql_execute(sql, [in_cpf_var_name])
         
         if len(rows) < 1:
-            # テンプレートが未登録の場合のエラー処理は呼び側にまかせる。
+            # ファイル管理が未登録の場合のエラー処理は呼び側にまかせる。
+            # Pionner/Legacyのチェック確認
             return False, mt_cpf_key, mt_cpf_file_name
 
         row = rows[0]
@@ -3896,7 +4037,7 @@ class CreateAnsibleExecFiles():
                                                       in_tpf_val_name,
                                                       in_tpf_key,
                                                       in_tpf_file_name,
-                                                      ina_tpf_vars_struct_array):
+                                                      ina_tpf_vars_struct_json):
         
         """
         テンプレートで使用しているITA独自変数がホストの変数に登録されているか判定
@@ -3906,7 +4047,7 @@ class CreateAnsibleExecFiles():
             in_tpf_val_name:      テンプレート変数名
             in_tpf_key:           テンプレートファイルPkey
             in_tpf_file_name:     テンプレートファイル名
-            ina_tpf_vars_struct_array: テンプレートで使用している変数の変数構造
+            ina_tpf_vars_struct_json: テンプレートで使用している変数の変数構造(JSON)
         Returns:
             True/False
         """
@@ -3920,16 +4061,25 @@ class CreateAnsibleExecFiles():
                                str(inspect.currentframe().f_lineno), msgstr)
             return False
 
-        # テンプレートに登録されている変数を抜出す。
+        # テンプレートに登録されているITA変数を抜出す。
         fd = open(templatefile)
         dataString = fd.read()
         fd.close()
 
+        objConv = VarStructAnalJsonConv()
+        retAry = objConv.TemplateVarStructAnalJsonLoads(ina_tpf_vars_struct_json)
+        # Vars_list = retAry[0]
+        # Array_vars_list = retAry[1]
+        # LCA_vars_use = retAry[2]
+        # Array_vars_use = retAry[3]
+        GBL_vars_info = retAry[4]
+        # VarVal_list = retAry[5]
+
         use_gbl_vars_list = {}
         # テンプレートに登録されているグローバル変数のデータベース登録確認
-        if 'GBL_vars_info' in ina_tpf_vars_struct_array:
-            if '1' in ina_tpf_vars_struct_array['GBL_vars_info']:
-                for var_name, dummy in ina_tpf_vars_struct_array['GBL_vars_info']['1'].items():
+        if isinstance(GBL_vars_info, dict):
+            if '1' in GBL_vars_info.keys():
+                for var_name, dummy in GBL_vars_info['1'].items():
                     if var_name not in self.lva_global_vars_list:
                         msgstr = g.appmsg.get_api_message("MSG-10530", [os.path.basename(templatefile), var_name])
                         self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
@@ -4041,18 +4191,22 @@ class CreateAnsibleExecFiles():
         # ファイル管理変数　{{ CPF_[a-zA-Z0-9_] }} を取出す
         keyFilter = r"{{[\s]CPF_[a-zA-Z0-9_]*[\s]}}"
         var_match = re.findall(keyFilter, in_var_val)
-        if len(var_match) > 0:
-            # 両端の{{}}は戻り値に含まれない
-            for var_name in var_match:
+        for var_name_str in var_match:
+            # 両端の{{}}を取り除く
+            keyFilter = r"CPF_[a-zA-Z0-9_]*"
+            var_names = re.findall(keyFilter, in_var_val)
+            for var_name in var_names:
                 if var_name not in mt_legacy_Role_cpf_vars_list:
                     vars_list[var_name] = "CPF"
 
         # テンプレート変数　{{ TPF_[a-zA-Z0-9_] }} を取出す
         keyFilter = r"{{[\s]TPF_[a-zA-Z0-9_]*[\s]}}"
         var_match = re.findall(keyFilter, in_var_val)
-        if len(var_match) > 0:
-            # 両端の{{}}は戻り値に含まれない
-            for var_name in var_match:
+        for var_name_str in var_match:
+            # 両端の{{}}を取り除く
+            keyFilter = r"TPF_[a-zA-Z0-9_]*"
+            var_names = re.findall(keyFilter, in_var_val)
+            for var_name in var_names:
                 if var_name not in mt_legacy_Role_tpf_vars_list:
                     vars_list[var_name] = "TPF"
 
@@ -4076,6 +4230,9 @@ class CreateAnsibleExecFiles():
                     key = retAry[1]
                     file_name = retAry[2]
                     if ret is False:
+                        msgstr = g.appmsg.get_api_message("MSG-10543", [var_name])
+                        self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
+                                            str(inspect.currentframe().f_lineno), msgstr)
                         return False, mt_legacy_Role_cpf_vars_list, mt_legacy_Role_tpf_vars_list
                     else:
                         # コピーファイル名が未登録の場合
@@ -4102,14 +4259,17 @@ class CreateAnsibleExecFiles():
                     tpf_key = ""
                     tpf_file_name = ""
                     role_only = ""
-                    tpf_vars_struct_array = {}
-                    ret = self.getDBTemplateMaster(tpf_var_name, tpf_key, tpf_file_name, role_only, tpf_vars_struct_array)
+                    tpf_vars_struct_json = {}
+                    retAry = self.getDBTemplateMaster(tpf_var_name, tpf_key, tpf_file_name, role_only, tpf_vars_struct_json)
                     ret = retAry[0]
                     tpf_key = retAry[1]
                     tpf_file_name = retAry[2]
                     role_only = retAry[3]
-                    tpf_vars_struct_array = retAry[4]
+                    tpf_vars_struct_json = retAry[4]
                     if ret is False:
+                        msgstr = g.appmsg.get_api_message("MSG-10531", [tpf_var_name])
+                        self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
+                                            str(inspect.currentframe().f_lineno), msgstr)
                         return False, mt_legacy_Role_cpf_vars_list, mt_legacy_Role_tpf_vars_list
                     else:
                         if not tpf_file_name:
@@ -4138,7 +4298,7 @@ class CreateAnsibleExecFiles():
                                                                              tpf_var_name,
                                                                              tpf_key,
                                                                              tpf_file_name,
-                                                                             tpf_vars_struct_array)
+                                                                             tpf_vars_struct_json)
                     if ret is False:
                         return False, mt_legacy_Role_cpf_vars_list, mt_legacy_Role_tpf_vars_list
 
@@ -4243,6 +4403,7 @@ class CreateAnsibleExecFiles():
         update_key = "key_{}_{}".format(in_system_id, in_pass)
 
         obj = AnsibleVault()
+        
         if not in_vaultpass:
 
             # パスワードが暗号化されているか判定
@@ -4255,7 +4416,7 @@ class CreateAnsibleExecFiles():
                 retAry = obj.Vault(self.lv_ans_if_info['ANSIBLE_CORE_PATH'],
                                    self.getAnsibleExecuteUser(),
                                    VaultPasswordFilePath,
-                                   ky_encrypt(in_pass),
+                                   in_pass,
                                    "",
                                    self.lv_engine_virtualenv_name,
                                    True)
@@ -4309,6 +4470,8 @@ class CreateAnsibleExecFiles():
 
         # unuse update_key = "key_{}_{}".format(in_assign_id, in_pass)
 
+        obj = AnsibleVault()
+
         if not in_vaultpass:
 
             # パスワードが暗号化されているか判定
@@ -4318,7 +4481,6 @@ class CreateAnsibleExecFiles():
             else:
                 # in_passはrot13+base64で暗号化されている
                 # unuse enc_in_pass = in_pass
-                obj = AnsibleVault()
                 VaultPasswordFilePath = obj.CreateVaultPasswordFilePath()
                 # in_passはrot13+base64で暗号化されている
                 obj.CreateVaultPasswordFile(VaultPasswordFilePath, self.lv_ans_if_info['ANSIBLE_VAULT_PASSWORD'])
@@ -4330,7 +4492,7 @@ class CreateAnsibleExecFiles():
                                    self.lv_engine_virtualenv_name, True)
                 ret = retAry[0]
                 out_vaultpass = retAry[1]
-                if ret != 0:
+                if ret is False:
                     # ansible-vault失敗
                     msgstr = g.appmsg.get_api_message("MSG-10626", [in_assign_id])
                     self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
@@ -4346,7 +4508,7 @@ class CreateAnsibleExecFiles():
             out_vaultpass = in_vaultpass
 
         # ansible-vaultで暗号化された文字列のインデントを調整
-        out_vaultpass = self.setValutPasswdIndento(out_vaultpass, in_indento)
+        out_vaultpass = obj.setValutPasswdIndento(out_vaultpass, in_indento)
 
         return out_vaultpass
 
@@ -4383,7 +4545,7 @@ class CreateAnsibleExecFiles():
         Returns:
             パディングされたホスト変数の具体値
         """
-        # josn形式(複数具体値)か判定
+        # josn形式(複数具体値)か判定        
         if self.isJsonString(val) is False:
             val = self.MultilineValueEdit(val, NumPadding)
         else:
@@ -4400,7 +4562,9 @@ class CreateAnsibleExecFiles():
         Returns:
             複数行複数具体値にインデントを設定した文字列
         """
+        # 具体値がNoneの場合に空白に置換える
         if not val:
+            val = ""
             return val
         strpad = "".ljust(NumPadding)
         if len(val.split("\n")) > 1:
@@ -4469,12 +4633,19 @@ class CreateAnsibleExecFiles():
         indstrpad = "".ljust(NumPadding + 2)
         ary = json.loads(jsonstr)
         for line in ary:
-            if len(line.split("\n")) != 1:
-                line = line.replace("\n", "\n" + indstrpad)
-                val += "\n{}- {}".format(strpad, line)
+            # 具体値が空か判定
+            if line:
+                # 空以外
+                if len(line.split("\n")) != 1:
+                    line = line.replace("\n", "\n" + indstrpad)
+                    val += "\n{}- {}".format(strpad, line)
+                else:
+                    val += "\n{}- {}".format(strpad, line)
             else:
+                # 空
+                line = ""
                 val += "\n{}- {}".format(strpad, line)
-
+                
         return val
 
     def isJsonString(self, json_str):
@@ -4777,7 +4948,7 @@ class CreateAnsibleExecFiles():
         if self.getAnsibleDriverID() == self.AnscObj.DF_LEGACY_DRIVER_ID or\
            self.getAnsibleDriverID() == self.AnscObj.DF_PIONEER_DRIVER_ID or\
            self.getAnsibleDriverID() == self.AnscObj.DF_LEGACY_ROLE_DRIVER_ID:
-            srcFilePath = "{}/{}/{}".format(getFileupLoadColumnPath('20410', 'file'), row['ASSIGN_ID'], row['VARS_ENTRY_FILE'])
+            srcFilePath = "{}/{}/{}".format(getFileupLoadColumnPath('20409', 'file'), row['ASSIGN_ID'], row['VARS_ENTRY_FILE'])
 
         if os.path.isfile(srcFilePath) is False:
             msgstr = g.appmsg.get_api_message("MSG-10171", [row['ASSIGN_ID']])
