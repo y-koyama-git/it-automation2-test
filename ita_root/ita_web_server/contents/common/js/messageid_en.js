@@ -25,10 +25,11 @@
 // メニュー定義・作成   01001～02000
 // Conductorクラス編集 02001～03000
 // Conductor作業確認   03001～04000
+// 作業実行            04001～05000
+// 作業状態確認        05001～06000
 // 
 //
-//
-//
+
 
 const getMessage = ( function() {
 
@@ -180,6 +181,42 @@ const getMessage = ( function() {
         'FTE01145' : "No patterns.",
         'FTE01146' : "Item name",
         'FTE01147' : "Item name(rest)",
+        'FTE05001' : "Execution No.",
+        'FTE05002' : "Check execution status",
+        'FTE05003' : "Schedule cancellation",
+        'FTE05004' : "Emergency stop",
+        'FTE05005' : "Execution No. has not been set.",
+        'FTE05006' : "Enter the execution No. and click the check execution status button, or",
+        'FTE05007' : "Work management page",
+        'FTE05008' : "Please press the Details button",
+        'FTE05009' : "Operation status",
+        'FTE05010' : "Execution type",
+        'FTE05011' : "Status",
+        'FTE05012' : "Execution engine",
+        'FTE05013' : "Caller conductor",
+        'FTE05014' : "Execution user",
+        'FTE05015' : "Populated data",
+        'FTE05016' : "Result data",
+        'FTE05017' : "Operation status",
+        'FTE05018' : "Scheduled date/time",
+        'FTE05019' : "Start date/time",
+        'FTE05020' : "End date/time",
+        'FTE05021' : "Operation",
+        'FTE05022' : "ID",
+        'FTE05023' : "Name",
+        'FTE05024' : "Confirmation of hosts to be worked on",
+        'FTE05025' : "Confirmation of assignment value",
+        'FTE05026' : "Movement",
+        'FTE05027' : "Delay timer (minute)",
+        'FTE05028' : "Movement detail confirmation",
+        'FTE05029' : "Dedicated information for ansible",
+        'FTE05030' : "Host specific format",
+        'FTE05031' : "WinRM connection",
+        'FTE05032' : "ansible.cfg",
+        'FTE05033' : "Ansible Core dedicated information",
+        'FTE05034' : "virtualenv",
+        'FTE05035' : "Ansible Automation Controller dedicated information",
+        'FTE05036' : "Execution environment",
     };
 
     return message;
