@@ -148,7 +148,7 @@ def external_valid_menu_after(objdbca, objtable, option):
     # 登録方式のチェック
     # key-value型などの確認。
     if boolExecuteContinue is True and boolSystemErrorFlag is False:
-        # 変数の無いパラメータシー都の場合何が選択されてもOK
+        # 変数の無いパラメータシー都の場合key,valueどちらが選択されてもOK
         if autoreg_only_item == 1:
             if rg_col_type == "1" or rg_col_type == "2":  # Value, Key
                 boolExecuteContinue = True
@@ -283,6 +283,8 @@ def external_valid_menu_after(objdbca, objtable, option):
                 intColSeqCombId = rg_col_seq_comb_id
                 intSeqOfAssign = rg_assign_seq
                 strColType = g.appmsg.get_api_message("MSG-10421")
+            else:
+                continue
             
             # ----変数タイプを取得
             intVarType = -1
@@ -428,7 +430,10 @@ def external_valid_menu_after(objdbca, objtable, option):
 
         # Key変数が必須の場合
         strQuery += " ("
-        strQuery += " MVMT_VAR_LINK_ID = %s"
+        if rg_vars_link_id:
+            strQuery += " MVMT_VAR_LINK_ID = '{}'".format(rg_vars_link_id)
+        else:
+            strQuery += " MVMT_VAR_LINK_ID is NULL"
         if rg_col_seq_comb_id:
             strQuery += " AND COL_SEQ_COMBINATION_ID = '{}'".format(rg_col_seq_comb_id)
         else:
@@ -440,8 +445,7 @@ def external_valid_menu_after(objdbca, objtable, option):
         strQuery += " )"
         aryForBind['MVMT_VAR_LINK_ID'] = rg_vars_link_id
         strQuery += " )"
-        retArray = objdbca.sql_execute(strQuery, bind_value_list=[aryForBind['COLUMN_ID'], aryForBind['MENU_ID'], aryForBind['MOVEMENT_ID'],
-                                                             aryForBind['MVMT_VAR_LINK_ID']])
+        retArray = objdbca.sql_execute(strQuery, bind_value_list=[aryForBind['COLUMN_ID'], aryForBind['MENU_ID'], aryForBind['MOVEMENT_ID']])
         if retArray:
             dupnostr = ""
             for row in retArray:
