@@ -1293,6 +1293,7 @@
     "MSG-40025": "The setting value of Case is duplicated. ({})",
     "MSG-40026": "[error] Movement: Failed to execute Movement. (MovementID:{},OperationID:{})",
     "MSG-40027": "[error] Conductor call: Failed to execute Conductor. (Conductor class ID: {}, operation ID: {})",
+    "MSG-40028": "Check the target Node of the connection destination.",
     "MSG-50001": "Cannot set itself as the parent menu.",
     "MSG-50002": "A menu group that has already been set as the parent menu.",
     "BKY-00001": "-",
