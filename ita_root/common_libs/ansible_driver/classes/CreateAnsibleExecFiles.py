@@ -152,6 +152,7 @@ import re
 import inspect
 import json
 import sys
+from dictknife import deepmerge
 from flask import g
 
 from common_libs.ansible_driver.classes.AnscConstClass import AnscConst
@@ -674,7 +675,7 @@ class CreateAnsibleExecFiles():
 
             # ロールパッケージファイル名(ZIP)の存在確認
             if os.path.isfile(zipfile) is False:
-                # test-ok
+                #
                 msgstr = g.appmsg.get_api_message("MSG-10262", [mt_role_rolepackage_id, role_package_file])
                 self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                    str(inspect.currentframe().f_lineno), msgstr)
@@ -787,7 +788,7 @@ class CreateAnsibleExecFiles():
                 ret = retAry[0]
                 msgstr = retAry[1]
                 if ret is False:
-                    # test-ok
+                    #
                     self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                        str(inspect.currentframe().f_lineno), msgstr)
                     return False, mt_rolenames, mt_rolevars, mt_roleglobalvars, mt_role_rolepackage_id, mt_def_vars_list, mt_def_array_vars_list
@@ -807,7 +808,7 @@ class CreateAnsibleExecFiles():
                 self.lva_cpf_vars_list = retAry[1]
                 strErrMsg = retAry[2]
                 if ret is False:
-                    # test エラーメッセージがオカシイ
+                    #
                     self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                        str(inspect.currentframe().f_lineno), strErrMsg)
                     return False, mt_rolenames, mt_rolevars, mt_roleglobalvars, mt_role_rolepackage_id, mt_def_vars_list, mt_def_array_vars_list
@@ -820,7 +821,7 @@ class CreateAnsibleExecFiles():
                 self.lva_tpf_vars_list = retAry[1]
                 strErrMsg = retAry[2]
                 if ret is False:
-                    # test エラーメッセージがオカシイ
+                    #
                     self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                        str(inspect.currentframe().f_lineno), strErrMsg)
                     return False, mt_rolenames, mt_rolevars, mt_roleglobalvars, mt_role_rolepackage_id, mt_def_vars_list, mt_def_array_vars_list
@@ -870,7 +871,7 @@ class CreateAnsibleExecFiles():
                 ret = retAry[0]
                 msgstr = retAry[1]
                 if ret is False:
-                    # test-ok
+                    #
                     self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                        str(inspect.currentframe().f_lineno), msgstr)
                     return False, mt_rolenames, mt_rolevars, mt_roleglobalvars, mt_role_rolepackage_id, mt_def_vars_list, mt_def_array_vars_list
@@ -1188,7 +1189,7 @@ class CreateAnsibleExecFiles():
             if self.getAnsibleDriverID() == self.AnscObj.DF_LEGACY_DRIVER_ID or self.getAnsibleDriverID() == self.AnscObj.DF_LEGACY_ROLE_DRIVER_ID:
                 # hosts_extra_argsの設定の有無を判定しhosts_extra_argsの内容を退避
                 if ina_hostinfolist[host_name]['HOSTS_EXTRA_ARGS']:
-                    # test-ok
+                    #
                     errorDetail = ""
                     retAry = self.InventryFileAddOptionCheckFormat(ina_hostinfolist[host_name]['HOSTS_EXTRA_ARGS'], hosts_extra_args, errorDetail)
                     ret = retAry[0]
@@ -1347,7 +1348,7 @@ class CreateAnsibleExecFiles():
         if CreateSSHAgentConfigInfoFile is True:
             ret = ky_file_encrypt(SSHAgentConfigInfoFile, SSHAgentConfigInfoFile)
             if ret is False:
-                # test-ok
+                #
                 msgstr = g.appmsg.get_api_message("MSG-10297", [])
                 self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                    str(inspect.currentframe().f_lineno), msgstr)
@@ -2078,7 +2079,7 @@ class CreateAnsibleExecFiles():
         sql = "SELECT ANS_HOST_DESIGNATE_TYPE_ID  FROM {} WHERE MOVEMENT_ID=%s AND DISUSE_FLAG='0'".format(self.AnscObj.vg_ansible_pattern_listDB)
         rows = self.lv_objDBCA.sql_execute(sql, [in_pattern_id])
         if len(rows) == 0:
-            # test-ok
+            #
             msgstr = g.appmsg.get_api_message("MSG-10382", [])
             self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                str(inspect.currentframe().f_lineno), msgstr)
@@ -2128,11 +2129,11 @@ class CreateAnsibleExecFiles():
                 login_auth_type = row['LOGIN_AUTH_TYPE']
                 if self.getAnsibleDriverID() == self.AnscObj.DF_LEGACY_DRIVER_ID or\
                    self.getAnsibleDriverID() == self.AnscObj.DF_LEGACY_ROLE_DRIVER_ID:
-                    # test-ok
+                    #
                     # Movement一覧でwinrm接続が選択されている場合
                     # 機器一覧の認証方式がパスワード認証(winrm)以外か判定
                     if in_winrm_id == "1" and login_auth_type != self.AnscObj.DF_LOGIN_AUTH_TYPE_PW_WINRM:
-                        # test-ok
+                        #
                         msgstr = g.appmsg.get_api_message("MSG-10207", [row['HOST_NAME']])
                         self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                            str(inspect.currentframe().f_lineno), msgstr)
@@ -2141,7 +2142,7 @@ class CreateAnsibleExecFiles():
                     # Movement一覧でwinrm接続が選択されていない場合
                     # 機器一覧の認証方式がパスワード認証(winrm)か判定
                     if in_winrm_id != "1" and login_auth_type == self.AnscObj.DF_LOGIN_AUTH_TYPE_PW_WINRM:
-                        # test-ok
+                        #
                         msgstr = g.appmsg.get_api_message("MSG-10208", [row['HOST_NAME']])
                         self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                            str(inspect.currentframe().f_lineno), msgstr)
@@ -2150,7 +2151,7 @@ class CreateAnsibleExecFiles():
                 if HostDesignateTypeId == "1":
                     # ホスト指定形式がIPの場合、機器一覧のIPアドレスが設定されているか判定
                     if not row['IP_ADDRESS']:
-                        # test-ok
+                        #
                         msgstr = g.appmsg.get_api_message("MSG-10690", [row['SYSTEM_ID']])
                         self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                            str(inspect.currentframe().f_lineno), msgstr)
@@ -2158,7 +2159,7 @@ class CreateAnsibleExecFiles():
                 else:
                     # ホスト指定形式がホストの場合、機器一覧のDNSホストが設定されているか判定
                     if not row['HOST_DNS_NAME']:
-                        # test-ok
+                        #
                         msgstr = g.appmsg.get_api_message("MSG-10691", [row['SYSTEM_ID']])
                         self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                            str(inspect.currentframe().f_lineno), msgstr)
@@ -2185,7 +2186,7 @@ class CreateAnsibleExecFiles():
 
                     # OS種別未入力判定
                     if not row['OS_TYPE_ID']:
-                        # test-ok
+                        #
                         msgstr = g.appmsg.get_api_message("MSG-10197", [row['SYSTEM_ID']])
                         self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                            str(inspect.currentframe().f_lineno), msgstr)
@@ -2196,7 +2197,7 @@ class CreateAnsibleExecFiles():
 
                 # Pioneer LNAG のIDを文字コードに置換する
                 if self.getAnsibleDriverID() == self.AnscObj.DF_PIONEER_DRIVER_ID:
-                    # test-ok
+                    #
                     if not row['PIONEER_LANG_ID']:
                         row['PIONEER_LANG_ID'] = "1"
                     lang_id2lang_str = {}
@@ -2212,7 +2213,7 @@ class CreateAnsibleExecFiles():
                         return False, mt_hostlist, mt_hostostypelist, mt_hostinfolist
                 # 接続タイプが選択されていることを確認
                 if not row['CREDENTIAL_TYPE_ID']:
-                    # test-ok
+                    #
                     msgstr = g.appmsg.get_api_message("MSG-10295", [row['HOST_NAME']])
                     self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                        str(inspect.currentframe().f_lineno), msgstr)
@@ -2230,21 +2231,21 @@ class CreateAnsibleExecFiles():
 
             # 作業対象ホスト管理に登録されているホストが機器一覧に未登録
             else:
-                # test-ok
+                #
                 msgstr = g.appmsg.get_api_message("MSG-10183", [row['PHO_LINK_ID'], row['SYSTEM_ID']])
                 self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                    str(inspect.currentframe().f_lineno), msgstr)
                 return False, mt_hostlist, mt_hostostypelist, mt_hostinfolist
 
         if len(rows) < 1:
-            # test-ok
+            #
             msgstr = g.appmsg.get_api_message("MSG-10184", [in_pattern_id])
             self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                str(inspect.currentframe().f_lineno), msgstr)
             return False, mt_hostlist, mt_hostostypelist, mt_hostinfolist
 
         if len(mt_hostlist) < 1:
-            # test-ok
+            #
             msgstr = g.appmsg.get_api_message("MSG-10185", [in_pattern_id])
             self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                str(inspect.currentframe().f_lineno), msgstr)
@@ -2363,7 +2364,6 @@ class CreateAnsibleExecFiles():
         tgt_row = []
         array_tgt_row = []
 
-        # test
         # ary = {}
         # ary = {'VARS_ENTRY_FILE': None,
         #       'ASSIGN_SEQ': 1,
@@ -2402,14 +2402,14 @@ class CreateAnsibleExecFiles():
                     # 多次元変数以外か判定
                     # if row['VARS_ATTRIBUTE_01'] == self.LC_VARS_ATTR_STRUCT:
                     #     if row['MEMBER_COL_COMB_DISUSE_FLAG'] != '0':
-                    #         # test-ok
+                    #         #
                     #         msgstr = g.appmsg.get_api_message("MSG-10452", [row['ASSIGN_ID']])
                     #         self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                     #                            str(inspect.currentframe().f_lineno), msgstr)
                     #         return False, mt_host_vars, mt_MultiArray_vars_list, mt_All_vars_list
                     #
                     #     if row['ARRAY_MEMBER_DISUSE_FLAG'] != '0':
-                    #         # test-ok
+                    #         #
                     #         msgstr = g.appmsg.get_api_message("MSG-10453", [row['ASSIGN_ID']])
                     #         self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                     #         str(inspect.currentframe().f_lineno), msgstr)
@@ -2418,7 +2418,7 @@ class CreateAnsibleExecFiles():
                     if row['VARS_ATTRIBUTE_01'] == self.LC_VARS_ATTR_LIST:
                         # 配列変数以外で代入順序がnullの場合はエラーにする。
                         if assign_seq is False:
-                            # test-ok
+                            #
                             msgstr = g.appmsg.get_api_message("MSG-10416", [row['ASSIGN_ID'], row['VARS_NAME']])
                             self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                                str(inspect.currentframe().f_lineno), msgstr)
@@ -2427,7 +2427,7 @@ class CreateAnsibleExecFiles():
                     if row['VARS_ATTRIBUTE_01'] == self.LC_VARS_ATTR_STD:
                         # 代入順序がnull以外の場合はエラーにする。
                         if assign_seq is True:
-                            # test-ok
+                            #
                             msgstr = g.appmsg.get_api_message("MSG-10442", [row['ASSIGN_ID'], row['VARS_NAME']])
                             self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                                str(inspect.currentframe().f_lineno), msgstr)
@@ -2438,7 +2438,7 @@ class CreateAnsibleExecFiles():
                         # 配列変数以外で代入順序が重複していないか判定する。
                         keyStr = "{}_{}_{}".format(row['HOST_NAME'], row['VARS_NAME'], row['ASSIGN_SEQ'])
                         if keyStr in vars_assign_seq_list:
-                            # test-ok
+                            #
                             msgstr = g.appmsg.get_api_message("MSG-10417", [row['ASSIGN_ID'],
                                                                             vars_assign_seq_list[keyStr],
                                                                             row['VARS_NAME'],
@@ -2480,7 +2480,7 @@ class CreateAnsibleExecFiles():
                             mt_host_vars[row['HOST_NAME']][row['VARS_NAME']] = retAry[1]
                             
             elif row['PTN_VARS_LINK_DISUSE_FLAG']:
-                # test-ok
+                #
                 msgstr = g.appmsg.get_api_message("MSG-10187", [row['ASSIGN_ID']])
                 self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                    str(inspect.currentframe().f_lineno), msgstr)
@@ -2659,14 +2659,15 @@ class CreateAnsibleExecFiles():
                     dup_key = vars_seq_list[keyStr]
 
                 if dup_key != 0:
-                    msgstr = g.appmsg.get_api_message("MSG-10443", [row['ASSIGN_ID'], dup_key, row['CHILD_VARS_NAME']])
+                    msgstr = g.appmsg.get_api_message("MSG-10443", [row['ASSIGN_ID'], dup_key, row['COL_COMBINATION_MEMBER_ALIAS']])
                     self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                        str(inspect.currentframe().f_lineno), msgstr)
                     return False, mt_MultiArray_vars_list
 
                 if row['VARS_NAME'] not in mt_MultiArray_vars_list:
                     mt_MultiArray_vars_list[row['VARS_NAME']] = {}
-                mt_MultiArray_vars_list[row['VARS_NAME']][row['HOST_NAME']] = {}
+                if row['HOST_NAME'] not in mt_MultiArray_vars_list[row['VARS_NAME']]:
+                    mt_MultiArray_vars_list[row['VARS_NAME']][row['HOST_NAME']] = {}
 
                 if not row['ASSIGN_SEQ']:
                     var_type = AnscConst.GC_VARS_ATTR_STD
@@ -2681,13 +2682,18 @@ class CreateAnsibleExecFiles():
                 # Noneを空白に設定 host_varsにNoneと出力される為
                 if not row['VARS_ENTRY']:
                     row['VARS_ENTRY'] = ""
-                # 多次元配列の具体値情報をホスト変数ファイルに戻す為の配列作成
-                ret = self.makeHostVarsArray(var_path_array,
+                # 多次元配列の具体値情報をホスト変数ファイルに戻す為の辞書作成
+                src_dict = mt_MultiArray_vars_list[row['VARS_NAME']][row['HOST_NAME']]
+
+                add_dict = self.makeHostVarsArray(var_path_array,
                                             0,
                                             mt_MultiArray_vars_list[row['VARS_NAME']][row['HOST_NAME']],
                                             var_type, row['VARS_ENTRY'],
                                             row['ASSIGN_SEQ'])
-                mt_MultiArray_vars_list[row['VARS_NAME']][row['HOST_NAME']] = ret
+                # 辞書をマージ
+                merge_dict = deepmerge(src_dict, add_dict)
+                mt_MultiArray_vars_list[row['VARS_NAME']][row['HOST_NAME']] = merge_dict
+                # mt_MultiArray_vars_list[row['VARS_NAME']][row['HOST_NAME']] = ret
             elif row['PTN_VARS_LINK_DISUSE_FLAG']:
                 msgstr = g.appmsg.get_api_message("MSG-10187", [row['ASSIGN_ID']])
                 self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
@@ -2947,7 +2953,6 @@ class CreateAnsibleExecFiles():
     
         # Movementロール紐付登録確認
         if len(rows) < 1:
-            # test-ok
             msgstr = g.appmsg.get_api_message("MSG-10180", [in_pattern_id])
             self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                str(inspect.currentframe().f_lineno), msgstr)
@@ -2994,14 +2999,13 @@ class CreateAnsibleExecFiles():
         role_package_list = []
         # ロールパッケージID登録確認
         if len(rows) < 1:
-            # test-ok
             msgstr = g.appmsg.get_api_message("MSG-10264", [in_role_package_id])
             self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                str(inspect.currentframe().f_lineno), msgstr)
             return False, role_package_list
 
         if not rows[0]['ROLE_PACKAGE_FILE']:
-            # test-ok
+            #
             msgstr = g.appmsg.get_api_message("MSG-10279", [in_role_package_id])
             self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                str(inspect.currentframe().f_lineno), msgstr)
@@ -3060,21 +3064,21 @@ class CreateAnsibleExecFiles():
 
             # ロール管理にロールが未登録の場合
             elif not row['DISUSE_FLAG']:
-                # test-ok
+                #
                 msgstr = g.appmsg.get_api_message("MSG-10265", row['MVMT_MATL_LINK_ID'])
                 self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                    str(inspect.currentframe().f_lineno), msgstr)
                 return False, mt_rolenamelist
             # DISUSE_FLAG = '1'は読み飛ばし
         if len(rows) < 1:
-            # test-ok
+            #
             msgstr = g.appmsg.get_api_message("MSG-10266", [in_pattern_id])
             self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                str(inspect.currentframe().f_lineno), msgstr)
             return False, mt_rolenamelist
         # 対象ロールの数を確認
         if len(mt_rolenamelist) < 1:
-            # test-ok
+            #
             msgstr = g.appmsg.get_api_message("MSG-10266", [in_pattern_id])
             self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                str(inspect.currentframe().f_lineno), msgstr)
@@ -3236,7 +3240,7 @@ class CreateAnsibleExecFiles():
         single_pkg = retAry[2]
         # [{ ROLE_PACKAGE_ID:? ,ROLE_ID: ?, INCLUDE_SEQ: ? }]
         if ret is not True:
-            # test-ok
+            #
             msgstr = g.appmsg.get_api_message("MSG-10023", [os.path.basename(__file__), self.lineno(), self.lineno()])
             self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                str(inspect.currentframe().f_lineno), msgstr)
@@ -3244,7 +3248,7 @@ class CreateAnsibleExecFiles():
 
         # 作業パターン詳細に複数のロールパッケージが紐づいていないか判定する。
         if single_pkg is False:
-            # test-ok
+            #
             msgstr = g.appmsg.get_api_message("MSG-10263", [])
             self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                str(inspect.currentframe().f_lineno), msgstr)
@@ -3561,8 +3565,13 @@ class CreateAnsibleExecFiles():
             #      array(1) {
             #      [0]=>
             #        string(5) "xxxxx2"
-            # enomoto
-            if var.isdigit():
+            var_int = False
+            if isinstance(var, int):
+                var_int = True
+            else:
+                if var.isdigit():
+                    var_int = True
+            if var_int is True:
                 # 具体値の配列の場合の判定
                 ret = self.is_assoc(val)
                 if ret == "I":
@@ -3571,7 +3580,7 @@ class CreateAnsibleExecFiles():
                     return False, mt_str_hostvars, mt_error_code, mt_line, mt_legacy_Role_cpf_vars_list, mt_legacy_Role_tpf_vars_list
 
             # 複数具体値か判定する。
-            if var.isdigit():
+            if var_int is True:
 
                 # 具体値があるか判定
                 if isinstance(val, dict) is False:
@@ -3735,10 +3744,13 @@ class CreateAnsibleExecFiles():
 
         for key, value in in_array.items():
             # 配列構造の場合に数値(index)と文字列が混在していないか判定
-            if key.isdigit() is False:
-                key_char = True
-            else:
+            if isinstance(key, int):
                 key_int = True
+            else:
+                if key.isdigit() is False:
+                    key_char = True
+                else:
+                    key_int = True
         if key_char is True and key_int is True:
             return -1
         if key_char is True:
@@ -3904,7 +3916,7 @@ class CreateAnsibleExecFiles():
         # SSH秘密鍵ファイルが存在しているか確認
         src_file = self.getITA_ssh_key_file(in_pkey, in_ssh_key_file)
         if os.path.isfile(src_file) is False:
-            # test-ok
+            #
             msgstr = g.appmsg.get_api_message("MSG-10526", [in_pkey, src_file])
             self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                str(inspect.currentframe().f_lineno), msgstr)
@@ -3917,7 +3929,7 @@ class CreateAnsibleExecFiles():
         # SSH認証ファイルをansible用ディレクトリにコピーする。
         ret = ky_file_decrypt(src_file, dst_file)
         if ret is False:
-            # test-ok
+            #
             msgstr = g.appmsg.get_api_message("MSG-10647", [src_file])
             self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                str(inspect.currentframe().f_lineno), msgstr)
@@ -4545,7 +4557,7 @@ class CreateAnsibleExecFiles():
         Returns:
             パディングされたホスト変数の具体値
         """
-        # josn形式(複数具体値)か判定        
+        # josn形式(複数具体値)か判定
         if self.isJsonString(val) is False:
             val = self.MultilineValueEdit(val, NumPadding)
         else:
@@ -4631,6 +4643,7 @@ class CreateAnsibleExecFiles():
         val = ""
         strpad = "".ljust(NumPadding)
         indstrpad = "".ljust(NumPadding + 2)
+        # 具体値が空の場合
         ary = json.loads(jsonstr)
         for line in ary:
             # 具体値が空か判定
@@ -4893,7 +4906,7 @@ class CreateAnsibleExecFiles():
         rows = self.lv_objDBCA.sql_execute(sql, [in_operation_id])
 
         if len(rows) != 1:
-            # test-ok
+            #
             msgstr = g.appmsg.get_api_message("MSG-10178", [os.path.basename(__file__), self.lineno()])
             self.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
                                str(inspect.currentframe().f_lineno), msgstr)
