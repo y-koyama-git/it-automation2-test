@@ -1723,9 +1723,10 @@ class loadTable():
 
                     # ID → VALUE 変換処理不要ならVALUE変更無し
                     if self.get_col_class_name(rest_key) not in ['PasswordColumn', 'SensitiveSingleTextColumn', 'SensitiveMultiTextColumn']:
-                        tmp_exec = objcolumn.convert_value_output(col_val)
-                        if tmp_exec[0] is True:
-                            col_val = tmp_exec[2]
+                        if mode not in ['input']:
+                            tmp_exec = objcolumn.convert_value_output(col_val)
+                            if tmp_exec[0] is True:
+                                col_val = tmp_exec[2]
                     else:
                         # 内部処理用
                         if mode in ['input']:
