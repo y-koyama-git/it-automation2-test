@@ -3044,10 +3044,8 @@ function setRerefenceItemSelectModalBody( itemList, initData, okCallback, cancel
                               + '</thead>'
                               + '<tbody>';
 
-
-          for ( const key in itemList ) {
-            const itemName = itemList[key],
-                  itemID = key,
+          itemList.forEach(itemName => {
+            const itemID = itemName['reference_id'],
                   //checkValue = ( valueType === 'name')? itemName: itemID,
                   checkValue = itemName,
                   checkedFlag = ( checkList.indexOf( checkValue['column_name_rest'] ) !== -1 )? ' checked': '',
@@ -3056,8 +3054,8 @@ function setRerefenceItemSelectModalBody( itemList, initData, okCallback, cancel
             itemSelectHTML += '<tr>'
             + '<th><input value="' + itemName['column_name_rest'] + '" class="modal-checkbox" type="checkbox"' + checkedFlag + '></th>'
             + '<th>' + itemName['column_name'] + '</th><td>' + itemName['column_name_rest'] + '</td></tr>';
-          }
-
+          })
+          
           itemSelectHTML += ''
               + '</tbody>'
             + '</table>'
