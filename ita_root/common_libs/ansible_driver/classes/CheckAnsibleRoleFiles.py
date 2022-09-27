@@ -1186,6 +1186,10 @@ class CheckAnsibleRoleFiles():
 
         boolRet = True
         yaml = pathlib.Path(Filename).read_bytes()
+        # 変数定義ファイルが空の場合
+        if len(yaml) == 0:
+            return boolRet, strErrMsg
+            
         encode = detect(yaml)
         encode = encode['encoding'].upper()
         if encode in ["ASCII", "UTF-8"]:
