@@ -860,7 +860,7 @@ def create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_colum
 
 
 # エクセルヘッダー部のカラム情報を作成する(変更履歴ver)
-def create_column_info_trace_history(lang, ws, startRow, startClm, retList_t_common_menu_column_link, menu_table_link_list):
+def create_column_info_trace_history(lang, ws, startRow, startClm, retList_t_common_menu_column_link):
     # 文字色
     font_bl = openpyxl.styles.Font(name='メイリオ', size=8, color='000000')
     font_wh = openpyxl.styles.Font(name='メイリオ', size=8, color='FFFFFF')
@@ -888,12 +888,8 @@ def create_column_info_trace_history(lang, ws, startRow, startClm, retList_t_com
         # 廃止フラグ
         msg = g.appmsg.get_api_message('MSG-30015')
         if column_name == msg:
-            if discard_flag:
-                column_num = 3
-                column_flg = True
-            else:
-                startClm -= 1
-                continue
+            column_num = 3
+            column_flg = True
         else:
             column_num = startClm + i + 1
             if column_flg:
@@ -1406,7 +1402,7 @@ def collect_excel_journal(objdbca, organization_id, workspace_id, menu, menu_rec
     ws = make_template_trace_history(ws, depth)
     
     # エクセルヘッダー部のカラム情報を作成する
-    ws, gray_column = create_column_info_trace_history(lang, ws, startRow, startClm, retList_t_common_menu_column_link, menu_table_link_list)
+    ws, gray_column = create_column_info_trace_history(lang, ws, startRow, startClm, retList_t_common_menu_column_link)
     
     # 明細部編集
     # 明細1行目編集
