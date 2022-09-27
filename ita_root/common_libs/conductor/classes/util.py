@@ -374,7 +374,7 @@ class ConductorCommonLibs():
                     block_err_msg_args.append('note is too long')
 
             if len(block_err_msg_args) != 0:
-                err_msg_args.append('{}({})'.format(key, ','.join(block_err_msg_args)))
+                err_msg_args.append('{}:{}'.format(key, ','.join(block_err_msg_args)))
             else:
                 # make node_id_list
                 self._node_id_list.append(block_1['id'])
@@ -436,6 +436,7 @@ class ConductorCommonLibs():
                 err_msg_args.append(','.join(block_err_msg_args))
 
         if len(err_msg_args) != 0:
+            return False, g.appmsg.get_api_message('MSG-40028')
             return False, ','.join(err_msg_args)
         else:
             return True,
