@@ -136,7 +136,7 @@ def child_process_exist_check(wsDb):
                     "STATUS_ID": ansc_const.EXCEPTION,
                     "TIME_END": time_stamp,
                 }
-                if execute_data["TIME_START"] is None:
+                if not execute_data["TIME_START"]:
                     data["TIME_START"] = time_stamp
                 result = cm.update_execution_record(wsDb, data)
                 if result[0] is True:

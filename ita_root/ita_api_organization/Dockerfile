@@ -52,6 +52,7 @@ RUN dnf install -y \
     python-dotenv \
     openpyxl \
     chardet \
+    dictknife \
 &&  pip3.9 install \
     connexion[swagger-ui] \
 &&  groupadd $GROUPNAME \

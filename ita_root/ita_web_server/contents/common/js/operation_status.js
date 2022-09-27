@@ -160,10 +160,10 @@ operationStatusInit() {
     
     const menu = {
         Main: [
-            { input: { className: 'operationId', value: op.id, before: '作業No.' } },
-            { button: { icon: 'check', text: '作業状態確認', type: 'check', action: 'default', width: '200px'} },
-            { button: { icon: 'cal_off', text: '予約取消', type: 'cansel', action: 'default', width: '200px'}, display: 'none', separate: true },
-            { button: { icon: 'stop', text: '緊急停止', type: 'scram', action: 'danger', width: '200px'}, display: 'none', separate: true }
+            { input: { className: 'operationId', value: op.id, before: getMessage.FTE05001 } },
+            { button: { icon: 'check', text: getMessage.FTE05002, type: 'check', action: 'default', width: '200px'} },
+            { button: { icon: 'cal_off', text: getMessage.FTE05003, type: 'cansel', action: 'default', width: '200px'}, display: 'none', separate: true },
+            { button: { icon: 'stop', text: getMessage.FTE05004, type: 'scram', action: 'danger', width: '200px'}, display: 'none', separate: true }
         ],
         Sub: []
     };
@@ -211,9 +211,9 @@ operationMessage() {
     
     const html = `<div class="contentMessage">
         <div class="contentMessageInner">
-            <span class="icon icon-circle_info"></span>作業No.が未設定です。<br>
-            作業No.を入力し作業状態確認ボタンを押下するか、<br>
-            <a href="?menu=execution_list_ansible_role">作業管理ページ</a>にて詳細ボタンを押下してください。
+            <span class="icon icon-circle_info"></span>` + getMessage.FTE05005 + `<br>
+            ` + getMessage.FTE05006 + `<br>
+            <a href="?menu=execution_list_ansible_role">` + getMessage.FTE05007 + `</a>` + getMessage.FTE05008 + `
         </div>
     </div>`;
     
@@ -236,74 +236,74 @@ operationStatus() {
     const html = `
     <div class="commonSection">
         <div class="commonBlock">
-            <div class="commonTitle">作業ステータス</div>
+            <div class="commonTitle">` + getMessage.FTE05009 + `</div>
             <div class="commonBody">
                 <table class="commonTable">
                     <tbody class="commonTbody">
                         <tr class="commonTr">
-                            <th class="commonTh">作業No.</th>
+                            <th class="commonTh">` + getMessage.FTE05001 + `</th>
                             <td class="commonTd"><span class="operationStatusData" data-type="execution_no"></span></td>
                         </tr>
                         <tr class="commonTr">
-                            <th class="commonTh">実行種別</th>
+                            <th class="commonTh">` + getMessage.FTE05010 + `</th>
                             <td class="commonTd"><span class="operationStatusData" data-type="execution_type"></span></td>
                         </tr>
                         <tr class="commonTr">
-                            <th class="commonTh">ステータス</th>
+                            <th class="commonTh">` + getMessage.FTE05011 + `</th>
                             <td class="commonTd"><span class="operationStatusData" data-type="status"></span></td>
                         </tr>
                         <tr class="commonTr">
-                            <th class="commonTh">実行エンジン</th>
+                            <th class="commonTh">` + getMessage.FTE05012 + `</th>
                             <td class="commonTd"><span class="operationStatusData" data-type="execution_engine"></span></td>
                         </tr>
                         <tr class="commonTr">
-                            <th class="commonTh">呼出元Conductor</th>
+                            <th class="commonTh">` + getMessage.FTE05013 + `</th>
                             <td class="commonTd"><span class="operationStatusData" data-type="caller_conductor"></span></td>
                         </tr>
                         <tr class="commonTr">
-                            <th class="commonTh">実行ユーザ</th>
+                            <th class="commonTh">` + getMessage.FTE05014 + `</th>
                             <td class="commonTd"><span class="operationStatusData" data-type="execution_user"></span></td>
                         </tr>
                         <tr class="commonTr">
-                            <th class="commonTh">投入データ</th>
+                            <th class="commonTh">` + getMessage.FTE05015 + `</th>
                             <td class="commonTd"><span class="operationStatusData" data-type="populated_data"></span></td>
                         </tr>
                         <tr class="commonTr">
-                            <th class="commonTh">結果データ</th>
+                            <th class="commonTh">` + getMessage.FTE05016 + `</th>
                             <td class="commonTd"><span class="operationStatusData" data-type="result_data"></span></td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-            <div class="commonSubTitle">作業状況</div>
+            <div class="commonSubTitle">` + getMessage.FTE05017 + `</div>
             <div class="commonBody">
                 <table class="commonTable">
                     <tbody class="commonTbody">
                         <tr class="commonTr">
-                            <th class="commonTh">予約日時</th>
+                            <th class="commonTh">` + getMessage.FTE05018 + `</th>
                             <td class="commonTd"><span class="operationStatusData" data-type="scheduled_date_time"></span></td>
                         </tr>
                         <tr class="commonTr">
-                            <th class="commonTh">開始日時</th>
+                            <th class="commonTh">` + getMessage.FTE05019 + `</th>
                             <td class="commonTd"><span class="operationStatusData" data-type="start_date_time"></span></td>
                         </tr>
                         <tr class="commonTr">
-                            <th class="commonTh">終了日時</th>
+                            <th class="commonTh">` + getMessage.FTE05020 + `</th>
                             <td class="commonTd"><span class="operationStatusData" data-type="end_date_time"></span></td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-            <div class="commonTitle">オペレーション</div>
+            <div class="commonTitle">` + getMessage.FTE05021 + `</div>
             <div class="commonBody">
                 <table class="commonTable">
                     <tbody class="commonTbody">
                         <tr class="commonTr">
-                            <th class="commonTh">ID</th>
+                            <th class="commonTh">` + getMessage.FTE05022 + `</th>
                             <td class="commonTd"><span class="operationStatusData" data-type="operation_id"></span></td>
                         </tr>
                         <tr class="commonTr">
-                            <th class="commonTh">名称</th>
+                            <th class="commonTh">` + getMessage.FTE05023 + `</th>
                             <td class="commonTd"><span class="operationStatusData" data-type="operation_name"></span></td>
                         </tr>
                     </tbody>
@@ -312,16 +312,16 @@ operationStatus() {
             <div class="commonBody">
                 <ul class="commonMenuList">
                     <li class="commonMenuItem">
-                        ${fn.html.iconButton('detail', '作業対象ホスト確認', 'hostButton commonButton itaButton', { type: 'host', action: 'default', style: 'width:100%', disabled: 'disabled'})}
+                        ${fn.html.iconButton('detail', getMessage.FTE05024, 'hostButton commonButton itaButton', { type: 'host', action: 'default', style: 'width:100%', disabled: 'disabled'})}
                     </li>
                     <li class="commonMenuItem">
-                        ${fn.html.iconButton('detail', '代入値確認', 'valueButton commonButton itaButton', { type: 'value', action: 'default', style: 'width:100%', disabled: 'disabled'})}
+                        ${fn.html.iconButton('detail', getMessage.FTE05025, 'valueButton commonButton itaButton', { type: 'value', action: 'default', style: 'width:100%', disabled: 'disabled'})}
                     </li>
                 </ul>
             </div>
         </div>
         <div class="commonBlock">
-            <div class="commonTitle">Movement</div>
+            <div class="commonTitle">` + getMessage.FTE05026 + `</div>
             <div class="movementArea" data-mode="">
                 <div class="movementAreaInner">
                     <div class="node ${Status.string[op.menu].movementClassName}">
@@ -361,15 +361,15 @@ operationStatus() {
                 <table class="commonTable">
                     <tbody class="commonTbody">
                         <tr class="commonTr">
-                            <th class="commonTh">ID</th>
+                            <th class="commonTh">` + getMessage.FTE05022 + `</th>
                             <td class="commonTd"><span class="operationStatusData" data-type="movement_id"></span></td>
                         </tr>
                         <tr class="commonTr">
-                            <th class="commonTh">名称</th>
+                            <th class="commonTh">` + getMessage.FTE05023 + `</th>
                             <td class="commonTd"><span class="operationStatusData" data-type="movement_name"></span></td>
                         </tr>
                         <tr class="commonTr">
-                            <th class="commonTh">遅延タイマー（分）</th>
+                            <th class="commonTh">` + getMessage.FTE05027 + `</th>
                             <td class="commonTd"><span class="operationStatusData" data-type="delay_timer"></span></td>
                         </tr>
                     </tbody>
@@ -378,46 +378,46 @@ operationStatus() {
             <div class="commonBody">
                 <ul class="commonMenuList">
                     <li class="commonMenuItem">
-                        ${fn.html.iconButton('detail', 'Movement詳細確認', 'commonButton itaButton', { type: 'movement', action: 'default', style: 'width:100%'})}
+                        ${fn.html.iconButton('detail', getMessage.FTE05028, 'commonButton itaButton', { type: 'movement', action: 'default', style: 'width:100%'})}
                     </li>
                 </ul>
             </div>
-            <div class="commonSubTitle">Ansible利用情報</div>
+            <div class="commonSubTitle">` + getMessage.FTE05029 + `</div>
             <div class="commonBody">
                 <table class="commonTable">
                     <tbody class="commonTbody">
                         <tr class="commonTr">
-                            <th class="commonTh">ホスト指定形式</th>
+                            <th class="commonTh">` + getMessage.FTE05030 + `</th>
                             <td class="commonTd"><span class="operationStatusData" data-type="host_specific_format"></span></td>
                         </tr>
                         <tr class="commonTr">
-                            <th class="commonTh">WinRM接続</th>
+                            <th class="commonTh">` + getMessage.FTE05031 + `</th>
                             <td class="commonTd"><span class="operationStatusData" data-type="winrm_connection"></span></td>
                         </tr>
                         <tr class="commonTr">
-                            <th class="commonTh">ansible.cfg</th>
+                            <th class="commonTh">` + getMessage.FTE05032 + `</th>
                             <td class="commonTd"><span class="operationStatusData" data-type="ansible_cfg"></span></td>
                         </tr>
-                     </tbody>
+                    </tbody>
                 </table>
             </div>
-            <div class="commonSubTitle">Ansible Core利用情報</div>
+            <div class="commonSubTitle">` + getMessage.FTE05033 + `</div>
             <div class="commonBody">
                 <table class="commonTable">
                     <tbody class="commonTbody">
                         <tr class="commonTr">
-                            <th class="commonTh">virtualenv</th>
+                            <th class="commonTh">` + getMessage.FTE05034 + `</th>
                             <td class="commonTd"><span class="operationStatusData" data-type="ansible_core_virtualenv"></span></td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-            <div class="commonSubTitle">Ansible Automation Controller利用情報</div>
+            <div class="commonSubTitle">` + getMessage.FTE05035 + `</div>
             <div class="commonBody">
                 <table class="commonTable">
                     <tbody class="commonTbody">
                         <tr class="commonTr">
-                            <th class="commonTh">実行環境</th>
+                            <th class="commonTh">` + getMessage.FTE05036 + `</th>
                             <td class="commonTd"><span class="commonData" data-type="execution_environment"></span></td>
                         </tr>
                     </tbody>
@@ -439,17 +439,17 @@ operationStatus() {
         switch ( type ) {
             case 'movement': {
                 const movementId = fn.cv( op.info.execution_list.parameter.movement_id, '');
-                target.title = 'Movement詳細確認';
+                target.title = getMessage.FTE05028;
                 target.menu = Status.string[ op.menu ].movementListMenu;
                 target.filter = { movement_id: { NORMAL: movementId } };
             } break;
             case 'host':
-                target.title = '作業対象ホスト確認';
+                target.title = getMessage.FTE05024;
                 target.menu = Status.string[ op.menu ].targetHostMenu;
                 target.filter = { item_no: { NORMAL: op.id } };
             break;
             case 'value':
-                target.title = '代入値確認';
+                target.title = getMessage.FTE05025;
                 target.menu = Status.string[ op.menu ].substValueMenu;
                 target.filter = { item_no: { NORMAL: op.id } };
             break;

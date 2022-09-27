@@ -12,16 +12,18 @@
 # limitations under the License.
 #
 from flask import g
-import json
+# import json
 from datetime import date, datetime
 
 from common_libs.common.exception import AppException
+
 
 def json_serial(obj):
 
     if isinstance(obj, (datetime, date)):
         return obj.isoformat()
-    raise TypeError (f'Type {obj} not serializable')
+    raise TypeError(f'Type {obj} not serializable')
+
 
 class TableBase:
     """
@@ -70,6 +72,7 @@ class TableBase:
         Returns:
             is success:(bool)
         """
+        g.applogger.debug(f"Read Table: {self._table_name}, contain_disused_data: {contain_disused_data}")
 
         where = ""
         if not contain_disused_data:
@@ -80,7 +83,6 @@ class TableBase:
         for data in data_list:
             self._stored_records[data[self.pkey]] = data
 
-        # print(self.table_name)
         # print(json.dumps(self._stored_records, default=json_serial))
         return True
 

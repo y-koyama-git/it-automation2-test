@@ -135,6 +135,7 @@
     "MSG-40025": "The setting value of Case is duplicated. ({})",
     "MSG-40026": "[error] Movement: Failed to execute Movement. (MovementID:{},OperationID:{})",
     "MSG-40027": "[error] Conductor call: Failed to execute Conductor. (Conductor class ID: {}, operation ID: {})",
+    "MSG-40028": "Check the target Node of the connection destination.",
     "BKY-00001": "[bacyard]main process is started",
     "BKY-00002": "[bacyard]main process is finished",
     "BKY-00003": "[bacyard]main process is finished with error",
