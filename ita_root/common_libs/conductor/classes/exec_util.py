@@ -2465,9 +2465,11 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
         try:
             instance_data = self.get_instance_data(conductor_instance_id)
             conductor_class = instance_data.get('conductor_class')
-            node_skip = conductor_class.get(node_name).get('skip')
+            node_skip = conductor_class.get(node_name).get('skip_flag')
             if node_skip is None:
                 node_skip = 'False'
+            elif node_skip in [1, '1']:
+                node_skip = 'True'
         except Exception as e:
             g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
             type_, value, traceback_ = sys.exc_info()
