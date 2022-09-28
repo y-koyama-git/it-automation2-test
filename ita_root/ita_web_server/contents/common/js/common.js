@@ -177,6 +177,10 @@ fetch: function( url, token, method = 'GET', json ) {
     
     if ( !token ) {
         token = CommonAuth.getToken();
+        console.group('Token( CommonAuth.getToken() )');
+        console.log( cmn.date( new Date(), 'yyyy/MM/dd HH:mm:ss.SSS') );
+        console.log( token );
+        console.groupEnd('Token( CommonAuth.getToken() )');
     }
     
     let errorCount = 0;
@@ -1543,6 +1547,9 @@ html: {
             + option.join('')
         + `</select>`;
     },
+    'noSelect': function() {
+        return '<div class="noSelect input">No data</div>';
+    },
     row: function( element, className ) {
         className = classNameCheck( className, 'tr');
         return `<tr class="${className.join(' ')}">${element}</tr>`;
@@ -1580,7 +1587,7 @@ html: {
                     }
                 }
                 const rowClass = ( type === 'thead')? 'tHeadTr': 'commonTr';
-                row.push(`<tr class="commonTr">${cell.join('')}</tr>`);
+                row.push(`<tr class="${rowClass}">${cell.join('')}</tr>`);
             }
             table.push( row.join('') );
             table.push(`</${type}>`);
@@ -1604,7 +1611,7 @@ html: {
         attrs.timeFlag = timeFlag;
         attrs.placeholder = placeholder;
         
-        const buttonAttrs = { action: 'default', timeFlag: timeFlag };
+        const buttonAttrs = { action: 'normal', timeFlag: timeFlag };
         if ( attrs.disabled ) {
             buttonAttrs.disabled = 'disabled';
         }
@@ -1628,6 +1635,7 @@ html: {
               itemAttr = {};
 
         // item
+        if ( item.className ) itemClass.push( item.className );
         if ( item.separate ) itemClass.push('operationMenuSeparate');
         if ( item.display ) itemStyle.push(`display:${item.display}`);
         if ( itemStyle.length ) itemAttr.style = itemStyle.join(';');
@@ -1641,7 +1649,7 @@ html: {
                   buttonClass = ['itaButton', 'operationMenuButton'],
                   buttonStyle = [],
                   buttonAttr = { action: button.action, type: button.type };
-            if ( button.width ) buttonStyle.push(`width:${button.width}`);
+            if ( button.width ) buttonStyle.push(`min-width:${button.width}`);
             if ( button.className ) buttonClass.push( button.className );
             if ( buttonStyle.length ) buttonAttr.style = buttonStyle.join(';');
             itemHtml.push( cmn.html.iconButton( button.icon, button.text, buttonClass, buttonAttr ) );
@@ -1667,17 +1675,18 @@ html: {
         };
                 
         for ( const menuType in list ) {
-            for ( const item of menu[ menuType ] ) {
-                list[ menuType ].push( cmn.html.operationItem( item ) );
+            if ( menu[ menuType ] ) {
+                for ( const item of menu[ menuType ] ) {
+                    list[ menuType ].push( cmn.html.operationItem( item ) );
+                }
+                className.push(`operationMenu${menuType}`);
+                if ( menu[ menuType ].length ) {
+                    html.push(`<ul class="${className.join(' ')}">${list[ menuType ].join('')}</ul>`);
+                }
             }
-            className.push(`operationMenu${menuType}`);
-            if ( menu[ menuType ].length ) html.push(`<ul class="${className.join(' ')}">${list[ menuType ].join('')}</ul>`)
         }        
         
         return `<div class="operationMenu">${html.join('')}</div>`;
-    },
-    content: function( type, tabs ) {
-        
     }
 },
 /*
@@ -2412,6 +2421,56 @@ modalConductor: function( menu, mode, conductorId, option ) {
 
     } else {
         alert('指定のConductorはすでに開いています。');
+    }
+},
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//   画面フルスクリーン
+// 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/*
+##################################################
+   フルスクリーン
+##################################################
+*/
+// フルスクリーンチェック
+fullScreenCheck() {
+    if (
+        ( document.fullScreenElement !== undefined && document.fullScreenElement === null ) ||
+        ( document.msFullscreenElement !== undefined && document.msFullscreenElement === null ) ||
+        ( document.mozFullScreen !== undefined && !document.mozFullScreen ) || 
+        ( document.webkitIsFullScreen !== undefined && !document.webkitIsFullScreen )
+    ) {
+        return false;
+    } else {
+        return true;
+    }
+},
+// フルスクリーン切り替え
+fullScreen( elem ) {
+    if ( elem === undefined ) elem = document.body;
+
+    if ( !this.fullScreenCheck() ) {
+      if ( elem.requestFullScreen ) {
+        elem.requestFullScreen();
+      } else if ( elem.mozRequestFullScreen ) {
+        elem.mozRequestFullScreen();
+      } else if ( elem.webkitRequestFullScreen ) {
+        elem.webkitRequestFullScreen( Element.ALLOW_KEYBOARD_INPUT );
+      } else if (elem.msRequestFullscreen) {
+        elem.msRequestFullscreen();
+      }
+    } else {
+      if ( document.cancelFullScreen ) {
+        document.cancelFullScreen();
+      } else if ( document.mozCancelFullScreen ) {
+        document.mozCancelFullScreen();
+      } else if ( document.webkitCancelFullScreen ) {
+        document.webkitCancelFullScreen();
+      } else if ( document.msExitFullscreen ) {
+        document.msExitFullscreen();
+      }
     }
 }
 

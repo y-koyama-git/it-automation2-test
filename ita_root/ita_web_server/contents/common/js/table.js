@@ -141,6 +141,10 @@ setHeaderHierarchy() {
     tb.data.columnKeys = [];
     tb.data.restNames = {};
     
+    // 参照用フィルター
+    const referenceFilterColumn = ['host_name', 'base_datetime'];
+    tb.data.referenceFilterKeys = [];
+    
     const restOrder = [];
     
     const hierarchy = function( columns, row, col ){
@@ -162,6 +166,9 @@ setHeaderHierarchy() {
                     restOrder.push( culumnRest );
                     tb.data.hierarchy[ row ].push( columnKey );
                     tb.data.columnKeys.push( columnKey );
+                    if ( referenceFilterColumn.indexOf( culumnRest ) !== -1 ) {
+                        tb.data.referenceFilterKeys.push( columnKey );
+                    }
                 }
             }
         }
@@ -185,7 +192,6 @@ setHeaderHierarchy() {
         tb.data.hierarchy[0].push( columnKey );
         tb.data.columnKeys.push( columnKey );
     }
-
 }
 /*
 ##################################################
@@ -196,7 +202,7 @@ setup() {
     const tb = this;
 
     const html = `
-    <div id="${tb.id}" class="tableContainer ${tb.mode}Table">
+    <div id="${tb.id}" class="tableContainer ${tb.mode}Table ${tb.option.sheetType}Table">
         <div class="tableHeader">
         </div>
         <div class="tableBody">
@@ -346,37 +352,35 @@ setTable( mode ) {
     tb.$.tbody = tb.$.container.find('.tbody');
     tb.setInitSort();    
     
-    // Table内各種イベントセット
-    tb.setTableEvents();    
-    
     // Table headerメニュー
     switch ( tb.mode ) {
-        case 'view': case 'select': case 'execute': {            
-            const tableHeaderMenuList = {
-                Main: [],
-                Sub: [
-                    { name: 'filterToggle', icon: 'filter', title: 'フィルタ', action: 'default', toggle: { init: 'off', on:'閉じる', off:'開く'}}
-                ]
-            };
-            if ( tb.mode === 'select') {
-                tableHeaderMenuList.Main.push({ message: '選択してください。', action: 'message'});
-            }
-            if ( tb.mode === 'execute') {
-                tableHeaderMenuList.Main.push({ className: 'tablePositive', name: 'tableRun', icon: 'square_next', title: '作業実行', action: 'positive', width: '160px', disabled: true });
-                tableHeaderMenuList.Main.push({ className: 'tablePositive', name: 'tableDryrun', icon: 'square_next', title: 'ドライラン', action: 'positive', width: '160px', disabled: true });
-                tableHeaderMenuList.Main.push({ className: 'tablePositive', name: 'tableParameter', icon: 'detail', title: 'パラメータ確認', action: 'positive', width: '160px', disabled: true });
-            }
-            if ( tb.mode === 'view') {
-                // 権限チェック
-                if ( tb.flag.insert ) tableHeaderMenuList.Main.push({ name: 'tableNew', icon: 'plus', title: '登録', action: 'positive', width: '200px'});
-                if ( tb.flag.update ) tableHeaderMenuList.Main.push({ name: 'tableEdit', icon: 'edit', title: '編集', action: 'positive', width: '200px', 'disabled': true });
-
-                if ( tableHeaderMenuList.Main.length === 0 ) {
-                     tableHeaderMenuList.Main.push({ message: 'このメニューは閲覧のみ可能です。', action: 'message'});
+        case 'view': case 'select': case 'execute': {    
+            if ( tb.option.sheetType !== 'reference') {
+                const tableHeaderMenuList = {
+                    Main: [],
+                    Sub: [{ name: 'filterToggle', icon: 'filter', title: 'フィルタ', action: 'default', toggle: { init: 'off', on:'閉じる', off:'開く'}}]
+                };            
+                if ( tb.mode === 'select') {
+                    tableHeaderMenuList.Main.push({ message: '選択してください。', action: 'message'});
                 }
+                if ( tb.mode === 'execute') {
+                    tableHeaderMenuList.Main.push({ className: 'tablePositive', name: 'tableRun', icon: 'square_next', title: '作業実行', action: 'positive', width: '160px', disabled: true });
+                    tableHeaderMenuList.Main.push({ className: 'tablePositive', name: 'tableDryrun', icon: 'square_next', title: 'ドライラン', action: 'positive', width: '160px', disabled: true });
+                    tableHeaderMenuList.Main.push({ className: 'tablePositive', name: 'tableParameter', icon: 'detail', title: 'パラメータ確認', action: 'positive', width: '160px', disabled: true });
+                }
+                if ( tb.mode === 'view') {
+                    // 権限チェック
+                    if ( tb.flag.insert ) tableHeaderMenuList.Main.push({ name: 'tableNew', icon: 'plus', title: '登録', action: 'positive', width: '200px'});
+                    if ( tb.flag.update ) tableHeaderMenuList.Main.push({ name: 'tableEdit', icon: 'edit', title: '編集', action: 'positive', width: '200px', 'disabled': true });
+
+                    if ( tableHeaderMenuList.Main.length === 0 ) {
+                         tableHeaderMenuList.Main.push({ message: 'このメニューは閲覧のみ可能です。', action: 'message'});
+                    }
+                }            
+                tb.$.header.html( tb.tableHeaderMenuHtml( tableHeaderMenuList ) );
+            } else {
+                tb.$.header.html( tb.referenceFilter() );
             }
-            
-            tb.$.header.html( tb.tableHeaderMenuHtml( tableHeaderMenuList ) );
             
             // メニューボタン
             tb.$.header.find('.itaButton').on('click', function(){
@@ -465,10 +469,12 @@ setTable( mode ) {
                         break;
                         // 行追加
                         case 'tableAdd':
+                            const addId = String( tb.edit.addId-- );
                             tb.workStart('add');
                             tb.paging.pageNum = 1;
                             tb.$.body.scrollTop(0);
-                            tb.edit.blank.parameter[ tb.idNameRest ] = String( tb.edit.addId-- );
+                            tb.edit.blank.parameter[ tb.idNameRest ] = addId;
+                            tb.addRowInputData( addId );
                             tb.workerPost('add', tb.edit.blank );
                         break;
                         // 選択行複製
@@ -589,7 +595,10 @@ setTable( mode ) {
                 }
             });
         } break;
-    }    
+    }
+    
+    // Table内各種イベントセット
+    tb.setTableEvents();    
 }
 /*
 ##################################################
@@ -644,7 +653,7 @@ tableHtml() {
     const info = tb.info,
           groupInfo = info.column_group_info,
           columnInfo = info.column_info,
-          hierarchy = tb.data.hierarchy;console.log(tb.data.hierarchy)
+          hierarchy = tb.data.hierarchy;
     
     const html = [['']],
           groupColspan = {};
@@ -779,7 +788,11 @@ tableHtml() {
     }
     
     // フィルター入力欄
-    if ( tb.mode === 'view' || tb.mode === 'select' || tb.mode === 'execute') html.push( tb.filterHtml() );
+    if ( tb.mode === 'view' || tb.mode === 'select' || tb.mode === 'execute') {
+        if ( tb.option.sheetType !== 'reference') {
+            html.push( tb.filterHtml() );
+        }
+    }
     
     return `
     <thead class="thead">
@@ -797,7 +810,7 @@ filterHtml() {
     const tb = this;
     
     const info = tb.info.column_info,
-          keys = tb.data.columnKeys,
+          keys = ( tb.option.sheetType !== 'reference')? tb.data.columnKeys: tb.data.referenceFilterKeys,
           initSetFilter = tb.option.initSetFilter;
     
     const filterIcon = `${fn.html.icon('filter')}<span class="tHeadFilterTitle">フィルタ</span>`,
@@ -805,12 +818,12 @@ filterHtml() {
           rowClassName = ['tHeadTr', 'filterTr'],
           className = ['tHeadFilter', 'tHeadLeftSticky', 'tHeadFilterHeader'];
     
-    
+    // 選択欄がない場合はフィルタタイトルを細くする
     if ( tb.data.filterHeadColspan === 1 ) className.push('tHeadFilterHeaderNarrow');
     
     const cells = [];
     cells.push( fn.html.cell( filterIcon, className, 'th', 2, tb.data.filterHeadColspan ) );
-    // rowClassName.push('filterNoHeaderTr');
+    // rowClassName.push('filterNoHeaderTr'); // フィルタタイトルを消す場合
     
     const pulldownOpen = function( name, rest ) {
         return ``
@@ -854,11 +867,19 @@ filterHtml() {
                     break;
                     // 日時のFROM,TO
                     case 'DateTimeColumn': case 'LastUpdateDateColumn':
-                        return 'dateTime';
+                        if ( tb.option.sheetType !== 'reference') {
+                            return 'fromToDateTime';
+                        } else {
+                            return 'dateTime';
+                        }
                     break;
                     // 日付のFROM,TO
                     case 'DateColumn':
-                        return 'date';
+                        if ( tb.option.sheetType !== 'reference') {
+                            return 'fromToDate';
+                        } else {
+                            return 'dateTime';
+                        }
                     break;
                     // 表示しない
                     default:
@@ -883,6 +904,7 @@ filterHtml() {
                       case 'discard':
                           return '1';
                       break;
+                      case 'dateTime':
                       case 'text':
                           return '';
                       break;
@@ -907,7 +929,9 @@ filterHtml() {
             switch ( filterType ) {
                 // 文字列検索
                 case 'text':
-                    cellHtml.push( fn.html.inputText(['filterInput', 'filterInputText'], initValue, name, { type: 'text', rest: rest }) );
+                    cellHtml.push(`<div class="filterInputArea">`
+                    + fn.html.inputText(['filterInput', 'filterInputText'], initValue, name, { type: 'text', rest: rest })
+                    + `</div>`);
                     cellHtml.push( pulldownOpen( name, rest ) );
                 break;
                 // 数値のFROM,TO
@@ -922,7 +946,7 @@ filterHtml() {
                     + `</div>`);
                 break;
                 // 日時のFROM,TO
-                case 'dateTime':
+                case 'fromToDateTime':
                     cellHtml.push(`<div class="filterInputFromToDate">`
                         + `<div class="filterInputFromDateWrap">`
                             + fn.html.inputText(['filterInput', 'filterFromDate'], initValue.start, name, { type: 'fromDate', rest: rest, placeholder: 'From' })
@@ -935,8 +959,14 @@ filterHtml() {
                         + `</div>`
                     + `</div>`);
                 break;
+                // 日時
+                case 'dateTime':
+                    cellHtml.push(`<div class="filterInputDate">`
+                        + fn.html.dateInput( true, 'filterInput filterDate', initValue, name, { type: 'text', rest: rest })
+                    + `</div>`);
+                break;
                 // 日付のFROM,TO
-                case 'date':
+                case 'fromToDate':
                     cellHtml.push(`<div class="filterInputFromToDate">`
                         + `<div class="filterInputFromDateWrap">`
                             + fn.html.inputText(['filterInput', 'filterFromDate'], initValue.start, name, { type: 'fromDate', rest: rest, placeholder: 'From' })
@@ -960,40 +990,50 @@ filterHtml() {
             className.push('tHeadLeftSticky');
         }
 
-        cells.push( fn.html.cell( cellHtml.join(''), className, 'th', 1, 1 ) );
+        cells.push( fn.html.cell( cellHtml.join(''), className, 'th', 1, 1, { rest: rest, type: filterType } ) );
     }
-    rows.push( fn.html.row( cells.join(''), rowClassName ) );
     
     // フィルタメニュー
+    const createFilterMenuHtml = function( filterMenuList ) {
+        const filterMenuListHtml = [];
+        for ( const item of filterMenuList ) {
+            const listClassName = ['filterMenuItem'];
+            if ( item.separate ) listClassName.push('filterMenuItemSeparate');
+            if ( item.name === 'auto') {
+                // オートフィルターチェックボックス
+                const attr = { type: item.name }
+                if ( tb.flag.autoFilter ) attr.checked = 'checked';
+                filterMenuListHtml.push(`<li class="${listClassName.join(' ')}">${fn.html.checkboxText('filterMenuAutoFilter', item.title, tb.id + '_AutoFilter', tb.id + '_AutoFilter', attr )}</li>`)
+            } else {
+                const attrs = { type: item.name, action: item.action };
+                if ( item.disabled ) attrs.disabled = 'disabled';
+                filterMenuListHtml.push(`<li class="${listClassName.join(' ')}">${fn.html.button( item.title,
+                    ['filterMenuButton', 'itaButton'], attrs )}</li>`);
+            }
+        }
+        return `<ul class="filterMenuList">${filterMenuListHtml.join('')}</ul>`;
+    };
+    
     const menuList = [
         { name: 'filter', title: 'フィルタ', action: 'restore'},
         { name: 'clear', title: 'フィルタクリア', action: 'negative'},
         { name: 'auto', title: 'オートフィルタ'}
     ];
-    if ( tb.mode === 'view') {
-        menuList.push({ name: 'excel', title: 'Excelダウンロード', action: 'default', separate: true, disabled: true });
-        menuList.push({ name: 'json', title: 'JSONダウンロード', action: 'default', disabled: true });
-    }
-    const menuListHtml = [];
-    for ( const item of menuList ) {
-        const listClassName = ['filterMenuItem'];
-        if ( item.separate ) listClassName.push('filterMenuItemSeparate');
-        
-        if ( item.name === 'auto') {
-            // オートフィルターチェックボックス
-            const attr = { type: item.name }
-            if ( tb.flag.autoFilter ) attr.checked = 'checked';
-            menuListHtml.push(`<li class="${listClassName.join(' ')}">${fn.html.checkboxText('filterMenuAutoFilter', item.title, tb.id + '_AutoFilter', tb.id + '_AutoFilter', attr )}</li>`)
-        } else {
-            const attrs = { type: item.name, action: item.action };
-            if ( item.disabled ) attrs.disabled = 'disabled';
-            menuListHtml.push(`<li class="${listClassName.join(' ')}">${fn.html.button( item.title,
-                ['filterMenuButton', 'itaButton'], attrs )}</li>`);
-        }
-    }
-    rows.push( fn.html.row( fn.html.cell(`<ul class="filterMenuList">${menuListHtml.join('')}</ul>`,
-        ['tHeadFilter', 'tHeadFilterMenu'], 'th', 1, keys.length ), rowClassName ));
     
+    if ( tb.mode === 'view') {
+        menuList.push({ name: 'excel', title: 'Excelダウンロード', action: 'default', separate: true, disabled: true }),
+        menuList.push({ name: 'json', title: 'JSONダウンロード', action: 'default', disabled: true })
+    };
+    
+    const filterMenuHtml = fn.html.cell( createFilterMenuHtml( menuList ),
+        ['tHeadFilter', 'tHeadFilterMenu'], 'th', 1, keys.length );
+    
+    if ( tb.option.sheetType !== 'reference') {
+        rows.push( fn.html.row( cells.join(''), rowClassName ) );
+        rows.push( fn.html.row( filterMenuHtml, rowClassName ) );
+    } else {
+        rows.push( fn.html.row( cells.join('') + filterMenuHtml, rowClassName ) );
+    }
     return rows.join('');
 }
 /*
@@ -1025,6 +1065,33 @@ filterDownloadButtonCheck() {
 }
 /*
 ##################################################
+   参照用メニューフィルター
+##################################################
+*/
+referenceFilter() {
+    const tb = this;
+    
+    const thead = [ fn.html.cell( name, 'tHeadBlank tHeadLeftSticky tHeadLeftStickyLast', 'th') ];
+    for ( const key of tb.data.referenceFilterKeys ) {
+        const column = tb.info.column_info[ key ];
+        let name = fn.cv( column.column_name, '', true );
+        
+        if ( column.column_name_rest === 'base_datetime') name = 'オペレーション' + name;
+                      
+        thead.push(  fn.html.cell( name, 'tHeadTh', 'th') );
+    }
+    thead.push( fn.html.cell( name, 'tHeadBlank', 'th') );
+    
+    return `<div class="referenceFilter">
+    <table class="table referenceFilterTable">
+        <thead class="thead">
+            ${fn.html.row( thead.join(''), 'tHeadTr')}
+            ${tb.filterHtml()}
+        </tbody
+    </table></div>`;
+}
+/*
+##################################################
    Set table events
 ##################################################
 */
@@ -1037,8 +1104,10 @@ setTableEvents() {
     ------------------------------
     */
     if ( tb.mode === 'view' || tb.mode === 'select' || tb.mode === 'execute') {
+        const $eventTarget = ( tb.option.sheetType !== 'reference')? tb.$.thead: tb.$.header.find('.referenceFilterTable');
+
         // フィルタプルダウン検索ボタン
-        tb.$.thead.on('click', '.filterPulldownOpenButton', function(){
+        $eventTarget.on('click', '.filterPulldownOpenButton', function(){
             if ( !tb.checkWork ) {
                 tb.filterSelectOpen.call( tb, $( this ));
             }
@@ -1062,7 +1131,7 @@ setTableEvents() {
         };
         
         // オートフィルター
-        tb.$.thead.on({
+        $eventTarget.on({
             'change': function(){
                 tb.flag.autoFilter = $( this ).prop('checked');
             },
@@ -1072,14 +1141,14 @@ setTableEvents() {
             }
         }, '.filterMenuAutoFilter');
         
-        tb.$.thead.on('change', '.filterInput', function(){
+        $eventTarget.on('change', '.filterInput', function(){
             if ( !tb.checkWork && tb.flag.autoFilter ) {
-                tb.$.thead.find('.filterMenuButton[data-type="filter"]').click();
+                $eventTarget.find('.filterMenuButton[data-type="filter"]').click();
             }
         });
         
         // フィルタボタン
-        tb.$.thead.on('click', '.filterMenuButton', function(){
+        $eventTarget.on('click', '.filterMenuButton', function(){
             if ( !tb.checkWork ) {
                 const $button = $( this ),
                       type = $button.attr('data-type');
@@ -1125,25 +1194,32 @@ setTableEvents() {
         });
           
         // フィルタカレンダー
-        tb.$.thead.find('.filterInputDatePicker').on('click', function(){
-            if ( !tb.checkWork ) {
-                const $button = $( this ),
-                      rest = $button.attr('data-rest');
+        if ( tb.option.sheetType !== 'reference') {
+            $eventTarget.find('.filterInputDatePicker').on('click', function(){
+                if ( !tb.checkWork ) {
+                    const $button = $( this ),
+                          rest = $button.attr('data-rest');
 
-                const $from = tb.$.thead.find(`.filterFromDate[data-rest="${rest}"]`),
-                      $to = tb.$.thead.find(`.filterToDate[data-rest="${rest}"]`);
+                    const $from = tb.$.thead.find(`.filterFromDate[data-rest="${rest}"]`),
+                          $to = tb.$.thead.find(`.filterToDate[data-rest="${rest}"]`);
 
-                const from = $from.val(),
-                      to = $to.val();
+                    const from = $from.val(),
+                          to = $to.val();
 
-                fn.datePickerDialog('fromTo', true, tb.data.restNames[ rest ], { from: from, to: to } ).then(function( result ){
-                    if ( result !== 'cancel') {
-                        $from.val( result.from );
-                        $to.val( result.to ).trigger('change');
-                    }
-                });
-            }
-        });
+                    fn.datePickerDialog('fromTo', true, tb.data.restNames[ rest ], { from: from, to: to } ).then(function( result ){
+                        if ( result !== 'cancel') {
+                            $from.val( result.from );
+                            $to.val( result.to ).trigger('change');
+                        }
+                    });
+                }
+            });
+        } else {
+            const $input = $eventTarget.find('.filterDate'),
+                  rest = $input.attr('data-rest'),
+                  title = tb.data.restNames[ rest ];
+            fn.setDatePickerEvent( $eventTarget.find('.filterDate'), title );
+        }
         
         // ソート
         tb.$.thead.on('click', '.tHeadSort', function(){
@@ -1620,6 +1696,39 @@ changeDiscard( beforeData, type ) {
 }
 /*
 ##################################################
+   追加データ処理
+##################################################
+*/
+addRowInputData( addId ) {
+    const tb = this;
+    
+    if ( !tb.edit.input[ addId ] ) {
+        tb.edit.input[ addId ] = {
+            before: {
+                file: {},
+                parameter: {
+                    discard: '0'
+                }
+            },
+            after: {
+                file: {},
+                parameter: {}
+            },
+        };
+        
+        // 初期値を入力済みへ
+        for ( const key in tb.edit.blank.parameter ) {
+            const beforeValue = tb.edit.input[ addId ].before.parameter[ key ],
+                  afterValue = tb.edit.blank.parameter[ key ];
+            if ( beforeValue !== afterValue && afterValue !== '' && afterValue !== null ) {
+                tb.edit.input[ addId ].after.parameter[ key ] = afterValue;
+            }
+        }
+     }
+     tb.checkNewInputDataDelete( addId );
+}
+/*
+##################################################
    追加行削除時に入力データを削除する
 ##################################################
 */
@@ -1826,7 +1935,7 @@ getFilterParameter() {
         const $input = $( this ),
               value = $input.val(),
               rest = $input.attr('data-rest'),
-              type = $input.attr('data-type');console.log(  value)
+              type = $input.attr('data-type');
 
         if ( ( fn.typeof( value ) === 'string' && value ) || ( fn.typeof( value ) === 'array' && value.length ) ) {
             if ( !filterParams[ rest ] ) filterParams[ rest ] = {};
@@ -2066,7 +2175,10 @@ setTbody() {
 setInitFilterStandBy() {
     const tb = this;
     
-    tb.$.table.addClass('filterShow');
+    if ( tb.option.sheetType !== 'reference') {
+        tb.$.table.addClass('filterShow');
+    }
+    
     tb.$.header.find('.itaButton[data-type="filterToggle"]').attr('data-toggle', 'on');
     tb.$.container.addClass('initFilterStandBy');
     
@@ -2124,7 +2236,9 @@ stickyWidth() {
 
     if ( !filterHeaderFlag ) leftStickyFilterMenuWidth += 1;
     
-    style.push(`#${tb.id} .filterMenuList{left:${leftStickyFilterMenuWidth}px;}`);    
+    if ( tb.option.sheetType !== 'reference') {
+        style.push(`#${tb.id} .filterMenuList{left:${leftStickyFilterMenuWidth}px;}`);
+    }
     style.push(`#${tb.id} .tHeadGroup>.ci{left:${leftStickyWidth}px;}`);    
     
     tb.$.style.html( style.join('') );
@@ -2569,7 +2683,11 @@ editCellHtml( parameter, columnKey ) {
         // プルダウン
         case 'IDColumn': case 'LinkIDColumn': case 'RoleIDColumn':
         case 'EnvironmentIDColumn': case 'JsonIDColumn':
-            return fn.html.select( fn.cv( tb.data.editSelect[columnName], {}), inputClassName, value, name, attr );
+            if ( Object.keys( tb.data.editSelect[columnName] ).length ) {
+                return fn.html.select( fn.cv( tb.data.editSelect[columnName], {}), inputClassName, value, name, attr );
+            } else {
+                return fn.html.noSelect();
+            }
 
         // パスワード
         case 'PasswordColumn': case 'MaskColumn':
@@ -2899,10 +3017,12 @@ changeEdtiMode( changeMode ) {
    
         if ( changeMode ) {
             switch ( changeMode ) {
-                case 'changeEditRegi':
-                    tb.edit.blank.parameter[ tb.idNameRest ] = String( tb.edit.addId-- );
+                case 'changeEditRegi': {
+                    const addId = String( tb.edit.addId-- );
+                    tb.edit.blank.parameter[ tb.idNameRest ] = addId;
+                    tb.addRowInputData( addId );
                     tb.workerPost('changeEditRegi', tb.edit.blank );
-                break;
+                } break;
                 case 'changeEditDup':
                     tb.workerPost('changeEditDup', { target: tb.select.view, id: tb.edit.addId-- });
                 break;

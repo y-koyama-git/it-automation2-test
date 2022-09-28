@@ -181,6 +181,8 @@ const getMessage = ( function() {
         'FTE01145' : "No patterns.",
         'FTE01146' : "Item name",
         'FTE01147' : "Item name(rest)",
+        'FTE01148' : "Full screen",
+        'FTE01149' : "Exit full screen",
         'FTE05001' : "Execution No.",
         'FTE05002' : "Check execution status",
         'FTE05003' : "Schedule cancellation",

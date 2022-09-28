@@ -51,6 +51,11 @@ open( body ) {
             d.$.dialog.addClass('dialogProcessing');
             d.$.dbody.html(`<div class="processingContainer"></div>`);
         }
+        
+        // animation
+        d.$.dialog.find('.dialogMain').on('animationend', function(){
+            $( this ).removeClass('dialogAnimation');
+        });
 
         // z-index
         const length = d.$.modalContainer.find('.showDialog').length;
@@ -140,6 +145,7 @@ show() {
         d.openInit();
         
         const zIndex = d.$.modalContainer.find('.showDialog').length + 1;
+        d.$.dialog.find('.dialogMain').addClass('dialogAnimation');
         d.$.dialog.show().addClass('showDialog active').css('z-index', zIndex );
     }
 }
@@ -157,7 +163,7 @@ openInit() {
             .prepend('<div class="modalContainerFocusFirst modalContainerFocus" tabindex="0"></div>')
             .append('<div id="modalContainer"></div><div class="modalContainerFocusLast modalContainerFocus" tabindex="0"></div>');
         d.$.modalContainer = $('#modalContainer');
-        d.onFocusEvent()
+        d.onFocusEvent();
     } else if ( $('#modalContainer').is(':hidden') ) {
         if ( !d.$.modalContainer ) d.$.modalContainer = $('#modalContainer');
         d.$.body.addClass('modalOpen')
@@ -212,7 +218,7 @@ dialog() {
           mainStyle = [],
           mainAttrs = [],
           overlayClassName = ['modalOverlay', 'showDialog'],
-          mainClassName = ['dialogMain'],
+          mainClassName = ['dialogMain', 'dialogAnimation'],
           html = [];
     
     if ( d.config.visibility === false ) overlayClassName.push('hiddenDialog');

@@ -564,7 +564,7 @@ errorLogUpdate() {
     const op = this;
     
     // エラーログがあるか？
-    if ( op.info.execution_log && op.info.execution_log.error_log ) {
+    if ( op.info && op.info.execution_log && op.info.execution_log.error_log ) {
         op.errorLog.update( op.info.execution_log.error_log );
     }
 }

@@ -497,7 +497,7 @@ sideMenu() {
     });
     
     // Menu accordion
-    ui.$.menu.find('.menuSecondaryToggleButton').on('click', function( e ){
+    ui.$.container.on('click', '.menuSecondaryToggleButton', function( e ){
         e.preventDefault();
         
         const $button = $( this ),
@@ -1039,7 +1039,7 @@ debugMenu() {
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-defaultMenu( mode ) {
+defaultMenu( sheetType ) {
     const ui = this;
     
     const contentTab = [{ name: 'dataList', title: WD.UI.List, type: 'blank' }];
@@ -1058,7 +1058,7 @@ defaultMenu( mode ) {
     // 一覧
     const $dataList = ui.$.content.find('#dataList'),
           initSetFilter = fn.getParams().filter,
-          option = { tableMode: mode };
+          option = { sheetType: sheetType };
     if ( initSetFilter !== undefined ) option.initSetFilter = initSetFilter;
     ui.mainTable = new DataTable('MT', 'view', ui.rest.info, ui.params, option );
     $dataList.find('.sectionBody').html( ui.mainTable.setup() );
