@@ -1810,7 +1810,7 @@ class SubValueAutoReg():
                     ina_array_vars_ass_list[idx] = ret[2]
                     
                     idx += 1
-        
+
         return ina_vars_ass_list, ina_array_vars_ass_list, warning_flag
 
     def makeVarsAssignData(self,
@@ -2689,7 +2689,7 @@ class SubValueAutoReg():
                 return False, inout_vars_attr
         
         if inout_vars_attr == AnscConst.GC_VARS_ATTR_LIST:
-            if row[in_assign_seq] is None or len(row[in_assign_seq]) == 0:
+            if row[in_assign_seq] is None or len(str(row[in_assign_seq])) == 0:
                 msgstr = g.appmsg.get_api_message("MSG-10350", [row['COLUMN_ID'], in_col_type])
                 g.applogger.debug(msgstr)
                 return False, inout_vars_attr
