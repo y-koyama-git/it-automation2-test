@@ -70,20 +70,25 @@ setup() {
     }
 
     const html = `
-    <div id="menu-editor" class="load-editor" data-editor-mode="` + itaEditorMode + `" data-load-menu-id="` + loadMenuID + `">
-        <div id="menu-editor-header">
-            ${cm.editorMenuHtml( itaEditorMode )}
-        </div>
-        <div id="menu-editor-main">
-            ${cm.editorMainHtml()}
-            ${cm.panelContainerHtml( itaEditorMode )}
-        </div>
-        <div id="menu-editor-footer">
-            <div class="menu-editor-menu">
-                ${cm.editorFooterHtml( itaEditorMode, createManagementMenuID )}
+    <div id="menu-editor" class="editor load-wait" data-editor-mode="` + itaEditorMode + `" data-load-menu-id="` + loadMenuID + `">
+        <div class="editor-inner">            
+            <div id="menu-editor-main" class="editor-main">
+                <div id="menu-editor-menu" class="editor-menu">
+                    ${cm.editorOperationMenuHtml( itaEditorMode, createManagementMenuID )}
+                </div>
+                <div id="menu-editor-header" class="editor-header">
+                    ${cm.editorMenuHtml( itaEditorMode )}
+                </div>
+                ${cm.editorMainHtml()}
+            </div>
+            <div class="eritor-panel">
+                ${cm.panelContainerHtml( itaEditorMode )}
             </div>
         </div>
-    </div>    
+    </div>`;
+    
+    // 縦メニュー説明
+    /*
     <div id="vertical-menu-description" class="modal-body-html">
         <div class="modal-description">
             <p class="modal-description-paragraph">縦メニューとは、同じパラメータを繰り返して定義する場合に視認性をよくするためのメニューです。<br>
@@ -95,7 +100,8 @@ setup() {
                 <tr><th  class="modal-description-note-cell">代入値自動登録用</th><td class="modal-description-note-cell">縦メニューから通常メニュー（横表示）に自動的に変換したメニュー</td></tr>
             </table>
         </div>
-    </div>`;
+    </div>
+    */
 
     cm.$ = {};
     
@@ -123,13 +129,11 @@ editorMenuHtml( editorMode ) {
     if ( editorMode !== 'view' ){
         return `
             <div class="menu-editor-menu">
-                <ul class="menu-editor-menu-ul">
-                    <li class="menu-editor-menu-li"><button class="menu-editor-menu-button" data-menu-button="newColumn">` + getMessage.FTE01001 + `</button></li>
-                    <li class="menu-editor-menu-li"><button class="menu-editor-menu-button" data-menu-button="newColumnGroup">` + getMessage.FTE01002 + `</button></li>
-                </ul>
-                <ul class="menu-editor-menu-ul">
-                    <li class="menu-editor-menu-li"><button id="button-undo" class="menu-editor-menu-button" data-menu-button="undo">` + getMessage.FTE01003 + `</button></li>
-                    <li class="menu-editor-menu-li"><button id="button-redo" class="menu-editor-menu-button" data-menu-button="redo">` + getMessage.FTE01004 + `</button></li>
+                <ul class="editor-menu-list menu-editor-menu-ul">
+                    <li class="editor-menu-item menu-editor-menu-li"><button class="editor-menu-button menu-editor-menu-button" data-type="newColumn">` + getMessage.FTE01001 + `</button></li>
+                    <li class="editor-menu-item menu-editor-menu-li"><button class="editor-menu-button menu-editor-menu-button" data-type="newColumnGroup">` + getMessage.FTE01002 + `</button></li>
+                    <li class="editor-menu-separate editor-menu-item menu-editor-menu-li"><button id="button-undo" class="editor-menu-button menu-editor-menu-button" data-type="undo">` + getMessage.FTE01003 + `</button></li>
+                    <li class="editor-menu-item menu-editor-menu-li"><button id="button-redo" class="editor-menu-button menu-editor-menu-button" data-type="redo">` + getMessage.FTE01004 + `</button></li>
                 </ul>
             </div>`;
     }
@@ -140,11 +144,11 @@ editorMenuHtml( editorMode ) {
     editorMainHtml
 ##################################################
 */
-editorMainHtml() {
+editorMainHtml( itaEditorMode ) {
     return `
-            <div id="menu-editor-body">
-                <div id="menu-editor-edit" class="menu-editor-block">
-                    <div class="menu-editor-block-inner">
+            <div id="menu-editor-body" class="editor-body editor-row-resize">
+                <div id="menu-editor-edit" class="editor-block menu-editor-block">
+                    <div class="editor-block-inner menu-editor-block-inner">
                         <div class="menu-table-wrapper">
                             <div class="menu-table">
                             </div>
@@ -152,29 +156,23 @@ editorMainHtml() {
                     </div>
                     <div id="column-resize"></div>
                 </div>
-                <div id="menu-editor-row-resize"></div>
-                <div id="menu-editor-info" class="menu-editor-block">
-                    <div class="menu-editor-block-inner">
+                <div id="menu-editor-row-resize" class="editor-row-resize-bar"></div>
+                <div id="menu-editor-info" class="editor-block menu-editor-block">
+                    <div class="editor-block-inner">
                         <div class="editor-tab">
                             <div class="editor-tab-menu">
                                 <ul class="editor-tab-menu-list">
-                                    <li class="editor-tab-menu-list-item" data-tab="menu-editor-preview">` + getMessage.FTE01005 + `</li>
-                                    <li class="editor-tab-menu-list-item" data-tab="menu-editor-log">` + getMessage.FTE01006 + `</li>
+                                    <li class="editor-tab-menu-item" data-tab="menu-editor-preview">` + getMessage.FTE01005 + `</li>
+                                    <li class="editor-tab-menu-item" data-tab="menu-editor-log">` + getMessage.FTE01006 + `</li>
                                 </ul>
                             </div>
                             <div class="editor-tab-contents">
                                 <div id="menu-editor-preview" class="editor-tab-body">
-                                    <h2><div class="midashi_class">` + getMessage.FTE01007 + `</div></h2>
-                                    <div class="text">
-                                        <div class="itaTable tableSticky">
-                                            <div class="itaTableBody">
-                                                <div class="tableScroll">
-                                                    <table>
-                                                        <tbody></tbody>
-                                                    </table>
-                                                </div>
-                                            </div>
-                                        </div>
+                                    <div class="tableBody">
+                                        <table class="table">
+                                            <thead class="thead"></tbody>
+                                            <tbody class="tbody"></tbody>
+                                        </table>
                                     </div>
                                 </div>
                                 <div id="menu-editor-log" class="editor-tab-body">
@@ -196,389 +194,408 @@ editorMainHtml() {
 ##################################################
 */
 panelContainerHtml( editorMode ) {
+    const panelType = {
+        menuType: '',
+        hostType: '',
+        verticalMenu: ''
+    };
+    let html = '';
+    
     if ( editorMode === 'view' ){
-        return `
-        <div id="panel-container">
-            <div id="property" data-menu-type="" data-host-type="" data-vertical-menu="" class="editor-tab">
-                <div class="editor-tab-menu">
-                    <ul class="editor-tab-menu-list">
-                        <li class="editor-tab-menu-list-item" data-tab="menu-info">` + getMessage.FTE01008 + `</li>
-                    </ul>
-                </div>
-                <div class="editor-tab-contents">
-                    <div id="menu-info" class="editor-tab-body">
-                        <div class="property-group">
-                            <div class="property-group-title">` + getMessage.FTE01009 + ` :</div>
-                            <table class="property-table">
-                                <tbody>
-                                    <tr>
-                                        <th class="property-th">` + getMessage.FTE01010 + ` :</th>
-                                        <td class="property-td" colspan="3"><span id="create-menu-id" class="property-span">` + getMessage.FTE01011 + `</span></td>
-                                    </tr>
-                                    <tr>
-                                        <th class="property-th">` + getMessage.FTE01012 + ` :</th>
-                                        <td class="property-td" colspan="3"><span id="create-menu-name" class="property-span"></span></td>
-                                    </tr>
-                                    <tr>
-                                        <th class="property-th">` + getMessage.FTE01013 + ` :</th>
-                                        <td class="property-td" colspan="3"><span id="create-menu-name-rest" class="property-span"></span></td>
-                                    </tr>
-                                    <tr>
-                                        <th class="property-th">` + getMessage.FTE01014 + ` :</th>
-                                        <td class="property-td" colspan="3"><span id="create-menu-type" class="property-span"></span></td>
-                                    </tr>
-                                    <tr>
-                                        <th class="property-th">` + getMessage.FTE01015 + ` :</th>
-                                        <td class="property-td" colspan="3"><span id="create-menu-order" class="property-span"></span></td>
-                                    </tr>
-                                    <tr class="parameter-sheet parameter-operation">
-                                        <th class="property-th" colspan="2">` + getMessage.FTE01016 + ` :</th>
-                                        <td class="property-td" colspan="2"><span id="create-menu-use-vertical" class="property-span"></span></td>
-                                    </tr>
-                                    <tr>
-                                        <th class="property-th">` + getMessage.FTE01017 + ` :</th>
-                                        <td class="property-td" colspan="3"><span id="create-menu-last-modified" class="property-span">` + getMessage.FTE01011 + `</span></td>
-                                    </tr>
-                                    <tr>
-                                        <th class="property-th">` + getMessage.FTE01018 + ` :</th>
-                                        <td class="property-td" colspan="3"><span id="create-last-update-user" class="property-span">` + getMessage.FTE01011 + `</span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div id="menu-group" class="property-group">
-                            <div class="property-group-title">` + getMessage.FTE01019 + `</div>
-                            <table class="property-table">
-                                <tbody>
-                                    <tr class="data-sheet parameter-sheet parameter-operation">
-                                        <th class="property-th">` + getMessage.FTE01020 + ` :</th>
-                                        <td class="property-td" colspan="3"><span id="create-menu-for-input" type="text" class="property-span"></span></td>
-                                    </tr>
-                                    <tr class="parameter-sheet parameter-operation">
-                                        <th class="property-th">` + getMessage.FTE01021 + ` :</th>
-                                        <td class="property-td" colspan="3"><span id="create-menu-for-substitution" type="text" class="property-span"></span></td>
-                                    </tr>
-                                    <tr class="parameter-sheet parameter-operation">
-                                        <th class="property-th">` + getMessage.FTE01022 + ` :</th>
-                                        <td class="property-td" colspan="3"><span id="create-menu-for-reference" type="text" class="property-span"></span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div id="unique-constraint" class="property-group">
-                            <div class="property-group-title">` + getMessage.FTE01023 + `</div>
-                            <table class="property-table">
-                                <tbody>
-                                    <tr class="data-sheet parameter-sheet parameter-operation">
-                                        <th class="property-th">` + getMessage.FTE01024 + `:</th>
-                                        <td class="property-td" colspan="3"><span id="unique-constraint-list" type="text" class="property-span"></span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div id="permission-role" class="property-group">
-                            <div class="property-group-title">` + getMessage.FTE01025 + `</div>
-                            <table class="property-table">
-                                <tbody>
-                                    <tr class="data-sheet parameter-sheet parameter-operation">
-                                        <th class="property-th">` + getMessage.FTE01026 + ` :</th>
-                                        <td class="property-td" colspan="3"><span id="permission-role-name-list" type="text" class="property-span"></span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="property-group">
-                            <div class="property-group-title">` + getMessage.FTE01027 + `</div>
-                            <span id="create-menu-explanation" type="text" class="property-span"></span>
-                        </div>
-                        <div class="property-group">
-                            <div class="property-group-title">` + getMessage.FTE01028 + `</div>
-                            <span id="create-menu-note" type="text" class="property-span"></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        html += `
+        <div class="panel-group">
+            <div class="panel-group-title">${getMessage.FTE01009}</div>
+            <table class="panel-table">
+                <tbody>
+                    <tr>
+                        <th class="panel-th">` + getMessage.FTE01010 + `</th>
+                        <td class="panel-td"><span id="create-menu-id" class="panel-span">` + getMessage.FTE01011 + `</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <table class="panel-table">
+                <tbody>
+                    <tr>
+                        <th class="panel-th">` + getMessage.FTE01012 + `</th>
+                        <td class="panel-td"><span id="create-menu-name" class="panel-span"></span></td>
+                    </tr>
+                    <tr>
+                        <th class="panel-th">` + getMessage.FTE01013 + `</th>
+                        <td class="panel-td"><span id="create-menu-name-rest" class="panel-span"></span></td>
+                    </tr>
+                    <tr>
+                        <th class="panel-th">` + getMessage.FTE01014 + `</th>
+                        <td class="panel-td"><span id="create-menu-type" class="panel-span"></span></td>
+                    </tr>
+                    <tr>
+                        <th class="panel-th">` + getMessage.FTE01015 + `</th>
+                        <td class="panel-td"><span id="create-menu-order" class="panel-span"></span></td>
+                    </tr>
+                    <tr class="parameter-sheet parameter-operation">
+                        <th class="panel-th"">` + getMessage.FTE01016 + `</th>
+                        <td class="panel-td"><span id="create-menu-use-vertical" class="panel-span"></span></td>
+                    </tr>
+                    <tr>
+                        <th class="panel-th">` + getMessage.FTE01017 + `</th>
+                        <td class="panel-td"><span id="create-menu-last-modified" class="panel-span">` + getMessage.FTE01011 + `</span></td>
+                    </tr>
+                    <tr>
+                        <th class="panel-th">` + getMessage.FTE01018 + `</th>
+                        <td class="panel-td"><span id="create-last-update-user" class="panel-span">` + getMessage.FTE01011 + `</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="menu-group" class="panel-group">
+            <div class="panel-group-title">${getMessage.FTE01019}</div>
+            <table class="panel-table">
+                <tbody>
+                    <tr class="data-sheet parameter-sheet parameter-operation">
+                        <th class="panel-th">` + getMessage.FTE01020 + `</th>
+                        <td class="panel-td"><span id="create-menu-for-input" type="text" class="panel-span"></span></td>
+                    </tr>
+                    <tr class="parameter-sheet parameter-operation">
+                        <th class="panel-th">` + getMessage.FTE01021 + `</th>
+                        <td class="panel-td"><span id="create-menu-for-substitution" type="text" class="panel-span"></span></td>
+                    </tr>
+                    <tr class="parameter-sheet parameter-operation">
+                        <th class="panel-th">` + getMessage.FTE01022 + `</th>
+                        <td class="panel-td"><span id="create-menu-for-reference" type="text" class="panel-span"></span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="unique-constraint" class="panel-group">
+            <div class="panel-group-title">${getMessage.FTE01023}</div>
+            <table class="panel-table">
+                <tbody>
+                    <tr class="data-sheet parameter-sheet parameter-operation">
+                        <th class="panel-th">` + getMessage.FTE01024 + `</th>
+                        <td class="panel-td"><span id="unique-constraint-list" type="text" class="panel-span"></span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="permission-role" class="panel-group">
+            <div class="panel-group-title">${getMessage.FTE01025}</div>
+            <table class="panel-table">
+                <tbody>
+                    <tr class="data-sheet parameter-sheet parameter-operation">
+                        <th class="panel-th">` + getMessage.FTE01026 + `</th>
+                        <td class="panel-td"><span id="permission-role-name-list" type="text" class="panel-span"></span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="permission-role" class="panel-group">
+            <div class="panel-group-title">${getMessage.FTE01027}</div>
+            <span id="create-menu-explanation" type="text" class="panel-span"></span>
+        </div>
+        <div id="permission-role" class="panel-group">
+            <div class="panel-group-title">${getMessage.FTE01028}</div>
+            <span id="create-menu-note" type="text" class="panel-span"></span>
         </div>`;
     } else if (editorMode === 'edit'){
-        return `
-        <div id="panel-container">
-            <div id="property" data-menu-type="1" data-host-type="1" data-vertical-menu="false" class="editor-tab">
-                <div class="editor-tab-menu">
-                    <ul class="editor-tab-menu-list">
-                        <li class="editor-tab-menu-list-item" data-tab="menu-info">` + getMessage.FTE01008 + `</li>
-                    </ul>
-                </div>
-                <div class="editor-tab-contents">
-                    <div id="menu-info" class="editor-tab-body">
-                        <div class="property-group">
-                            <div class="property-group-title">` + getMessage.FTE01009 + ` :</div>
-                            <table class="property-table">
-                                <tbody>
-                                    <tr>
-                                        <th class="property-th">` + getMessage.FTE01010 + ` :</th>
-                                        <td class="property-td" colspan="3"><span id="create-menu-id" class="property-span" data-value="">` + getMessage.FTE01011 + `</span></td>
-                                    </tr>
-                                    <tr title="` + getMessage.FTE01029 + `">
-                                        <th class="property-th">` + getMessage.FTE01012 + `<span class="input_required">*</span> :</th>
-                                        <td class="property-td" colspan="3"><input id="create-menu-name" class="property-text" type="text"></td>
-                                    </tr>
-                                    <tr title="` + getMessage.FTE01030 + `">
-                                        <th class="property-th">` + getMessage.FTE01013 + `<span class="input_required">*</span> :</th>
-                                        <td class="property-td" colspan="3"><input id="create-menu-name-rest" class="property-text" type="text"></td>
-                                    </tr>
-                                    <tr title="` + getMessage.FTE01031 + `">
-                                        <th class="property-th">` + getMessage.FTE01014 + ` :</th>
-                                        <td class="property-td" colspan="3">
-                                            <select id="create-menu-type" class="property-select" disabled></select>
-                                        </td>
-                                    </tr>
-                                    <tr title="` + getMessage.FTE01032 + `">
-                                        <th class="property-th">` + getMessage.FTE01015 + `<span class="input_required">*</span> :</th>
-                                        <td class="property-td" colspan="3"><input id="create-menu-order" class="property-number" type="number" data-min="0" data-max="2147483647"></td>
-                                    </tr>
-                                    <tr class="parameter-sheet parameter-operation" title="` + getMessage.FTE01033 + `">
-                                        <th class="property-th" colspan="2">` + getMessage.FTE01016 + ` :</th>
-                                        <td class="property-td" colspan="2">
-                                            <label class="property-label" ><input type="checkbox" id="create-menu-use-vertical" disabled> ` + getMessage.FTE01034 + `</label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <th class="property-th">` + getMessage.FTE01017 + ` :</th>
-                                        <td class="property-td" colspan="3"><span id="create-menu-last-modified" class="property-span" data-value="">` + getMessage.FTE01011 + `</span></td>
-                                    </tr>
-                                    <tr>
-                                        <th class="property-th">` + getMessage.FTE01018 + ` :</th>
-                                        <td class="property-td" colspan="3"><span id="create-last-update-user" class="property-span" data-value="">` + getMessage.FTE01011 + `</span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div id="menu-group" class="property-group">
-                            <div class="property-group-title">` + getMessage.FTE01019 + `</div>
-                            <table class="property-table">
-                                <tbody>
-                                    <tr class="data-sheet parameter-sheet parameter-operation">
-                                        <th class="property-th">` + getMessage.FTE01020 + `<span class="input_required">*</span> :</th>
-                                        <td class="property-td" colspan="3"><span id="create-menu-for-input" type="text" class="property-span" data-id="" data-value=""></span></td>
-                                    </tr>
-                                    <tr class="parameter-sheet parameter-operation">
-                                        <th class="property-th">` + getMessage.FTE01021 + `<span class="input_required">*</span> :</th>
-                                        <td class="property-td" colspan="3"><span id="create-menu-for-substitution" type="text" class="property-span" data-id="" data-value=""></span></td>
-                                    </tr>
-                                    <tr class="parameter-sheet parameter-operation">
-                                        <th class="property-th">` + getMessage.FTE01022 + `<span class="input_required">*</span> :</th>
-                                        <td class="property-td" colspan="3"><span id="create-menu-for-reference" type="text" class="property-span" data-id="" data-value=""></span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            <ul class="property-button-group">
-                                <li><button id="create-menu-group-select" class="property-button">` + getMessage.FTE01035 + `</button></li>
-                            </ul>
-                        </div>
-                        <div id="unique-constraint" class="property-group">
-                            <div class="property-group-title">` + getMessage.FTE01023 + `</div>
-                            <table class="property-table">
-                                <tbody>
-                                    <tr class="data-sheet parameter-sheet parameter-operation">
-                                        <th class="property-th">` + getMessage.FTE01024 + `:</th>
-                                        <td class="property-td" colspan="3"><span id="unique-constraint-list" type="text" class="property-span"></span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            <ul class="property-button-group">
-                                <li><button id="unique-constraint-select" class="property-button">` + getMessage.FTE01036 + `</button></li>
-                            </ul>
-                        </div>
-                        <div id="permission-role" class="property-group">
-                            <div class="property-group-title">` + getMessage.FTE01025 + `</div>
-                            <table class="property-table">
-                                <tbody>
-                                    <tr class="data-sheet parameter-sheet parameter-operation">
-                                        <th class="property-th">` + getMessage.FTE01026 + ` :</th>
-                                        <td class="property-td" colspan="3"><span id="permission-role-name-list" type="text" class="property-span"></span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            <ul class="property-button-group">
-                                <li><button id="permission-role-select" class="property-button">` + getMessage.FTE01037 + `</button></li>
-                            </ul>
-                        </div>
-                        <div class="property-group" title="` + getMessage.FTE01038 + `">
-                            <div class="property-group-title">` + getMessage.FTE01027 + `</div>
-                            <textarea id="create-menu-explanation" class="property-textarea" spellcheck="false"></textarea>
-                        </div>
-                        <div class="property-group" title="` + getMessage.FTE01039 + `">
-                            <div class="property-group-title">` + getMessage.FTE01028 + `</div>
-                            <textarea id="create-menu-note" class="property-textarea" spellcheck="false"></textarea>
-                        </div>
-                        <p class="note">※<span class="input_required">*</span>` + getMessage.FTE01040 + `</p>
-                    </div>
-                </div>
-            </div>
+        panelType.menuType = '1';
+        panelType.hostType = '1';
+        panelType.verticalMenu = 'false';
+        html += `
+        <div class="panel-group">
+            <div class="panel-group-title">` + getMessage.FTE01009 + `</div>
+            <table class="panel-table">
+                <tbody>
+                    <tr>
+                        <th class="panel-th">` + getMessage.FTE01010 + `</th>
+                        <td class="panel-td"><span id="create-menu-id" class="panel-span" data-value="">` + getMessage.FTE01011 + `</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <table class="panel-table">
+                <tbody>
+                    <tr title="` + getMessage.FTE01029 + `">
+                        <th class="panel-th">${getMessage.FTE01012 + fn.html.required()}</th>
+                        <td class="panel-td"><input id="create-menu-name" class="panel-text" type="text"></td>
+                    </tr>
+                    <tr title="` + getMessage.FTE01030 + `">
+                        <th class="panel-th">${getMessage.FTE01013 + fn.html.required()}</th>
+                        <td class="panel-td"><input id="create-menu-name-rest" class="panel-text" type="text"></td>
+                    </tr>
+                </tbody>
+            </table>
+            <table class="panel-table">
+                <tbody>
+                    <tr title="` + getMessage.FTE01031 + `">
+                        <th class="panel-th">` + getMessage.FTE01014 + `</th>
+                        <td class="panel-td">
+                            <select id="create-menu-type" class="panel-select" disabled></select>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <table class="panel-table">
+                <tbody>
+                    <tr title="` + getMessage.FTE01032 + `">
+                        <th class="panel-th">${getMessage.FTE01015 + fn.html.required()}</th>
+                        <td class="panel-td"><input id="create-menu-order" class="panel-number" type="number" data-min="0" data-max="2147483647"></td>
+                    </tr>
+                    <tr class="parameter-sheet parameter-operation" title="` + getMessage.FTE01033 + `">
+                        <th class="panel-th">` + getMessage.FTE01016 + `</th>
+                        <td class="panel-td">
+                            ${fn.html.checkboxText('panel-check', getMessage.FTE01034, 'create-menu-use-vertical', 'create-menu-use-vertical', {disabled: 'disabled'})}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="panel-th">` + getMessage.FTE01017 + `</th>
+                        <td class="panel-td" colspan="3"><span id="create-menu-last-modified" class="panel-span" data-value="">` + getMessage.FTE01011 + `</span></td>
+                    </tr>
+                    <tr>
+                        <th class="panel-th">` + getMessage.FTE01018 + `</th>
+                        <td class="panel-td" colspan="3"><span id="create-last-update-user" class="panel-span" data-value="">` + getMessage.FTE01011 + `</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="menu-group" class="panel-group">
+            <div class="panel-group-title">${getMessage.FTE01019  + fn.html.required()}</div>
+            <table class="panel-table">
+                <tbody>
+                    <tr class="data-sheet parameter-sheet parameter-operation">
+                        <th class="panel-th">${getMessage.FTE01020}</th>
+                        <td class="panel-td" colspan="3"><span id="create-menu-for-input" type="text" class="panel-span" data-id="" data-value=""></span></td>
+                    </tr>
+                    <tr class="parameter-sheet parameter-operation">
+                        <th class="panel-th">${getMessage.FTE01021}</th>
+                        <td class="panel-td" colspan="3"><span id="create-menu-for-substitution" type="text" class="panel-span" data-id="" data-value=""></span></td>
+                    </tr>
+                    <tr class="parameter-sheet parameter-operation">
+                        <th class="panel-th">${getMessage.FTE01022}</th>
+                        <td class="panel-td" colspan="3"><span id="create-menu-for-reference" type="text" class="panel-span" data-id="" data-value=""></span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <ul class="panel-button-group">
+                <li><button id="create-menu-group-select" class="panel-button">` + getMessage.FTE01035 + `</button></li>
+            </ul>
+        </div>
+        <div id="unique-constraint" class="panel-group">
+            <div class="panel-group-title">` + getMessage.FTE01023 + `</div>
+            <table class="panel-table">
+                <tbody>
+                    <tr class="data-sheet parameter-sheet parameter-operation">
+                        <th class="panel-th">` + getMessage.FTE01024 + `</th>
+                        <td class="panel-td" colspan="3"><span id="unique-constraint-list" type="text" class="panel-span"></span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <ul class="panel-button-group">
+                <li><button id="unique-constraint-select" class="panel-button">` + getMessage.FTE01036 + `</button></li>
+            </ul>
+        </div>
+        <div id="permission-role" class="panel-group">
+            <div class="panel-group-title">` + getMessage.FTE01025 + `</div>
+            <table class="panel-table">
+                <tbody>
+                    <tr class="data-sheet parameter-sheet parameter-operation">
+                        <th class="panel-th">` + getMessage.FTE01026 + `</th>
+                        <td class="panel-td" colspan="3"><span id="permission-role-name-list" type="text" class="panel-span"></span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <ul class="panel-button-group">
+                <li><button id="permission-role-select" class="panel-button">` + getMessage.FTE01037 + `</button></li>
+            </ul>
+        </div>
+        <div class="panel-group" title="` + getMessage.FTE01038 + `">
+            <div class="panel-group-title">` + getMessage.FTE01027 + `</div>
+            ${fn.html.textarea(['panel-note', 'panel-textarea', 'popup'], '', 'create-menu-explanation', null, true )}
+        </div>
+        <div class="panel-group" title="` + getMessage.FTE01039 + `">
+            <div class="panel-group-title">` + getMessage.FTE01028 + `</div>
+            ${fn.html.textarea(['panel-note', 'panel-textarea', 'popup'], '', 'create-menu-note', null, true )}
         </div>`;
     } else {
-        return `
-        <div id="panel-container">
-            <div id="property" data-menu-type="1" data-host-type="1" data-vertical-menu="false" class="editor-tab">
-                <div class="editor-tab-menu">
-                    <ul class="editor-tab-menu-list">
-                        <li class="editor-tab-menu-list-item" data-tab="menu-info">` + getMessage.FTE01008 + `</li>
-                    </ul>
-                </div>
-                <div class="editor-tab-contents">
-                    <div id="menu-info" class="editor-tab-body">
-                        <div class="property-group">
-                            <div class="property-group-title">` + getMessage.FTE01009 + ` :</div>
-                            <table class="property-table">
-                                <tbody>
-                                    <tr>
-                                        <th class="property-th">` + getMessage.FTE01010 + ` :</th>
-                                        <td class="property-td" colspan="3"><span id="create-menu-id" class="property-span" data-value="">` + getMessage.FTE01011 + `</span></td>
-                                    </tr>
-                                    <tr title="` + getMessage.FTE01029 + `">
-                                        <th class="property-th">` + getMessage.FTE01012 + `<span class="input_required">*</span> :</th>
-                                        <td class="property-td" colspan="3"><input id="create-menu-name" class="property-text" type="text"></td>
-                                    </tr>
-                                    <tr title="` + getMessage.FTE01030 + `">
-                                        <th class="property-th">` + getMessage.FTE01013 + `<span class="input_required">*</span> :</th>
-                                        <td class="property-td" colspan="3"><input id="create-menu-name-rest" class="property-text" type="text"></td>
-                                    </tr>
-                                    <tr title="` + getMessage.FTE01031 + `">
-                                        <th class="property-th">` + getMessage.FTE01014 + ` :</th>
-                                        <td class="property-td" colspan="3">
-                                            <select id="create-menu-type" class="property-select"></select>
-                                        </td>
-                                    </tr>
-                                    <tr title="` + getMessage.FTE01032 + `">
-                                        <th class="property-th">` + getMessage.FTE01015 + `<span class="input_required">*</span> :</th>
-                                        <td class="property-td" colspan="3"><input id="create-menu-order" class="property-number" type="number" data-min="0" data-max="2147483647"></td>
-                                    </tr>
-                                    <tr class="parameter-sheet parameter-operation" title="` + getMessage.FTE01033 + `">
-                                        <th class="property-th" colspan="2">` + getMessage.FTE01016 + ` :</th>
-                                        <td class="property-td" colspan="2">
-                                            <label class="property-label" ><input type="checkbox" id="create-menu-use-vertical"> ` + getMessage.FTE01034 + `</label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <th class="property-th">` + getMessage.FTE01017 + ` :</th>
-                                        <td class="property-td" colspan="3"><span id="create-menu-last-modified" class="property-span" data-value="">` + getMessage.FTE01011 + `</span></td>
-                                    </tr>
-                                    <tr>
-                                        <th class="property-th">` + getMessage.FTE01018 + ` :</th>
-                                        <td class="property-td" colspan="3"><span id="create-last-update-user" class="property-span" data-value="">` + getMessage.FTE01011 + `</span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
+        panelType.menuType = '1';
+        panelType.hostType = '1';
+        panelType.verticalMenu = 'false';
+        html += `
+        <div class="panel-group">
+            <div class="panel-group-title">` + getMessage.FTE01009 + `</div>
+            <table class="panel-table">
+                <tbody>
+                    <tr>
+                        <th class="panel-th">` + getMessage.FTE01010 + `</th>
+                        <td class="panel-td" colspan="3"><span id="create-menu-id" class="panel-span" data-value="">` + getMessage.FTE01011 + `</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <table class="panel-table">
+                <tbody>
+                    <tr title="` + getMessage.FTE01029 + `">
+                        <th class="panel-th">${getMessage.FTE01012 + fn.html.required()}</th>
+                        <td class="panel-td" colspan="3"><input id="create-menu-name" class="panel-text" type="text"></td>
+                    </tr>
+                    <tr title="` + getMessage.FTE01030 + `">
+                        <th class="panel-th">${getMessage.FTE01013 + fn.html.required()}</th>
+                        <td class="panel-td" colspan="3"><input id="create-menu-name-rest" class="panel-text" type="text"></td>
+                    </tr>
+                </tbody>
+            </table>
+            <table class="panel-table">
+                <tbody>
+                    <tr title="` + getMessage.FTE01031 + `">
+                        <th class="panel-th">` + getMessage.FTE01014 + `</th>
+                        <td class="panel-td" colspan="3">
+                            <select id="create-menu-type" class="panel-select"></select>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <table class="panel-table">
+                <tbody>
+                    <tr title="` + getMessage.FTE01032 + `">
+                        <th class="panel-th">${getMessage.FTE01015 + fn.html.required()}</th>
+                        <td class="panel-td" colspan="3"><input id="create-menu-order" class="panel-number" type="number" data-min="0" data-max="2147483647"></td>
+                    </tr>
+                    <tr class="parameter-sheet parameter-operation" title="` + getMessage.FTE01033 + `">
+                        <th class="panel-th" colspan="2">` + getMessage.FTE01016 + `</th>
+                        <td class="panel-td" colspan="2">
+                            ${fn.html.checkboxText('panel-check', getMessage.FTE01034, 'create-menu-use-vertical', 'create-menu-use-vertical')}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="panel-th">` + getMessage.FTE01017 + `</th>
+                        <td class="panel-td" colspan="3"><span id="create-menu-last-modified" class="panel-span" data-value="">` + getMessage.FTE01011 + `</span></td>
+                    </tr>
+                    <tr>
+                        <th class="panel-th">` + getMessage.FTE01018 + `</th>
+                        <td class="panel-td" colspan="3"><span id="create-last-update-user" class="panel-span" data-value="">` + getMessage.FTE01011 + `</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="menu-group" class="panel-group">
+            <div class="panel-group-title">${getMessage.FTE01019 + fn.html.required()}</div>
+            <table class="panel-table">
+                <tbody>
+                    <tr class="data-sheet parameter-sheet parameter-operation">
+                        <th class="panel-th">${getMessage.FTE01020}</th>
+                        <td class="panel-td" colspan="3"><span id="create-menu-for-input" type="text" class="panel-span" data-id="" data-value=""></span></td>
+                    </tr>
+                    <tr class="parameter-sheet parameter-operation">
+                        <th class="panel-th">${getMessage.FTE01021}</th>
+                        <td class="panel-td" colspan="3"><span id="create-menu-for-substitution" type="text" class="panel-span" data-id="" data-value=""></span></td>
+                    </tr>
+                    <tr class="parameter-sheet parameter-operation">
+                        <th class="panel-th">${getMessage.FTE01022}</th>
+                        <td class="panel-td" colspan="3"><span id="create-menu-for-reference" type="text" class="panel-span" data-id="" data-value=""></span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <ul class="panel-button-group">
+                <li><button id="create-menu-group-select" class="panel-button">` + getMessage.FTE01035 + `</button></li>
+            </ul>
+        </div>
+        <div id="unique-constraint" class="panel-group">
+            <div class="panel-group-title">` + getMessage.FTE01023 + `</div>
+            <table class="panel-table">
+                <tbody>
+                    <tr class="data-sheet parameter-sheet parameter-operation">
+                        <th class="panel-th">` + getMessage.FTE01024 + `</th>
+                        <td class="panel-td" colspan="3"><span id="unique-constraint-list" type="text" class="panel-span"></span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <ul class="panel-button-group">
+                <li><button id="unique-constraint-select" class="panel-button">` + getMessage.FTE01036 + `</button></li>
+            </ul>
+        </div>
+        <div id="permission-role" class="panel-group">
+            <div class="panel-group-title">` + getMessage.FTE01025 + `</div>
+            <table class="panel-table">
+                <tbody>
+                    <tr class="data-sheet parameter-sheet parameter-operation">
+                        <th class="panel-th">` + getMessage.FTE01026 + `</th>
+                        <td class="panel-td" colspan="3"><span id="permission-role-name-list" type="text" class="panel-span"></span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <ul class="panel-button-group">
+                <li><button id="permission-role-select" class="panel-button">` + getMessage.FTE01037 + `</button></li>
+            </ul>
+        </div>
+        <div class="panel-group" title="` + getMessage.FTE01038 + `">
+            <div class="panel-group-title">` + getMessage.FTE01027 + `</div>
+            ${fn.html.textarea(['panel-note', 'panel-textarea', 'popup'], '', 'create-menu-explanation', null, true )}
+        </div>
+        <div class="panel-group" title="` + getMessage.FTE01039 + `">
+            <div class="panel-group-title">` + getMessage.FTE01028 + `</div>
+            ${fn.html.textarea(['panel-note', 'panel-textarea', 'popup'], '', 'create-menu-note', null, true )}
+        </div>`;
+    }
+    
+    return `
+    <div id="panel-container" class="editor-panel">
+        <div id="property" data-menu-type="${panelType.menuType}" data-host-type="${panelType.hostType}" data-vertical-menu="${panelType.verticalMenu}" class="editor-block">
+            <div class="editor-block-inner">
+                <div id="menu-info" class="editor-panel-block">
+                    <div class="editor-panel-title">
+                        <div class="editor-panel-title-inner">${getMessage.FTE01008}</div>
+                    </div>
+                    <div class="editor-panel-body">
+                        <div class="editor-panel-body-inner">
+                            ${html}
                         </div>
-                        <div id="menu-group" class="property-group">
-                            <div class="property-group-title">` + getMessage.FTE01019 + `</div>
-                            <table class="property-table">
-                                <tbody>
-                                    <tr class="data-sheet parameter-sheet parameter-operation">
-                                        <th class="property-th">` + getMessage.FTE01020 + `<span class="input_required">*</span> :</th>
-                                        <td class="property-td" colspan="3"><span id="create-menu-for-input" type="text" class="property-span" data-id="" data-value=""></span></td>
-                                    </tr>
-                                    <tr class="parameter-sheet parameter-operation">
-                                        <th class="property-th">` + getMessage.FTE01021 + `<span class="input_required">*</span> :</th>
-                                        <td class="property-td" colspan="3"><span id="create-menu-for-substitution" type="text" class="property-span" data-id="" data-value=""></span></td>
-                                    </tr>
-                                    <tr class="parameter-sheet parameter-operation">
-                                        <th class="property-th">` + getMessage.FTE01022 + `<span class="input_required">*</span> :</th>
-                                        <td class="property-td" colspan="3"><span id="create-menu-for-reference" type="text" class="property-span" data-id="" data-value=""></span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            <ul class="property-button-group">
-                                <li><button id="create-menu-group-select" class="property-button">` + getMessage.FTE01035 + `</button></li>
-                            </ul>
-                        </div>
-                        <div id="unique-constraint" class="property-group">
-                            <div class="property-group-title">` + getMessage.FTE01023 + `</div>
-                            <table class="property-table">
-                                <tbody>
-                                    <tr class="data-sheet parameter-sheet parameter-operation">
-                                        <th class="property-th">` + getMessage.FTE01024 + `:</th>
-                                        <td class="property-td" colspan="3"><span id="unique-constraint-list" type="text" class="property-span"></span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            <ul class="property-button-group">
-                                <li><button id="unique-constraint-select" class="property-button">` + getMessage.FTE01036 + `</button></li>
-                            </ul>
-                        </div>
-                        <div id="permission-role" class="property-group">
-                            <div class="property-group-title">` + getMessage.FTE01025 + `</div>
-                            <table class="property-table">
-                                <tbody>
-                                    <tr class="data-sheet parameter-sheet parameter-operation">
-                                        <th class="property-th">` + getMessage.FTE01026 + ` :</th>
-                                        <td class="property-td" colspan="3"><span id="permission-role-name-list" type="text" class="property-span"></span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            <ul class="property-button-group">
-                                <li><button id="permission-role-select" class="property-button">` + getMessage.FTE01037 + `</button></li>
-                            </ul>
-                        </div>
-                        <div class="property-group" title="` + getMessage.FTE01038 + `">
-                            <div class="property-group-title">` + getMessage.FTE01027 + `</div>
-                            <textarea id="create-menu-explanation" class="property-textarea" spellcheck="false"></textarea>
-                        </div>
-                        <div class="property-group" title="` + getMessage.FTE01039 + `">
-                            <div class="property-group-title">` + getMessage.FTE01028 + `</div>
-                            <textarea id="create-menu-note" class="property-textarea" spellcheck="false"></textarea>
-                        </div>
-                        <p class="note">※<span class="input_required">*</span>` + getMessage.FTE01040 + `</p>
                     </div>
                 </div>
             </div>
-        </div>`;
-    }
+        </div>
+    </div>`;
 }
 /*
 ##################################################
-    editorFooterHtml
+    editorOperationMenuHtml
 ##################################################
 */
-editorFooterHtml( editorMode, createManagementMenuID ) {
+editorOperationMenuHtml( editorMode, createManagementMenuID ) {
+    const menuList = {
+        Sub: [
+            { className: 'fullscreen-on', button: { className: 'menu-editor-menu-button', icon: '', text: getMessage.FTE01148, type: 'fullscreen', action: 'default', width: '120px'}},
+            { className: 'fullscreen-off', button: { className: 'menu-editor-menu-button', icon: '', text: getMessage.FTE01149, type: 'fullscreen', action: 'default', width: '120px'}}
+        ]
+    };
     if ( editorMode === 'new' || editorMode === 'diversion'){
-        return `
-            <ul class="menu-editor-menu-ul">
-                <li class="menu-editor-menu-li"><button class="menu-editor-menu-button positive" data-menu-button="registration" onclick=>` + getMessage.FTE01041 + `</button></li>
-            </ul>`;
+        menuList.Main = [
+            { button: { className: 'menu-editor-menu-button', icon: 'plus', text: getMessage.FTE01041, type: 'registration', action: 'positive', width: '160px'}},
+        ];
     } else if ( editorMode === 'view' ){
         if ( createManagementMenuID !== '' ) {
-            return `
-            <ul class="menu-editor-menu-ul">
-                <li class="menu-editor-menu-li"><button class="menu-editor-menu-button positive" data-menu-button="edit">` + getMessage.FTE01042 + `</button></li>
-                <li class="menu-editor-menu-li"><button class="menu-editor-menu-button positive" data-menu-button="initialize">` + getMessage.FTE01043 + `</button></li>
-                <li class="menu-editor-menu-li"><button class="menu-editor-menu-button positive" data-menu-button="diversion">` + getMessage.FTE01044 + `</button></li>
-                <li class="menu-editor-menu-li"><button class="menu-editor-menu-button positive" data-menu-button="management">` + getMessage.FTE01045 + `</button></li>
-            </ul>`;
+            menuList.Main = [
+                { button: { className: 'menu-editor-menu-button', icon: 'edit', text: getMessage.FTE01042, type: 'edit', action: 'positive', width: '160px'}},
+                { button: { className: 'menu-editor-menu-button', icon: 'clear', text: getMessage.FTE01043, type: 'initialize', action: 'negative', width: '120px'}, separate: true },
+                { button: { className: 'menu-editor-menu-button', icon: 'copy', text: getMessage.FTE01044, type: 'diversion', action: 'negative', width: '120px'}},
+                { button: { className: 'menu-editor-menu-button', icon: 'check', text: getMessage.FTE01045, type: 'management', action: 'default', width: '160px'}, separate: true },
+            ];
         } else {
-            return `
-            <ul class="menu-editor-menu-ul">
-                <li class="menu-editor-menu-li"><button class="menu-editor-menu-button positive" data-menu-button="edit">` + getMessage.FTE01042 + `</button></li>
-                <li class="menu-editor-menu-li"><button class="menu-editor-menu-button positive" data-menu-button="initialize">` + getMessage.FTE01043 + `</button></li>
-                <li class="menu-editor-menu-li"><button class="menu-editor-menu-button positive" data-menu-button="diversion">` + getMessage.FTE01044 + `</button></li>
-            </ul>`;
+            menuList.Main = [
+                { button: { className: 'menu-editor-menu-button', icon: 'edit', text: getMessage.FTE01042, type: 'edit', action: 'positive', width: '160px'}},
+                { button: { className: 'menu-editor-menu-button', icon: 'clear', text: getMessage.FTE01043, type: 'initialize', action: 'negative', width: '120px'}, separate: true },
+                { button: { className: 'menu-editor-menu-button', icon: 'copy', text: getMessage.FTE01044, type: 'diversion', action: 'negative', width: '120px'}},
+            ];
         }
     } else if ( editorMode === 'initialize' ){
-        return `
-            <ul class="menu-editor-menu-ul">
-                <li class="menu-editor-menu-li"><button class="menu-editor-menu-button positive" data-menu-button="update-initialize">` + getMessage.FTE01046 + `</button></li>
-                <li class="menu-editor-menu-li"><button class="menu-editor-menu-button negative" data-menu-button="reload-initialize">` + getMessage.FTE01047 + `</button></li>
-                <li class="menu-editor-menu-li"><button class="menu-editor-menu-button negative" data-menu-button="cancel">` + getMessage.FTE01048 + `</button></li>
-            </ul>`;
+        menuList.Main = [
+            { button: { className: 'menu-editor-menu-button', icon: 'update02', text: getMessage.FTE01046, type: 'update-initialize', action: 'positive', width: '160px'}},
+            { button: { className: 'menu-editor-menu-button', icon: 'update01', text: getMessage.FTE01047, type: 'reload-initialize', action: 'negative', width: '120px'}, separate: true },
+            { button: { className: 'menu-editor-menu-button', icon: 'cross', text: getMessage.FTE01048, type: 'cancel', action: 'negative', width: '120px'}},
+        ];
     } else if ( editorMode === 'edit' ){
-        return `
-            <ul class="menu-editor-menu-ul">
-                <li class="menu-editor-menu-li"><button class="menu-editor-menu-button positive" data-menu-button="update">` + getMessage.FTE01049 + `</button></li>
-                <li class="menu-editor-menu-li"><button class="menu-editor-menu-button negative" data-menu-button="reload">` + getMessage.FTE01047 + `</button></li>
-                <li class="menu-editor-menu-li"><button class="menu-editor-menu-button negative" data-menu-button="cancel">` + getMessage.FTE01048 + `</button></li>
-            </ul>`;
+        menuList.Main = [
+            { button: { className: 'menu-editor-menu-button', icon: 'update02', text: getMessage.FTE01049, type: 'update', action: 'positive', width: '160px'}},
+            { button: { className: 'menu-editor-menu-button', icon: 'update01', text: getMessage.FTE01047, type: 'reload', action: 'negative', width: '120px'}, separate: true },
+            { button: { className: 'menu-editor-menu-button', icon: 'cross', text: getMessage.FTE01048, type: 'cancel', action: 'negative', width: '120px'}},
+        ];
     }
-    return '';
+    return fn.html.operationMenu( menuList );
 }
 /*
 ##################################################
@@ -636,32 +653,33 @@ const textEntities = function( text, flag ) {
 // ログ表示
 let menuEditorLogNumber = 1;
 const menuEditorLog = {
-  // log type : debug, log, notice, warning, error
-  'set': function( type, content ) {
-  $('.editor-tab-menu-list-item[data-tab="menu-editor-log"]').click();
-  if ( type === undefined || type === '' ) type = 'log';
-  
-  const $menuEditorLog = $('.editor-log'),
-        $menuEditorLogTable = $menuEditorLog.find('tbody');
+    // log type : debug, log, notice, warning, error
+    'set': function( type, content ) {
+        $('.editor-tab-menu-item[data-tab="menu-editor-log"]').click();
+        if ( type === undefined || type === '' ) type = 'log';
+
+        const $menuEditorLog = $('.editor-log'),
+              $menuEditorLogTable = $menuEditorLog.find('tbody');
         
-  let logRowHTML = ''
-    + '<tr class="editor-log-row ' + type + '">'
-      + '<th class="editor-log-number">' + ( menuEditorLogNumber++ ) +'</th><td class="editor-log-content">';
-  if ( type !== 'log') logRowHTML += '<span class="logLevel">' + textEntities( type.toLocaleUpperCase() ) + '</span>'
-  
-  logRowHTML += content + '</td></tr>';
+        const logClass = ( type !== 'log')? ' editor-log-content-level': '';
+        
+        let logRowHTML = ''
+          + '<tr class="editor-log-row ' + type + '">'
+            + '<th class="editor-log-number">' + ( menuEditorLogNumber++ ) +'</th><td class="editor-log-content"><div class="editor-log-content-inner' + logClass + '">';
+        if ( type !== 'log') logRowHTML += '<span class="logLevel">' + textEntities( type.toLocaleUpperCase() ) + '</span>'
 
-  $menuEditorLogTable.append( logRowHTML );
+        logRowHTML += content + '</div></td></tr>';
 
-  // 一番下までスクロール
-  const scrollTop = $menuEditorLog.get(0).scrollHeight - $menuEditorLog.get(0).clientHeight;   
-  $menuEditorLog.animate({ scrollTop : scrollTop }, 200 );
+        $menuEditorLogTable.append( logRowHTML );
 
-  },
-  'clear': function() {
-    menuEditorLogNumber = 1;
-    $('.editor-log').find('tbody').empty();
-  }
+        // 一番下までスクロール
+        const scrollTop = $menuEditorLog.get(0).scrollHeight - $menuEditorLog.get(0).clientHeight;   
+        $menuEditorLog.animate({ scrollTop : scrollTop }, 200 );
+    },
+    'clear': function() {
+        menuEditorLogNumber = 1;
+        $('.editor-log').find('tbody').empty();
+    }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -679,8 +697,7 @@ function itaModalOpen( headerTitle, bodyFunc, modalType, target = "" ) {
     if ( modalType === undefined ) modalType = 'default';
 
     const $window = $( window ),
-          $body = $('body'),
-          $container = $('.wholecontainer');
+          $body = $('body');
     
     let footerHTML;
     
@@ -720,7 +737,6 @@ function itaModalOpen( headerTitle, bodyFunc, modalType, target = "" ) {
           $lastFocus = $editorModal.find('.editor-modal-footer-menu-button[data-button-type="cancel"]');
 
     $body.append( $editorModal );
-    $container.css('filter','blur(2px)');
     $firstFocus.focus();
 
     $window.on('keydown.modal', function( e ) {
@@ -762,13 +778,11 @@ function itaModalOpen( headerTitle, bodyFunc, modalType, target = "" ) {
 function itaModalClose() {
 
     const $window = $( window ),
-        $container = $('.wholecontainer'),
         $editorModal = $('#editor-modal');
 
     if ( $editorModal.length ) {
         $window.off('keyup.modal');
         $editorModal.remove();
-        $container.css('filter','blur(0)');
     }
 }
 
@@ -789,7 +803,7 @@ function itaTabMenu() {
     $('.editor-tab').each( function() {
     
         const $tab = $( this ),
-            $tabItem = $tab.find('.editor-tab-menu-list-item'),
+            $tabItem = $tab.find('.editor-tab-menu-item'),
             $tabBody = $tab.find('.editor-tab-body');
 
         $tabItem.eq(0).addClass('selected');
@@ -822,7 +836,22 @@ const menuEditor = function() {
     itaTabMenu();
     
     // 読み込み完了
-    $menuEditor.removeClass('load-editor');
+    $menuEditor.removeClass('load-wait');
+    $menuEditor.find('.textareaAdjustment').each( fn.textareaAdjustment );
+    
+    // --------------------------------------------------
+    // フルスクリーン切り替え時のイベントを追加する
+    // --------------------------------------------------
+    document.onfullscreenchange = document.onmozfullscreenchange = document.onwebkitfullscreenchange = document.onmsfullscreenchange = function () {
+        if( fn.fullScreenCheck() ){
+            $body.addClass('editor-full-screen');
+        } else {
+            $body.removeClass('editor-full-screen');
+        }
+    }
+    
+    
+    
 
     // テキスト
 const languageText = {
@@ -965,17 +994,19 @@ if ( menuEditorMode === 'edit') disbledCheckbox = ' disabled-checkbox';
 // HTML
 const columnHeaderHTML = ''
   + '<div class="menu-column-move" title="' + textEntities(getMessage.FTE01103,1) + '"></div>'
-  + '<div class="menu-column-title on-hover" title="' + textEntities(getMessage.FTE01104,1) + '">'
-    + '<input class="menu-column-title-input" type="text" value=""'+modeDisabled+'>'
-    + '<span class="menu-column-title-dummy"></span>'
-  + '</div>'
-  + '<div class="menu-column-title on-hover" title="' + textEntities(getMessage.FTE01105,1) + '">'
-    + '<input class="menu-column-title-rest-input" type="text" value=""'+modeDisabled+'>'
-    + '<span class="menu-column-title-dummy"></span>'
+  + '<div class="menu-column-title-wrap">'
+      + '<div class="menu-column-title on-hover" title="' + textEntities(getMessage.FTE01104,1) + '">'
+            + '<input class="menu-column-title-input" type="text" value=""'+modeDisabled+'>'
+            + '<span class="menu-column-title-dummy"></span>'
+      + '</div>'
+      + '<div class="menu-column-title on-hover" title="' + textEntities(getMessage.FTE01105,1) + '">'
+            + '<input class="menu-column-title-rest-input" type="text" value=""'+modeDisabled+'>'
+            + '<span class="menu-column-title-dummy"></span>'
+      + '</div>'
   + '</div>'
   + '<div class="menu-column-function">'
-    + '<div class="menu-column-delete on-hover" title="' + textEntities(getMessage.FTE01106,1) + '"></div>'
-    + '<div class="menu-column-copy on-hover" title="' + textEntities(getMessage.FTE01107,1) + '"></div>'
+        + '<div class="menu-column-delete on-hover" title="' + textEntities(getMessage.FTE01106,1) + '"></div>'
+        + '<div class="menu-column-copy on-hover" title="' + textEntities(getMessage.FTE01107,1) + '"></div>'
   + '</div>';
 
   const columnHeaderGroupHTML = ''
@@ -1054,93 +1085,100 @@ if ( menuEditorMode !== 'view') {
 }
 
 const columnHTML = ''
-  + '<div class="menu-column" data-rowpan="1" data-item-id="" style="min-width: 180px">'
+  + '<div class="menu-column" data-rowpan="1" data-item-id="" style="min-width: 280px">'
     + '<div class="menu-column-header">'
       + columnHeaderHTML
     + '</div>'
     + '<div class="menu-column-body">'
       + '<div class="menu-column-type" title="' + textEntities(getMessage.FTE01109,1) + '">'
-        + '<select class="menu-column-type-select" id="menu-column-type-select"'+modeDisabled+''+modeKeepData+'>' + inputMethodHTML + '</select>'
+        + '<select class="input menu-column-type-select" id="menu-column-type-select"'+modeDisabled+''+modeKeepData+'>' + inputMethodHTML + '</select>'
       + '</div>'
       + '<div class="menu-column-config">'
         + '<table class="menu-column-config-table" date-select-value="1">'
           + '<tr class="multiple single link" title="' + textEntities(getMessage.FTE01110,1) + '">'
-            + '<th>' + textCode('0011') + '<span class="input_required">*</span></th>'
-            + '<td><input class="config-number max-byte" type="number" data-min="1" data-max="8192" value=""'+modeDisabled+'></td>'
+            + '<th>' + textCode('0011') + fn.html.required() + '</th>'
+            + '<td><input class="input config-number max-byte" type="number" data-min="1" data-max="8192" value=""'+modeDisabled+'></td>'
           + '</tr>'
           + '<tr class="multiple single" title="' + textEntities(getMessage.FTE01111,1) + '">'
             + '<th>' + textCode('0012') + '</th>'
-            + '<td><input class="config-text regex" type="text" value=""'+modeDisabled+'></td>'
+            + '<td><input class="input config-text regex" type="text" value=""'+modeDisabled+'></td>'
           + '</tr>'
           + '<tr class="number-int" title="' + textEntities(getMessage.FTE01112,1) + '">'
             + '<th>' + textCode('0013') + '</th>'
-            + '<td><input class="config-number int-min-number" data-min="-2147483648" data-max="2147483647" type="number" value=""'+modeDisabled+'></td>'
+            + '<td><input class="input config-number int-min-number" data-min="-2147483648" data-max="2147483647" type="number" value=""'+modeDisabled+'></td>'
           + '</tr>'
           + '<tr class="number-int" title="' + textEntities(getMessage.FTE01113,1) + '">'
             + '<th>' + textCode('0014') + '</th>'
-            + '<td><input class="config-number int-max-number" data-min="-2147483648" data-max="2147483647"  type="number" value=""'+modeDisabled+'></td>'
+            + '<td><input class="input config-number int-max-number" data-min="-2147483648" data-max="2147483647"  type="number" value=""'+modeDisabled+'></td>'
           + '</tr>'
           + '<tr class="number-float" title="' + textEntities(getMessage.FTE01114,1) + '">'
             + '<th>' + textCode('0013') + '</th>'
-            + '<td><input class="config-number float-min-number" data-min="-99999999999999" data-max="99999999999999"  type="number" value=""'+modeDisabled+'></td>'
+            + '<td><input class="input config-number float-min-number" data-min="-99999999999999" data-max="99999999999999"  type="number" value=""'+modeDisabled+'></td>'
           + '</tr>'
           + '<tr class="number-float" title="' + textEntities(getMessage.FTE01115,1) + '">'
             + '<th>' + textCode('0014') + '</th>'
-            + '<td><input class="config-number float-max-number" data-min="-99999999999999" data-max="99999999999999"  type="number" value=""'+modeDisabled+'></td>'
+            + '<td><input class="input config-number float-max-number" data-min="-99999999999999" data-max="99999999999999"  type="number" value=""'+modeDisabled+'></td>'
           + '</tr>'
           + '<tr class="number-float" title="' + textEntities(getMessage.FTE01116,1) + '">'
             + '<th>' + textCode('0015') + '</th>'
-            + '<td><input class="config-number digit-number" data-min="1" data-max="14" type="number" value=""'+modeDisabled+'></td>'
+            + '<td><input class="input config-number digit-number" data-min="1" data-max="14" type="number" value=""'+modeDisabled+'></td>'
           + '</tr>'
           + '<tr class="select" title="' + textEntities(getMessage.FTE01117,1) + '">'
-            + '<th>' + textCode('0016') + '<span class="input_required">*</span></th>'
+            + '<th>' + textCode('0016') + fn.html.required() + '</th>'
             + '<td>'
-              + '<select class="config-select pulldown-select"'+modeDisabled+''+modeKeepData+'>' + selectPulldownListHTML + '</select>'
+              + '<select class="input config-select pulldown-select"'+modeDisabled+''+modeKeepData+'>' + selectPulldownListHTML + '</select>'
             + '</td>'
           + '</tr>'
           + '<tr class="select reference" title="' + textEntities(getMessage.FTE01118,1) + '">'
-            + '<th rowspan="2">' + textCode('0043') + '</th>'
-            + '<td><span type="text" class="config-text reference-item property-span" type="text" data-reference-item-id '+modeDisabled+''+modeKeepData+'></span></td>'
+            + '<th>' + textCode('0043') + '</th>'
+            + '<td>'
+              + '<div class="reference-block">'
+                + '<span type="text" class="input config-text reference-item" type="text" data-reference-item-id '+modeDisabled+''+modeKeepData+'></span>'
+                + '<button class="itaButton button reference-item-select property-button popup" data-action="normal" title="' + textCode('0045') + '"' + modeDisabled + modeKeepData + '><div class="inner">' + fn.html.icon('menuList') + '</div></button>'
+              + '</div>'  
+            + '</td>'
           + '</tr>'
+          /*
           + '<tr class="select reference" title="' + textEntities(getMessage.FTE01118,1) + '">'
             + '<td><button class="reference-item-select property-button" '+modeDisabled+''+modeKeepData+'>' + textCode('0045') + '</button></td>'
           + '</tr>'
+          */
           + '<tr class="password" title="' + textEntities(getMessage.FTE01110,1) + '">'
-            + '<th>' + textCode('0011') + '<span class="input_required">*</span></th>'
-            + '<td><input class="config-number password-max-byte" type="number" data-min="1" data-max="8192" value=""'+modeDisabled+'></td>'
+            + '<th>' + textCode('0011') + fn.html.required() + '</th>'
+            + '<td><input class="input config-number password-max-byte" type="number" data-min="1" data-max="8192" value=""'+modeDisabled+'></td>'
           + '</tr>'
           + '<tr class="file" title="' + textEntities(getMessage.FTE01119,1) + '">'
-            + '<th>' + textCode('0042') + '<span class="input_required">*</span></th>'
-            + '<td><input class="config-number file-max-size" data-min="1" data-max="4294967296"  type="number" value=""'+modeDisabled+'></td>'
+            + '<th>' + textCode('0042') + fn.html.required() + '</th>'
+            + '<td><input class="input config-number file-max-size" data-min="1" data-max="4294967296"  type="number" value=""'+modeDisabled+'></td>'
           + '</tr>'
           + '</tr>'
           //+ '<tr class="type3" title="' + textEntities("作成対象「パラメータシート(オペレーションあり)」で作成したメニューの項目の中から参照する項目を選択します。\n選択した項目の中から同一オペレーションの値を参照します。",1) + '">'
-            //+ '<th>' + textCode('0051') + '<span class="input_required">*</span></th>'
+            //+ '<th>' + textCode('0051') + fn.html.required() + '</th>'
             //+ '<td>'
               //+ '<select class="config-select type3-reference-menu"'+modeDisabled+''+modeKeepData+'>' + type3PulldownListHTML + '</select>'
             //+ '</td>'
           //+ '</tr>'
           + '<tr class="type3" title="' + textEntities(getMessage.FTE01120,1) + '">'
-            + '<th>' + textCode('0052') + '<span class="input_required">*</span></th>'
+            + '<th>' + textCode('0052') + fn.html.required() + '</th>'
             + '<td class="type3-item-area">'
-              + '<select class="config-select type3-reference-item"'+modeDisabled+''+modeKeepData+'></select>'
+              + '<select class="input config-select type3-reference-item"'+modeDisabled+''+modeKeepData+'></select>'
             + '</td>'
           + '</tr>'
           + '<tr class="single" title="' + textEntities(getMessage.FTE01121,1) + '">'
             + '<th>' + textCode('0050') + '</th>'
-            + '<td><input class="config-text single-default-value" type="text" value=""'+modeDisabled+'></td>'
+            + '<td><input class="input config-text single-default-value" type="text" value=""'+modeDisabled+'></td>'
           + '</tr>'
           + '<tr class="multiple" title="' + textEntities(getMessage.FTE01121,1) + '">'
             + '<th>' + textCode('0050') + '</th>'
-            + '<td><textarea class="config-textarea multiple-default-value"'+modeDisabled+'></textarea></td>'
+            + '<td><textarea class="input config-textarea multiple-default-value"'+modeDisabled+'></textarea></td>'
           + '</tr>'
           + '<tr class="number-int" title="' + textEntities(getMessage.FTE01122,1) + '">'
             + '<th>' + textCode('0050') + '</th>'
-            + '<td><input class="config-number int-default-value" data-min="-2147483648" data-max="2147483647" type="number" value=""'+modeDisabled+'></td>'
+            + '<td><input class="input config-number int-default-value" data-min="-2147483648" data-max="2147483647" type="number" value=""'+modeDisabled+'></td>'
           + '</tr>'
           + '<tr class="number-float" title="' + textEntities(getMessage.FTE01123,1) + '">'
             + '<th>' + textCode('0050') + '</th>'
-            + '<td><input class="config-number float-default-value" data-min="-99999999999999" data-max="99999999999999" type="number" value=""'+modeDisabled+'></td>'
+            + '<td><input class="input config-number float-default-value" data-min="-99999999999999" data-max="99999999999999" type="number" value=""'+modeDisabled+'></td>'
           + '</tr>'
           + '<tr class="date-time" title="' + textEntities(getMessage.FTE01124,1) + '">'
             + '<th>' + textCode('0050') + '</th>'
@@ -1152,25 +1190,25 @@ const columnHTML = ''
           + '</tr>'
           + '<tr class="link" title="' + textEntities(getMessage.FTE01125,1) + '">'
             + '<th>' + textCode('0050') + '</th>'
-            + '<td><input class="config-text link-default-value" type="text" value=""'+modeDisabled+'></td>'
+            + '<td><input class="input config-text link-default-value" type="text" value=""'+modeDisabled+'></td>'
           + '</tr>'
           + '<tr class="select" title="' + textEntities(getMessage.FTE01126,1) + '">'
             + '<th>' + textCode('0050') + '</th>'
             + '<td class="pulldown-default-area">'
-              + '<select class="config-select pulldown-default-select"'+modeDisabled+'></select>'
+              + '<select class="input config-select pulldown-default-select"'+modeDisabled+'></select>'
             + '</td>'
           + '</tr>'
           + '<tr class="single multiple number-int number-float date-time date password select file link">'
             + '<td colspan="2">'
-              + '<label class="required-label'+onHover+'" title="' + textEntities(getMessage.FTE01127,1) + '"><input class="config-checkbox required'+disbledCheckbox+'" type="checkbox"'+modeDisabled+''+modeKeepData+'><span></span>' + textCode('0017') + '</label>'
-              + '<label class="unique-label'+onHover+'" title="' + textEntities(getMessage.FTE01128,1) + '"><input class="config-checkbox unique'+disbledCheckbox+'" type="checkbox"'+modeDisabled+''+modeKeepData+'><span></span>' + textCode('0018') + '</label>'
+              + '<label class="required-label'+onHover+'" title="' + textEntities(getMessage.FTE01127,1) + '"'+modeDisabled+modeKeepData+'><input class="config-checkbox required'+disbledCheckbox+'" type="checkbox"'+modeDisabled+''+modeKeepData+'><span></span>' + textCode('0017') + '</label>'
+              + '<label class="unique-label'+onHover+'" title="' + textEntities(getMessage.FTE01128,1) + '"'+modeDisabled+modeKeepData+'><input class="config-checkbox unique'+disbledCheckbox+'" type="checkbox"'+modeDisabled+''+modeKeepData+'><span></span>' + textCode('0018') + '</label>'
             + '</td>'
           + '</tr>'
           + '<tr class="all" title="' + textEntities(getMessage.FTE01129,1) + '">'
-            + '<td colspan="2"><div class="config-textarea-wrapper"><textarea class="config-textarea explanation"'+modeDisabled+'></textarea><span>' + textCode('0019') + '</span></div></td>'
+            + '<td colspan="2"><div class="config-textarea-wrapper"><textarea class="input config-textarea explanation"'+modeDisabled+'></textarea><span>' + textCode('0019') + '</span></div></td>'
           + '</tr>'
           + '<tr class="all" title="' + textEntities(getMessage.FTE01130,1) + '">'
-            + '<td colspan="2"><div class="config-textarea-wrapper"><textarea class="config-textarea note"'+modeDisabled+'></textarea><span>' + textCode('0020') + '</span></div></td>'
+            + '<td colspan="2"><div class="config-textarea-wrapper"><textarea class="input config-textarea note"'+modeDisabled+'></textarea><span>' + textCode('0020') + '</span></div></td>'
           + '</tr>'
         + '</table>'
       + '</div>'
@@ -1605,7 +1643,7 @@ $menuEditWindow.on('click', '.inputDateCalendarButton', function(){
 
 $menuEditor.find('.menu-editor-menu-button').on('click', function() {
     const $button = $( this ),
-        buttonType = $button.attr('data-menu-button');
+        buttonType = $button.attr('data-type');
 
     let url_path,
         splitstr,
@@ -1627,7 +1665,9 @@ $menuEditor.find('.menu-editor-menu-button').on('click', function() {
                 $newColumnTarget.find('.config-select'+'.type3-reference-item').prop('disabled', false); //パラメータシート参照(項目選択)
                 $newColumnTarget.find('.reference-item-select').prop('disabled', false); //参照項目を選択ボタン
                 $newColumnTarget.find('.config-checkbox'+'.required').prop('disabled', false); //必須
+                $newColumnTarget.find('.required-label').removeAttr('disabled'); //必須
                 $newColumnTarget.find('.config-checkbox'+'.unique').prop('disabled', false); //一意制
+                $newColumnTarget.find('.unique-label').removeAttr('disabled'); //一意制
                 $newColumnTarget.find('.config-checkbox'+'.required').removeClass('disabled-checkbox'); //必須のチェックボックスの色約
                 $newColumnTarget.find('.config-checkbox'+'.unique').removeClass('disabled-checkbox'); //一意制約のチェックボックスの色
                 $newColumnTarget.find('.required-label').addClass('on-hover'); //必須のカーソル動作
@@ -1722,6 +1762,9 @@ $menuEditor.find('.menu-editor-menu-button').on('click', function() {
             workspace_id = splitstr[3];
             menu = getParam('menu');
             window.location.href = '/' + organization_id + '/workspaces/' + workspace_id + '/ita/?menu=' + menu + '&menu_name_rest=' + menuEditorTargetID;
+            break;
+        case 'fullscreen':
+            fn.fullScreen();
             break;
     }
 });
@@ -2087,7 +2130,7 @@ const emptyCheck = function() {
   };
   // リピートがあるかチェックする
   const repeatCheck = function() {
-    const $repeatButton = $('.menu-editor-menu-button[data-menu-button="newColumnRepeat"]'),
+    const $repeatButton = $('.menu-editor-menu-button[data-type="newColumnRepeat"]'),
           type = $('#create-menu-type').val();
     // パラメータシートかつ、縦メニュー利用有無チェック
     if ( ( type === '1' || type === '3' ) && $('#create-menu-use-vertical').prop('checked') ) {
@@ -2243,7 +2286,7 @@ const columnHeightUpdate = function(){
             columnLevel = $column.parents('.menu-column-group').length,
             rowspan = maxLevel - columnLevel;
         $column.attr('data-rowpan', rowspan );
-        $column.find('.menu-column-header').css('height', titleHeight * rowspan );
+        $column.find('.menu-column-header').css('height', titleHeight * rowspan + titleHeight );
     });
 };
 
@@ -2268,40 +2311,45 @@ $menuTable.on({
 // プレビュー用HTML
 const sortMark = '<span class="sortMarkWrap"><span class="sortNotSelected"></span></span>',
       tHeadHeaderLeftHTML = ''
-        + '<th rowspan="{{rowspan}}" class="thSticky left"><span class="generalBold">No</span>' + sortMark + '</th>',
+        + '<th class="tHeadTh tHeadLeftSticky tHeadRowSelect th" rowspan="{{rowspan}}"><div class="ci"><button class="rowSelectButton button"><span class="inner"></span></button></div></th>'
+        + '<th class="tHeadTh tHeadLeftSticky tHeadRowMenu th" rowspan="{{rowspan}}"><div class="ci"><span class="icon icon-ellipsis_v  "></span></div></th>'
+        + '<th rowspan="{{rowspan}}" class="tHeadLeftSticky tHeadTh tHeadLeftStickyLast tHeadSort th"><div class="ci">' + getMessage.FTE01010 +'</div></th>',
       tHeadParameterHeaderLeftHTML = ''
-        + '<th rowspan="{{rowspan}}"><span class="generalBold">' + textCode('0021') + '</span>' + sortMark + '</th>'
-        + '<th colspan="4"><span class="generalBold">' + textCode('0022') + '</span></th>'
-        + '<th colspan="{{colspan}}"><span class="generalBold">' + textCode('0023') + '</span></th>',
+        + '<th rowspan="{{rowspan}}" class="tHeadTh tHeadSort th"><div class="ci">' + textCode('0021') + '</div></th>'
+        + '<th colspan="4" class="tHeadGroup tHeadTh th"><div class="ci">' + textCode('0022') + '</div></th>'
+        + '<th colspan="{{colspan}}" class="tHeadGroup tHeadTh th"><div class="ci">' + textCode('0023') + '</div></th>',
       tHeadOperationrHeaderLeftHTML = ''
-        + '<th colspan="4"><span class="generalBold">' + textCode('0022') + '</span></th>'
-        + '<th colspan="{{colspan}}"><span class="generalBold">' + textCode('0023') + '</span></th>',  
+        + '<th colspan="4" class="tHeadTh th"><div class="ci">' + textCode('0022') + '</div></th>'
+        + '<th colspan="{{colspan}}" class="tHeadTh tHeadSort th"><div class="ci">' + textCode('0023') + '</div></th>',  
       tHeadParameterOpeHeaderLeftHTML = ''
-        + '<th rowspan="{{rowspan}}"><span class="generalBold">' + textCode('0024') + '</span>' + sortMark + '</th>'
-        + '<th rowspan="{{rowspan}}"><span class="generalBold">' + textCode('0025') + '</span>' + sortMark + '</th>'
-        + '<th rowspan="{{rowspan}}"><span class="generalBold">' + textCode('0026') + '</span>' + sortMark + '</th>'
-        + '<th rowspan="{{rowspan}}"><span class="generalBold">' + textCode('0027') + '</span>' + sortMark + '</th>',
+        + '<th rowspan="{{rowspan}}" class="tHeadTh tHeadSort th"><div class="ci">' + textCode('0024') + '</div></th>'
+        + '<th rowspan="{{rowspan}}" class="tHeadTh tHeadSort th"><div class="ci">' + textCode('0025') + '</div></th>'
+        + '<th rowspan="{{rowspan}}" class="tHeadTh tHeadSort th"><div class="ci">' + textCode('0026') + '</div></th>'
+        + '<th rowspan="{{rowspan}}" class="tHeadTh tHeadSort th"><div class="ci">' + textCode('0027') + '</div></th>',
       tHeadHeaderRightHTML = ''
-        + '<th rowspan="{{rowspan}}" class="sortTriggerInTbl" ><span class="generalBold">' + textCode('0028') + '</span>' + sortMark + '</th>'
-        + '<th rowspan="{{rowspan}}" class="sortTriggerInTbl thSticky right" ><span class="generalBold">' + textCode('0029') + '</span>' + sortMark + '</th>'
-        + '<th rowspan="{{rowspan}}" class="sortTriggerInTbl thSticky right"><span class="generalBold">' + textCode('0030') + '</span>' + sortMark + '</th>',
+        + '<th rowspan="{{rowspan}}" class="tHeadTh tHeadSort th"><div class="ci">' + textCode('0028') + '</div></th>'
+        + '<th rowspan="{{rowspan}}" class="tHeadTh tHeadSort th"><div class="ci">' + textCode('0029') + '</div></th>'
+        + '<th rowspan="{{rowspan}}" class="tHeadTh tHeadSort th"><div class="ci">' + textCode('0030') + '</div></th>',
+        
       tBodyHeaderLeftHTML = ''
-        + '<td class="likeHeader number">{{id}}</td>',
+        + '<th class="tBodyLeftSticky tBodyRowSelect tBodyTh th"><div class="ci"><div class="checkboxWrap"><input type="checkbox" class="tBodyRowCheck checkbox"><label class="checkboxLabel"></label></div></div></th>'
+        + '<th class="tBodyLeftSticky tBodyRowMenu tBodyTh th"><div class="ci"><span class="icon icon-ellipsis_v"></span></div></th>'
+        + '<th class="tBodyLeftSticky tBodyTh th"><div class="ci">XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX</div></th>',
       tBodyParameterHeaderLeftHTML = ''
-        + '<td>192.168.0.1</td>'
-        + '<td>' + textCode('0031') + '</td>'
-        + '<td>2020/01/01 00:00</td>'
-        + '<td>2020/01/01 00:00</td>'
-        + '<td></td>',
+        + '<td class="tBodyTd td"><div class="ci">192.168.0.1</td>'
+        + '<td class="tBodyTd td"><div class="ci">' + textCode('0031') + '</div></td>'
+        + '<td class="tBodyTd td"><div class="ci">2020/01/01 00:00</div></td>'
+        + '<td class="tBodyTd td"><div class="ci">2020/01/01 00:00</div></td>'
+        + '<td class="tBodyTd td"><div class="ci"></td>',
       tBodyOperationHeaderLeftHTML = ''
-        + '<td>' + textCode('0031') + '</td>'
-        + '<td>2020/01/01 00:00</td>'
-        + '<td>2020/01/01 00:00</td>'
-        + '<td></td>',
+        + '<td class="tBodyTd td"><div class="ci">' + textCode('0031') + '</div></td>'
+        + '<td class="tBodyTd td"><div class="ci">2020/01/01 00:00</div></td>'
+        + '<td class="tBodyTd td"><div class="ci">2020/01/01 00:00</div></td>'
+        + '<td class="tBodyTd td"><div class="ci"></div></td>',
       tBodyHeaderRightHTML = ''
-        + '<td></td>'
-        + '<td class="likeHeader">2020/01/01 00:00:00</td>'
-        + '<td class="likeHeader">' + textCode('0032') + '</td>';
+        + '<td class="tBodyTd td"><div class="ci"></div></td>'
+        + '<td class="tBodyTd td"><div class="ci">2020/01/01 00:00:00</div></td>'
+        + '<td class="tBodyTd td"><div class="ci">' + textCode('0032') + '</div></td>';
 
 // リピートを含めた子の列数を返す
 const childColumnCount = function( $column, type ) {
@@ -2367,6 +2415,7 @@ const previewTable = function(){
   
   let tableArray = [],
       tbodyArray = [],
+      theadHTML = '',
       tableHTML = '',
       tbodyNumber = 3,
       maxLevel = rowNumberCheck();
@@ -2390,12 +2439,12 @@ const previewTable = function(){
             const selectTypeValue = $column.find('.menu-column-type-select').val();
             // Head
             const rowspan = $column.attr('data-rowpan');
-            let itemHTML = '<th rowspan="' + rowspan + '" class="sortTriggerInTbl">'
+            let itemHTML = '<th rowspan="' + rowspan + '" class="tHeadTh tHeadSort th"><div class="ci">'
                           + textEntities( $column.find('.menu-column-title-input').val() );
             if ( repeatCount > 1 ) {
               itemHTML += '[' + repeatCount + ']';
             }
-            itemHTML += sortMark + '</th>';
+            itemHTML += '</div></th>';
             tableArray[ currentFloor ].push( itemHTML );
 
             //プルダウン選択の参照項目
@@ -2407,11 +2456,11 @@ const previewTable = function(){
                     const referenceItemNameAry = referenceItemName.split(',');
                     const referenceItemLength = referenceItemAry.length;
                     for ( let i = 0; i < referenceItemLength; i++ ) {
-                        let referenceItemHTML = '<th rowspan="' + rowspan + '" class="sortTriggerInTbl">'+referenceItemNameAry[i];
+                        let referenceItemHTML = '<th rowspan="' + rowspan + '" class="tHeadTh tHeadSort th"><div class="ci">'+referenceItemNameAry[i];
                         if ( repeatCount > 1 ) {
                             referenceItemHTML += '[' + repeatCount + ']';
                         }
-                        referenceItemHTML += sortMark + '</th>';
+                        referenceItemHTML += sortMark + '</div></th>';
                         tableArray[ currentFloor ].push( referenceItemHTML );
                     }
                 }
@@ -2423,7 +2472,7 @@ const previewTable = function(){
             if ( dummyType === 'select' ) {
               dummyText = $column.find('.pulldown-select').find('option:selected').text();
             }
-            tbodyArray.push('<td class="' + dummyType + '">' + dummyText + '</td>');
+            tbodyArray.push('<td class="tBodyTd td ' + dummyType + '"><div class="ci">' + dummyText + '</div></td>');
 
             //プルダウン選択の参照項目
             if(selectTypeValue == '7'){
@@ -2434,7 +2483,7 @@ const previewTable = function(){
                     const referenceItemNameAry = referenceItemName.split(',');
                     const referenceItemLength = referenceItemAry.length;
                     for ( let i = 0; i < referenceItemLength; i++ ) {
-                        const referenceItemHTML = '<td class="' + 'reference' + '">' + textCode('0044') + '</td>';
+                        const referenceItemHTML = '<td class="tBodyTd td reference"><div class="ci">' + textCode('0044') + '</div></td>';
                         tbodyArray.push(referenceItemHTML);
                     };
                 }
@@ -2464,11 +2513,11 @@ const previewTable = function(){
           // グループ
             const colspan = childColumnCount( $column, 'group' ),
                   groupTitle = textEntities( $column.find('.menu-column-title-input').eq(0).val() ),
-                  regexTitle = new RegExp( '<th colspan=".+">' + groupTitle + '<\/th>'),
+                  regexTitle = new RegExp( '<th class="tHeadTh th" colspan=".+">' + groupTitle + '<\/th>'),
                   tableArrayLength = tableArray[ currentFloor ].length - 1;
-            let groupHTML = '<th colspan="' + colspan + '">' + groupTitle + '</th>';
+            let groupHTML = '<th class="tHeadGroup tHeadTh th" colspan="' + colspan + '"><div class="ci">' + groupTitle + '</div></th>';
             if ( repeatCount > 1 && tableArray[ currentFloor ][ tableArrayLength ].match( regexTitle ) ) {
-              tableArray[ currentFloor ][ tableArrayLength ] = '<th colspan="' + ( colspan * repeatCount ) + '">' + groupTitle + '</th>';
+              tableArray[ currentFloor ][ tableArrayLength ] = '<th class="tHeadGroup tHeadTh th" colspan="' + ( colspan * repeatCount ) + '"><div class="ci">' + groupTitle + '</div></th>';
             } else {
               tableArray[ currentFloor ].push( groupHTML );
             }
@@ -2477,8 +2526,8 @@ const previewTable = function(){
         } else if ( $column.is('.column-empty') ) {
           // 空
             const rowspan = maxLevel - currentFloor;
-            tableArray[ currentFloor ].push('<th class="empty" rowspan="' + rowspan + '">Empty</th>');
-            tbodyArray.push('<td>Empty</td>');
+            tableArray[ currentFloor ].push('<th class="tHeadBlank th empty" rowspan="' + rowspan + '"><div class="ci"></div></th>');
+            tbodyArray.push('<td class="tBodyTd td"><div class="ci">Empty</div></td>');
           // Empty end
         }
 
@@ -2498,31 +2547,31 @@ const previewTable = function(){
   }
   const tableArrayLength = tableArray.length;
   for ( let i = 0; i < tableArrayLength; i++ ) {
-    tableHTML += '<tr class="defaultExplainRow">';
+    theadHTML += '<tr class="tHeadTr headerTr tr">';
     if ( i === 0 ) {
-      tableHTML += tHeadHeaderLeftHTML.replace(/{{rowspan}}/g, maxLevel );
+      theadHTML += tHeadHeaderLeftHTML.replace(/{{rowspan}}/g, maxLevel );
       if ( previewType === 1 ) {
-        tableHTML += tHeadParameterHeaderLeftHTML
+        theadHTML += tHeadParameterHeaderLeftHTML
           .replace(/{{rowspan}}/g, maxLevel )
           .replace(/{{colspan}}/g, itemLength );
       }
       if ( previewType === 3 ) {
-        tableHTML += tHeadOperationrHeaderLeftHTML
+        theadHTML += tHeadOperationrHeaderLeftHTML
           .replace(/{{rowspan}}/g, maxLevel )
           .replace(/{{colspan}}/g, itemLength );
       }
     }
     if ( i === 1 && previewType === 1 || i === 1 && previewType === 3 ) {
-      tableHTML += tHeadParameterOpeHeaderLeftHTML.replace(/{{rowspan}}/g, maxLevel - 1 );
+      theadHTML += tHeadParameterOpeHeaderLeftHTML.replace(/{{rowspan}}/g, maxLevel - 1 );
     }
-    tableHTML += tableArray[i];
+    theadHTML += tableArray[i];
     if ( i === 0 ) {
-      tableHTML += tHeadHeaderRightHTML.replace(/{{rowspan}}/g, maxLevel );
+      theadHTML += tHeadHeaderRightHTML.replace(/{{rowspan}}/g, maxLevel );
     }
   }
   
   for ( let i = 1; i <= tbodyNumber; i++ ) {
-    tableHTML += '<tr>' + tBodyHeaderLeftHTML.replace('{{id}}', i );
+    tableHTML += '<tr class="tBodyTr tr">' + tBodyHeaderLeftHTML.replace('{{id}}', i );
     if ( previewType === 1 ) {
       tableHTML += tBodyParameterHeaderLeftHTML;
     }
@@ -2533,7 +2582,8 @@ const previewTable = function(){
   }
   
   // プレビュー更新
-  $('#menu-editor-preview').find('tbody').html( tableHTML );
+  $('#menu-editor-preview').find('.thead').html( theadHTML );
+  $('#menu-editor-preview').find('.tbody').html( tableHTML );
   
 };
 
@@ -2620,7 +2670,7 @@ const repeatRemoveConfirm = function() {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 const $columnResizeLine = $('#column-resize'),
-      defMinWidth = 180;
+      defMinWidth = 280;
 $menuEditor.on('mousedown', '.column-resize', function( e ) {
   
   // 左クリックチェック
@@ -2754,7 +2804,7 @@ const menuGroupBody = function() {
   
     // header Radio
     for ( let i = 0; i < menuGroupTypeLength; i++ ) {
-      html += '<th class="radio ' + menuGroupType[i] + '" checked>' + menuGroupAbbreviation[i] + '</th>' 
+      html += '<th class="th-radio ' + menuGroupType[i] + '" checked>' + menuGroupAbbreviation[i] + '</th>' 
     }
     // header Title
     html += '<th class="id">ID</th>'
@@ -2766,7 +2816,7 @@ const menuGroupBody = function() {
     for ( let i = 0; i < menuGroupTypeLength; i++ ) {
       const radioID = 'radio-' + menuGroupType[i] + '-0';
       html += ''
-      + '<th class="radio ' + menuGroupType[i] + '">'
+      + '<th class="th-radio ' + menuGroupType[i] + '">'
         + '<span class="menu-group-radio">'
           + '<input type="radio" class="select-menu radio-number-0" id="' + radioID + '" name="' + menuGroupType[i] + '" value="unselected" data-name="unselected" checked>' 
           + '<label class="select-menu-label" for="' + radioID + '"></label>'
@@ -2785,7 +2835,7 @@ const menuGroupBody = function() {
         const radioClass = 'select-menu radio-number-' + menuGroupData[i]['menu_group_id'],
               radioID = 'radio-' + menuGroupType[j] + '-' + menuGroupData[i]['menu_group_id'];
         html += ''
-        + '<th class="radio ' + menuGroupType[j] + '">'
+        + '<th class="th-radio ' + menuGroupType[j] + '">'
           + '<span class="menu-group-radio">'
             + '<input type="radio" class="' + radioClass +'" id="' + radioID + '" name="' + menuGroupType[j] + '" value="' + menuGroupData[i]['menu_group_id'] + '" data-name="' + menuGroupData[i]['menu_group_name'] + '">'
             + '<label class="select-menu-label" for="' + radioID + '"></label>'
@@ -2818,7 +2868,7 @@ const menuGroupBody = function() {
     });
   
     // 選択状態をRadioボタンに反映する
-    $('#menu-group').find('.property-span:visible').each( function(){
+    $('#menu-group').find('.panel-span:visible').each( function(){
       const $item = $( this ),
             type = $item.attr('id').replace('create-menu-',''),
             id = $item.attr('data-id');
@@ -3040,9 +3090,10 @@ function setRerefenceItemSelectModalBody( itemList, initData, okCallback, cancel
                             + '<form id="modal-reference-item-select">'
                             + '<table class="modal-table modal-select-table">'
                               + '<thead>'
-                                + '<th class="select">Select</th><th class="id">' + getMessage.FTE01146 + '</th><th class="name">' + getMessage.FTE01147 + '</th>'
+                                + '<th class="select">Select</th><th class="name">' + getMessage.FTE01146 + '</th><th class="name">' + getMessage.FTE01147 + '</th>'
                               + '</thead>'
                               + '<tbody>';
+
 
           itemList.forEach(itemName => {
             const itemID = itemName['reference_id'],
@@ -3053,9 +3104,9 @@ function setRerefenceItemSelectModalBody( itemList, initData, okCallback, cancel
                   value = itemID;
             itemSelectHTML += '<tr>'
             + '<th><input value="' + itemName['column_name_rest'] + '" class="modal-checkbox" type="checkbox"' + checkedFlag + '></th>'
-            + '<th>' + itemName['column_name'] + '</th><td>' + itemName['column_name_rest'] + '</td></tr>';
-          })
-          
+            + '<td>' + itemName['column_name'] + '</td><td>' + itemName['column_name_rest'] + '</td></tr>';
+          });
+
           itemSelectHTML += ''
               + '</tbody>'
             + '</table>'
@@ -3528,15 +3579,14 @@ const createRegistrationData = function( type ){
                 }
               }
               */
-
-              let required = $column.find('.required').prop('checked');
+              let required = $column.find('.config-checkbox.required').prop('checked');
               if ( required === false ){
                 required = "False";
               } else {
                 required = "True";
               }
 
-              let uniqued = $column.find('.unique').prop('checked');
+              let uniqued = $column.find('.config-checkbox.unique').prop('checked');
               if ( uniqued === false ){
                 uniqued = "False";
               } else {
@@ -3714,7 +3764,7 @@ const createRegistrationData = function( type ){
     // JSON変換
     //const menuData = JSON.stringify( createMenuJSON );
     const menuData = createMenuJSON;
-
+    
     fn.fetch('/create/define/execute/', null, 'POST', menuData ).then(function(result){
       let id  = result['history_id'];
       let string = getMessage.FTE01140;
@@ -3742,25 +3792,30 @@ const errorFormat = function( error ) {
     let keyVal;
     let val;
     let errMessage = "";
+    
+    const errorRow = function( m ){
+        return `<div class="error-log-row">${m}</div>`
+    };
+    
     try {
         errorMessage = JSON.parse(error);
         for ( const key in errorMessage ) {
             message = errorMessage[key];
             if ( key === '__line__'){
-                val = message + '<br><br>';
+                val = errorRow( message );
                 errMessage = errMessage + val;
             } else {
                 if (key in nameConvertList) {
-                    keyVal = nameConvertList[key] + ':' + message + '<br><br>';
+                    keyVal = errorRow( nameConvertList[key] + ':' + message );
                     errMessage = errMessage + keyVal;
                 } else {
-                    keyVal = key + ':' + message + '<br><br>';
+                    keyVal = errorRow( key + ':' + message );
                     errMessage = errMessage + keyVal;
                 }
             }
         }
     } catch ( e ) {
-        errMessage = error;
+        errMessage = errorRow( error );
     }
     return errMessage;
 };
@@ -4180,9 +4235,9 @@ const setPanelParameter = function( setData ) {
     
   //「メニュー作成状態」が1（未作成）の場合に各種ボタンを操作
   if(setData['menu']['menu_create_done_status_id'] == 1){
-    $('[data-menu-button="edit"]').parent().remove(); //「編集」ボタンを削除
-    $('[data-menu-button="initialize"]').text(textCode('0046')); //「初期化」ボタンを「作成」に名称変更
-    $('[data-menu-button="update-initialize"]').text(textCode('0046')); //「作成(初期化)」ボタンを「作成」に名称変更
+    $('[data-type="edit"]').parent().remove(); //「編集」ボタンを削除
+    $('[data-type="initialize"]').text(textCode('0046')); //「初期化」ボタンを「作成」に名称変更
+    $('[data-type="update-initialize"]').text(textCode('0046')); //「作成(初期化)」ボタンを「作成」に名称変更
   }
 
   itemCounter = setData['menu']['number_item'] + 1;

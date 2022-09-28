@@ -331,6 +331,14 @@ border-width: 2px;
 .checkboxText:checked ~ .checkboxTextLabel:hover > .checkboxTextMark {
 background-color: var(--accentColor100);
 }
+.checkboxText:disabled ~ .checkboxTextLabel {
+cursor: default;
+}
+.checkboxText:disabled ~ .checkboxTextLabel > .checkboxTextMark {
+background-color: var(--black60)!important;
+background-image: none!important;
+border-color: transparent!important;
+}
 /* button */
 .button {
 overflow: hidden;
@@ -347,11 +355,7 @@ outline: none;
 .button:focus {
 box-shadow: 0 0 0 1px var(--white100), 0 0 0 3px var(--focusColor);
 }
-#editor .button:focus {
-box-shadow: 0 0 0 1px var(--black80), 0 0 0 3px var(--focusColor);
-}
-.button:focus:hover,
-#editor .button:focus:hover {
+.button:focus:hover {
 box-shadow: none;
 }
 .button:hover > .inner {
@@ -536,6 +540,14 @@ margin-bottom: 2px;
 line-height: 22px;
 }
 
+.noSelect {
+display: flex;
+justify-content: center;
+align-items: center;
+color: var(--black50);
+user-select: none;
+}
+
 /* 必須 */
 .required {
 display: inline-block;
@@ -554,6 +566,7 @@ color: #FFF;
 cursor: no-drop!important;
 }
 .input:disabled {
+background-color: var(--black20);
 color: var(--rowDiscardTextColor)!important;
 }
 .tBodyTrDiscard .input[data-key="remarks"] {
@@ -1667,7 +1680,6 @@ flex-wrap: wrap;
 column-gap: 32px;
 padding: 0 4px;
 }
-
 .tableHeaderMainMenuList,
 .tableHeaderSubMenuList {
 flex: 0 0 auto;
@@ -1821,16 +1833,28 @@ border-left: 1px solid var(--mainColor100);
 .tHeadTr:first-child .tHeadLeftStickyLast {
 border-right: 1px solid var(--mainColor100);
 }
-.tHeadTr:first-child .tHeadTh {
+.tHeadTr:first-child .tHeadTh,
+.tHeadTr:first-child .tHeadBlank {
 border-top: 1px solid var(--mainColor100);
 }
-.tHeadTh {
+.tHeadTh,
+.tHeadBlank {
 background-color: var(--mainColor70);
 background-image: linear-gradient(rgba(255,255,255,.075), rgba(255,255,255,0));
 border-color: var(--mainColor100);
 box-shadow: 0 1px 1px rgba( 255,255,255,.2 ) inset;
 text-shadow: 1px 1px 1px rgb( 0,0,0,.2 );
 color: var(--white100);
+}
+.tHeadBlank {
+padding: 0 8px;
+background-color: var(--black60)!important;
+}
+.tHeadBlank > .ci {
+height: 16px;
+background-image: linear-gradient( -45deg, transparent 25%, rgba(255,255,255,.1) 25%, rgba(255,255,255,.1) 50%, transparent 50%, transparent 75%, rgba(255,255,255,.1) 75% );
+background-size: 8px 8px;
+
 }
 .tHeadSort {
 cursor: pointer;
@@ -2216,6 +2240,8 @@ gap: 16px;
 height: 48px;
 padding: 0 16px;
 }
+
+
 .filterMenuItem {
 display: flex;
 align-items: center;
@@ -2296,6 +2322,47 @@ font-size: 16px;
 margin: 0;
 opacity: 1;
 }
+/* 参照用フィルタ */
+.referenceTable .tableHeader {
+padding: 0;
+}
+.referenceFilter {
+overflow: auto;
+width: 100%;
+margin-bottom: 8px;
+background-color: rgba(0,0,0,.05);
+border: 1px solid rgba( 0,0,0,.1);
+}
+.referenceFilterTable {
+}
+.referenceFilterTable .filterTr {
+display: table-row;
+}
+.referenceFilterTable .tHeadFilterMenu > .ci {
+display: flex;
+flex-direction: column;
+}
+.referenceFilterTable .filterMenuList {
+height: 40px;
+}
+.referenceFilterTable .tHeadFilterMenu {
+border-top: 4px solid var(--black50);
+}
+.referenceFilterTable .tHeadFilter[data-type="text"] > .ci {
+display: flex;
+}
+.referenceFilterTable .filterInputArea {
+flex: 0 0 auto;
+min-width: 0;
+}
+.referenceFilterTable .filterSelectArea {
+flex: 0 0 auto;
+min-width: 160px;
+margin: 0 0 0 8px; padding: 0 0 0 8px;
+border-top: none;
+border-left: 1px dashed var(--black40);
+}
+
 /* Input date */
 .inputDateContainer {
 display: flex;
@@ -2694,6 +2761,15 @@ display: flex;
 align-items: center;
 min-width: 0;
 }
+.editor .operationMenuItem {
+padding-top: 2px;
+}
+.editor .button:focus {
+box-shadow: 0 0 0 1px var(--black90), 0 0 0 3px var(--focusColor);
+}
+.editor .button:focus:hover {
+box-shadow: none;
+}
 .operationMenuSeparate {
 position: relative;
 z-index: 0;
@@ -2707,6 +2783,10 @@ left: 0; top: 50%;
 transform: translateY(-50%);
 width: 1px; height: 32px;
 border-left: 1px solid var(--black30);
+}
+.editor .operationMenuSeparate::before {
+border-left: 1px solid rgba( 0,0,0,.3 );
+border-right: 1px solid rgba( 255,255,255,.1 );
 }
 .operationMenuSub .operationMenuSeparate::before {
 height: 28px;
@@ -2843,7 +2923,7 @@ display: none;
 height: 100%;
 }
 .editor-full-screen .fullscreen-off {
-display: block;
+display: flex;
 }
 /*
 ##################################################

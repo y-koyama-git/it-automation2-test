@@ -45,9 +45,11 @@ max-width: 100%;
 overflow: hidden;
 display: flex;
 flex-direction: column;
-transform: scale(.5);
 background-color: #FFF;
 box-shadow: 0 0 16px rgba( 0,0,0,.3 );
+}
+.dialogAnimation {
+transform: scale(.5);
 animation:  dialogOpen .1s forwards;
 }
 @keyframes dialogOpen {
