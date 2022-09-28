@@ -45,7 +45,7 @@ def get_filter_count(organization_id, workspace_id, menu):  # noqa: E501
     check_menu_info(menu, objdbca)
 
     # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['0', '1', '2', '3', '4']
+    sheet_type_list = ['0', '1', '2', '3', '4', '5', '6']
     check_sheet_type(menu, sheet_type_list, objdbca)
 
     # メニューに対するロール権限をチェック
@@ -78,7 +78,7 @@ def get_filter(organization_id, workspace_id, menu):  # noqa: E501
     check_menu_info(menu, objdbca)
 
     # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['0', '1', '2', '3', '4']
+    sheet_type_list = ['0', '1', '2', '3', '4', '5', '6']
     check_sheet_type(menu, sheet_type_list, objdbca)
 
     # メニューに対するロール権限をチェック
@@ -114,7 +114,7 @@ def get_journal(organization_id, workspace_id, menu, uuid):  # noqa: E501
     check_menu_info(menu, objdbca)
 
     # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['0', '1', '2', '3', '4']
+    sheet_type_list = ['0', '1', '2', '3', '4', '5', '6']
     check_sheet_type(menu, sheet_type_list, objdbca)
 
     # メニューに対するロール権限をチェック
@@ -149,7 +149,7 @@ def post_filter(organization_id, workspace_id, menu, body=None):  # noqa: E501
     check_menu_info(menu, objdbca)
 
     # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['0', '1', '2', '3', '4']
+    sheet_type_list = ['0', '1', '2', '3', '4', '5', '6']
     check_sheet_type(menu, sheet_type_list, objdbca)
 
     # メニューに対するロール権限をチェック
@@ -189,7 +189,7 @@ def post_filter_count(organization_id, workspace_id, menu, body=None):  # noqa: 
     check_menu_info(menu, objdbca)
 
     # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['0', '1', '2', '3', '4']
+    sheet_type_list = ['0', '1', '2', '3', '4', '5', '6']
     check_sheet_type(menu, sheet_type_list, objdbca)
 
     # メニューに対するロール権限をチェック
