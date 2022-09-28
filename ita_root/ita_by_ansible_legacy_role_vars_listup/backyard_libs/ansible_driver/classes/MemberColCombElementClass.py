@@ -13,7 +13,6 @@
 #
 from abc import ABCMeta, abstractmethod
 from flask import g
-import json
 
 
 class MemberColCombElement(metaclass=ABCMeta):
@@ -74,7 +73,7 @@ class MemberColCombElement(metaclass=ABCMeta):
             'ARRAY_MEMBER_ID',
             'COL_COMBINATION_MEMBER_ALIAS',
             'COL_SEQ_VALUE'
-            ]
+        ]
 
         result = {}
         for column in columns:

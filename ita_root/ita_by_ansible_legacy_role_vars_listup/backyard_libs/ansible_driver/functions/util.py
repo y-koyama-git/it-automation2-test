@@ -18,14 +18,15 @@ import os
 from common_libs.ansible_driver.classes.AnscConstClass import AnscConst
 from common_libs.ansible_driver.classes.WrappedStringReplaceAdmin import WrappedStringReplaceAdmin
 from common_libs.ansible_driver.classes.SubValueAutoReg import SubValueAutoReg
-from backyard_libs.ansible_driver.classes.ExpandableElementClass import ExpandableElement  # noqa F401
-from backyard_libs.ansible_driver.classes.NonExpandableElementClass import NonExpandableElement  # noqa F401
-from backyard_libs.ansible_driver.classes.VariableClass import Variable  # noqa F401
-from backyard_libs.ansible_driver.classes.VariableManagerClass import VariableManager  # noqa F401
+from backyard_libs.ansible_driver.classes.ExpandableElementClass import ExpandableElement
+from backyard_libs.ansible_driver.classes.NonExpandableElementClass import NonExpandableElement
+from backyard_libs.ansible_driver.classes.VariableClass import Variable
+from backyard_libs.ansible_driver.classes.VariableManagerClass import VariableManager
 
 """
 ライブラリ
 """
+
 
 def extract_variable_for_movement(mov_records, mov_matl_lnk_records, registerd_role_records, role_varmgr_dict):
     """
@@ -60,13 +61,13 @@ def extract_variable_for_movement(mov_records, mov_matl_lnk_records, registerd_r
         # Movementの追加オプションの変数の追加
         ans_exec_options = mov_records[movement_id]['ANS_EXEC_OPTIONS']
 
-        var_heder_id = AnscConst.DF_HOST_VAR_HED # VAR変数
-        mt_varsLineArray = [] # [{行番号:変数名}, ...]
-        mt_varsArray = [] # 不要
-        arrylocalvars = [] # 不要
+        var_heder_id = AnscConst.DF_HOST_VAR_HED  # VAR変数
+        mt_varsLineArray = []  # [{行番号:変数名}, ...]
+        mt_varsArray = []  # 不要
+        arrylocalvars = []  # 不要
         is_success, mt_varsLineArray = var_extractor.SimpleFillterVerSearch(var_heder_id, ans_exec_options, mt_varsLineArray, mt_varsArray, arrylocalvars)
         for mov_var in mt_varsLineArray:
-            for line_no, var_name in mov_var.items(): # forで回すが要素は1つしかない
+            for line_no, var_name in mov_var.items():  # forで回すが要素は1つしかない
                 var_attr = AnscConst.GC_VARS_ATTR_STD
                 item = Variable(var_name, var_attr)
 
@@ -76,6 +77,7 @@ def extract_variable_for_movement(mov_records, mov_matl_lnk_records, registerd_r
         mov_vars_dict[movement_id] = mov_vars_mgr
 
     return mov_vars_dict
+
 
 def extract_variable_for_execute(mov_vars_dict, tpl_varmng_dict, device_varmng_dict, ws_db):
     """
@@ -108,6 +110,7 @@ def extract_variable_for_execute(mov_vars_dict, tpl_varmng_dict, device_varmng_d
 
     return mov_vars_dict
 
+
 def expand_vars_member(nest_vars_mem_records, mem_max_col_records):
     """
     メンバ変数を膨らませたレコードリストを作成する
@@ -130,7 +133,6 @@ def expand_vars_member(nest_vars_mem_records, mem_max_col_records):
     sorted_vars_mem_records = sorted(nest_vars_mem_records.values(), key=lambda x: x['ARRAY_NEST_LEVEL'])
 
     top_element_list = []
-    contains_index = {}
     for vars_mem in sorted_vars_mem_records:
 
         # 多段変数最大繰返数メニュー反映要素かどうか

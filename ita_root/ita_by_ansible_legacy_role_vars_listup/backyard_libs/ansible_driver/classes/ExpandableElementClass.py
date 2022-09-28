@@ -12,9 +12,9 @@
 # limitations under the License.
 #
 from flask import g
-import json
 
-from .MemberColCombElementClass import MemberColCombElement  # noqa F401
+from .MemberColCombElementClass import MemberColCombElement
+
 
 class ExpandableElement(MemberColCombElement):
     """
