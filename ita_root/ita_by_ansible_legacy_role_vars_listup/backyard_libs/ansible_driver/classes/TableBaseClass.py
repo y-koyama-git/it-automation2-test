@@ -12,7 +12,6 @@
 # limitations under the License.
 #
 from flask import g
-# import json
 from datetime import date, datetime
 
 from common_libs.common.exception import AppException
@@ -83,7 +82,6 @@ class TableBase:
         for data in data_list:
             self._stored_records[data[self.pkey]] = data
 
-        # print(json.dumps(self._stored_records, default=json_serial))
         return True
 
     def get_stored_records(self):

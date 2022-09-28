@@ -12,10 +12,10 @@
 # limitations under the License.
 #
 from flask import g
-import json
 
 from common_libs.common.exception import AppException
-from .TableBaseClass import TableBase  # noqa F401
+from .TableBaseClass import TableBase
+
 
 class MovementVarsLinkTable(TableBase):
     """
@@ -70,7 +70,7 @@ class MovementVarsLinkTable(TableBase):
             })
 
         ret = self._ws_db.table_insert(self.table_name, register_list, self.pkey, False)
-        if ret == False:
+        if ret is False:
             # TODO メッセージを定義する
             result_code = "499-00201"
             log_msg_args = f"Insert record to `{self.table_name}` was Failed."
@@ -87,7 +87,7 @@ class MovementVarsLinkTable(TableBase):
                 restore_list.append(restore_item)
 
         ret = self._ws_db.table_update(self.table_name, restore_list, self.pkey, False)
-        if ret == False:
+        if ret is False:
             # TODO メッセージを定義する
             result_code = "499-00201"
             log_msg_args = f"Update(restore) record to `{self.table_name}` was Failed."
@@ -103,7 +103,7 @@ class MovementVarsLinkTable(TableBase):
             discard_list.append(discard_item)
 
         ret = self._ws_db.table_update(self.table_name, discard_list, self.pkey, False)
-        if ret == False:
+        if ret is False:
             # TODO メッセージを定義する
             result_code = "499-00201"
             log_msg_args = f"Update(discard) record to `{self.table_name}` was Failed."

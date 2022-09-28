@@ -12,10 +12,13 @@
 # limitations under the License.
 #
 from flask import g
-import json
 
+from backyard_libs.ansible_driver.classes.VariableClass import Variable
+from backyard_libs.ansible_driver.classes.VariableManagerClass import VariableManager
 from common_libs.ansible_driver.classes.AnscConstClass import AnscConst
-from .TableBaseClass import TableBase  # noqa F401
+from common_libs.ansible_driver.classes.WrappedStringReplaceAdmin import WrappedStringReplaceAdmin
+from .TableBaseClass import TableBase
+
 
 class DeviceTable(TableBase):
     """
@@ -41,6 +44,7 @@ class DeviceTable(TableBase):
             result_dict: { (system_id): VariableManager }
         """
 
+        var_extractor = WrappedStringReplaceAdmin()
         result_dict = {}
         for row in self._stored_records.values():
             system_id = row["SYSTEM_ID"]
