@@ -190,25 +190,17 @@ class DockerMode(AnsibleAgent):
         if cp.returncode != 0:
             return True, "already not exists"
 
-        # exitedでないものは、まずはstopする
+        # existedしているものを削除
         result_obj = json.loads(cp.stdout)
-        if len(result_obj) > 0 and "exited" not in result_obj[0]['State']:
-            # docker-compose -p project stop
-            docker_compose_command = ["/usr/local/bin/docker-compose", "-p", project_name, "stop"]
+        if len(result_obj) > 0 and result_obj[0]['State'] in ['existed']:
+            # docker-compose -p project rm -f
+            docker_compose_command = ["/usr/local/bin/docker-compose", "-p", project_name, "rm", "-f"]
             command = ["sudo"] + docker_compose_command
 
             cp = subprocess.run(command, capture_output=True, text=True)
             if cp.returncode != 0:
+                # cp.check_returncode()  # 例外を発生させたい場合
                 return False, {"return_code": cp.returncode, "stderr": cp.stderr}
-
-        # docker-compose -p project rm -f
-        docker_compose_command = ["/usr/local/bin/docker-compose", "-p", project_name, "rm", "-f"]
-        command = ["sudo"] + docker_compose_command
-
-        cp = subprocess.run(command, capture_output=True, text=True)
-        if cp.returncode != 0:
-            # cp.check_returncode()  # 例外を発生させたい場合
-            return False, {"return_code": cp.returncode, "stderr": cp.stderr}
 
         return True, cp.stdout
 
