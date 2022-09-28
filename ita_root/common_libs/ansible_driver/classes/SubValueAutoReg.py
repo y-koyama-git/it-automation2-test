@@ -97,7 +97,7 @@ class SubValueAutoReg():
         global g_null_data_handling_def
         global warning_flag
         global error_flag
-
+        
         # インターフェース情報からNULLデータを代入値管理に登録するかのデフォルト値を取得する。
         ret = self.getIFInfoDB(WS_DB)
 
@@ -2309,7 +2309,6 @@ class SubValueAutoReg():
         sql += "   TBL_A.COLUMN_ID                                             ,  \n"
         sql += "   TBL_A.MENU_ID                                               ,  \n"
         sql += "   TBL_C.TABLE_NAME                                            ,  \n"
-        sql += "   TBL_C.PK_COLUMN_NAME_REST                                   ,  \n"
         sql += "   TBL_C.DISUSE_FLAG  AS TBL_DISUSE_FLAG                       ,  \n"
         sql += "   TBL_A.COLUMN_LIST_ID                                        ,  \n"
         sql += "   TBL_B.COL_NAME                                              ,  \n"
@@ -2529,12 +2528,6 @@ class SubValueAutoReg():
                 # 次のカラムへ
                 raise ValidationException("MSG-10338", [data['COLUMN_ID']])
             
-            # CMDB代入値紐付メニューの主キーが登録されているか判定
-            if data['PK_COLUMN_NAME_REST'] is None or len(data['PK_COLUMN_NAME_REST']) == 0:
-                msgstr = g.appmsg.get_api_message("MSG-10404", [data['COLUMN_ID']])
-                # 次のカラムへ
-                raise ValidationException("MSG-10404", [data['COLUMN_ID']])
-            
             # CMDB代入値紐付メニューのカラムが未登録か判定
             if data['COL_NAME'] is None or len(data['COL_NAME']) == 0:
                 msgstr = g.appmsg.get_api_message("MSG-10340", [data['COLUMN_ID']])
@@ -2622,7 +2615,8 @@ class SubValueAutoReg():
                                                                             'KEY_SENSITIVE_FLAG': key_sensitive_flg}
         
             # テーブルの主キー名退避
-            inout_tableNameToPKeyNameList = {data['TABLE_NAME']: data['PK_COLUMN_NAME_REST']}
+            pk_name = WS_DB.table_columns_get(data['TABLE_NAME'])
+            inout_tableNameToPKeyNameList = {data['TABLE_NAME']: pk_name[1][0]}
         
         return True, inout_tableNameToMenuIdList, inout_tabColNameToValAssRowList, inout_tableNameToPKeyNameList
     
