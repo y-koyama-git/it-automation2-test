@@ -44,18 +44,20 @@ def menu_define_valid(objdbca, objtable, option):
                 retBool = False
                 msg = g.appmsg.get_api_message("MSG-20004", [])
     
-    # 「メニュー管理」テーブルで使用されているmenu_name_restは使用不可
+    # 「メニュー管理」テーブルで使用されているmenu_name_restは使用不可(currentと同じ名前の場合はチェック処理をスキップ)
     menu_name_rest = entry_parameter.get('menu_name_rest')
-    ret = objdbca.table_select('T_COMN_MENU', 'WHERE DISUSE_FLAG = %s', [0])
-    menu_name_rest_list = []
-    for recode in ret:
-        menu_name_rest_list.append(recode.get('MENU_NAME_REST'))
-    if menu_name_rest in (menu_name_rest_list):
-        retBool = False
-        msg = g.appmsg.get_api_message("MSG-20005", [])
+    current_menu_name_rest = current_parameter.get('menu_name_rest')
+    if not menu_name_rest == current_menu_name_rest:
+        ret = objdbca.table_select('T_COMN_MENU', 'WHERE DISUSE_FLAG = %s', [0])
+        menu_name_rest_list = []
+        for recode in ret:
+            menu_name_rest_list.append(recode.get('MENU_NAME_REST'))
+        if menu_name_rest in (menu_name_rest_list):
+            retBool = False
+            msg = g.appmsg.get_api_message("MSG-20005", [])
 
-    if not retBool:
-        return retBool, msg, option
+        if not retBool:
+            return retBool, msg, option
     # ---------メニュー名---------
 
     # ---------作成対象---------
