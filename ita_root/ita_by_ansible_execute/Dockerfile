@@ -48,6 +48,7 @@ RUN dnf install -y \
     pymysql \
     python-dotenv \
     chardet \
+    dictknife \
     ansible \
     kubernetes \
 &&  groupadd $GROUPNAME \
