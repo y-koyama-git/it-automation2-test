@@ -3650,7 +3650,11 @@ const createRegistrationData = function( type ){
                   }
                   createMenuJSON['column'][key]['pulldown_selection_default_value'] = $column.find('.pulldown-default-select').val();
                   let reference_item = $column.find('.reference-item').attr('data-reference-item-id');
-                  reference_item = reference_item.split(',');
+                  if (reference_item){
+                    reference_item = reference_item.split(',');
+                  }else{
+                    reference_item = null
+                  }
                   createMenuJSON['column'][key]['reference_item'] = reference_item;
                   break;
                 case '8':
