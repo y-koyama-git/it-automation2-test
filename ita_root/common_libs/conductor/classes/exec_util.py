@@ -829,11 +829,17 @@ class ConductorExecuteLibs():
                             msg_json.setdefault(ekey, einfo)
                         else:
                             for node_err in einfo:
-                                node_err_json = json.loads(node_err)
-                                for tmp_node_err in node_err_json:
-                                    tmp_node_err_json = json.loads(tmp_node_err)
-                                    for node_name, node_msg in tmp_node_err_json.items():
-                                        msg_json.setdefault(node_name, node_msg.splitlines())
+                                try:
+                                    node_err_json = json.loads(node_err)
+                                    for tmp_node_err in node_err_json:
+                                        try:
+                                            tmp_node_err_json = json.loads(tmp_node_err)
+                                            for node_name, node_msg in tmp_node_err_json.items():
+                                                msg_json.setdefault(node_name, node_msg.splitlines())
+                                        except Exception:
+                                            msg_json.setdefault(g.appmsg.get_api_message("MSG-00004", []), tmp_node_err)
+                                except Exception:
+                                    msg_json.setdefault(g.appmsg.get_api_message("MSG-00004", []), node_err)
                 result = json.dumps(msg_json, ensure_ascii=False)
             except Exception:
                 result = msg
@@ -1517,21 +1523,21 @@ class ConductorExecuteLibs():
         try:
             result = {
                 "1": {
-                    'menu': 'execution_list_ansible_legacy',
+                    'menu': 'check_operation_status_ansible',
                     'path': 'ansible/legacy',
                     'execute': 'T_COMN_MOVEMENT',
                     'abort': '',
                     'status': ''
                 },
                 "2": {
-                    'menu': 'execution_list_ansible_pioneer',
+                    'menu': 'check_operation_status_ansible_pioneer',
                     'path': 'ansible/pioneer',
                     'execute': 'T_COMN_MOVEMENT',
                     'post_abort': '',
                     'status': ''
                 },
                 "3": {
-                    'menu': 'execution_list_ansible_role',
+                    'menu': 'check_operation_status_ansible_role',
                     'path': 'ansible/legacy_role',
                     'execute': 'T_COMN_MOVEMENT',
                     'abort': '',
@@ -2459,9 +2465,11 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
         try:
             instance_data = self.get_instance_data(conductor_instance_id)
             conductor_class = instance_data.get('conductor_class')
-            node_skip = conductor_class.get(node_name).get('skip')
+            node_skip = conductor_class.get(node_name).get('skip_flag')
             if node_skip is None:
                 node_skip = 'False'
+            elif node_skip in [1, '1']:
+                node_skip = 'True'
         except Exception as e:
             g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
             type_, value, traceback_ = sys.exc_info()

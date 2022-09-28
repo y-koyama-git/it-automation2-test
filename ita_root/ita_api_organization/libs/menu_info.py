@@ -614,6 +614,8 @@ def collect_search_candidates(objdbca, menu, column, menu_record={}, menu_table_
         return []
     
     search_candidates = []
+    # 7(IDColumn), 11(LinkIDColumn), 14(LastUpdateUserColumn), 18(RoleIDColumn), 21(JsonIDColumn), 22(EnvironmentIDColumn)
+    id_column_list = ["7", "11", "14", "18", "21", "22"]
     if save_type == "JSON":
         for record in ret:
             target = record.get(col_name)
@@ -624,17 +626,24 @@ def collect_search_candidates(objdbca, menu, column, menu_record={}, menu_table_
             if json_rows:
                 for jsonkey, jsonval in json_rows.items():
                     if jsonkey == column_name_rest:
-                        search_candidates.append(jsonval)
+                        if column_class_id in id_column_list:
+                            # プルダウンの一覧を取得
+                            objmenu = load_table.loadTable(objdbca, menu)  # noqa: F405
+                            objcolumn = objmenu.get_columnclass(column)
+                            column_pulldown_list = objcolumn.get_values_by_key()
+                            # レコードの中からIDに合致するデータを取得
+                            conv_jsonval = column_pulldown_list.get(jsonval)
+                            search_candidates.append(conv_jsonval)
+                        else:
+                            search_candidates.append(jsonval)
     else:
-        # 7(IDColumn), 11(LinkIDColumn), 14(LastUpdateUserColumn), 18(RoleIDColumn), 21(JsonIDColumn), 22(EnvironmentIDColumn)
-        id_column_list = ["7", "11", "14", "18", "21", "22"]
         if column_class_id in id_column_list:
             # プルダウンの一覧を取得
             objmenu = load_table.loadTable(objdbca, menu)  # noqa: F405
             objcolumn = objmenu.get_columnclass(column)
             column_pulldown_list = objcolumn.get_values_by_key()
 
-            # レコードのなかからプルダウンの一覧に合致するデータを抽出
+            # レコードの中からプルダウンの一覧に合致するデータを抽出
             for record in ret:
                 if record.get(col_name) in column_pulldown_list.keys():
                     convert = column_pulldown_list[record.get(col_name)]

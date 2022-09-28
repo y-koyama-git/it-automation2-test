@@ -40,7 +40,7 @@ def get_column_list(organization_id, workspace_id, menu):  # noqa: E501
     menu_record = check_menu_info(menu, objdbca)
 
     # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['0', '1', '2', '3', '4']
+    sheet_type_list = ['0', '1', '2', '3', '4', '5', '6']
     check_sheet_type(menu, sheet_type_list, objdbca)
 
     # メニューに対するロール権限をチェック
@@ -108,7 +108,7 @@ def get_pulldown_list(organization_id, workspace_id, menu):  # noqa: E501
     menu_record = check_menu_info(menu, objdbca)
 
     # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['0', '1', '2', '3', '4']
+    sheet_type_list = ['0', '1', '2', '3', '4', '5', '6']
     check_sheet_type(menu, sheet_type_list, objdbca)
 
     # メニューに対するロール権限をチェック
@@ -144,7 +144,7 @@ def get_search_candidates(organization_id, workspace_id, menu, column):  # noqa:
     menu_record = check_menu_info(menu, objdbca)
 
     # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['0', '1', '2', '3', '4']
+    sheet_type_list = ['0', '1', '2', '3', '4', '5', '6']
     menu_table_link_record = check_sheet_type(menu, sheet_type_list, objdbca)
 
     # メニューに対するロール権限をチェック

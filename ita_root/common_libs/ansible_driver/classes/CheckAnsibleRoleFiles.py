@@ -128,7 +128,7 @@ class CheckAnsibleRoleFiles():
 
         return self.lv_lasterrmsg
 
-    def ZipextractTo(self, in_zip_path, in_dist_path):
+    def ZipextractTo(self, in_zip_path, in_dist_path, del_flag=True):
 
         """
         処理内容
@@ -136,13 +136,17 @@ class CheckAnsibleRoleFiles():
         パラメータ
           in_zip_path:    zipファイル
           in_dist_path:   zipファイル展開先ディレクトリ
+          del_flag:       zipファイル展開先ディレクトリ削除有無
+                          作業実行の場合に削除できない為
         戻り値
           true: 正常  false:異常
         """
 
         try:
-            if os.path.isdir(in_dist_path):
-                shutil.rmtree(in_dist_path)
+            if del_flag is True:
+               if os.path.isdir(in_dist_path):
+                   shutil.rmtree(in_dist_path)
+
             with zipfile.ZipFile(in_zip_path) as zip:
                 zip.extractall(in_dist_path)
 
@@ -1182,6 +1186,10 @@ class CheckAnsibleRoleFiles():
 
         boolRet = True
         yaml = pathlib.Path(Filename).read_bytes()
+        # 変数定義ファイルが空の場合
+        if len(yaml) == 0:
+            return boolRet, strErrMsg
+            
         encode = detect(yaml)
         encode = encode['encoding'].upper()
         if encode in ["ASCII", "UTF-8"]:

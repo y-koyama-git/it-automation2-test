@@ -122,7 +122,7 @@ def main_logic(wsDb: DBConnectWs, execution_no, driver_id):  # noqa: C901
     # 処理対象の作業インスタンス情報取得
     retBool, execute_data = cm.get_execution_process_info(wsDb, execution_no)
     if retBool is False:
-        return False, execute_data
+        return False, g.appmsg.get_log_message(execute_data, [execution_no])
     execution_no = execute_data["EXECUTION_NO"]
     run_mode = execute_data['RUN_MODE']
 
@@ -146,7 +146,8 @@ def main_logic(wsDb: DBConnectWs, execution_no, driver_id):  # noqa: C901
     try:
         sub_value_auto_reg.GetDataFromParameterSheet("1", execute_data["OPERATION_ID"], execute_data["MOVEMENT_ID"], execution_no, wsDb)
     except ValidationException as e:
-        return False, e
+        err_msg = g.appmsg.get_log_message(e)
+        return False, err_msg
 
     # 実行モードが「パラメータ確認」の場合は終了
     if run_mode == ansc_const.CHK_PARA:
@@ -185,19 +186,18 @@ def main_logic(wsDb: DBConnectWs, execution_no, driver_id):  # noqa: C901
     ansdrv = CreateAnsibleExecFiles(driver_id, ans_if_info, execution_no, execute_data['I_ENGINE_VIRTUALENV_NAME'], execute_data['I_ANSIBLE_CONFIG_FILE'], wsDb)  # noqa: E501
 
     # 処理対象の作業インスタンス実行
+    g.applogger.debug("execute instance_execution")
     retBool, execute_data, result_data = instance_execution(wsDb, ansdrv, ans_if_info, execute_data, driver_id)
 
     # 実行結果から、処理対象の作業インスタンスのステータス更新
     if retBool is True:
         wsDb.db_transaction_start()
         if execute_data['FILE_INPUT']:
-            zip_file_name = execute_data['FILE_INPUT']
-            zip_tmp_save_path = get_AnsibleDriverTmpPath() + "/" + zip_file_name
+            zip_tmp_save_path = get_AnsibleDriverTmpPath() + "/" + execute_data['FILE_INPUT']
         else:
-            zip_file_name = ''
             zip_tmp_save_path = ''
-        result = InstanceRecodeUpdate(wsDb, driver_id, execution_no, execute_data, 'FILE_INPUT', zip_file_name, zip_tmp_save_path)
-        # result = cm.update_execution_record(wsDb, execute_data)
+        result = InstanceRecodeUpdate(wsDb, driver_id, execution_no, execute_data, 'FILE_INPUT', zip_tmp_save_path)
+
         if result[0] is True:
             wsDb.db_commit()
             g.applogger.info(g.appmsg.get_log_message("BKY-10004", [execute_data["STATUS_ID"], execution_no]))
@@ -232,6 +232,7 @@ def main_logic(wsDb: DBConnectWs, execution_no, driver_id):  # noqa: C901
             clone_execute_data = execute_data
 
         # 実行結果の確認
+        g.applogger.debug("execute instance_checkcondition")
         retBool, clone_execute_data, db_update_need = instance_checkcondition(wsDb, ansdrv, ans_if_info, clone_execute_data, driver_id, tower_host_list)  # noqa: E501
 
         status_update = False
@@ -241,14 +242,12 @@ def main_logic(wsDb: DBConnectWs, execution_no, driver_id):  # noqa: C901
             status_update = True
 
             wsDb.db_transaction_start()
-            if execute_data['FILE_RESULT']:
-                zip_file_name = execute_data['FILE_RESULT']
-                zip_tmp_save_path = get_AnsibleDriverTmpPath() + "/" + zip_file_name
+            if clone_execute_data['FILE_RESULT']:
+                zip_tmp_save_path = get_AnsibleDriverTmpPath() + "/" + clone_execute_data['FILE_RESULT']
             else:
-                zip_file_name = ''
                 zip_tmp_save_path = ''
-            result = InstanceRecodeUpdate(wsDb, driver_id, execution_no, execute_data, 'FILE_RESULT', zip_file_name, zip_tmp_save_path)
-            # result = cm.update_execution_record(wsDb, clone_execute_data)
+            result = InstanceRecodeUpdate(wsDb, driver_id, execution_no, clone_execute_data, 'FILE_RESULT', zip_tmp_save_path)
+
             if result[0] is True:
                 wsDb.db_commit()
                 g.applogger.info(g.appmsg.get_log_message("BKY-10004", [clone_execute_data["STATUS_ID"], execution_no]))
@@ -267,7 +266,7 @@ def main_logic(wsDb: DBConnectWs, execution_no, driver_id):  # noqa: C901
 
 def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if_info, execute_data, driver_id):
     execution_no = execute_data["EXECUTION_NO"]
-    pattern_id = execute_data["PATTERN_ID"]
+    movement_id = execute_data["MOVEMENT_ID"]
     run_mode = execute_data['RUN_MODE']  # 処理対象のドライランモードのリスト
 
     # [処理]処理対象インスタンス 作業実行開始(作業No.:{})
@@ -275,7 +274,7 @@ def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if
 
     # 処理対象の並列実行数のリストを格納 (pioneer)
     tgt_exec_count = execute_data['I_ANS_PARALLEL_EXE']
-    if len(tgt_exec_count.strip()) == 0:
+    if not tgt_exec_count or len(tgt_exec_count.strip()) == 0:
         tgt_exec_count = '0'
 
     # ANSIBLEインタフェース情報をローカル変数に格納
@@ -283,7 +282,7 @@ def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if
     ans_exec_user = ans_if_info['ANSIBLE_EXEC_USER']
     ans_exec_mode = ans_if_info['ANSIBLE_EXEC_MODE']
 
-    if len(ans_exec_user.strip()) == 0:
+    if not ans_exec_user or len(ans_exec_user.strip()) == 0:
         ans_exec_user = 'root'
 
     winrm_id = ""
@@ -300,7 +299,7 @@ def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if
         return False, execute_data, result[1]
 
     # ansible-playbookのオプションパラメータを確認
-    movement_ansible_exec_option = getMovementAnsibleExecOption(wsDb, pattern_id)
+    movement_ansible_exec_option = getMovementAnsibleExecOption(wsDb, movement_id)
 
     option_parameter = ansible_exec_options + ' ' + movement_ansible_exec_option
     option_parameter = option_parameter.replace("--verbose", "-v")
@@ -394,7 +393,10 @@ def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if
                 Ansible_out_Dir,
                 uiexec_log_path, uierror_log_path,
                 multiple_log_mark, multiple_log_file_json_ary)
-            raise Exception(e)
+
+            err_msg = g.appmsg.get_log_message("BKY-00004", ["AnsibleTowerExecution(DF_EXECUTION_FUNCTION)", e])
+            ansdrv.LocalLogPrint(err_msg)
+            return False, execute_data, err_msg
 
         # マルチログか判定
         if multiple_log_mark and execute_data['MULTIPLELOG_MODE'] != multiple_log_mark:
@@ -412,7 +414,7 @@ def instance_checkcondition(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, a
     ans_exec_user = ans_if_info['ANSIBLE_EXEC_USER']
     ans_exec_mode = ans_if_info['ANSIBLE_EXEC_MODE']
 
-    if len(str(ans_exec_user).strip()) == 0:
+    if not ans_exec_user or len(ans_exec_user.strip()) == 0:
         ans_exec_user = 'root'
 
     # 実行エンジンを判定
@@ -577,7 +579,7 @@ def call_CreateAnsibleExecFiles(ansdrv: CreateAnsibleExecFiles, execute_data, dr
     execution_no = execute_data["EXECUTION_NO"]
     conductor_instance_no = execute_data["CONDUCTOR_INSTANCE_NO"]
     operation_id = execute_data["OPERATION_ID"]
-    pattern_id = execute_data["PATTERN_ID"]
+    movement_id = execute_data["MOVEMENT_ID"]
     # ホストアドレス指定方式（I_ANS_HOST_DESIGNATE_TYPE_ID）
     # null or 1 がIP方式 2 がホスト名方式
     hostaddres_type = execute_data['I_ANS_HOST_DESIGNATE_TYPE_ID']
@@ -614,7 +616,7 @@ def call_CreateAnsibleExecFiles(ansdrv: CreateAnsibleExecFiles, execute_data, dr
 
     result = ansdrv.CreateAnsibleWorkingDir(ansr_const.vg_OrchestratorSubId_dir, execution_no, operation_id, hostaddres_type,
                                             winrm_id,
-                                            pattern_id,
+                                            movement_id,
                                             role_rolenamelist,
                                             role_rolevarslist,
                                             role_roleglobalvarslist,
@@ -633,7 +635,7 @@ def call_CreateAnsibleExecFiles(ansdrv: CreateAnsibleExecFiles, execute_data, dr
 
     result = ansdrv.getDBHostList(
         execution_no,
-        pattern_id,
+        movement_id,
         operation_id,
         hostlist,
         hostostypelist,
@@ -647,7 +649,7 @@ def call_CreateAnsibleExecFiles(ansdrv: CreateAnsibleExecFiles, execute_data, dr
         # データベースからPlayBookファイルを取得
         #    playbooklist:     子PlayBookファイル返却配列
         #                     [INCLUDE順序][素材管理Pkey]=>素材ファイル
-        result = ansdrv.getDBLegacyPlaybookList(pattern_id, playbooklist)
+        result = ansdrv.getDBLegacyPlaybookList(movement_id, playbooklist)
         retBool, playbooklist = result
         if retBool is False:
             return False, g.appmsg.get_log_message("BKY-00004", ["CreateAnsibleExecFiles.getDBLegacyPlaybookList", "error occured"])
@@ -655,7 +657,7 @@ def call_CreateAnsibleExecFiles(ansdrv: CreateAnsibleExecFiles, execute_data, dr
         # データベースから対話ファイルを取得
         #    dialogfilelist:     子PlayBookファイル返却配列
         #                     [ホスト名(IP)][INCLUDE順番][素材管理Pkey]=対話ファイル
-        result = ansdrv.getDBPioneerDialogFileList(pattern_id, operation_id, dialogfilelist, hostostypelist)
+        result = ansdrv.getDBPioneerDialogFileList(movement_id, operation_id, dialogfilelist, hostostypelist)
         retBool, dialogfilelist = result
         if retBool is False:
             return False, g.appmsg.get_log_message("BKY-00004", ["CreateAnsibleExecFiles.getDBPioneerDialogFileList", "error occured"])
@@ -663,7 +665,7 @@ def call_CreateAnsibleExecFiles(ansdrv: CreateAnsibleExecFiles, execute_data, dr
         # データベースからロール名を取得
         #    rolenamelist:     ロール名返却配列
         #                     [実行順序][ロールID(Pkey)]=>ロール名
-        result = ansdrv.getDBLegactRoleList(pattern_id, rolenamelist)
+        result = ansdrv.getDBLegactRoleList(movement_id, rolenamelist)
         retBool, rolenamelist = result
         if retBool is False:
             return False, g.appmsg.get_log_message("BKY-00004", ["CreateAnsibleExecFiles.getDBLegactRoleList", "error occured"])
@@ -672,7 +674,7 @@ def call_CreateAnsibleExecFiles(ansdrv: CreateAnsibleExecFiles, execute_data, dr
     if driver_id == ansc_const.DF_LEGACY_DRIVER_ID or driver_id == ansc_const.DF_PIONEER_DRIVER_ID:
         #  データベースから変数情報を取得する。
         result = ansdrv.getDBVarList(
-            pattern_id,
+            movement_id,
             operation_id,
             host_vars,
             pioneer_template_host_vars,
@@ -687,7 +689,7 @@ def call_CreateAnsibleExecFiles(ansdrv: CreateAnsibleExecFiles, execute_data, dr
         # データベースから変数情報を取得する。
         #   $host_vars:        変数一覧返却配列
         #                      [ホスト名(IP)][ 変数名 ]=>具体値
-        result = ansdrv.getDBRoleVarList(execution_no, pattern_id, operation_id, host_vars, MultiArray_vars_list, All_vars_list)
+        result = ansdrv.getDBRoleVarList(execution_no, movement_id, operation_id, host_vars, MultiArray_vars_list, All_vars_list)
         retBool, host_vars, MultiArray_vars_list, All_vars_list = result
         if retBool is False:
             return False, g.appmsg.get_log_message("BKY-00004", ["CreateAnsibleExecFiles.getDBRoleVarList", "error occured"])
@@ -723,9 +725,9 @@ def call_CreateAnsibleExecFiles(ansdrv: CreateAnsibleExecFiles, execute_data, dr
     return True, ""
 
 
-def getMovementAnsibleExecOption(wsDb, pattern_id):
-    condition = 'WHERE `DISUSE_FLAG`=0 AND PATTERN_ID = %s'
-    records = wsDb.table_select('V_ANSR_MOVEMENT', condition, [pattern_id])
+def getMovementAnsibleExecOption(wsDb, movement_id):
+    condition = 'WHERE `DISUSE_FLAG`=0 AND MOVEMENT_ID = %s'
+    records = wsDb.table_select('V_ANSR_MOVEMENT', condition, [movement_id])
 
     return records[0]['ANS_EXEC_OPTIONS']
 
@@ -745,18 +747,18 @@ def getAnsiblePlaybookOptionParameter(wsDb, option_parameter):  # noqa: C901
     param_arr = re.split(r'((\s)-)', param)
     # 無効なオプションパラメータが設定されていないか判定
     for param_string in param_arr:
-        if param_string.strip() == '-__dummy__':
+        if param_string and param_string.strip() == '-__dummy__':
             continue
 
         hit = False
         chk_param_string = '-' + param_string + ' '
         for job_template_property_record in job_template_property_info:
-            key_string = job_template_property_record['KEY_NAME'].strip()
+            key_string = job_template_property_record['KEY_NAME'].strip() if job_template_property_record['KEY_NAME'] else ''
             if key_string != "":
                 if re.match(key_string, chk_param_string):
                     hit = True
                     break
-            key_string = job_template_property_record['SHORT_KEY_NAME'].strip()
+            key_string = job_template_property_record['SHORT_KEY_NAME'].strip() if job_template_property_record['SHORT_KEY_NAME'] else ''
             if key_string != "":
                 if re.match(key_string, chk_param_string):
                     hit = True
@@ -908,7 +910,7 @@ def getAnsiblePlaybookOptionParameter(wsDb, option_parameter):  # noqa: C901
                 n = n + 1
 
         # JobTemplatePropertyParameterAryの作成
-        if len(job_template_property_record['KEY_NAME'].strip()) != 0:
+        if job_template_property_record['KEY_NAME'] and len(job_template_property_record['KEY_NAME'].strip()) != 0:
             retBool, JobTemplatePropertyParameterAry = makeJobTemplatePropertyParameterAry(
                 job_template_property_record['KEY_NAME'],
                 job_template_property_record['PROPERTY_TYPE'],
@@ -918,7 +920,7 @@ def getAnsiblePlaybookOptionParameter(wsDb, option_parameter):  # noqa: C901
                 verbose_cnt)
             if retBool is False:
                 res_retBool = False
-        if len(job_template_property_record['SHORT_KEY_NAME'].strip()) != 0:
+        if job_template_property_record['SHORT_KEY_NAME'] and len(job_template_property_record['SHORT_KEY_NAME'].strip()) != 0:
             retBool, JobTemplatePropertyParameterAry = makeJobTemplatePropertyParameterAry(
                 job_template_property_record['SHORT_KEY_NAME'],
                 job_template_property_record['PROPERTY_TYPE'],
@@ -967,7 +969,7 @@ def makeJobTemplateProperty(key_string, property_type, param_arr, err_msg_arr, e
             excist_list.append(param_string)
 
             if property_type == ansc_const.DF_JobTemplateKeyValueProperty:
-                if len(property_arr[1].strip()) == 0:
+                if not property_arr[1] or len(property_arr[1].strip()) == 0:
                     err_msg_arr.append(g.appmsg.get_log_message("MSG-10553", [chk_param_string]))
                     res_retBool = False
                 elif re.search(r'-f', key_string):
@@ -980,19 +982,19 @@ def makeJobTemplateProperty(key_string, property_type, param_arr, err_msg_arr, e
 
             elif property_type == ansc_const.DF_JobTemplateVerbosityProperty:
                 property_arr = re.split(r'^(v)*', param_string)
-                if len(property_arr[1].strip()) != 0:
+                if property_arr[1] and len(property_arr[1].strip()) != 0:
                     err_msg_arr.append(g.appmsg.get_log_message("MSG-10555", [chk_param_string]))
                     res_retBool = False
                 else:
                     verbose_cnt = verbose_cnt + len(param_string.strip())
 
             elif property_type == ansc_const.DF_JobTemplatebooleanTrueProperty:
-                if len(property_arr[1]).strip() != 0:
+                if property_arr[1] and len(property_arr[1]).strip() != 0:
                     err_msg_arr.append(g.appmsg.get_log_message("MSG-10555", [chk_param_string]))
                     res_retBool = False
 
             elif property_type == ansc_const.DF_JobTemplateExtraVarsProperty:
-                if len(property_arr[1]).strip() == 0:
+                if not property_arr[1] or len(property_arr[1]).strip() == 0:
                     err_msg_arr.append(g.appmsg.get_log_message("MSG-10553", [chk_param_string]))
                     res_retBool = False
                 else:
@@ -1014,6 +1016,8 @@ def makeJobTemplatePropertyParameterAry(key_string, property_type, property_name
             continue
 
         proper_ary = re.split(r'^{}'.format(key_string), chk_param_string)
+        if not proper_ary[1]:
+            proper_ary[1] = ''
 
         if property_type == ansc_const.DF_JobTemplateKeyValueProperty:
             JobTemplatePropertyParameterAry[property_name] = proper_ary[1].strip()
@@ -1097,7 +1101,7 @@ def createTmpZipFile(execution_no, zip_data_source_dir, zip_type, zip_file_pfx):
     return True, err_msg, zip_file_name
 
 
-def InstanceRecodeUpdate(wsDb, driver_id, execution_no, execute_data, update_column_name, zip_file_name, zip_tmp_save_path):
+def InstanceRecodeUpdate(wsDb, driver_id, execution_no, execute_data, update_column_name, zip_tmp_save_path):
     """
     作業管理更新
 
@@ -1107,8 +1111,7 @@ def InstanceRecodeUpdate(wsDb, driver_id, execution_no, execute_data, update_col
         execution_no: 作業番号
         execute_data: 更新内容配列
         update_column_name: 更新対象のFileUpLoadColumn名
-        zip_file_name: zipファイル名
-        zip_tmp_save_path: zipファイルのパス
+        zip_tmp_save_path: 一時的に作成したzipファイルのパス
     RETRUN:
         True/False, errormsg
     """
@@ -1126,7 +1129,6 @@ def InstanceRecodeUpdate(wsDb, driver_id, execution_no, execute_data, update_col
     TableDict["TABLE"][AnscConst.DF_PIONEER_DRIVER_ID] = "Not supported"
     TableDict["TABLE"][AnscConst.DF_LEGACY_ROLE_DRIVER_ID] = "T_ANSR_EXEC_STS_INST"
     MenuName = TableDict["MENU_REST"][driver_id]
-    TableName = TableDict["TABLE"][driver_id]
     MenuId = TableDict["MENU_ID"][driver_id]
 
     # loadtyable.pyで使用するCOLUMN_NAME_RESTを取得
@@ -1135,14 +1137,6 @@ def InstanceRecodeUpdate(wsDb, driver_id, execution_no, execute_data, update_col
     restcolnamerow = wsDb.sql_execute(sql, [MenuId])
     for row in restcolnamerow:
         RestNameConfig[row["COL_NAME"]] = row["COLUMN_NAME_REST"]
-
-    # 更新対象レコードの最終更新日時をと取得
-    sql = "SELECT DATE_FORMAT(LAST_UPDATE_TIMESTAMP, '%%Y/%%m/%%d %%H:%%i:%%s.%%f') AS LAST_UPDATE_TIMESTAMP FROM "
-    + TableName + " WHERE EXECUTION_NO = %s"
-    # print(sql)
-    InstanceRows = wsDb.sql_execute(sql, [execution_no])
-    # マスタなので件数チェックしない
-    InstanceRow = InstanceRows[0]
 
     ExecStsInstTableConfig = {}
 
@@ -1161,22 +1155,28 @@ def InstanceRecodeUpdate(wsDb, driver_id, execution_no, execute_data, update_col
 
     # 入力データ/投入データ／出力データ/結果データ用zipデータ
     uploadfiles = {}
-    ZipDataData = file_encode(zip_tmp_save_path)
-    if ZipDataData is False:
-        # エンコード失敗
-        msgstr = g.appmsg.get_api_message("499-00909", [])
-        return False, msgstr
-    uploadfiles = {RestNameConfig[update_column_name]: ZipDataData}
+    if zip_tmp_save_path:
+        ZipDataData = file_encode(zip_tmp_save_path)
+        if ZipDataData is False:
+            # エンコード失敗
+            msgstr = g.appmsg.get_api_message("499-00909", [])
+            return False, msgstr
+        uploadfiles = {RestNameConfig[update_column_name]: ZipDataData}
 
-    # 入力データ/投入データ／出力データ/結果データ
-    ExecStsInstTableConfig[RestNameConfig[update_column_name]] = zip_file_name
-
+    # 作業状況/開始日時
+    if update_column_name == "FILE_INPUT":
+        ExecStsInstTableConfig[RestNameConfig["FILE_INPUT"]] = execute_data["FILE_INPUT"]  # 入力データ/投入データ
+        ExecStsInstTableConfig[RestNameConfig["TIME_START"]] = execute_data["TIME_START"]
+        ExecStsInstTableConfig[RestNameConfig["MULTIPLELOG_MODE"]] = execute_data["MULTIPLELOG_MODE"]
     # 作業状況/終了日時
     if update_column_name == "FILE_RESULT":
+        ExecStsInstTableConfig[RestNameConfig["FILE_RESULT"]] = execute_data["FILE_RESULT"]  # 出力データ/結果データ
         ExecStsInstTableConfig[RestNameConfig["TIME_END"]] = execute_data["TIME_END"]
+        ExecStsInstTableConfig[RestNameConfig["MULTIPLELOG_MODE"]] = execute_data["MULTIPLELOG_MODE"]
+        ExecStsInstTableConfig[RestNameConfig["LOGFILELIST_JSON"]] = execute_data["LOGFILELIST_JSON"]
 
     # 最終更新日時
-    ExecStsInstTableConfig[RestNameConfig["LAST_UPDATE_TIMESTAMP"]] = InstanceRow['LAST_UPDATE_TIMESTAMP']
+    ExecStsInstTableConfig[RestNameConfig["LAST_UPDATE_TIMESTAMP"]] = execute_data['LAST_UPDATE_TIMESTAMP']
 
     parameters = {
         "parameter": ExecStsInstTableConfig,

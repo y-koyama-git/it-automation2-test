@@ -104,8 +104,8 @@ def external_valid_menu_after(objDBCA, objtable, option):
             # aryErrMsgBody = retAry[0][2]
             retStrBody = retAry[0][3]
             def_vars_list = retAry[1]
-            def_array_vars_list = retAry[2]
-            def_varsval_list = retAry[3]
+            def_varsval_list = retAry[2]
+            def_array_vars_list = retAry[3]
             cpf_vars_list = retAry[4]
             tpf_vars_list = retAry[5]
             gbl_vars_list = retAry[6]
@@ -152,6 +152,6 @@ def external_valid_menu_after(objDBCA, objtable, option):
     table_name = "T_COMN_PROC_LOADED_LIST"
     data_list = {"LOADED_FLG": "0", "ROW_ID": "204"}
     primary_key_name = "ROW_ID"
-    ret = objDBCA.table_update(table_name, data_list, primary_key_name, False)
+    objDBCA.table_update(table_name, data_list, primary_key_name, False)
 
     return retBool, retStrBody, option

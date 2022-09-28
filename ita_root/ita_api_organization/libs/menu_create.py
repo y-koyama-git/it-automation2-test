@@ -458,7 +458,7 @@ def collect_pulldown_reference_item(objdbca, menu_name_rest, column_name_rest):
     
     # 変数定義
     lang = g.get('LANGUAGE')
-    reference_item_dict = {}
+    reference_item_list = []
     
     # 「他メニュー連携」から対象のレコード一覧を取得
     ret = objdbca.table_select(v_menu_other_link, 'WHERE MENU_NAME_REST = %s AND REF_COL_NAME_REST = %s AND DISUSE_FLAG = %s', [menu_name_rest, column_name_rest, 0])  # noqa: E501
@@ -471,16 +471,16 @@ def collect_pulldown_reference_item(objdbca, menu_name_rest, column_name_rest):
     link_id = ret[0].get('LINK_ID')
     
     # 「参照項目情報」からLINK_IDに紐づくレコードを取得
-    ret = objdbca.table_select(v_menu_reference_item, 'WHERE LINK_ID = %s AND DISUSE_FLAG = %s', [link_id, 0])
+    ret = objdbca.table_select(v_menu_reference_item, 'WHERE LINK_ID = %s AND DISUSE_FLAG = %s ORDER BY DISP_SEQ ASC', [link_id, 0])
     if ret:
         for record in ret:
-            print(record)
             reference_id = record.get('REFERENCE_ID')
             column_name = record.get('COLUMN_NAME_' + lang.upper())
             column_name_rest = record.get('COLUMN_NAME_REST')
-            reference_item_dict[reference_id] = {'column_name': column_name, 'column_name_rest': column_name_rest}
+            add_dict = {'reference_id': reference_id, 'column_name': column_name, 'column_name_rest': column_name_rest}
+            reference_item_list.append(add_dict)
     
-    return reference_item_dict
+    return reference_item_list
 
 
 def menu_create_execute(objdbca, exec_target):
