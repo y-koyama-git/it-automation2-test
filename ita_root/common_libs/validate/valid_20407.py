@@ -14,6 +14,9 @@ def external_valid_menu_after(objdbca, objtable, option):
     # --UPD--
     pattan_tbl = "V_ANSR_MOVEMENT"
     
+    autoreg_only_item = "0"
+    rg_menu_id = ""
+    
     if option["cmd_type"] == "Discard" or option["cmd_type"] == "Restore":
         # ----更新前のレコードから、各カラムの値を取得
         rg_column_list_id         = option["current_parameter"]["parameter"]["menu_group_menu_item"]
@@ -92,7 +95,6 @@ def external_valid_menu_after(objdbca, objtable, option):
 
     # 紐付け対象メニューに登録されているかの確認。カウント使用して数えて存在しているかの確認
     if boolExecuteContinue is True and boolSystemErrorFlag is False:
-        
         if rg_column_list_id:
             query = "SELECT" \
                 + " TBL_A.COLUMN_DEFINITION_ID," \
@@ -105,7 +107,7 @@ def external_valid_menu_after(objdbca, objtable, option):
                 + " FROM" \
                 + " V_ANSC_MENU TBL_B" \
                 + " WHERE" \
-                + " TBL_B.MENU_ID = TBL_A.MENU_ID AND" \
+                + " TBL_B.COLUMN_DEFINITION_ID = %s AND" \
                 + " TBL_B.DISUSE_FLAG = '0'" \
                 + " ) AS MENU_CNT " \
                 + "FROM" \
@@ -115,9 +117,8 @@ def external_valid_menu_after(objdbca, objtable, option):
                 + " TBL_A.DISUSE_FLAG = '0'"
             aryForBind = {}
             aryForBind['COLUMN_DEFINITION_ID'] = rg_column_list_id
-            row = objdbca.sql_execute(query, bind_value_list=[aryForBind['COLUMN_DEFINITION_ID']])
+            row = objdbca.sql_execute(query, bind_value_list=[aryForBind['COLUMN_DEFINITION_ID'], aryForBind['COLUMN_DEFINITION_ID']])
             if len(row) == 1:
-
                 if row[0]['MENU_CNT'] == 1:
                     if row[0]['COLUMN_LIST_ID_CNT'] == 1:
                         rg_menu_id = row[0]['MENU_ID']
@@ -131,25 +132,29 @@ def external_valid_menu_after(objdbca, objtable, option):
                         if boolExecuteContinue is True:
                             boolExecuteContinue = True
                     #  紐付対象メニューに項目が登録されているかの確認。
-                    elif row[0]['COLUMN_LIST_ID_CNT'] == 0:
+                    else:
                         # 紐付対象メニューに項目が未登録です。
                         msg = g.appmsg.get_api_message("MSG-10379")
                         retBool = False
                         boolExecuteContinue = False
-                elif row[0]['MENU_CNT'] == 0:
-                    boolExecuteContinue = False
+                else:
                     # 紐付対象メニュー一覧にメニューが未登録です。
                     msg = g.appmsg.get_api_message("MSG-10378")
                     retBool = False
                     boolExecuteContinue = False
+            else:
+                # メニューカラム紐付け管理が不正です。
+                msg = g.appmsg.get_api_message("MSG-10900", [rg_column_list_id])
+                retBool = False
+                boolExecuteContinue = False
             del row
 
     # メニューと項目の組み合わせチェック----
     # 登録方式のチェック
     # key-value型などの確認。
     if boolExecuteContinue is True and boolSystemErrorFlag is False:
-        # 変数の無いパラメータシー都の場合key,valueどちらが選択されてもOK
-        if autoreg_only_item == 1:
+        # 変数の無いパラメータシートの場合key,valueどちらが選択されてもOK
+        if autoreg_only_item == "1":
             if rg_col_type == "1" or rg_col_type == "2":  # Value, Key
                 boolExecuteContinue = True
             else:
@@ -159,7 +164,7 @@ def external_valid_menu_after(objdbca, objtable, option):
                 boolExecuteContinue = False
         else:
             boolExecuteContinue = False
-            if rg_col_type is None:
+            if not rg_col_type:
                 # 登録方式が未選択です。
                 # 1.Value
                 # 2.key
@@ -220,7 +225,7 @@ def external_valid_menu_after(objdbca, objtable, option):
             boolExecuteContinue = False
             retBool = False
         # 空のパラメータシートの場合を除く
-        elif not rg_col_type and autoreg_only_item != 1:
+        elif not rg_col_type and autoreg_only_item != "1":
             # 登録方式が未選択です。
             msg = g.appmsg.get_api_message("MSG-10380")
             boolExecuteContinue = False
@@ -250,14 +255,12 @@ def external_valid_menu_after(objdbca, objtable, option):
         if len(row) == 1:
             if row[0]['PATTAN_CNT'] == 1:
                 boolExecuteContinue = True
-            elif row[0]['PATTAN_CNT'] == 0:
+            else:
                 boolExecuteContinue = False
                 # Movementが未登録です。
                 msg = g.appmsg.get_api_message("MSG-10382")
                 retBool = False
                 boolExecuteContinue = False
-            else:
-                boolSystemErrorFlag = True
         else:
             boolSystemErrorFlag = True
         del row
@@ -331,16 +334,15 @@ def external_valid_menu_after(objdbca, objtable, option):
             # 変数の種類ごとに、バリデーションチェック
             # 変数タイプが「一般変数」の場合 ←分岐
             if "1" == intVarType:
-
                 # メンバー変数名のチェック
-                if intColSeqCombId is not None:
+                if intColSeqCombId:
                     retBool = False
                     boolExecuteContinue = False
                     # 一般変数の場合は、メンバー変数の入力はできません。
                     msg = g.appmsg.get_api_message("MSG-10422", [strColType])
                     break
                 # 代入順序のチェック
-                if intSeqOfAssign is not None:
+                if intSeqOfAssign:
                     retBool = False
                     boolExecuteContinue = False
                     # 一般変数の場合は、代入順序の入力はできません。
@@ -348,9 +350,8 @@ def external_valid_menu_after(objdbca, objtable, option):
                     break
             # 変数タイプが「複数具体値変数」の場合
             elif "2" == intVarType:
-
                 # メンバー変数名のチェック
-                if intColSeqCombId is not None:
+                if intColSeqCombId:
                     retBool = False
                     boolExecuteContinue = False
                     # 複数具体値変数の場合は、メンバー変数の入力はできません。
@@ -365,7 +366,6 @@ def external_valid_menu_after(objdbca, objtable, option):
                     break
             # 変数タイプが「多次元変数」の場合
             elif "3" == intVarType:
-
                 # メンバー変数名のチェック
                 if not intColSeqCombId:
                     retBool = False
@@ -378,20 +378,21 @@ def external_valid_menu_after(objdbca, objtable, option):
                     aryResult = getChildVars(objdbca, intVarsLinkId, intColSeqCombId)
                     if aryResult is False:
                         retBool = False
-                        boolExecuteContinue = False
+                        boolSystemErrorFlag = True
+                        break
                     elif type([]) == type(aryResult) and 1 == len(aryResult):
                         childData = aryResult[0]
-                    
+                        # 代入順序のチェック
+                        intAssignSeqNeed = childData['ASSIGN_SEQ_NEED']
                     elif type([]) == type(aryResult) and 0 == len(aryResult):
                         retBool = False
                         boolExecuteContinue = False
                         # メンバー変数は、多段変数のメンバーではありません。
                         msg = g.appmsg.get_api_message("MSG-10424", [strColType])
+                        break
                     else:
                         boolSystemErrorFlag = True
-                # 代入順序のチェック
-                intAssignSeqNeed = childData['ASSIGN_SEQ_NEED']
-
+                        break
                 # 代入順序の有無が有の場合
                 if 1 == intAssignSeqNeed:
                     if not intSeqOfAssign:
@@ -402,7 +403,7 @@ def external_valid_menu_after(objdbca, objtable, option):
                         break
                 # 代入順序の有無が無の場合
                 else:
-                    if intSeqOfAssign is not None:
+                    if intSeqOfAssign:
                         retBool = False
                         boolExecuteContinue = False
                         # メンバー変数は、代入順序の入力はできません。
@@ -476,11 +477,11 @@ def external_valid_menu_after(objdbca, objtable, option):
     if boolExecuteContinue is True and boolSystemErrorFlag is False:
         # 変数の無いパラメータシート
         if autoreg_only_item == "1":
-            if rg_col_sub_order is not None or rg_assign_seq is not None:
+            if rg_col_sub_order or rg_assign_seq:
                 retBool = False
                 boolExecuteContinue = False
                 msg = g.appmsg.get_api_message("MSG-10896")
-            elif rg_vars_link_id is not None or rg_col_seq_comb_id is not None:
+            elif rg_vars_link_id or rg_col_seq_comb_id:
                 retBool = False
                 boolExecuteContinue = False
                 msg = g.appmsg.get_api_message("MSG-10897")
@@ -489,5 +490,5 @@ def external_valid_menu_after(objdbca, objtable, option):
         retBool = False
         # ----システムエラー
         msg = g.appmsg.get_api_message("MSG-10886")
-    
+
     return retBool, msg, option,
