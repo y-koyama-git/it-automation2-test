@@ -12,9 +12,9 @@
 # limitations under the License.
 #
 from flask import g
-import json
 
-from .TableBaseClass import TableBase  # noqa F401
+from .TableBaseClass import TableBase
+
 
 class MovementMaterialLinkTable(TableBase):
     """
