@@ -1971,23 +1971,19 @@ class SubValueAutoReg():
         # 代入値管理用のデータ取得
         if exe_flag == 1: 
             # 変数名
-            sql = "SELECT VARS_NAME FROM V_ANSR_NESTVAR_MOVEMENT WHERE MVMT_VAR_LINK_ID = '" + row['MVMT_VAR_LINK_ID'] + "'"
+            sql = "SELECT VARS_NAME FROM V_ANSR_VAL_VARS_LINK WHERE MVMT_VAR_LINK_ID = '" + row['MVMT_VAR_LINK_ID'] + "'"
 
             data_list = WS_DB.sql_execute(sql, [])
             for data in data_list:
                 row['VARS_NAME'] = data['VARS_NAME']
             
-            if not row['COL_SEQ_COMBINATION_ID'] == "":
+            if row['COL_SEQ_COMBINATION_ID'] is not None and not row['COL_SEQ_COMBINATION_ID'] == "":
                 sql = "SELECT COL_COMBINATION_MEMBER_ALIAS FROM V_ANSR_COL_SEQ_COMBINATION WHERE COL_SEQ_COMBINATION_ID = '" + row['COL_SEQ_COMBINATION_ID'] + "'"
                 data_list = WS_DB.sql_execute(sql, [])
                 for data in data_list:
                     row['COL_COMBINATION_MEMBER_ALIAS'] = data['COL_COMBINATION_MEMBER_ALIAS']
             else:
                 row['COL_COMBINATION_MEMBER_ALIAS'] = ""
-
-            data_list = WS_DB.sql_execute(sql, [])
-            for data in data_list:
-                row['COL_COMBINATION_MEMBER_ALIAS'] = data['COL_COMBINATION_MEMBER_ALIAS']
             
             # Sensitive設定
             sql = "SELECT FLAG_NAME FROM T_COMN_BOOLEAN_FLAG WHERE FLAG_ID = '" + row['SENSITIVE_FLAG'] + "'"
@@ -2725,7 +2721,7 @@ class SubValueAutoReg():
         
         for row in data_list:
             # 変数名
-            sql = "SELECT VARS_NAME FROM V_ANSR_NESTVAR_MOVEMENT WHERE MVMT_VAR_LINK_ID = " + row['MVMT_VAR_LINK_ID']
+            sql = "SELECT VARS_NAME FROM V_ANSR_VAL_VARS_LINK WHERE MVMT_VAR_LINK_ID = " + row['MVMT_VAR_LINK_ID']
 
             data_list = WS_DB.sql_execute(sql, [])
             for data in data_list:
