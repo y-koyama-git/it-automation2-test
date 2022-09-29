@@ -20,6 +20,7 @@ from common_libs.ansible_driver.classes.AnsrConstClass import AnsrConst
 from common_libs.ansible_driver.functions.util import getAnsibleExecutDirPath, get_AnsibleDriverShellPath
 from common_libs.ansible_driver.classes.controll_ansible_agent import DockerMode, KubernetesMode
 from common_libs.common.util import ky_file_decrypt
+from common_libs.common.util import ky_decrypt
 """
 Ansible coreコンテナの実行を制御するモジュール
 """
@@ -122,7 +123,7 @@ class AnsibleExecute():
 
         # ansible vault password file作成
         with open(strVaultPasswordFileName, 'w') as fd:
-            fd.write(vault_password)
+            fd.write(ky_decrypt(vault_password))
 
         # 実行ユーザー確認
         if execute_user:
