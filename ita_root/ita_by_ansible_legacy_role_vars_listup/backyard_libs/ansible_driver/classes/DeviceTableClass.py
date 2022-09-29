@@ -43,19 +43,20 @@ class DeviceTable(TableBase):
         Returns:
             result_dict: { (system_id): VariableManager }
         """
+        g.applogger.debug(f"[Trace] Call {self.__class__.__name__} extract_variable()")
 
         var_extractor = WrappedStringReplaceAdmin()
         result_dict = {}
         for row in self._stored_records.values():
             system_id = row["SYSTEM_ID"]
 
-            vars_line_array = [] # [{行番号:変数名}, ...]
-            is_success, vars_line_array = var_extractor.SimpleFillterVerSearch(AnscConst.DF_HOST_VAR_HED, row["HOSTS_EXTRA_ARGS"], vars_line_array, [], [])
+            vars_line_array = []  # [{行番号:変数名}, ...]
+            is_success, vars_line_array = var_extractor.SimpleFillterVerSearch(AnscConst.DF_HOST_VAR_HED, row["HOSTS_EXTRA_ARGS"], vars_line_array, [], [])  # noqa: E501
             for var_info in vars_line_array:
                 if system_id not in result_dict:
                     result_dict[system_id] = VariableManager()
 
-                for line_no, var_name in var_info.items(): # forで回すが要素は1つしかない
+                for line_no, var_name in var_info.items():  # forで回すが要素は1つしかない
                     var_attr = AnscConst.GC_VARS_ATTR_STD
                     item = Variable(var_name, var_attr)
                     result_dict[system_id].add_variable(item)

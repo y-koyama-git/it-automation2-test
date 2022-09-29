@@ -41,11 +41,11 @@ def extract_variable_for_movement(mov_records, mov_matl_lnk_records, registerd_r
     Returns:
         mov_vars_dict: { (movement_id): VariableManager }
     """
+    g.applogger.debug("[Trace] Call util.extract_variable_for_movement()")
 
-    mov_vars_dict = {key: VariableManager() for key, value in mov_records.items()}
+    mov_vars_dict = {mov_id: VariableManager() for mov_id in mov_records.keys()}
 
-    key_convert_dict = { x['ROLE_ID'] : (x['ROLE_NAME'], x['ROLE_PACKAGE_ID']) for x in registerd_role_records.values()}
-    # print(key_convert_dict)
+    key_convert_dict = {x['ROLE_ID']: (x['ROLE_NAME'], x['ROLE_PACKAGE_ID']) for x in registerd_role_records.values()}
 
     var_extractor = WrappedStringReplaceAdmin()
     for matl_lnk in mov_matl_lnk_records.values():
@@ -53,10 +53,14 @@ def extract_variable_for_movement(mov_records, mov_matl_lnk_records, registerd_r
         mov_vars_mgr = mov_vars_dict[movement_id]
 
         # ロール変数の追加
-        role_varmgr_key = key_convert_dict[matl_lnk['ROLE_ID']]
-        role_varmgr = role_varmgr_dict[role_varmgr_key]
+        if matl_lnk['ROLE_ID'] in key_convert_dict:
+            role_varmgr_key = key_convert_dict[matl_lnk['ROLE_ID']]
+            role_varmgr = role_varmgr_dict[role_varmgr_key]
 
-        mov_vars_mgr.merge_variable_list(role_varmgr.export_var_list())
+            mov_vars_mgr.merge_variable_list(role_varmgr.export_var_list())
+        else:
+            # データ不整合（ロール名管理に無いデータがMovementロール紐づけに存在）
+            g.applogger.debug("Data mismatch between role_name table and material_link table.")
 
         # Movementの追加オプションの変数の追加
         ans_exec_options = mov_records[movement_id]['ANS_EXEC_OPTIONS']
@@ -65,7 +69,7 @@ def extract_variable_for_movement(mov_records, mov_matl_lnk_records, registerd_r
         mt_varsLineArray = []  # [{行番号:変数名}, ...]
         mt_varsArray = []  # 不要
         arrylocalvars = []  # 不要
-        is_success, mt_varsLineArray = var_extractor.SimpleFillterVerSearch(var_heder_id, ans_exec_options, mt_varsLineArray, mt_varsArray, arrylocalvars)
+        is_success, mt_varsLineArray = var_extractor.SimpleFillterVerSearch(var_heder_id, ans_exec_options, mt_varsLineArray, mt_varsArray, arrylocalvars)  # noqa: E501
         for mov_var in mt_varsLineArray:
             for line_no, var_name in mov_var.items():  # forで回すが要素は1つしかない
                 var_attr = AnscConst.GC_VARS_ATTR_STD
@@ -92,6 +96,7 @@ def extract_variable_for_execute(mov_vars_dict, tpl_varmng_dict, device_varmng_d
     Returns:
         mov_vars_dict: { (movement_id): VariableManager }
     """
+    g.applogger.debug("[Trace] Call util.extract_variable_for_execute()")
 
     sub_value_auto_reg = SubValueAutoReg()
     exec_type = '2'
@@ -106,7 +111,10 @@ def extract_variable_for_execute(mov_vars_dict, tpl_varmng_dict, device_varmng_d
     for movement_id, ope_host_dict in host_list.items():
         for _, system_dict in ope_host_dict.items():
             for system_id in system_dict.keys():
-                mov_vars_dict[movement_id].merge_variable_list(device_varmng_dict[system_id].export_var_list(), is_option_var=True)
+
+                # 作業ホストに解析すべき変数があれば
+                if system_id in device_varmng_dict:
+                    mov_vars_dict[movement_id].merge_variable_list(device_varmng_dict[system_id].export_var_list(), is_option_var=True)
 
     return mov_vars_dict
 
@@ -122,6 +130,7 @@ def expand_vars_member(nest_vars_mem_records, mem_max_col_records):
     Returns:
         mov_vars_dict: { (movement_id): VariableManager }
     """
+    g.applogger.debug("[Trace] Call util.expand_vars_member()")
 
     # 変換用辞書作成
     max_col_dict = {}

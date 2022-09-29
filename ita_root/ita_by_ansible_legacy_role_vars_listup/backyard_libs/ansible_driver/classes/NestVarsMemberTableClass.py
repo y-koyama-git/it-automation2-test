@@ -38,6 +38,7 @@ class NestVarsMemberTable(TableBase):
         """
         既存の多段変数メンバと解析結果の多段変数メンバを比較し、登録廃止を行う
         """
+        g.applogger.debug(f"[Trace] Call {self.__class__.__name__} register_and_discard()")
 
         mov_vars_link_id_dict = {}
         for mov_vars_link_id, record in mov_vars_link_records.items():
@@ -70,9 +71,8 @@ class NestVarsMemberTable(TableBase):
 
         ret = self._ws_db.table_insert(self.table_name, register_list, self.pkey, False)
         if ret is False:
-            # TODO メッセージを定義する
-            result_code = "499-00201"
-            log_msg_args = f"Insert record to `{self.table_name}` was Failed."
+            result_code = "BKY-30003"
+            log_msg_args = [self.table_name]
             raise AppException(result_code, log_msg_args)
 
         # 復活
@@ -84,9 +84,8 @@ class NestVarsMemberTable(TableBase):
 
         ret = self._ws_db.table_update(self.table_name, restore_list, self.pkey, False)
         if ret is False:
-            # TODO メッセージを定義する
-            result_code = "499-00201"
-            log_msg_args = f"Update(restore) record to `{self.table_name}` was Failed."
+            result_code = "BKY-30004"
+            log_msg_args = [self.table_name]
             raise AppException(result_code, log_msg_args)
 
         # 廃止
@@ -97,9 +96,8 @@ class NestVarsMemberTable(TableBase):
 
         ret = self._ws_db.table_update(self.table_name, discard_list, self.pkey, False)
         if ret is False:
-            # TODO メッセージを定義する
-            result_code = "499-00201"
-            log_msg_args = f"Update(discard) record to `{self.table_name}` was Failed."
+            result_code = "BKY-30005"
+            log_msg_args = [self.table_name]
             raise AppException(result_code, log_msg_args)
 
         # 再読み込み

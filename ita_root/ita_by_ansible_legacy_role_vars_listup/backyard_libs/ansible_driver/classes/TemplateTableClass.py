@@ -43,6 +43,7 @@ class TemplateTable(TableBase):
         Returns:
             result_dict: { (tpl_var_name): VariableManager }
         """
+        g.applogger.debug(f"[Trace] Call {self.__class__.__name__} extract_variable()")
 
         result_dict = {}
         for row in self._stored_records.values():

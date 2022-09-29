@@ -41,10 +41,7 @@ class TableBase:
     @property
     def table_name(self):
         if self._table_name is None:
-            # TODO メッセージを定義する
-            result_code = "499-00201"
-            log_msg_args = "table_name is None"
-            raise AppException(result_code, log_msg_args)
+            raise AppException("BKY-30001")
         return self._table_name
 
     @table_name.setter
@@ -54,10 +51,7 @@ class TableBase:
     @property
     def pkey(self):
         if self._pkey is None:
-            # TODO メッセージを定義する
-            result_code = "499-00201"
-            log_msg_args = "pkey is None"
-            raise AppException(result_code, log_msg_args)
+            raise AppException("BKY-30002")
         return self._pkey
 
     @pkey.setter
@@ -71,7 +65,7 @@ class TableBase:
         Returns:
             is success:(bool)
         """
-        g.applogger.debug(f"Read Table: {self._table_name}, contain_disused_data: {contain_disused_data}")
+        g.applogger.debug(f"[Trace] Read Table: {self._table_name}, contain_disused_data: {contain_disused_data}")
 
         where = ""
         if not contain_disused_data:

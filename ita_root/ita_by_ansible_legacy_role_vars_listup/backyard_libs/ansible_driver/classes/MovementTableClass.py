@@ -32,9 +32,3 @@ class MovementTable(TableBase):
         super().__init__(ws_db)
         self.table_name = MovementTable.TABLE_NAME
         self.pkey = MovementTable.PKEY
-
-    def get_tpl_record_by_id(self, tpl_id):
-        """
-        格納データからID指定でレコードを渡す
-        """
-        return self._tpl_records[tpl_id]
