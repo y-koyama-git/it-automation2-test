@@ -120,9 +120,10 @@ def external_valid_menu_before(objdbca, objtable, option):
         else:
             retBool, msg = False, ret_str_body[1]
     # ホスト名が数値文字列か判定
-    if host_name.isdecimal():
-        retBool = False
-        if len(msg) != 0:
-            msg += "\n"
-        msg += g.appmsg.get_api_message("MSG-10879")
+    if host_name:
+        if host_name.isdecimal():
+            retBool = False
+            if len(msg) != 0:
+                msg += "\n"
+            msg += g.appmsg.get_api_message("MSG-10879")
     return retBool, msg, option,
