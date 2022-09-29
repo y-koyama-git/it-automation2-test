@@ -20,7 +20,6 @@ import json
 import yaml
 import glob
 import inspect
-import datetime
 
 from common_libs.common.dbconnect import DBConnectWs
 from common_libs.common.exception import AppException, ValidationException
@@ -32,7 +31,7 @@ from common_libs.ansible_driver.classes.AnsrConstClass import AnscConst, AnsrCon
 from common_libs.ansible_driver.classes.ansible_execute import AnsibleExecute
 from common_libs.ansible_driver.classes.SubValueAutoReg import SubValueAutoReg
 from common_libs.ansible_driver.classes.CreateAnsibleExecFiles import CreateAnsibleExecFiles
-from common_libs.ansible_driver.functions.util import getAnsibleExecutDirPath, get_AnsibleDriverTmpPath
+from common_libs.ansible_driver.functions.util import getAnsibleExecutDirPath, get_AnsibleDriverTmpPath, getDataRelayStorageDir
 from common_libs.ansible_driver.functions.ansibletowerlibs.AnsibleTowerExecute import AnsibleTowerExecution
 from common_libs.driver.functions import operation_LAST_EXECUTE_TIMESTAMP_update
 
@@ -140,7 +139,7 @@ def main_logic(wsDb: DBConnectWs, execution_no, driver_id):  # noqa: C901
     work_dir = container_driver_path + "/.tmp"
     if not os.path.isdir(work_dir):
         os.makedirs(work_dir)
-    work_dir = "/storage/org1/workspace-1/driver/conductor/dummy"
+    work_dir = getDataRelayStorageDir() + "/driver/conductor/dummy"
     if not os.path.isdir(work_dir):
         os.makedirs(work_dir)
 
@@ -280,6 +279,7 @@ def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if
     execution_no = execute_data["EXECUTION_NO"]
     movement_id = execute_data["MOVEMENT_ID"]
     run_mode = execute_data['RUN_MODE']  # 処理対象のドライランモードのリスト
+    conductor_instance_no = execute_data["CONDUCTOR_INSTANCE_NO"]
 
     # [処理]処理対象インスタンス 作業実行開始(作業No.:{})
     g.applogger.info(g.appmsg.get_log_message("MSG-10763", [execution_no]))
@@ -337,7 +337,7 @@ def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if
             err_msg_ary = result[1]
             for err_msg in err_msg_ary:
                 ansdrv.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
-                                 str(inspect.currentframe().f_lineno),err_msg)
+                                     str(inspect.currentframe().f_lineno), err_msg)
             return False, execute_data, g.appmsg.get_log_message("BKY-00004", ["getAnsiblePlaybookOptionParameter", ",".join(err_msg_ary)])
 
         retBool, err_msg_ary, JobTemplatePropertyParameterAry, JobTemplatePropertyNameAry, param_arry_exc = result
@@ -367,8 +367,6 @@ def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if
     # 実行エンジンを判定
     if ans_exec_mode == ansc_const.DF_EXEC_MODE_ANSIBLE:
         ansible_execute = AnsibleExecute()
-        # 正しい内容を設定する必要あり
-        conductor_instance_no = None
         retBool = ansible_execute.execute_construct(driver_id, execution_no, conductor_instance_no, "", "", ans_if_info['ANSIBLE_CORE_PATH'], ans_if_info['ANSIBLE_VAULT_PASSWORD'], run_mode, "")  # noqa: E501
         
         if retBool is True:
@@ -379,7 +377,7 @@ def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if
             if not isinstance(err_msg, str):
                 err_msg = str(err_msg)
             ansdrv.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
-                                 str(inspect.currentframe().f_lineno),err_msg)
+                                 str(inspect.currentframe().f_lineno), err_msg)
             return False, execute_data, err_msg
     else:
         uiexec_log_path = ansdrv.getAnsible_out_Dir() + "/exec.log"  # 使ってる？
@@ -419,7 +417,7 @@ def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if
 
             err_msg = g.appmsg.get_log_message("BKY-00004", ["AnsibleTowerExecution(DF_EXECUTION_FUNCTION)", e])
             ansdrv.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
-                                 str(inspect.currentframe().f_lineno),err_msg)
+                                 str(inspect.currentframe().f_lineno), err_msg)
             return False, execute_data, err_msg
 
         # マルチログか判定
@@ -725,7 +723,7 @@ def call_CreateAnsibleExecFiles(ansdrv: CreateAnsibleExecFiles, execute_data, dr
         #   $host_vars:        変数一覧返却配列
         #                      [ホスト名(IP)][ 変数名 ]=>具体値
                                          # 一時的なパッチ
-        result = ansdrv.getDBRoleVarList(# comment out execution_no, 
+        result = ansdrv.getDBRoleVarList(# comment out execution_no,
                                          "EXE01",
                                          movement_id, operation_id, host_vars, MultiArray_vars_list, All_vars_list)
         retBool, host_vars, MultiArray_vars_list, All_vars_list = result
@@ -1205,11 +1203,11 @@ def InstanceRecodeUpdate(wsDb, driver_id, execution_no, execute_data, update_col
     if update_column_name == "FILE_INPUT":
         ExecStsInstTableConfig[RestNameConfig["FILE_INPUT"]] = execute_data["FILE_INPUT"]  # 入力データ/投入データ
         dt = "{:0>4}/{:0>2}/{:0>2} {:0>2}:{:0>2}:{:0>2}".format(execute_data['TIME_START'].year,
-                                                            execute_data['TIME_START'].month,
-                                                            execute_data['TIME_START'].day,
-                                                            execute_data['TIME_START'].hour,
-                                                            execute_data['TIME_START'].minute,
-                                                            execute_data['TIME_START'].second)
+                                                                execute_data['TIME_START'].month,
+                                                                execute_data['TIME_START'].day,
+                                                                execute_data['TIME_START'].hour,
+                                                                execute_data['TIME_START'].minute,
+                                                                execute_data['TIME_START'].second)
         ExecStsInstTableConfig[RestNameConfig["TIME_START"]] = dt
         if "MULTIPLELOG_MODE" in execute_data:
             ExecStsInstTableConfig[RestNameConfig["MULTIPLELOG_MODE"]] = execute_data["MULTIPLELOG_MODE"]
@@ -1217,11 +1215,11 @@ def InstanceRecodeUpdate(wsDb, driver_id, execution_no, execute_data, update_col
     if update_column_name == "FILE_RESULT":
         ExecStsInstTableConfig[RestNameConfig["FILE_RESULT"]] = execute_data["FILE_RESULT"]  # 出力データ/結果データ
         dt = "{:0>4}/{:0>2}/{:0>2} {:0>2}:{:0>2}:{:0>2}".format(execute_data['TIME_END'].year,
-                                                            execute_data['TIME_END'].month,
-                                                            execute_data['TIME_END'].day,
-                                                            execute_data['TIME_END'].hour,
-                                                            execute_data['TIME_END'].minute,
-                                                            execute_data['TIME_END'].second)
+                                                                execute_data['TIME_END'].month,
+                                                                execute_data['TIME_END'].day,
+                                                                execute_data['TIME_END'].hour,
+                                                                execute_data['TIME_END'].minute,
+                                                                execute_data['TIME_END'].second)
         ExecStsInstTableConfig[RestNameConfig["TIME_END"]] = dt
         # MULTIPLELOG_MODEとLOGFILELIST_JSONが廃止レコードになっているので0にする
         if "MULTIPLELOG_MODE" in execute_data:
@@ -1231,12 +1229,12 @@ def InstanceRecodeUpdate(wsDb, driver_id, execution_no, execute_data, update_col
 
     # 最終更新日時
     dt = "{:0>4}/{:0>2}/{:0>2} {:0>2}:{:0>2}:{:0>2}.{:0>6}".format(execute_data['LAST_UPDATE_TIMESTAMP'].year,
-                                                            execute_data['LAST_UPDATE_TIMESTAMP'].month,
-                                                            execute_data['LAST_UPDATE_TIMESTAMP'].day,
-                                                            execute_data['LAST_UPDATE_TIMESTAMP'].hour,
-                                                            execute_data['LAST_UPDATE_TIMESTAMP'].minute,
-                                                            execute_data['LAST_UPDATE_TIMESTAMP'].second,
-                                                            execute_data['LAST_UPDATE_TIMESTAMP'].microsecond)
+                                                                   execute_data['LAST_UPDATE_TIMESTAMP'].month,
+                                                                   execute_data['LAST_UPDATE_TIMESTAMP'].day,
+                                                                   execute_data['LAST_UPDATE_TIMESTAMP'].hour,
+                                                                   execute_data['LAST_UPDATE_TIMESTAMP'].minute,
+                                                                   execute_data['LAST_UPDATE_TIMESTAMP'].second,
+                                                                   execute_data['LAST_UPDATE_TIMESTAMP'].microsecond)
     ExecStsInstTableConfig[RestNameConfig["LAST_UPDATE_TIMESTAMP"]] = dt
 
     parameters = {
