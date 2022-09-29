@@ -99,8 +99,13 @@ setup() {
     cd.$.canvas = cd.$.editor.find('.canvas'),
     cd.$.artBoard = cd.$.editor.find('.art-board');
     
-    // HTMLセット
-    
+    // モードタイトル
+    cd.modeTitleList = {
+        edit: getMessage.FTE02133,
+        view: getMessage.FTE02134,
+        update: getMessage.FTE02135,
+        confirmation: getMessage.FTE02136
+    }
     
     const restApiUrls = [];
     
@@ -113,7 +118,7 @@ setup() {
         cd.$.main.addClass('conductorInstanceIdStandBy');
         cd.$.header.remove();
         cd.$.editor.removeClass('load-wait');
-        cd.$.mode.text( WD.CONDUCTOR[ cd.mode ] );
+        cd.$.mode.text( cd.modeTitleList[ cd.mode ] );
         cd.$.main.html(`<div class="conductorInstanceIdStandByMessage"><span class="icon icon-circle_info"></span>
         ` + getMessage.FTE02001 + `<br>
         ` + getMessage.FTE02002 + `<br>
@@ -429,7 +434,7 @@ conductorMode( mode ) {
     cd.$.header.html( cd.headerHtml() );
     
     // モードテキスト切替
-    cd.$.mode.text( WD.CONDUCTOR[ cd.mode ] );
+    cd.$.mode.text( cd.modeTitleList[ cd.mode ] );
 
     // パネル切替
     cd.select = [];
