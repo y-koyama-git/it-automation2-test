@@ -38,7 +38,7 @@ class NonExpandableElement(MemberColCombElement):
         self.mem_col_comb_record = self.create_mem_col_comb_record()
         self.mem_col_comb_record['COL_SEQ_VALUE'] = self.col_seq_value
         dot = '' if len(self.comb_mem_alias) == 0 else '.'
-        self.mem_col_comb_record['COL_COMBINATION_MEMBER_ALIAS'] = f"{self.comb_mem_alias}{dot}{self.record_data['VARS_NAME']}";
+        self.mem_col_comb_record['COL_COMBINATION_MEMBER_ALIAS'] = f"{self.comb_mem_alias}{dot}{self.record_data['VARS_NAME']}"
 
         if str(self.record_data['MEMBER_DISP']) == "1":
             result_record.append(self.mem_col_comb_record)

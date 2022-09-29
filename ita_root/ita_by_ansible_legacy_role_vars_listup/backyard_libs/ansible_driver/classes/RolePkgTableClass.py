@@ -44,6 +44,7 @@ class RolePkgTable(TableBase):
             role_name_list: [ {'ROLE_NAME': role_name, 'ROLE_PACKAGE_ID': role_pkg_id}, ... ]
             role_varmgr_dict: { (role_name, role_pkg_id): VariableManager }
         """
+        g.applogger.debug(f"[Trace] Call {self.__class__.__name__} extract_variable()")
 
         role_name_list = []
         role_varmgr_dict = {}

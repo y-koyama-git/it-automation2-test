@@ -31,9 +31,3 @@ class MovementMaterialLinkTable(TableBase):
         super().__init__(ws_db)
         self.table_name = MovementMaterialLinkTable.TABLE_NAME
         self.pkey = MovementMaterialLinkTable.PKEY
-
-    def get_tpl_record_by_id(self, tpl_id):
-        """
-        格納データからID指定でレコードを渡す
-        """
-        return self._tpl_records[tpl_id]
