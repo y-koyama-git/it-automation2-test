@@ -732,7 +732,7 @@ class ConductorExecuteLibs():
                 
             objcclass = self.objmenus.get('objcclass')
             # maintenance呼び出し(pk uuid.uuid()を外部実行 )
-            tmp_result = objcclass.exec_maintenance(conductor_parameter, target_uuid, cmd_type, True)
+            tmp_result = objcclass.exec_maintenance(conductor_parameter, target_uuid, cmd_type, True, False)
             objcclass.set_error_message()
             if tmp_result[0] is not True:
                 raise Exception()
@@ -761,7 +761,7 @@ class ConductorExecuteLibs():
                 
             objconductor = self.objmenus.get('objconductor')
             # maintenance呼び出し(pk uuid.uuid()を外部実行 )
-            tmp_result = objconductor.exec_maintenance(conductor_parameter, target_uuid, cmd_type, True)
+            tmp_result = objconductor.exec_maintenance(conductor_parameter, target_uuid, cmd_type, True, False)
             objconductor.set_error_message()
             if tmp_result[0] is not True:
                 return tmp_result
@@ -797,7 +797,7 @@ class ConductorExecuteLibs():
                     cmd_type = self.cmd_type
 
                 # maintenance呼び出し
-                tmp_result = objnode.exec_maintenance(parameters, target_uuid, cmd_type)
+                tmp_result = objnode.exec_maintenance(parameters, target_uuid, cmd_type, False, False)
                 objnode.set_error_message()
                 if tmp_result[0] is not True:
                     return tmp_result
@@ -1346,7 +1346,7 @@ class ConductorExecuteLibs():
                         "file": {},
                         "parameter": tmp_parameter
                     }
-                    tmp_result = objconductor.exec_maintenance(conductor_parameter, conductor_instance_id, 'Update')
+                    tmp_result = objconductor.exec_maintenance(conductor_parameter, conductor_instance_id, 'Update', False, False)
                     objconductor.set_error_message()
                     if tmp_result[0] is not True:
                         status_code = "499-00807"
@@ -1376,7 +1376,7 @@ class ConductorExecuteLibs():
                         "file": {},
                         "parameter": tmp_parameter
                     }
-                    tmp_result = objconductor.exec_maintenance(conductor_parameter, conductor_instance_id, 'Update')
+                    tmp_result = objconductor.exec_maintenance(conductor_parameter, conductor_instance_id, 'Update', False, False)
                     objconductor.set_error_message()
                     if tmp_result[0] is not True:
                         status_code = "499-00807"
@@ -1401,7 +1401,7 @@ class ConductorExecuteLibs():
                                 "file": {},
                                 "parameter": tmp_parameter
                             }
-                            tmp_result = objnode.exec_maintenance(node_parameter, node_instance_id, 'Update')
+                            tmp_result = objnode.exec_maintenance(node_parameter, node_instance_id, 'Update', False, False)
                             objconductor.set_error_message()
                             if tmp_result[0] is not True:
                                 status_code = "499-00807"
@@ -1734,7 +1734,8 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             if tmp_result[0] is not True:
                 raise Exception()
             strage_path = os.environ.get('STORAGEPATH')  # noqa: F405
-            tmp_conductor_storage_path = tmp_result[1].get('CONDUCTOR_STORAGE_PATH_ITA')
+            tmp_conductor_storage_path = '%%%%%ITA_DRIVER_DIRECTORY%%%%%/conductor'
+            # tmp_result[1].get('CONDUCTOR_STORAGE_PATH_ITA')
             base_storage_path = "{}/{}/{}/".format(strage_path, self.organization_id, self.workspace_id).replace('//', '/')
             conductor_storage_path = tmp_conductor_storage_path.replace('%%%%%ITA_DRIVER_DIRECTORY%%%%%', base_storage_path).replace('//', '/')
             base_conductor_storage_path = "{}".format(conductor_storage_path).replace('//', '/')

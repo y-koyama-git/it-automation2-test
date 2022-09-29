@@ -2,7 +2,6 @@
 CREATE TABLE T_COMN_CONDUCTOR_IF_INFO
 (
     CONDUCTOR_IF_INFO_ID            VARCHAR(40),                                -- ConductorインターフェースID
-    CONDUCTOR_STORAGE_PATH_ITA      VARCHAR(255),                               -- Conductorストレージパス(ITA)
     CONDUCTOR_REFRESH_INTERVAL      INT,                                        -- 状態監視周期(単位ミリ秒)
     NOTE                            VARCHAR(4000),                              -- 備考
     DISUSE_FLAG                     VARCHAR(1)  ,                               -- 廃止フラグ
@@ -17,7 +16,6 @@ CREATE TABLE T_COMN_CONDUCTOR_IF_INFO_JNL
     JOURNAL_REG_DATETIME            DATETIME(6),                                -- 履歴用変更日時
     JOURNAL_ACTION_CLASS            VARCHAR (8),                                -- 履歴用変更種別
     CONDUCTOR_IF_INFO_ID            VARCHAR(40),                                -- ConductorインターフェースID
-    CONDUCTOR_STORAGE_PATH_ITA      VARCHAR(255),                               -- Conductorストレージパス(ITA)
     CONDUCTOR_REFRESH_INTERVAL      INT,                                        -- 状態監視周期(単位ミリ秒)
     NOTE                            VARCHAR(4000),                              -- 備考
     DISUSE_FLAG                     VARCHAR(1)  ,                               -- 廃止フラグ
