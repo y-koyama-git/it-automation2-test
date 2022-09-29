@@ -607,6 +607,15 @@ def collect_search_candidates(objdbca, menu, column, menu_record={}, menu_table_
     column_name_rest = str(ret[0].get('COLUMN_NAME_REST'))
     column_class_id = str(ret[0].get('COLUMN_CLASS'))
     save_type = str(ret[0].get('SAVE_TYPE'))
+    
+    # パスワードカラム系の場合は499を返却
+    # 8(PasswordColumn), 15(MaskColumn), 16(SensitiveSingleTextColumn), 17(SensitiveMultiTextColumn), 25(PasswordIDColumn), 26(JsonPasswordIDColumn)
+    sensitive_column_list = ["8", "15", "16", "17", "25", "26"]
+    if column_class_id in sensitive_column_list:
+        log_msg_args = [menu, column]
+        api_msg_args = [menu, column]
+        raise AppException("499-00010", log_msg_args, api_msg_args)  # noqa: F405
+    
     # 対象のテーブルからレコードを取得し、対象のカラムの値を一覧化
     ret = objdbca.table_select(table_name, '', [])
     if not ret:
@@ -614,6 +623,8 @@ def collect_search_candidates(objdbca, menu, column, menu_record={}, menu_table_
         return []
     
     search_candidates = []
+    # 7(IDColumn), 11(LinkIDColumn), 14(LastUpdateUserColumn), 18(RoleIDColumn), 21(JsonIDColumn), 22(EnvironmentIDColumn)
+    id_column_list = ["7", "11", "14", "18", "21", "22"]
     if save_type == "JSON":
         for record in ret:
             target = record.get(col_name)
@@ -624,17 +635,24 @@ def collect_search_candidates(objdbca, menu, column, menu_record={}, menu_table_
             if json_rows:
                 for jsonkey, jsonval in json_rows.items():
                     if jsonkey == column_name_rest:
-                        search_candidates.append(jsonval)
+                        if column_class_id in id_column_list:
+                            # プルダウンの一覧を取得
+                            objmenu = load_table.loadTable(objdbca, menu)  # noqa: F405
+                            objcolumn = objmenu.get_columnclass(column)
+                            column_pulldown_list = objcolumn.get_values_by_key()
+                            # レコードの中からIDに合致するデータを取得
+                            conv_jsonval = column_pulldown_list.get(jsonval)
+                            search_candidates.append(conv_jsonval)
+                        else:
+                            search_candidates.append(jsonval)
     else:
-        # 7(IDColumn), 11(LinkIDColumn), 14(LastUpdateUserColumn), 18(RoleIDColumn), 21(JsonIDColumn), 22(EnvironmentIDColumn)
-        id_column_list = ["7", "11", "14", "18", "21", "22"]
         if column_class_id in id_column_list:
             # プルダウンの一覧を取得
             objmenu = load_table.loadTable(objdbca, menu)  # noqa: F405
             objcolumn = objmenu.get_columnclass(column)
             column_pulldown_list = objcolumn.get_values_by_key()
 
-            # レコードのなかからプルダウンの一覧に合致するデータを抽出
+            # レコードの中からプルダウンの一覧に合致するデータを抽出
             for record in ret:
                 if record.get(col_name) in column_pulldown_list.keys():
                     convert = column_pulldown_list[record.get(col_name)]

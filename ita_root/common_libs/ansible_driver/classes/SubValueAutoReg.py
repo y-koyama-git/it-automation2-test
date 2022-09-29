@@ -97,7 +97,7 @@ class SubValueAutoReg():
         global g_null_data_handling_def
         global warning_flag
         global error_flag
-
+        
         # インターフェース情報からNULLデータを代入値管理に登録するかのデフォルト値を取得する。
         ret = self.getIFInfoDB(WS_DB)
 
@@ -1810,7 +1810,7 @@ class SubValueAutoReg():
                     ina_array_vars_ass_list[idx] = ret[2]
                     
                     idx += 1
-        
+
         return ina_vars_ass_list, ina_array_vars_ass_list, warning_flag
 
     def makeVarsAssignData(self,
@@ -1971,23 +1971,19 @@ class SubValueAutoReg():
         # 代入値管理用のデータ取得
         if exe_flag == 1: 
             # 変数名
-            sql = "SELECT VARS_NAME FROM V_ANSR_NESTVAR_MOVEMENT WHERE MVMT_VAR_LINK_ID = '" + row['MVMT_VAR_LINK_ID'] + "'"
+            sql = "SELECT VARS_NAME FROM V_ANSR_VAL_VARS_LINK WHERE MVMT_VAR_LINK_ID = '" + row['MVMT_VAR_LINK_ID'] + "'"
 
             data_list = WS_DB.sql_execute(sql, [])
             for data in data_list:
                 row['VARS_NAME'] = data['VARS_NAME']
             
-            if not row['COL_SEQ_COMBINATION_ID'] == "":
+            if row['COL_SEQ_COMBINATION_ID'] is not None and not row['COL_SEQ_COMBINATION_ID'] == "":
                 sql = "SELECT COL_COMBINATION_MEMBER_ALIAS FROM V_ANSR_COL_SEQ_COMBINATION WHERE COL_SEQ_COMBINATION_ID = '" + row['COL_SEQ_COMBINATION_ID'] + "'"
                 data_list = WS_DB.sql_execute(sql, [])
                 for data in data_list:
                     row['COL_COMBINATION_MEMBER_ALIAS'] = data['COL_COMBINATION_MEMBER_ALIAS']
             else:
                 row['COL_COMBINATION_MEMBER_ALIAS'] = ""
-
-            data_list = WS_DB.sql_execute(sql, [])
-            for data in data_list:
-                row['COL_COMBINATION_MEMBER_ALIAS'] = data['COL_COMBINATION_MEMBER_ALIAS']
             
             # Sensitive設定
             sql = "SELECT FLAG_NAME FROM T_COMN_BOOLEAN_FLAG WHERE FLAG_ID = '" + row['SENSITIVE_FLAG'] + "'"
@@ -2309,7 +2305,6 @@ class SubValueAutoReg():
         sql += "   TBL_A.COLUMN_ID                                             ,  \n"
         sql += "   TBL_A.MENU_ID                                               ,  \n"
         sql += "   TBL_C.TABLE_NAME                                            ,  \n"
-        sql += "   TBL_C.PK_COLUMN_NAME_REST                                   ,  \n"
         sql += "   TBL_C.DISUSE_FLAG  AS TBL_DISUSE_FLAG                       ,  \n"
         sql += "   TBL_A.COLUMN_LIST_ID                                        ,  \n"
         sql += "   TBL_B.COL_NAME                                              ,  \n"
@@ -2529,12 +2524,6 @@ class SubValueAutoReg():
                 # 次のカラムへ
                 raise ValidationException("MSG-10338", [data['COLUMN_ID']])
             
-            # CMDB代入値紐付メニューの主キーが登録されているか判定
-            if data['PK_COLUMN_NAME_REST'] is None or len(data['PK_COLUMN_NAME_REST']) == 0:
-                msgstr = g.appmsg.get_api_message("MSG-10404", [data['COLUMN_ID']])
-                # 次のカラムへ
-                raise ValidationException("MSG-10404", [data['COLUMN_ID']])
-            
             # CMDB代入値紐付メニューのカラムが未登録か判定
             if data['COL_NAME'] is None or len(data['COL_NAME']) == 0:
                 msgstr = g.appmsg.get_api_message("MSG-10340", [data['COLUMN_ID']])
@@ -2622,7 +2611,8 @@ class SubValueAutoReg():
                                                                             'KEY_SENSITIVE_FLAG': key_sensitive_flg}
         
             # テーブルの主キー名退避
-            inout_tableNameToPKeyNameList = {data['TABLE_NAME']: data['PK_COLUMN_NAME_REST']}
+            pk_name = WS_DB.table_columns_get(data['TABLE_NAME'])
+            inout_tableNameToPKeyNameList = {data['TABLE_NAME']: pk_name[1][0]}
         
         return True, inout_tableNameToMenuIdList, inout_tabColNameToValAssRowList, inout_tableNameToPKeyNameList
     
@@ -2695,7 +2685,7 @@ class SubValueAutoReg():
                 return False, inout_vars_attr
         
         if inout_vars_attr == AnscConst.GC_VARS_ATTR_LIST:
-            if row[in_assign_seq] is None or len(row[in_assign_seq]) == 0:
+            if row[in_assign_seq] is None or len(str(row[in_assign_seq])) == 0:
                 msgstr = g.appmsg.get_api_message("MSG-10350", [row['COLUMN_ID'], in_col_type])
                 g.applogger.debug(msgstr)
                 return False, inout_vars_attr
@@ -2731,7 +2721,7 @@ class SubValueAutoReg():
         
         for row in data_list:
             # 変数名
-            sql = "SELECT VARS_NAME FROM V_ANSR_NESTVAR_MOVEMENT WHERE MVMT_VAR_LINK_ID = " + row['MVMT_VAR_LINK_ID']
+            sql = "SELECT VARS_NAME FROM V_ANSR_VAL_VARS_LINK WHERE MVMT_VAR_LINK_ID = " + row['MVMT_VAR_LINK_ID']
 
             data_list = WS_DB.sql_execute(sql, [])
             for data in data_list:

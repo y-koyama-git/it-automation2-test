@@ -120,7 +120,13 @@ class JsonColumn(Column):
         retBool = True
         msg = ''
         try:
-            str_val = json.dumps(val, ensure_ascii=False)
+            if self.get_save_type() == "JSON":
+                str_val = val
+            else:
+                if isinstance(val, str):
+                    str_val = val
+                else:
+                    str_val = json.dumps(val, ensure_ascii=False)
         except Exception:
             str_val = val
         finally:
@@ -139,10 +145,15 @@ class JsonColumn(Column):
         retBool = True
         msg = ''
         try:
-            json_val = json.loads(val)
+            if self.get_save_type() == "JSON":
+                if isinstance(val, str):
+                    json_val = json.loads(val)
+                else:
+                    json_val = val
+            else:
+                json_val = json.loads(val)
         except Exception:
             json_val = val
         finally:
             val = json_val
-
         return retBool, msg, val

@@ -15,6 +15,7 @@
 from common_libs.ansible_driver.classes.AnscConstClass import AnscConst
 from common_libs.ansible_driver.classes.CheckAnsibleRoleFiles import DefaultVarsFileAnalysis
 
+
 class Variable:
     """
     Variable

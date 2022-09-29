@@ -25,37 +25,60 @@ from jinja2 import FileSystemLoader, Environment
 class AnsibleAgent(ABC):
 
     def __init__(self):
+        """
+        コンストラクタ
+        """
         self._organization_id = g.get('ORGANIZATION_ID')
         self._workspace_id = g.get('WORKSPACE_ID')
 
     @abstractclassmethod
     def container_start_up(self, execution_no, conductor_instance_no, str_shell_command):
+        """
+        コンテナを立ち上げる
+        """
         pass
 
     @abstractclassmethod
     def is_container_running(self, execution_no):
+        """
+        コンテナが実行中か確認する
+        """
         pass
 
     @abstractclassmethod
     def container_kill(self, execution_no):
+        """
+        コンテナを削除する
+        """
         pass
 
     def get_unique_name(self, execution_no):
+        """
+        コンテナを特定するためのユニークな文字列を生成する
+        """
         return "%s_%s_%s" % (self._organization_id, self._workspace_id, execution_no)
 
     @abstractclassmethod
     def container_clean(self, execution_no):
+        """
+        実行完了しているコンテナがあれば削除する
+        """
         pass
 
 
 class DockerMode(AnsibleAgent):
 
     def __init__(self):
+        """
+        コンストラクタ
+        親クラスのコンストラクタを呼ぶ
+        """
         super().__init__()
 
     def container_start_up(self, execution_no, conductor_instance_no, str_shell_command):
-        '''
-        '''
+        """
+        コンテナを立ち上げる
+        """
         # print("method: container_start_up")
 
         # create path string
@@ -105,8 +128,9 @@ class DockerMode(AnsibleAgent):
             return False, {"return_code": cp.returncode, "stderr": cp.stderr}
 
     def is_container_running(self, execution_no):
-        '''
-        '''
+        """
+        コンテナが実行中か確認する
+        """
         # print("method: is_container_running")
 
         # docker-compose -p project ps
@@ -127,8 +151,9 @@ class DockerMode(AnsibleAgent):
         return False, {"return_code": cp.returncode, "stderr": "not running"}
 
     def container_kill(self, execution_no):
-        '''
-        '''
+        """
+        コンテナを削除する
+        """
         # print("method: container_kill")
 
         # docker-compose -p project kill
@@ -153,8 +178,9 @@ class DockerMode(AnsibleAgent):
         return True, cp.stdout
 
     def container_clean(self, execution_no):
-        '''
-        '''
+        """
+        実行完了しているコンテナがあれば削除する
+        """
         # docker-compose -p project ps
         project_name = self.get_unique_name(execution_no)
         docker_compose_command = ["/usr/local/bin/docker-compose", "-p", project_name, "ps", "--format", "json"]
@@ -164,25 +190,17 @@ class DockerMode(AnsibleAgent):
         if cp.returncode != 0:
             return True, "already not exists"
 
-        # exitedでないものは、まずはstopする
+        # existedしているものを削除
         result_obj = json.loads(cp.stdout)
-        if len(result_obj) > 0 and "exited" not in result_obj[0]['State']:
-            # docker-compose -p project stop
-            docker_compose_command = ["/usr/local/bin/docker-compose", "-p", project_name, "stop"]
+        if len(result_obj) > 0 and result_obj[0]['State'] in ['existed']:
+            # docker-compose -p project rm -f
+            docker_compose_command = ["/usr/local/bin/docker-compose", "-p", project_name, "rm", "-f"]
             command = ["sudo"] + docker_compose_command
 
             cp = subprocess.run(command, capture_output=True, text=True)
             if cp.returncode != 0:
+                # cp.check_returncode()  # 例外を発生させたい場合
                 return False, {"return_code": cp.returncode, "stderr": cp.stderr}
-
-        # docker-compose -p project rm -f
-        docker_compose_command = ["/usr/local/bin/docker-compose", "-p", project_name, "rm", "-f"]
-        command = ["sudo"] + docker_compose_command
-
-        cp = subprocess.run(command, capture_output=True, text=True)
-        if cp.returncode != 0:
-            # cp.check_returncode()  # 例外を発生させたい場合
-            return False, {"return_code": cp.returncode, "stderr": cp.stderr}
 
         return True, cp.stdout
 
@@ -190,10 +208,15 @@ class DockerMode(AnsibleAgent):
 class KubernetesMode(AnsibleAgent):
 
     def __init__(self):
+        """
+        コンストラクタ
+        親クラスのコンストラクタを呼ぶ
+        """
         super().__init__()
 
     def container_start_up(self, execution_no, conductor_instance_no, str_shell_command):
         '''
+        コンテナ(Pod)を立ち上げる
         '''
         # print("method: container_start_up")
 
@@ -250,32 +273,22 @@ class KubernetesMode(AnsibleAgent):
             return False, {"return_code": cp.returncode, "stderr": cp.stderr}
 
     def is_container_running(self, execution_no):
-        '''
-        '''
+        """
+        コンテナ(Pod)が実行中か確認する
+        """
         # print("method: is_container_running")
 
-        namespace = 'ita-ansible-agent'
-
-        # create command string
-        unique_name = self.get_unique_name(execution_no)
-        unique_name = re.sub(r'_', '-', unique_name).lower()
-        command = ["/usr/local/bin/kubectl", "get", "pod", "-n", namespace, 'it-ansible-agent-' + unique_name, "-o", "json"]
-
-        cp = subprocess.run(' '.join(command), capture_output=True, shell=True, text=True)
-        if cp.returncode != 0:
-            # cp.check_returncode()  # 例外を発生
-            return False, {"return_code": cp.returncode, "stderr": cp.stderr}
-
-        # 戻りをjsonデコードして、runningのものが一つだけ存在しているか確認
-        result_obj = json.loads(cp.stdout)
-        if result_obj['status']['phase'] == "running":
+        # runningのものが一つだけ存在しているか確認
+        return_code, status, errmsg = self._check_status(execution_no)
+        if return_code == 0 and status == "running":
             return True,
 
-        return False, {"return_code": cp.returncode, "stderr": "not running"}
+        return False, {"return_code": return_code, "stderr": "not running"}
 
     def container_kill(self, execution_no):
-        '''
-        '''
+        """
+        コンテナ(Pod)を削除する
+        """
         # print("method: container_kill")
 
         namespace = 'ita-ansible-agent'
@@ -295,6 +308,43 @@ class KubernetesMode(AnsibleAgent):
         return True, cp.stdout
 
     def container_clean(self, execution_no):
-        '''
-        '''
-        return "bool", "err_msg"
+        """
+        実行完了しているコンテナ(Pod)があれば削除する
+        """
+        # print("method: container_clean")
+
+        return_code, status, errmsg = self._check_status(execution_no)
+        if status in ["Succeeded", "Failed"]:
+            return self.container_kill(execution_no)
+
+        g.applogger.debug("not exist completed container, nothing to do.")
+        return True,
+
+    def _check_status(self, execution_no):
+        """
+        コンテナ(Pod)のステータスを確認する
+        """
+        # print("method: _check_status")
+
+        namespace = 'ita-ansible-agent'
+
+        # create command string
+        unique_name = self.get_unique_name(execution_no)
+        unique_name = re.sub(r'_', '-', unique_name).lower()
+        command = ["/usr/local/bin/kubectl", "get", "pod", "-n", namespace, 'it-ansible-agent-' + unique_name, "-o", "json"]
+
+        cp = subprocess.run(' '.join(command), capture_output=True, shell=True, text=True)
+        if cp.returncode != 0:
+            # cp.check_returncode()  # 例外を発生
+            return cp.returncode, None, cp.stderr
+
+        try:
+            result_obj = json.loads(cp.stdout)
+            status = result_obj['status']['phase']
+        except Exception as e:
+            g.applogger.debug(str(e))
+            g.applogger.debug("stdout:\n%s" % cp.stdout.decode('utf-8'))
+
+            return 1, None, str(e)
+
+        return cp.returncode, status,

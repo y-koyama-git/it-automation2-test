@@ -11,24 +11,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from flask import g
 
-from .TableBaseClass import TableBase
+from flask import g  # noqa: F401
+from common_libs.common import *  # noqa: F401,F403
+
+# import column_class
+from .id_class import IDColumn
 
 
-class MovementTable(TableBase):
+class PasswordIDColumn(IDColumn):
     """
-    Movementとそれに関連する変数定義を管理する
-    (Movement一覧だけの管理ではない)
+    カラムクラス個別処理(PasswordIDColumn)
     """
-
-    TABLE_NAME = "V_ANSR_MOVEMENT"
-    PKEY = "MOVEMENT_ID"
-
-    def __init__(self, ws_db):
+    
+    def convert_value_output(self, val=''):
         """
-        constructor
+            値を暗号化
+            ARGS:
+                val:値
+            RETRUN:
+                retBool, msg, val
         """
-        super().__init__(ws_db)
-        self.table_name = MovementTable.TABLE_NAME
-        self.pkey = MovementTable.PKEY
+        retBool = True
+        msg = ''
+        val = None
+
+        return retBool, msg, val

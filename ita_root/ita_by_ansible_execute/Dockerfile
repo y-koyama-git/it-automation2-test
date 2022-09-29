@@ -20,7 +20,7 @@ ARG USERNAME
 ARG GROUPNAME
 ARG APP_PATH
 ENV PYTHONPATH=/exastro/
-ENV USER_ID=20102
+ENV USER_ID=20101
 ENV EXECUTE_INTERVAL=1
 ENV LANGUAGE=en
 ENV STORAGEPATH=/storage/
@@ -48,6 +48,7 @@ RUN dnf install -y \
     pymysql \
     python-dotenv \
     chardet \
+    dictknife \
     ansible \
     kubernetes \
 &&  groupadd $GROUPNAME \

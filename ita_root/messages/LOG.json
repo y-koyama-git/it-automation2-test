@@ -178,5 +178,10 @@
     "BKY-20210": "There is no record of the parent column group of the target column group in \"Column group list\". (column_group_name: {})",
     "BKY-20211": "The same combination of \"Menu ID\" and \"Column name (rest)\" exists in \"Menu-Column link list\". (menuID: {}, Column name rest: {})",
     "BKY-20212": "Invalid value for \"Reference item\". (Reference item: {})",
-    "BKY-20213": "Abnormal parent-child relationship of records in \"Column group creation info\"."
+    "BKY-20213": "Abnormal parent-child relationship of records in \"Column group creation info\".",
+    "BKY-30001": "table_name is None",
+    "BKY-30002": "pkey is None",
+    "BKY-30003": "Insert record to `{}` was Failed.",
+    "BKY-30004": "Update(restore) record to `{}` was Failed.",
+    "BKY-30005": "Update(discard) record to `{}` was Failed."
 }

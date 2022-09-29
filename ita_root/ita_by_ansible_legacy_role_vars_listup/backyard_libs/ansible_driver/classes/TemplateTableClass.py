@@ -14,8 +14,11 @@
 from flask import g
 import json
 
+from backyard_libs.ansible_driver.classes.VariableClass import Variable
+from backyard_libs.ansible_driver.classes.VariableManagerClass import VariableManager
 from common_libs.ansible_driver.classes.AnscConstClass import AnscConst
-from .TableBaseClass import TableBase  # noqa F401
+from .TableBaseClass import TableBase
+
 
 class TemplateTable(TableBase):
     """
@@ -40,6 +43,7 @@ class TemplateTable(TableBase):
         Returns:
             result_dict: { (tpl_var_name): VariableManager }
         """
+        g.applogger.debug(f"[Trace] Call {self.__class__.__name__} extract_variable()")
 
         result_dict = {}
         for row in self._stored_records.values():
@@ -55,7 +59,7 @@ class TemplateTable(TableBase):
                 item = Variable(var_name, var_attr)
                 result_dict[tpl_var_name].add_variable(item)
 
-            ## 多次元変数
+            # 多次元変数
             var_attr = AnscConst.GC_VARS_ATTR_M_ARRAY
             for var_name, var_detail in var_struct['Array_vars_list'].items():
                 var_struct = var_detail

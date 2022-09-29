@@ -15,9 +15,10 @@ from flask import g
 import json
 
 from common_libs.ansible_driver.classes.AnscConstClass import AnscConst
-from .TableBaseClass import TableBase  # noqa F401
-from .VariableClass import Variable  # noqa F401
-from .VariableManagerClass import VariableManager  # noqa F401
+from .TableBaseClass import TableBase
+from .VariableClass import Variable
+from .VariableManagerClass import VariableManager
+
 
 class RolePkgTable(TableBase):
     """
@@ -43,6 +44,7 @@ class RolePkgTable(TableBase):
             role_name_list: [ {'ROLE_NAME': role_name, 'ROLE_PACKAGE_ID': role_pkg_id}, ... ]
             role_varmgr_dict: { (role_name, role_pkg_id): VariableManager }
         """
+        g.applogger.debug(f"[Trace] Call {self.__class__.__name__} extract_variable()")
 
         role_name_list = []
         role_varmgr_dict = {}
@@ -56,7 +58,7 @@ class RolePkgTable(TableBase):
                 role_varmgr_dict[(role_name, role_pkg_id)] = VariableManager()
 
             # ロール変数抽出
-            ## 一般変数、複数具体値変数
+            # - 一般変数、複数具体値変数
             for role_name, role_vars in var_struct['Vars_list'].items():
                 varmgr = role_varmgr_dict[(role_name, role_pkg_id)]
                 for var_name, attr_flag in role_vars.items():
@@ -65,7 +67,7 @@ class RolePkgTable(TableBase):
                     varmgr.add_variable(item)
                     # print(f"role_name: {role_name}, item: {item}") # debug
 
-            ## 多次元変数
+            # - 多次元変数
             var_attr = AnscConst.GC_VARS_ATTR_M_ARRAY
             for role_name, role_vars in var_struct['Array_vars_list'].items():
                 varmgr = role_varmgr_dict[(role_name, role_pkg_id)]

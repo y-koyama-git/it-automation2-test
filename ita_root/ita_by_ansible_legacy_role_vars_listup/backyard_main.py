@@ -42,7 +42,7 @@ def backyard_main(organization_id, workspace_id):
         return
 
     # 各インスタンス準備
-    g.applogger.debug("Read all related table.")
+    g.applogger.debug("[Trace] Read all related table.")
     tpl_table = TemplateTable(ws_db)  # noqa: F405
     tpl_table.store_dbdata_in_memory()
 
@@ -76,7 +76,7 @@ def backyard_main(organization_id, workspace_id):
     # - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
     # メイン処理開始
     # - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
-    g.applogger.debug("Read all related table.")
+    g.applogger.debug("[Trace] Start extracting variables.")
     # RolePKG - Role 変数チェック
     role_name_list, role_varmgr_dict = role_pkg_table.extract_variable()
 

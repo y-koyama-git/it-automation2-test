@@ -12,11 +12,10 @@
 # limitations under the License.
 #
 from flask import g
-import json
 
-from common_libs.ansible_driver.classes.AnscConstClass import AnscConst
 from common_libs.common.exception import AppException
-from .TableBaseClass import TableBase  # noqa F401
+from .TableBaseClass import TableBase
+
 
 class NestVarsMemberColCombTable(TableBase):
     """
@@ -38,6 +37,7 @@ class NestVarsMemberColCombTable(TableBase):
         """
         既存の多段変数配列組み合わせと解析結果の多段変数配列組み合わせを比較し、登録廃止を行う
         """
+        g.applogger.debug(f"[Trace] Call {self.__class__.__name__} register_and_discard()")
 
         nominate_dict = {}
         for rec in nominate_record:
@@ -68,10 +68,9 @@ class NestVarsMemberColCombTable(TableBase):
             register_list.append(record)
 
         ret = self._ws_db.table_insert(self.table_name, register_list, self.pkey, False)
-        if ret == False:
-            # TODO メッセージを定義する
-            result_code = "499-00201"
-            log_msg_args = f"Insert record to `{self.table_name}` was Failed."
+        if ret is False:
+            result_code = "BKY-30003"
+            log_msg_args = [self.table_name]
             raise AppException(result_code, log_msg_args)
 
         # 復活
@@ -85,10 +84,9 @@ class NestVarsMemberColCombTable(TableBase):
                 restore_list.append(restore_item)
 
         ret = self._ws_db.table_update(self.table_name, restore_list, self.pkey, False)
-        if ret == False:
-            # TODO メッセージを定義する
-            result_code = "499-00201"
-            log_msg_args = f"Update(restore) record to `{self.table_name}` was Failed."
+        if ret is False:
+            result_code = "BKY-30004"
+            log_msg_args = [self.table_name]
             raise AppException(result_code, log_msg_args)
 
         # 廃止
@@ -101,10 +99,9 @@ class NestVarsMemberColCombTable(TableBase):
             discard_list.append(discard_item)
 
         ret = self._ws_db.table_update(self.table_name, discard_list, self.pkey, False)
-        if ret == False:
-            # TODO メッセージを定義する
-            result_code = "499-00201"
-            log_msg_args = f"Update(discard) record to `{self.table_name}` was Failed."
+        if ret is False:
+            result_code = "BKY-30005"
+            log_msg_args = [self.table_name]
             raise AppException(result_code, log_msg_args)
 
         # 再読み込み

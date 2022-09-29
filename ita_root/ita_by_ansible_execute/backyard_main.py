@@ -144,16 +144,22 @@ def child_process_exist_check(wsDb):
                     g.applogger.debug(g.appmsg.get_log_message("MSG-10060", [driver_name, execution_no]))
 
             # コンテナが残っている場合に備えて掃除
+            # ゴミ掃除に失敗しても処理は続ける
             container_base = os.getenv('CONTAINER_BASE')
             if container_base == 'docker':
                 ansibleAg = DockerMode()
             else:
                 ansibleAg = KubernetesMode()
 
-            result = ansibleAg.container_clean(execution_no)
-            if result[0] is False:
-                # ゴミ掃除に失敗しても処理は続ける
-                log_err(g.appmsg.get_log_message("BKY-10007", [result[1], execution_no]))
+            result = ansibleAg.is_container_running(execution_no)
+            if result[0] is True:
+                result = ansibleAg.container_kill(execution_no)
+                if result[0] is False:
+                    log_err(g.appmsg.get_log_message("BKY-10007", [result[1], execution_no]))
+            else:
+                result = ansibleAg.container_clean(execution_no)
+                if result[0] is False:
+                    log_err(g.appmsg.get_log_message("BKY-10007", [result[1], execution_no]))
 
     return True
 

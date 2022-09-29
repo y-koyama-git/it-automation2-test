@@ -1336,6 +1336,14 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                     for ref_item_record in record_v_menu_reference_item:
                         reference_link_id = ref_item_record.get('LINK_ID')
                         reference_column_name_rest = ref_item_record.get('COLUMN_NAME_REST')
+                        sensitive_flag = ref_item_record.get('SENSITIVE_FLAG')
+                        
+                        # ColumnClassを選定
+                        ref_column_class = column_class
+                        if column_class == "7" and sensitive_flag == "1":  # 親のプルダウン選択がIDColumnかつsensitive_flagが1(True)なら「25:PasswordIDColumn」とする
+                            ref_column_class = "25"
+                        elif column_class == "21" and sensitive_flag == "1":  # 親のプルダウン選択がJsonIDColumnかつsensitive_flagが1(True)なら「26:JsonPasswordIDColumn」とする  # noqa: E501
+                            ref_column_class = "26"
                         if target_column_name_rest == reference_column_name_rest and other_menu_link_id == reference_link_id:
                             res_valid, msg = _check_column_validation(objdbca, menu_uuid, ref_column_name_rest)
                             if not res_valid:
@@ -1346,7 +1354,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                                 "COLUMN_NAME_EN": ref_item_record.get('COLUMN_NAME_EN'),
                                 "COLUMN_NAME_REST": ref_column_name_rest,
                                 "COL_GROUP_ID": col_group_id,  # 直前に作成したIDColumnの項目と同じカラムグループを採用する
-                                "COLUMN_CLASS": column_class,  # 「7:IDColumn」or「21:JsonIDColumn」
+                                "COLUMN_CLASS": ref_column_class,  # 「7:IDColumn」or「21:JsonIDColumn」or「25:PasswordIDColumn」or「26:JsonPasswordIDColumn」
                                 "COLUMN_DISP_SEQ": disp_seq_num,
                                 "REF_TABLE_NAME": ref_item_record.get('REF_TABLE_NAME'),
                                 "REF_PKEY_NAME": ref_item_record.get('REF_PKEY_NAME'),
@@ -1786,8 +1794,8 @@ def _insert_t_menu_reference_item(objdbca, menu_uuid, create_table_name, record_
                 if other_menu_link_column_name_rest == column_name_rest:
                     continue
                 
-                # 参照項目の対象とするカラムクラス一覧(1:SingleTextColumn, 2:MultiTextColumn, 3:NumColumn, 4:FloatColumn, 5:DateTimeColumn, 6:DateColumn, 9:FileUploadColumn, 10:HostInsideLinkTextColumn)  # noqa: E501
-                target_column_class_list = ["1", "2", "3", "4", "5", "6", "9", "10"]
+                # 参照項目の対象とするカラムクラス一覧(1:SingleTextColumn, 2:MultiTextColumn, 3:NumColumn, 4:FloatColumn, 5:DateTimeColumn, 6:DateColumn, 8:PasswordColumn, 9:FileUploadColumn, 10:HostInsideLinkTextColumn)  # noqa: E501
+                target_column_class_list = ["1", "2", "3", "4", "5", "6", "8", "9", "10"]
                 column_class = column_record.get('COLUMN_CLASS')
                 
                 # カラムクラスが参照項目の対象であれば、「参照項目情報」にレコードを登録
@@ -1796,6 +1804,13 @@ def _insert_t_menu_reference_item(objdbca, menu_uuid, create_table_name, record_
                     column_name_en = column_record.get('COLUMN_NAME_EN')
                     description_ja = column_record.get('DESCRIPTION_JA')
                     description_en = column_record.get('DESCRIPTION_EN')
+                    
+                    # パスワードカラムはSENSITIVE_FLAGをTrueにする
+                    if str(column_class) == "8":
+                        sensitive_flag = "1"  # True
+                    else:
+                        sensitive_flag = "0"  # False
+                    
                     data_list = {
                         "LINK_ID": link_id,
                         "DISP_SEQ": disp_seq_num,
@@ -1806,7 +1821,7 @@ def _insert_t_menu_reference_item(objdbca, menu_uuid, create_table_name, record_
                         "REF_COL_NAME": column_name_rest,
                         "REF_SORT_CONDITIONS": None,
                         "REF_MULTI_LANG": "0",  # False
-                        "SENSITIVE_FLAG": "0",  # False
+                        "SENSITIVE_FLAG": sensitive_flag,
                         "DESCRIPTION_JA": description_ja,
                         "DESCRIPTION_EN": description_en,
                         "DISUSE_FLAG": "0",
