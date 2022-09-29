@@ -71,10 +71,10 @@ const ja = {
         restore: '復活'
     },
     CONDUCTOR: {
-        edit: '編集モード',
-        view: '閲覧モード',
-        update: '更新モード',
-        confirmation: '確認モード'
+        edit: getMessage.FTE02133,
+        view: getMessage.FTE02134,
+        update: getMessage.FTE02135,
+        confirmation: getMessage.FTE02136
     }
 };
 
