@@ -1692,9 +1692,19 @@ class loadTable():
                 if json_rows:
                     for jsonkey, jsonval in json_rows.items():
                         objcolumn = self.get_columnclass(jsonkey)
-                        tmp_exec = objcolumn.convert_value_output(jsonval)
-                        if tmp_exec[0] is True:
-                            jsonval = tmp_exec[2]
+                        # ID → VALUE 変換処理不要ならVALUE変更無し
+                        if self.get_col_class_name(jsonkey) not in ['PasswordColumn', 'SensitiveSingleTextColumn', 'SensitiveMultiTextColumn', 'PasswordIDColumn', 'JsonPasswordIDColumn']:  # noqa: E501
+                            tmp_exec = objcolumn.convert_value_output(jsonval)
+                            if tmp_exec[0] is True:
+                                jsonval = tmp_exec[2]
+                        else:
+                            # 内部処理用
+                            if mode in ['input']:
+                                if jsonval is not None:
+                                    objcolumn = self.get_columnclass(jsonkey)
+                                    jsonval = util.ky_decrypt(jsonval)    # noqa: F405
+                            else:
+                                jsonval = None
 
                         rest_parameter.setdefault(jsonkey, jsonval)
                         if mode not in ['excel', 'excel_jnl']:
@@ -1733,6 +1743,8 @@ class loadTable():
                             if col_val is not None:
                                 objcolumn = self.get_columnclass(rest_key)
                                 col_val = util.ky_decrypt(col_val)    # noqa: F405
+                        else:
+                            col_val = None
 
                     if mode in ['input']:
                         rest_parameter.setdefault(rest_key, col_val)

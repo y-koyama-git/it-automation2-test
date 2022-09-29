@@ -20,11 +20,10 @@ from common_libs.common import *  # noqa: F401,F403
 from .id_class import IDColumn
 
 
-class JsonIDColumn(IDColumn):
+class JsonPasswordIDColumn(IDColumn):
     """
-    カラムクラス個別処理(JsonIDColumn)
+    カラムクラス個別処理(JsonPasswordIDColumn)
     """
-    
     def search_id_data_list(self):
         """
             データリストを検索する
@@ -55,3 +54,17 @@ class JsonIDColumn(IDColumn):
                     break
 
         return values
+    
+    def convert_value_output(self, val=''):
+        """
+            値を暗号化
+            ARGS:
+                val:値
+            RETRUN:
+                retBool, msg, val
+        """
+        retBool = True
+        msg = ''
+        val = None
+
+        return retBool, msg, val
