@@ -909,7 +909,7 @@ class SubValueAutoReg():
                 g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
                 
                 # 更新処理はスキップ
-                return True
+                return True, in_VarsAssignRecodes
             
             # トレースメッセージ
             traceMsg = g.appmsg.get_api_message("MSG-10814", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
