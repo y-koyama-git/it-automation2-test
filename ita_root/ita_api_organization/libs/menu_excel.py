@@ -1448,7 +1448,11 @@ def collect_excel_journal(objdbca, organization_id, workspace_id, menu, menu_rec
                                 column_num = header_order.index(key) + 3
                             else:
                                 continue
-                        
+
+                        # dict or list 形式を json.dumps
+                        if isinstance(value, dict) or isinstance(value, list):
+                            value = json.dumps(value, ensure_ascii=False)
+                            
                         ws.cell(row=startDetailRow, column=column_num).number_format = openpyxl.styles.numbers.FORMAT_TEXT
                         ws.cell(row=startDetailRow, column=column_num).font = font_bl
                         ws.cell(row=startDetailRow, column=column_num).border = border
