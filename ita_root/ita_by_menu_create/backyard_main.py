@@ -1342,7 +1342,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                         ref_column_class = column_class
                         if column_class == "7" and sensitive_flag == "1":  # 親のプルダウン選択がIDColumnかつsensitive_flagが1(True)なら「25:PasswordIDColumn」とする
                             ref_column_class = "25"
-                        elif column_class == "21" and sensitive_flag == "1":  # 親のプルダウン選択がJsonIDColumnかつsensitive_flagが1(True)なら「26:JsonPasswordIDColumn」とする
+                        elif column_class == "21" and sensitive_flag == "1":  # 親のプルダウン選択がJsonIDColumnかつsensitive_flagが1(True)なら「26:JsonPasswordIDColumn」とする  # noqa: E501
                             ref_column_class = "26"
                         if target_column_name_rest == reference_column_name_rest and other_menu_link_id == reference_link_id:
                             res_valid, msg = _check_column_validation(objdbca, menu_uuid, ref_column_name_rest)
@@ -1354,7 +1354,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                                 "COLUMN_NAME_EN": ref_item_record.get('COLUMN_NAME_EN'),
                                 "COLUMN_NAME_REST": ref_column_name_rest,
                                 "COL_GROUP_ID": col_group_id,  # 直前に作成したIDColumnの項目と同じカラムグループを採用する
-                                "COLUMN_CLASS": ref_column_class,  # 「7:IDColumn」or「21:JsonIDColumn」or「25:PasswordIDColumn」
+                                "COLUMN_CLASS": ref_column_class,  # 「7:IDColumn」or「21:JsonIDColumn」or「25:PasswordIDColumn」or「26:JsonPasswordIDColumn」
                                 "COLUMN_DISP_SEQ": disp_seq_num,
                                 "REF_TABLE_NAME": ref_item_record.get('REF_TABLE_NAME'),
                                 "REF_PKEY_NAME": ref_item_record.get('REF_PKEY_NAME'),
