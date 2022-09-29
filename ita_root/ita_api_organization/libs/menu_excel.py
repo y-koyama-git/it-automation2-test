@@ -219,6 +219,10 @@ def collect_excel_all(objdbca, organization_id, workspace_id, menu, menu_record,
                         else:
                             value = ''
                     
+                    # dict or list 形式を json.dumps
+                    if isinstance(value, dict) or isinstance(value, list):
+                        value = json.dumps(value, ensure_ascii=False)
+
                     if key in header_order:
                         column_num = header_order.index(key) + 4
                     else:
