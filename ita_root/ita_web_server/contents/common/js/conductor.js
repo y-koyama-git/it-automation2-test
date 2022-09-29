@@ -99,8 +99,13 @@ setup() {
     cd.$.canvas = cd.$.editor.find('.canvas'),
     cd.$.artBoard = cd.$.editor.find('.art-board');
     
-    // HTMLセット
-    
+    // モードタイトル
+    cd.modeTitleList = {
+        edit: getMessage.FTE02133,
+        view: getMessage.FTE02134,
+        update: getMessage.FTE02135,
+        confirmation: getMessage.FTE02136
+    }
     
     const restApiUrls = [];
     
@@ -113,11 +118,11 @@ setup() {
         cd.$.main.addClass('conductorInstanceIdStandBy');
         cd.$.header.remove();
         cd.$.editor.removeClass('load-wait');
-        cd.$.mode.text( WD.CONDUCTOR[ cd.mode ] );
+        cd.$.mode.text( cd.modeTitleList[ cd.mode ] );
         cd.$.main.html(`<div class="conductorInstanceIdStandByMessage"><span class="icon icon-circle_info"></span>
-        ConductorインスタンスIDが未設定です。<br>
-        ConductorインスタンスIDを入力し作業確認ボタンを押下するか、<br>
-        <a href="?menu=conductor_list">Conductor作業一覧</a>ページにて詳細ボタンを押下してください。</di>`);
+        ` + getMessage.FTE02001 + `<br>
+        ` + getMessage.FTE02002 + `<br>
+        <a href="?menu=conductor_list">` + getMessage.FTE02003 + `</a>` + getMessage.FTE02004 + `</di>`);
         cd.instanceIdEvent();
         return false;
     } else {
@@ -151,26 +156,26 @@ operationMenuHtml() {
     
     const menu = {
         edit: [
-            { icon: 'note', type: 'selectConductor', title: '選択', action: 'default', width: '100px' },
-            { icon: 'plus', type: 'registration', title: '登録', action: 'positive', width: '160px', separate: true },
-            { icon: 'return', type: 'reset', title: 'リセット', action: 'negative', width: '100px', separate: true }
+            { icon: 'note', type: 'selectConductor', title: getMessage.FTE02005, action: 'default', width: '100px' },
+            { icon: 'plus', type: 'registration', title: getMessage.FTE02006, action: 'positive', width: '160px', separate: true },
+            { icon: 'return', type: 'reset', title: getMessage.FTE02007, action: 'negative', width: '100px', separate: true }
         ],
         view: [
-            { icon: 'note', type: 'selectConductor', title: '選択', action: 'default', width: '100px' },
-            { icon: 'edit', type: 'edit', title: '編集', action: 'positive', width: '160px', separate: true },
-            { icon: 'square_next', type: 'execute', title: '作業実行', action: 'positive', width: '160px' },
-            { icon: 'copy', type: 'diversion', title: '流用新規', action: 'normal', width: '100px', separate: true },
-            { icon: 'plus', type: 'new', title: '新規', action: 'normal', width: '100px'}
+            { icon: 'note', type: 'selectConductor', title: getMessage.FTE02005, action: 'default', width: '100px' },
+            { icon: 'edit', type: 'edit', title: getMessage.FTE02008, action: 'positive', width: '160px', separate: true },
+            { icon: 'square_next', type: 'execute', title: getMessage.FTE02009, action: 'positive', width: '160px' },
+            { icon: 'copy', type: 'diversion', title: getMessage.FTE02010, action: 'normal', width: '100px', separate: true },
+            { icon: 'plus', type: 'new', title: getMessage.FTE02011, action: 'normal', width: '100px'}
         ],
         update: [
-            { icon: 'update02', type: 'update', title: '更新', action: 'positive', width: '160px'},
-            { icon: 'update01', type: 'refresh', title: '再読み込み', action: 'negative', separate: true, width: '120px'},
-            { icon: 'cross', type: 'cancel', title: 'キャンセル', action: 'negative', width: '120px'},
+            { icon: 'update02', type: 'update', title: getMessage.FTE02012, action: 'positive', width: '160px'},
+            { icon: 'update01', type: 'refresh', title: getMessage.FTE02013, action: 'negative', separate: true, width: '120px'},
+            { icon: 'cross', type: 'cancel', title: getMessage.FTE02014, action: 'negative', width: '120px'},
         ],
         confirmation: [
-            { icon: 'check', type: 'work-confirm', title: '作業確認', action: 'default', width: '120px', disabled: true },
-            { icon: 'cal_off', className: 'canselInstance', type: 'cansel-instance', title: '予約取消', action: 'danger', width: '120px', disabled: true, separate: true },
-            { icon: 'stop', className: 'scramInstance', type: 'scram-instance', title: '緊急停止', action: 'danger', width: '120px', disabled: true },
+            { icon: 'check', type: 'work-confirm', title: getMessage.FTE02015, action: 'default', width: '120px', disabled: true },
+            { icon: 'cal_off', className: 'canselInstance', type: 'cansel-instance', title: getMessage.FTE02016, action: 'danger', width: '120px', disabled: true, separate: true },
+            { icon: 'stop', className: 'scramInstance', type: 'scram-instance', title: getMessage.FTE02017, action: 'danger', width: '120px', disabled: true },
         ]
     };
     
@@ -189,16 +194,16 @@ operationMenuHtml() {
     }
     return `
     <ul class="operation-menu-list">
-        ${( cd.mode === 'confirmation')? `<li class="operation-menu-item">${fn.html.inputText( 'inputConductorInstanceId', cd.id, null, {}, { widthAdjustment: true, before: 'ConductorインスタンスID' })}</li>`: ''}
+        ${( cd.mode === 'confirmation')? `<li class="operation-menu-item">${fn.html.inputText( 'inputConductorInstanceId', cd.id, null, {}, { widthAdjustment: true, before: getMessage.FTE02018 })}</li>`: ''}
         ${list.join('')}
     </ul>
     <ul class="operation-submenu-list">
         <li class="operation-menu-item">${
-            fn.html.button('フルスクリーン', ['itaButton', `fullscreen-on operation-menu-button`],
+            fn.html.button(getMessage.FTE02019, ['itaButton', `fullscreen-on operation-menu-button`],
                 { action: 'default', menu: 'fullscreen-on', style: 'width:160px'})
         }</li>
         <li class="operation-menu-item">${
-            fn.html.button('フルスクリーン解除', ['itaButton', `fullscreen-off operation-menu-button`],
+            fn.html.button(getMessage.FTE02020, ['itaButton', `fullscreen-off operation-menu-button`],
                 { action: 'default', menu: 'fullscreen-off', style: 'width:160px'})
         }</li>
     </ul>`;
@@ -214,15 +219,15 @@ headerHtml() {
     // モードごとに表示するボタンを変更する
     const main = [];
     if ( cd.mode === 'edit' || cd.mode === 'update' || cd.mode === 'view') {
-        main.push({ type: 'conductor-save', title: 'JSON保存'});
+        main.push({ type: 'conductor-save', title: getMessage.FTE02021});
     }
     if ( cd.mode === 'edit'  || cd.mode === 'update') {
-        main.push({ type: 'conductor-read', title: 'JSON読込', separate: true });
-        main.push({ type: 'undo', title: '操作取り消し', disabled: true });
-        main.push({ type: 'redo', title: '操作やり直し', separate: true, disabled: true });
-        main.push({ type: 'node-delete', title: '選択ノード削除', disabled: true });
+        main.push({ type: 'conductor-read', title: getMessage.FTE02022, separate: true });
+        main.push({ type: 'undo', title: getMessage.FTE02023, disabled: true });
+        main.push({ type: 'redo', title: getMessage.FTE02024, separate: true, disabled: true });
+        main.push({ type: 'node-delete', title: getMessage.FTE02025, disabled: true });
     }
-    main.push({ type: 'view-all', title: '全体表示', separate: true });
+    main.push({ type: 'view-all', title: getMessage.FTE02026, separate: true });
     
     const mainItem = [];
     for ( const item of main ) {
@@ -283,7 +288,7 @@ infoHtml() {
     <div class="editor-tab">
         <div class="editor-tab-menu">
             <ul class="editor-tab-menu-list">
-                <li class="editor-tab-menu-item" data-tab="log">ログ</li>
+                <li class="editor-tab-menu-item" data-tab="log">` + getMessage.FTE02027 + `</li>
             </ul>
         </div>
         <div class="editor-tab-contents">
@@ -330,7 +335,7 @@ init( info, conductorData ) {
     
     if ( cd.mode === 'confirmation') {
         if ( conductorData.conductor_class && Object.keys( conductorData.conductor_class ).length === 0 ) {
-            alert(`ConductorインスタンスID [ ${cd.id} ]の読み込みに失敗しました。`);
+            alert(getMessage.FTE02018 + `[ ${cd.id} ]` + getMessage.FTE02028);
             window.location.href = '?menu=conductor_confirmation';
             return false;
         }
@@ -429,7 +434,7 @@ conductorMode( mode ) {
     cd.$.header.html( cd.headerHtml() );
     
     // モードテキスト切替
-    cd.$.mode.text( WD.CONDUCTOR[ cd.mode ] );
+    cd.$.mode.text( cd.modeTitleList[ cd.mode ] );
 
     // パネル切替
     cd.select = [];
@@ -552,7 +557,7 @@ initEvents() {
               cd.menuButtonDisabled( true );           
               
               const executeConfig = {
-                  title: '作業実行',
+                  title: getMessage.FTE02009,
                   itemName: 'Conductor',
                   selectName: cd.data.conductor.conductor_name,
                   selectId: cd.id,
@@ -581,24 +586,24 @@ initEvents() {
                           window.location.href = `?menu=conductor_confirmation&conductor_instance_id=${exeResult.conductor_instance_id}`;
                       }).catch(function( error ){
                           cd.menuButtonDisabled( false );
-                          cd.message('danger', '作業実行に失敗しました。');
+                          cd.message('danger', getMessage.FTE02029);
                       });
                   }
               });
           break;
           // コンダクター新規登録
           case 'registration':
-              if ( window.confirm('登録しますか？') ) {
+              if ( window.confirm(getMessage.FTE02030) ) {
                   cd.menuButtonDisabled( true );
                   fn.fetch(`/menu/${cd.menu}/conductor/class/maintenance/`, null, 'POST', cd.data ).then(function( result ){
                       cd.fetchConductor( result.conductor_class_id ).then(function(){
                           cd.menuButtonDisabled( false );
                           cd.conductorMode('view');
-                          cd.message('success', '登録しました。');
+                          cd.message('success', getMessage.FTE02031);
                       });
                   }).catch(function( error ){
                       cd.menuButtonDisabled( false );
-                      cd.message('danger', '登録に失敗しました。', error.message );
+                      cd.message('danger', getMessage.FTE02032, error.message );
                   });
               }
           break;
@@ -611,7 +616,7 @@ initEvents() {
                       cd.fetchConductor( select[0].id ).then(function( result ){
                           cd.menuButtonDisabled( false );
                           cd.conductorMode('view');
-                          cd.message('success', '読み込み完了しました。');
+                          cd.message('success', getMessage.FTE02033);
                       });
                   } else {
                       cd.menuButtonDisabled( false );
@@ -622,15 +627,15 @@ initEvents() {
               cd.conductorMode('update');
           break;
           case 'reset':
-              if ( window.confirm('リセットしますか？') ) {
+              if ( window.confirm(getMessage.FTE02034) ) {
                     cd.clearConductor();
                     cd.InitialSetNode();
-                    cd.message('info', 'リセットしました。');
+                    cd.message('info', getMessage.FTE02035);
               }
           break;
           case 'diversion':
             // 流用しますか？
-            if ( window.confirm('流用しますか？') ) {
+            if ( window.confirm(getMessage.FTE02036) ) {
               // 流用する場合は下記の項目はnullに
               cd.data.conductor.id = null;
               cd.data.conductor.last_update_date_time = null;
@@ -641,7 +646,7 @@ initEvents() {
               cd.panelChange();
 
               history.replaceState( null, null, '?menu=conductor_class_edit');
-              cd.message('info', '流用しました。');
+              cd.message('info', getMessage.FTE02037);
             }
             break;
           case 'new':
@@ -655,27 +660,27 @@ initEvents() {
           break;
           case 'update':
               // 更新しますか？
-              if ( window.confirm('更新しますか？') ) {
+              if ( window.confirm(getMessage.FTE02038) ) {
                   cd.menuButtonDisabled( true );
                   fn.fetch(`/menu/${cd.menu}/conductor/class/maintenance/${cd.id}/`, null, 'PATCH', cd.data ).then(function(result){
                       cd.fetchConductor( result.conductor_class_id ).then(function(){
                           cd.menuButtonDisabled( false );
                           cd.conductorMode('view');
-                          cd.message('success', '更新しました。');
+                          cd.message('success', getMessage.FTE02039);
                       });
                   }).catch(function( error ){
                       cd.menuButtonDisabled( false );
-                      cd.message('danger', '更新に失敗しました。', error.message );
+                      cd.message('danger', getMessage.FTE02040, error.message );
                   });
               }
           break;
           // 編集中データ再読み込み
           case 'refresh':
-            if ( window.confirm('再読込しますか？') ) {
+            if ( window.confirm(getMessage.FTE02041) ) {
                 cd.menuButtonDisabled( true );
                 cd.fetchConductor( cd.id ).then(function( result ){
                     cd.menuButtonDisabled( false );
-                    cd.message('success', '再読込しました。');
+                    cd.message('success', getMessage.FTE02042);
                 });
             }
             break;
@@ -691,14 +696,14 @@ initEvents() {
           } break;
           // 予約取消
           case 'cansel-instance':
-            if ( window.confirm('予約を取消ますか？') ) {
+            if ( window.confirm(getMessage.FTE02043) ) {
               cd.menuButtonDisabled( true );
               cd.cancelInstance();
             }
             break;
           // 緊急停止
           case 'scram-instance':
-            if ( window.confirm('緊急停止しますか？') ) {
+            if ( window.confirm(getMessage.FTE02044) ) {
               cd.menuButtonDisabled( true );
               cd.scramInstance();
             }
@@ -1717,14 +1722,14 @@ initNode() {
     
     // Movementステータス
     cd.status.movement = {
-      '5': ['done', '正常終了'], // 正常終了
-      '6': ['fail', '異常終了'], // 異常終了
-      '7': ['error', '想定外エラー'], // 想定外エラー
-      '8': ['stop', '緊急停止'], // 緊急停止
-      '12': ['error', '準備エラー'], // 準備エラー
-      '13': ['skip', 'Skip終了'], // Skip終了
-      '14': ['warning', '警告終了'], // 警告終了
-      '9999': ['other', 'Other'],
+      '5': ['done', getMessage.FTE02045], // 正常終了
+      '6': ['fail', getMessage.FTE02046], // 異常終了
+      '7': ['error', getMessage.FTE02047], // 想定外エラー
+      '8': ['stop', getMessage.FTE02048], // 緊急停止
+      '12': ['error', getMessage.FTE02049], // 準備エラー
+      '13': ['skip', getMessage.FTE02050], // Skip終了
+      '14': ['warning', getMessage.FTE02051], // 警告終了
+      '9999': ['other', getMessage.FTE02052],
     };
 
     // マージテータス
@@ -3009,7 +3014,7 @@ addBranch( nodeID ) {
         cd.branchLine( nodeID );
         cd.connectEdgeUpdate( nodeID );
       } else {
-        cd.message('warning', '条件分岐は最大６つです。');
+        cd.message('warning', getMessage.FTE02053);
       }
     }
 }
@@ -3437,7 +3442,7 @@ edgeConnectCheck( currentNodeID, inOut ) {
         
       }
     }
-    if ( conectCount === 0 ) cd.message('warning', '接続先がありません。');
+    if ( conectCount === 0 ) cd.message('warning', getMessage.FTE02054);
 }
 /*
 ##################################################
@@ -3743,14 +3748,14 @@ nodeConditionalToMergeCheck() {
           if ( parallelBranchFlag === true ) {
             if ( nodeID in mergeCheckArray ) {
               if ( mergeCheckArray[ nodeID ] !== conditionalID ) {
-                cd.message('warning', 'マージできません。');
+                cd.message('warning', getMessage.FTE02055);
                 nodeConditionalToMergeFlag = false;
               }
             } else {
               mergeCheckArray[ nodeID ] = conditionalID;
             }
           } else {
-            cd.message('warning', 'マージできません。');
+            cd.message('warning', getMessage.FTE02055);
             nodeConditionalToMergeFlag = false;
           }
         }
@@ -3859,9 +3864,9 @@ initPanel() {
     // 終了ステータス
     cd.status = {};
     cd.status.end = {
-      '6': ['done', '正常'], // 正常
-      '7': ['error', '異常'], // 異常
-      '8': ['warning', '警告'] // 警告
+      '6': ['done', getMessage.FTE02056], // 正常
+      '7': ['error', getMessage.FTE02057], // 異常
+      '8': ['warning', getMessage.FTE02058] // 警告
     };
     
     // 初期パネルをセットする
@@ -4015,22 +4020,22 @@ movementListHtml() {
       <div class="movement-filter-setting-inner">
         <div class="movement-filter-setting-body">
           <div class="panel-group">
-            <div class="panel-group-title">フィルタ設定</div>
+            <div class="panel-group-title">` + getMessage.FTE02059 + `</div>
             <ul class="movement-filter-setting-list">
-              <li><label class="property-label"><input class="filter-setting-radio" type="radio" name="${cd.createId('filter-setting')}" value="regexp-off" checked>正規表現を使用しない</label></li>
-              <li><label class="property-label"><input class="filter-setting-radio" type="radio" name="${cd.createId('filter-setting')}" value="regexp-on">正規表現を使用する</label></li>
+              <li><label class="property-label"><input class="filter-setting-radio" type="radio" name="${cd.createId('filter-setting')}" value="regexp-off" checked>` + getMessage.FTE02060 + `</label></li>
+              <li><label class="property-label"><input class="filter-setting-radio" type="radio" name="${cd.createId('filter-setting')}" value="regexp-on">` + getMessage.FTE02061 + `</label></li>
             </ul>
           </div>
           <div class="panel-group">
-            <div class="panel-group-title">オーケストレータ選択</div>
+            <div class="panel-group-title">` + getMessage.FTE02062 + `</div>
             <ul class="orchestrator-list movement-filter-setting-list">
             </ul>
           </div>
         </div>
         <div class="movement-filter-setting-footer">
           <ul class="panel-button-group">
-            <li class="panel-button-group-item"><button class="movement-filter-ok positive panel-button">設定</button></li>
-            <li class="panel-button-group-item"><button class="movement-filter-cancel negative panel-button">キャンセル</button></li>
+            <li class="panel-button-group-item"><button class="movement-filter-ok positive panel-button">` + getMessage.FTE02063 + `</button></li>
+            <li class="panel-button-group-item"><button class="movement-filter-cancel negative panel-button">` + getMessage.FTE02064 + `</button></li>
           </ul>
         </div>
       </div>
@@ -4089,10 +4094,10 @@ panelTextareaHtml( note ) {
     const cd = this;
     return `
     <div class="panel-group">
-        <div class="panel-group-title">備考</div>
+        <div class="panel-group-title">` + getMessage.FTE02065 + `</div>
         ${( cd.mode !== 'edit' && cd.mode!== 'update')?
             `<span class="view panel-note panel-span">${note}</span>`:
-            fn.html.textarea(['panel-note', 'panel-textarea', 'popup'], note, null, { title: '説明を入力します。[最大長]8192バイト'}, true )
+            fn.html.textarea(['panel-note', 'panel-textarea', 'popup'], note, null, { title: getMessage.FTE02066}, true )
         }
     </div>`;
 }
@@ -4113,7 +4118,7 @@ panelConductorHtml() {
 
     const html = `
     <div class="panel-group">
-        <div class="panel-group-title">Conductor情報</div>
+        <div class="panel-group-title">` + getMessage.FTE02067 + `</div>
         <table class="panel-table">
             <tbody>
                 <tr>
@@ -4126,8 +4131,8 @@ panelConductorHtml() {
         </table>
         <table class="panel-table">
             <tbody>
-                <tr ${( cd.mode === 'edit' || cd.mode === 'update')? `class="popup" title="Conductor名称を入力します。[最大長]256バイト"`: ''}>
-                    <th class="panel-th">名称${(cd.mode === 'edit' || cd.mode === 'update')? fn.html.required(): ''}</th>
+                <tr ${( cd.mode === 'edit' || cd.mode === 'update')? `class="popup" title="` + getMessage.FTE02068 + `"`: ''}>
+                    <th class="panel-th">` + getMessage.FTE02069 + `${(cd.mode === 'edit' || cd.mode === 'update')? fn.html.required(): ''}</th>
                     <td class="panel-td">
                         ${( cd.mode !== 'edit' && cd.mode !== 'update')?
                             `<span class="view panel-span">${name}</span>`:
@@ -4136,7 +4141,7 @@ panelConductorHtml() {
                     </td>
                 </tr>
                 <tr>
-                    <th class="panel-th">更新日時</th>
+                    <th class="panel-th">` + getMessage.FTE02070 + `</th>
                     <td class="panel-td"><span class="panel-span">${update}</span></td>
                 </tr>
             </tbody>
@@ -4164,11 +4169,11 @@ panelMovementHtml( nodeId ) {
           
     const html = `
     <div class="panel-group">
-        <div class="panel-group-title">Movement情報</div>
+        <div class="panel-group-title">` + getMessage.FTE02071 + `</div>
         <table class="panel-table">
             <tbody>
                 <tr>
-                    <th class="panel-th">ID</th>
+                    <th class="panel-th">` + getMessage.FTE02072 + `</th>
                     <td class="panel-td"><span class="panel-span">${id}</span></td>
                 </tr>
             </tbody>
@@ -4176,18 +4181,18 @@ panelMovementHtml( nodeId ) {
         <table class="panel-table">
             <tbody>
                 <tr>
-                    <th class="panel-th">名称</th>
+                    <th class="panel-th">` + getMessage.FTE02069 + `</th>
                     <td class="panel-td"><span class="panel-span">${name}</span></td>
                 </tr>
                 <tr>
-                    <th class="panel-th">スキップ</th>
+                    <th class="panel-th">` + getMessage.FTE02073 + `</th>
                     <td class="panel-td"><span class="panel-span-noborder">${fn.html.check('panel-checkbox', null, null, null, skip )}</span></td>
                 </tr>
             </tbody>
         </table>
     </div>
     <div class="panel-group">
-        <div class="panel-group-title">個別オペレーション</div>
+        <div class="panel-group-title">` + getMessage.FTE02074 + `</div>
         <table class="panel-table">
             <tbody>
                 <tr>
@@ -4196,8 +4201,8 @@ panelMovementHtml( nodeId ) {
             </tbody>
         </table>
         <ul class="panel-button-group">
-            <li class="panel-button-group-item"><button class="panel-button panel-select-button" data-type="operation">オペレーション選択</button></li>
-            <li class="panel-button-group-item"><button class="panel-button panel-select-button" data-type="clearOperation">クリア</button></li>
+            <li class="panel-button-group-item"><button class="panel-button panel-select-button" data-type="operation">` + getMessage.FTE02075 + `</button></li>
+            <li class="panel-button-group-item"><button class="panel-button panel-select-button" data-type="clearOperation">` + getMessage.FTE02076 + `</button></li>
         </ul>
     </div>
     ${cd.panelTextareaHtml( note )}`;
@@ -4238,7 +4243,7 @@ panelEndHtml( nodeId ) {
     return cd.panelCommon('Conductor end', `
     ${(cd.mode === 'edit' || cd.mode === 'update')? `
     <div class="panel-group">
-        <div class="panel-group-title">終了ステータス</div>
+        <div class="panel-group-title">` + getMessage.FTE02077 + `</div>
         <table class="panel-table">
             <tbody>
                 <tr>
@@ -4269,14 +4274,14 @@ panelParallelBranchHtml( nodeId ) {
     return cd.panelCommon('Parallel branch', `
     ${(cd.mode === 'edit' || cd.mode === 'update')? `
     <div class="panel-group">
-        <div class="panel-group-title">平行分岐設定</div>
+        <div class="panel-group-title">` + getMessage.FTE02078 + `</div>
         <table class="panel-table">
           <tbody>
               <tr>
                   <td class="panel-td">
                       <ul class="panel-button-group">
-                          <li class="panel-button-group-item"><button class="branch-add panel-button">分岐追加</button></li>
-                          <li class="panel-button-group-item"><button class="branch-delete panel-button">分岐削除</button></li>
+                          <li class="panel-button-group-item"><button class="branch-add panel-button">` + getMessage.FTE02079 + `</button></li>
+                          <li class="panel-button-group-item"><button class="branch-delete panel-button">` + getMessage.FTE02080 + `</button></li>
                       </ul>
                   </td>
               </tr>
@@ -4299,14 +4304,14 @@ panelMergeHtml( nodeId ) {
     return cd.panelCommon('Parallel merge', `
     ${(cd.mode === 'edit' || cd.mode === 'update')? `
     <div class="panel-group">
-        <div class="panel-group-title">平行マージ設定</div>
+        <div class="panel-group-title">` + getMessage.FTE02081 + `</div>
         <table class="panel-table">
           <tbody>
             <tr>
               <td class="panel-td">
                 <ul class="panel-button-group">
-                  <li class="panel-button-group-item"><button class="branch-add panel-button">マージ追加</button></li>
-                  <li class="panel-button-group-item"><button class="branch-delete panel-button">マージ削除</button></li>
+                  <li class="panel-button-group-item"><button class="branch-add panel-button">` + getMessage.FTE02082 + `</button></li>
+                  <li class="panel-button-group-item"><button class="branch-delete panel-button">` + getMessage.FTE02083 + `</button></li>
                 </ul>
               </td>
             </tr>
@@ -4363,14 +4368,14 @@ panelConditionalBranchHtml( nodeId ) {
     return cd.panelCommon('Conditional branch', `
     ${(cd.mode === 'edit' || cd.mode === 'update')? `
     <div class="panel-group">
-        <div class="panel-group-title">条件分岐設定</div>
+        <div class="panel-group-title">` + getMessage.FTE02084 + `</div>
         <table class="panel-table">
           <tbody>
             <tr>
               <td class="panel-td">
                 <ul class="panel-button-group">
-                  <li class="panel-button-group-item"><button class="branch-add panel-button">分岐追加</button></li>
-                  <li class="panel-button-group-item"><button class="branch-delete panel-button">分岐削除</button></li>
+                  <li class="panel-button-group-item"><button class="branch-add panel-button">` + getMessage.FTE02085 + `</button></li>
+                  <li class="panel-button-group-item"><button class="branch-delete panel-button">` + getMessage.FTE02086 + `</button></li>
                 </ul>
               </td>
             </tr>
@@ -4416,18 +4421,18 @@ panelCallHtml( nodeId ) {
           
     return cd.panelCommon('Condcutor call', `
     <div class="panel-group">
-        <div class="panel-group-title">Conductor call情報</div>
+        <div class="panel-group-title">` + getMessage.FTE02087 + `</div>
         <table class="panel-table">
           <tbody>
             <tr>
-              <th class="panel-th">スキップ</th>
+              <th class="panel-th">` + getMessage.FTE02088 + `</th>
               <td class="panel-td"><span class="panel-span-noborder">${fn.html.check('panel-checkbox', null, null, null, skip )}</span></td>
             </tr>
           </tbody>
         </table>
     </div>
     <div class="panel-group">
-      <div class="panel-group-title">呼び出しConductor ${(cd.mode === 'edit' || cd.mode === 'update')? fn.html.required(): ''}</div>
+      <div class="panel-group-title">` + getMessage.FTE02089 + ` ${(cd.mode === 'edit' || cd.mode === 'update')? fn.html.required(): ''}</div>
       <table class="panel-table">
         <tbody>
           <tr>
@@ -4437,13 +4442,13 @@ panelCallHtml( nodeId ) {
       </table>
       ${(cd.mode === 'edit' || cd.mode === 'update')?
       `<ul class="panel-button-group">
-        <li class="panel-button-group-item"><button class="panel-button panel-select-button" data-type="conductor">Conductor選択</button></li>
-        <li class="panel-button-group-item"><button class="panel-button panel-select-button" data-type="clearConductor">クリア</button></li>
+        <li class="panel-button-group-item"><button class="panel-button panel-select-button" data-type="conductor">` + getMessage.FTE02090 + `</button></li>
+        <li class="panel-button-group-item"><button class="panel-button panel-select-button" data-type="clearConductor">` + getMessage.FTE02091 + `</button></li>
       </ul>`: ``
       }
     </div>
     <div class="panel-group">
-        <div class="panel-group-title">個別オペレーション</div>
+        <div class="panel-group-title">` + getMessage.FTE02092 + `</div>
         <table class="panel-table">
             <tbody>
                 <tr>
@@ -4452,8 +4457,8 @@ panelCallHtml( nodeId ) {
             </tbody>
         </table>
         <ul class="panel-button-group">
-            <li class="panel-button-group-item"><button class="panel-button panel-select-button" data-type="operation">オペレーション選択</button></li>
-            <li class="panel-button-group-item"><button class="panel-button panel-select-button" data-type="clearOperation">クリア</button></li>
+            <li class="panel-button-group-item"><button class="panel-button panel-select-button" data-type="operation">` + getMessage.FTE02093 + `</button></li>
+            <li class="panel-button-group-item"><button class="panel-button panel-select-button" data-type="clearOperation">` + getMessage.FTE02094 + `</button></li>
         </ul>
     </div>
     ${cd.panelTextareaHtml( note )}`);
@@ -4506,14 +4511,14 @@ panelStatusBranchHtml( nodeId ) {
 return cd.panelCommon('Status file branch', `
   ${(cd.mode === 'edit' || cd.mode === 'update')? `
   <div class="panel-group">
-        <div class="panel-group-title">ステータスファイル分岐設定</div>
+        <div class="panel-group-title">` + getMessage.FTE02095 + `</div>
         <table class="panel-table">
           <tbody>
               <tr>
                   <td class="panel-td">
                       <ul class="panel-button-group">
-                          <li class="panel-button-group-item"><button class="branch-add panel-button">条件追加</button></li>
-                          <li class="panel-button-group-item"><button class="branch-delete panel-button">条件削除</button></li>
+                          <li class="panel-button-group-item"><button class="branch-add panel-button">` + getMessage.FTE02096 + `</button></li>
+                          <li class="panel-button-group-item"><button class="branch-delete panel-button">` + getMessage.FTE02097 + `</button></li>
                       </ul>
                   </td>
               </tr>
@@ -4536,23 +4541,23 @@ return cd.panelCommon('Status file branch', `
 ##################################################
 */
 panelAlignmentHtml() {
-    return this.panelCommon('Node 整列', `
+    return this.panelCommon(getMessage.FTE02098, `
     <div class="panel-group">
-      <div class="panel-group-title">整列</div>
+      <div class="panel-group-title">` + getMessage.FTE02099 + `</div>
       <ul class="panel-button-group">
-        <li class="panel-button-group-item"><button data-type="left" class="panel-button node-align popup" title="水平方向左に整列">${fn.html.icon('align_left')}</button></li>
-        <li class="panel-button-group-item"><button data-type="vertical" class="panel-button node-align popup" title="水平方向中央に整列")}">${fn.html.icon('align_center')}</button></li>
-        <li class="panel-button-group-item"><button data-type="right" class="panel-button node-align popup" title="水平方向右に整列">${fn.html.icon('align_right')}</button></li>
-        <li class="panel-button-group-item"><button data-type="top" class="panel-button node-align popup" title="垂直方向上に整列">${fn.html.icon('align_top')}</button></li>
-        <li class="panel-button-group-item"><button data-type="horizonal" class="panel-button node-align popup" title="垂直方向中央に整列">${fn.html.icon('align_horizonal')}</button></li>
-        <li class="panel-button-group-item"><button data-type="bottom" class="panel-button node-align popup" title="垂直方向下に整列">${fn.html.icon('align_bottom')}</button></li>
+        <li class="panel-button-group-item"><button data-type="left" class="panel-button node-align popup" title="` + getMessage.FTE02100 + `">${fn.html.icon('align_left')}</button></li>
+        <li class="panel-button-group-item"><button data-type="vertical" class="panel-button node-align popup" title="` + getMessage.FTE02101 + `">${fn.html.icon('align_center')}</button></li>
+        <li class="panel-button-group-item"><button data-type="right" class="panel-button node-align popup" title="` + getMessage.FTE02102 + `">${fn.html.icon('align_right')}</button></li>
+        <li class="panel-button-group-item"><button data-type="top" class="panel-button node-align popup" title="` + getMessage.FTE02103 + `">${fn.html.icon('align_top')}</button></li>
+        <li class="panel-button-group-item"><button data-type="horizonal" class="panel-button node-align popup" title="` + getMessage.FTE02104 + `">${fn.html.icon('align_horizonal')}</button></li>
+        <li class="panel-button-group-item"><button data-type="bottom" class="panel-button node-align popup" title="` + getMessage.FTE02105 + `">${fn.html.icon('align_bottom')}</button></li>
       </ul>
     </div>
     <div class="panel-group">
-      <div class="panel-group-title">等間隔</div>
+      <div class="panel-group-title">` + getMessage.FTE02106 + `</div>
       <ul class="panel-button-group">
-        <li class="panel-button-group-item"><button data-type="equally-spaced-vertical" class="panel-button node-equally-spaced popup" title="垂直方向等間隔に分布">${fn.html.icon('algin_equally_horizonal')}</span></button></li>
-        <li class="panel-button-group-item"><button data-type="equally-spaced-horizonal" class="panel-button node-equally-spaced popup" title="水平方向等間隔に分布">${fn.html.icon('algin_equally_vertical')}</button></li>
+        <li class="panel-button-group-item"><button data-type="equally-spaced-vertical" class="panel-button node-equally-spaced popup" title="` + getMessage.FTE02107 + `">${fn.html.icon('algin_equally_horizonal')}</span></button></li>
+        <li class="panel-button-group-item"><button data-type="equally-spaced-horizonal" class="panel-button node-equally-spaced popup" title="` + getMessage.FTE02108 + `">${fn.html.icon('algin_equally_vertical')}</button></li>
       </ul>
     </div>`);
 }
@@ -4581,11 +4586,11 @@ panelConfirmationConductorHtml() {
     
     return cd.panelCommon('Conductor', `
     <div class="panel-group">
-      <div class="panel-group-title">Conductorインスタンス情報</div>
+      <div class="panel-group-title">` + getMessage.FTE02109 + `</div>
       <table class="panel-table">
           <tbody>
               <tr>
-                  <th class="panel-th">ID</th>
+                  <th class="panel-th">` + getMessage.FTE02072 + `</th>
                   <td class="panel-td"><span class="panel-span">${fn.cv( conductorInfo.conductor_instance_id, '', true )}</span></td>
               </tr>
           </tbody>
@@ -4593,38 +4598,38 @@ panelConfirmationConductorHtml() {
       <table class="panel-table">
           <tbody>
               <tr>
-                <th class="panel-th">名称</th>
+                <th class="panel-th">` + getMessage.FTE02069 + `</th>
                 <td class="panel-td"><span class="view panel-span">${fn.cv( conductorInfo.conductor_name, '', true )}</span></td>
               </tr>
               <tr>
-                  <th class="panel-th">ステータス</th>
+                  <th class="panel-th">` + getMessage.FTE02110 + `</th>
                   <td class="panel-td"><span class="panel-span">${fn.cv( conductorInfo.status, '', true )}</span></td>
               </tr>
               <tr>
-                  <th class="panel-th">開始時間</th>
+                  <th class="panel-th">` + getMessage.FTE02111 + `</th>
                   <td class="panel-td"><span class="panel-span">${fn.cv( conductorInfo.time_start, '', true )}</span></td>
               </tr>
               <tr>
-                  <th class="panel-th">終了時間</th>
+                  <th class="panel-th">` + getMessage.FTE02112 + `</th>
                   <td class="panel-td"><span class="panel-span">${fn.cv( conductorInfo.time_end, '', true )}</span></td>
               </tr>
               <tr>
-                  <th class="panel-th">実行ユーザ</th>
+                  <th class="panel-th">` + getMessage.FTE02113 + `</th>
                   <td class="panel-td"><span class="panel-span">${fn.cv( conductorInfo.execution_user, '', true )}</span></td>
               </tr>
               <tr>
-                  <th class="panel-th">予約日時</th>
+                  <th class="panel-th">` + getMessage.FTE02114 + `</th>
                   <td class="panel-td"><span class="panel-span">${fn.cv( conductorInfo.time_book, '', true )}</span></td>
               </tr>
               <tr>
-                  <th class="panel-th">緊急停止</th>
+                  <th class="panel-th">` + getMessage.FTE02115 + `</th>
                   <td class="panel-td"><span class="panel-span">${fn.cv( conductorInfo.abort_execute_flag, '', true )}</span></td>
               </tr>
           </tbody>
       </table>
     </div>
     <div class="panel-group">
-        <div class="panel-group-title">オペレーション</div>
+        <div class="panel-group-title">` + getMessage.FTE02116 + `</div>
         <table class="panel-table">
             <tbody>
                 <tr>
@@ -4647,11 +4652,11 @@ panelConfirmationNodeHtml( nodeId ) {
     
     return cd.panelCommon('Node', `
     <div class="panel-group">
-      <div class="panel-group-title">Nodeインスタンス情報</div>
+      <div class="panel-group-title">` + getMessage.FTE02117 + `</div>
       <table class="panel-table">
           <tbody>
               <tr>
-                  <th class="panel-th">ID</th>
+                  <th class="panel-th">` + getMessage.FTE02072 + `</th>
                   <td class="panel-td"><span class="panel-span">${fn.cv( nodeInfo.node_instance_id, '', true )}</span></td>
               </tr>
           </tbody>
@@ -4659,27 +4664,27 @@ panelConfirmationNodeHtml( nodeId ) {
       <table class="panel-table">
           <tbody>
               <tr>
-                  <th class="panel-th">種別</th>
+                  <th class="panel-th">` + getMessage.FTE02118 + `</th>
                   <td class="panel-td"><span class="panel-span">${fn.cv( nodeInfo.node_type, '', true )}</span></td>
               </tr>
               <tr>
-                  <th class="panel-th">Node ID</th>
+                  <th class="panel-th">` + getMessage.FTE02119 + `</th>
                   <td class="panel-td"><span class="panel-span">${fn.cv( nodeInfo.node_name, '', true )}</span></td>
               </tr>
               <tr>
-                  <th class="panel-th">ステータス</th>
+                  <th class="panel-th">` + getMessage.FTE02110 + `</th>
                   <td class="panel-td"><span class="panel-span">${fn.cv( nodeInfo.status, '', true )}</span></td>
               </tr>
               <tr>
-                  <th class="panel-th">Stファイル</th>
+                  <th class="panel-th">` + getMessage.FTE02120 + `</th>
                   <td class="panel-td"><span class="panel-span">${fn.cv( nodeInfo.status_file, '', true )}</span></td>
               </tr>
               <tr>
-                  <th class="panel-th">開始日時</th>
+                  <th class="panel-th">` + getMessage.FTE02121 + `</th>
                   <td class="panel-td"><span class="panel-span">${fn.cv( nodeInfo.time_start, '', true )}</span></td>
               </tr>
               <tr>
-                  <th class="panel-th">終了日時</th>
+                  <th class="panel-th">` + getMessage.FTE02122 + `</th>
                   <td class="panel-td"><span class="panel-span">${fn.cv( nodeInfo.time_end, '', true )}</span></td>
               </tr>
           </tbody>
@@ -4687,22 +4692,22 @@ panelConfirmationNodeHtml( nodeId ) {
     </div>
     ${( nodeInfo.jump.menu_id )? `
     <div class="panel-group">
-        <div class="panel-group-title">作業状況確認</div>
+        <div class="panel-group-title">` + getMessage.FTE02123 + `</div>
         <ul class="panel-button-group">
-            <li class="panel-button-group-item"><button class="panel-button">確認</button></li>
+            <li class="panel-button-group-item"><button class="panel-button">` + getMessage.FTE02124 + `</button></li>
         </ul>
     </div>`: ``}
     ${( nodeInfo.operation_id )? `
     <div class="panel-group">
-        <div class="panel-group-title">個別オペレーション</div>
+        <div class="panel-group-title">` + getMessage.FTE02125 + `</div>
         <table class="panel-table">
             <tbody>
                 <tr>
-                    <th class="panel-th">ID :</th>
+                    <th class="panel-th">` + getMessage.FTE02072 + ` :</th>
                     <td class="panel-td"><span class="panel-span">${fn.cv( nodeInfo.operation_id, '', true )}</span></td>
                 </tr>
                 <tr>
-                    <th class="panel-th">名称 :</th>
+                    <th class="panel-th">` + getMessage.FTE02069 + ` :</th>
                     <td class="panel-td"><span class="panel-span">${fn.cv( nodeInfo.operation_name, '', true )}</span></td>
                 </tr>
             </tbody>
@@ -4838,7 +4843,7 @@ movementList() {
         $filterSetting.show();
         // Text入力欄反映
         const inputType = $movementList.attr('data-filter-setting');
-       $movementList.find(`.filter-setting-radio[value="${inputType}"]`).prop('checked', true );
+        $movementList.find(`.filter-setting-radio[value="${inputType}"]`).prop('checked', true );
         // Orchestratorチェックボックスの反映
         for ( const orchestra of orchestraList ) {
             const flag = ( $movementList.attr('data-orche' + orchestra.id ) === 'true' )? true: false;
@@ -5232,7 +5237,7 @@ panelEvents() {
     const config = {
         mode: 'modeless',
         header: {
-            title: 'オペレーション選択',
+            title: getMessage.FTE02075,
             move: false,
             close: false
         }
@@ -5780,13 +5785,13 @@ selectModalOpen( type ) {
         let title;
 
         if ( type === 'operation') {
-            title = 'オペレーション選択';
+            title = getMessage.FTE02075;
             selectConfig.selectNameKey = 'operation_name';
             selectConfig.filter = `/menu/${cd.menu}/conductor/execute/filter/operation_list/`;
             selectConfig.filterPulldown = `/menu/${cd.menu}/conductor/execute/filter/operation_list/search/candidates/`;
             selectConfig.sub = 'operation_list';
         } else {
-            title = 'Conductor選択';
+            title = getMessage.FTE02090;
             selectConfig.selectNameKey = 'conductor_name';
             selectConfig.filter = `/menu/${cd.menu}/conductor/execute/filter/conductor_class_list/`;
             selectConfig.filterPulldown = `/menu/${cd.menu}/conductor/execute/filter/conductor_class_list/search/candidates/`;
@@ -5938,7 +5943,7 @@ nodeReSet( reSetConductorData ) {
                   }
               }
           } catch( e ) {
-              cd.message('danger', 'Conductorデータが正しくありません。');
+              cd.message('danger', getMessage.FTE02126);
               window.console.error( e );
           }
           cd.clearAction();
@@ -5974,7 +5979,7 @@ fetchConductor( conductorId ) {
             cd.selectConductor( result );
             history.replaceState( null, null, `?menu=conductor_class_edit&conductor_class_id=${conductorId}`);
         }).catch(function(){
-            alert('読み込みに失敗しました。');
+            alert(getMessage.FTE02127);
         }).then(function(){
             process.close();
             process = null;
@@ -6015,7 +6020,7 @@ loadConductor( loadConductorData ) {
       cd.clearAction();
       cd.$.editor.removeClass('load-conductor');
       cd.clearConductor();
-      cd.message('error', '読み込みに失敗しました。');
+      cd.message('error', getMessage.FTE02127);
     }
 }
 
@@ -6041,7 +6046,7 @@ conductorStatusPopup( $target, id ) {
     $popup = $( cd.createId(  popupID ) );
   } else {
     $popup = $('<div/>').attr('id', popupID ).addClass('conductorStatusPopup')
-      .text('作業状態確認').css('display','none');
+      .text(getMessage.FTE02128).css('display','none');
     if ( !$target.is('.resultPopup') ) {
       cd.$.body.append( $popup );
     }
@@ -6549,7 +6554,7 @@ cancelInstance() {
     fn.fetch(`/menu/${cd.menu}/conductor/${cd.id}/cancel/`, null, 'PATCH', {}).then(function(){
         
     }).catch( function( error ){
-        alert('予約取消に失敗しました。\n\n' + error.message );
+        alert(getMessage.FTE02129 + error.message );
     });
 }
 /*
@@ -6563,7 +6568,7 @@ scramInstance() {
     fn.fetch(`/menu/${cd.menu}/conductor/${cd.id}/scram/`, null, 'PATCH', {}).then(function(){
         
     }).catch( function( error ){
-        alert('緊急停止に失敗しました。\n\n' + error.message );
+        alert(getMessage.FTE02130 + error.message );
     });
 }
 /*
@@ -6589,12 +6594,12 @@ pauseStatus( nodeID ) {
             $node.find('.pause-status').attr('data-status', 'pause');
 
             $pauseButton.prop('disabled', false ).on('click', function() {
-                if ( confirm('一時停止を解除しますか？') ) {
+                if ( confirm(getMessage.FTE02131) ) {
                     $pauseButton.prop('disabled', true ).off();
                     cd.unpause( nodeInfo.node_instance_id ).then( function(){
                         $node.find('.pause-status').attr('data-status', 'resume');
                     }).catch( function( error ){
-                        alert('一時停止の解除に失敗しました。\n\n' + error.message );
+                        alert(getMessage.FTE02132 + error.message );
                     });
                 }
             });
