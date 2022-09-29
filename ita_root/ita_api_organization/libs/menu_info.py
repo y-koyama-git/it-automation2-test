@@ -607,6 +607,15 @@ def collect_search_candidates(objdbca, menu, column, menu_record={}, menu_table_
     column_name_rest = str(ret[0].get('COLUMN_NAME_REST'))
     column_class_id = str(ret[0].get('COLUMN_CLASS'))
     save_type = str(ret[0].get('SAVE_TYPE'))
+    
+    # パスワードカラム系の場合は499を返却
+    # 8(PasswordColumn), 15(MaskColumn), 16(SensitiveSingleTextColumn), 17(SensitiveMultiTextColumn), 25(PasswordIDColumn), 26(JsonPasswordIDColumn)
+    sensitive_column_list = ["8", "15", "16", "17", "25", "26"]
+    if column_class_id in sensitive_column_list:
+        log_msg_args = [menu, column]
+        api_msg_args = [menu, column]
+        raise AppException("499-00010", log_msg_args, api_msg_args)  # noqa: F405
+    
     # 対象のテーブルからレコードを取得し、対象のカラムの値を一覧化
     ret = objdbca.table_select(table_name, '', [])
     if not ret:
