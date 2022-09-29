@@ -1351,8 +1351,11 @@ def _update_t_menu_column(objdbca, current_t_menu_column_list, column_data_list,
                         # 現在設定されているIDのreference_itemを取得
                         current_reference_item = target_record.get('REFERENCE_ITEM')
                         update_reference_item_list = column_data.get('reference_item')
-                        update_reference_item_dump = json.dumps(update_reference_item_list)
-                        update_reference_item = str(update_reference_item_dump)
+                        if update_reference_item_list:
+                            update_reference_item_dump = json.dumps(update_reference_item_list)
+                            update_reference_item = str(update_reference_item_dump)
+                        else:
+                            update_reference_item = None
                         
                         # reference_itemが変更されている場合エラー判定
                         if not current_reference_item == update_reference_item:
