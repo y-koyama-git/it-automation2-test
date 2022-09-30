@@ -41,6 +41,23 @@ def AnsibleTowerExecution(
         tgt_execution_no = toProcessRow['EXECUTION_NO']
         db_access_user_id = '20102'
 
+        if 'ANSTWR_HOSTNAME' not in ansibleTowerIfInfo and 'ANSTWR_HOST_ID' in ansibleTowerIfInfo:
+            cols = dbAccess.table_columns_get("T_ANSC_TOWER_HOST")
+            pkey = cols[1][0]
+            cols = (',').join(cols[0])
+            sql = (
+                "SELECT              \n"
+                "  %s                \n"
+                "FROM                \n"
+                "  T_ANSC_TOWER_HOST \n"
+                "WHERE               \n"
+                "  DISUSE_FLAG = '0' \n"
+                "AND                 \n"
+                "  %s = %%s ;        \n"
+            ) % (cols, pkey)
+            ifInfoRows = dbAccess.sql_execute(sql, [ansibleTowerIfInfo['ANSTWR_HOST_ID'], ])
+            ansibleTowerIfInfo['ANSTWR_HOSTNAME'] = ifInfoRows[0]['ANSTWR_HOSTNAME']
+
         ################################
         # 接続トークン取得
         ################################
@@ -70,7 +87,7 @@ def AnsibleTowerExecution(
         director = None
         if not process_has_error:
             g.applogger.debug("maintenance environment (exec_no: %s)" % (tgt_execution_no))
-            director = ExecuteDirector(restApiCaller, None, None, exec_out_dir, ansibleTowerIfInfo, JobTemplatePropertyParameterAry, JobTemplatePropertyNameAry, TowerProjectsScpPath, TowerInstanceDirPath)
+            director = ExecuteDirector(restApiCaller, None, dbAccess, exec_out_dir, ansibleTowerIfInfo, JobTemplatePropertyParameterAry, JobTemplatePropertyNameAry, TowerProjectsScpPath, TowerInstanceDirPath)
             GitObj = GitLabAgent()
 
         # Tower 接続確認
@@ -238,7 +255,7 @@ def AnsibleTowerExecution(
                 # トレースメッセージ
                 g.applogger.debug("monitoring environment (exec_no: %s)" % (tgt_execution_no))
 
-                director = ExecuteDirector(restApiCaller, None, None, "", ansibleTowerIfInfo, TowerProjectsScpPath=TowerProjectsScpPath, TowerInstanceDirPath=TowerInstanceDirPath)
+                director = ExecuteDirector(restApiCaller, None, dbAccess, "", ansibleTowerIfInfo, TowerProjectsScpPath=TowerProjectsScpPath, TowerInstanceDirPath=TowerInstanceDirPath)
                 status = director.monitoring(toProcessRow, ansibleTowerIfInfo)
 
                 # マルチログかを取得する
