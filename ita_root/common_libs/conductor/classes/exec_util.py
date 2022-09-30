@@ -2869,6 +2869,15 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                 n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('13')
                 # filter
                 node_filter_data = node_options.get('all_node_filter').get('name').get(node_name)
+                conductor_instance_id = node_filter_data.get('parameter').get('conductor_instance_id')
+                node_instance_id = node_filter_data.get('parameter').get('node_instance_id')
+
+                # 最新再取得
+                tmp_result = self.get_filter_node_one(conductor_instance_id, node_instance_id)
+                if tmp_result[0] is False:
+                    raise Exception()
+                node_filter_data = tmp_result[1]
+                
                 # Node更新
                 node_filter_data['parameter']['status_id'] = n_status_id
                 tmp_time = get_now_datetime()
