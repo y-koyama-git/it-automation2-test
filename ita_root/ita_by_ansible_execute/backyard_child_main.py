@@ -271,8 +271,6 @@ def main_logic(wsDb: DBConnectWs, execution_no, driver_id):  # noqa: C901
 
 
 def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if_info, execute_data, driver_id):
-    # パラメータ数かえているので良く見ないとわからないけど
-    # とりあえず変数定義がないので定義
     tower_host_list = {}
 
     execution_no = execute_data["EXECUTION_NO"]
@@ -335,8 +333,9 @@ def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if
         if result[0] is False:
             err_msg_ary = result[1]
             for err_msg in err_msg_ary:
-                ansdrv.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
-                                     str(inspect.currentframe().f_lineno), err_msg)
+                ansdrv.LocalLogPrint(
+                    os.path.basename(inspect.currentframe().f_code.co_filename),
+                    str(inspect.currentframe().f_lineno), err_msg)
             return False, execute_data, g.appmsg.get_log_message("BKY-00004", ["getAnsiblePlaybookOptionParameter", ",".join(err_msg_ary)])
 
         retBool, err_msg_ary, JobTemplatePropertyParameterAry, JobTemplatePropertyNameAry, param_arry_exc = result
@@ -375,8 +374,9 @@ def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if
             err_msg = ansible_execute.getLastError()
             if not isinstance(err_msg, str):
                 err_msg = str(err_msg)
-            ansdrv.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
-                                 str(inspect.currentframe().f_lineno), err_msg)
+            ansdrv.LocalLogPrint(
+                os.path.basename(inspect.currentframe().f_code.co_filename),
+                str(inspect.currentframe().f_lineno), err_msg)
             return False, execute_data, err_msg
     else:
         uiexec_log_path = ansdrv.getAnsible_out_Dir() + "/exec.log"  # 使ってる？
@@ -415,8 +415,9 @@ def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if
                 multiple_log_mark, multiple_log_file_json_ary)
 
             err_msg = g.appmsg.get_log_message("BKY-00004", ["AnsibleTowerExecution(DF_EXECUTION_FUNCTION)", e])
-            ansdrv.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
-                                 str(inspect.currentframe().f_lineno), err_msg)
+            ansdrv.LocalLogPrint(
+                os.path.basename(inspect.currentframe().f_code.co_filename),
+                str(inspect.currentframe().f_lineno), err_msg)
             return False, execute_data, err_msg
 
         # マルチログか判定
@@ -453,8 +454,9 @@ def instance_checkcondition(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, a
             err_msg = ansible_execute.getLastError()
             if not isinstance(err_msg, str):
                 err_msg = str(err_msg)
-            ansdrv.LocalLogPrint(os.path.basename(inspect.currentframe().f_code.co_filename),
-                                 str(inspect.currentframe().f_lineno), err_msg)
+            ansdrv.LocalLogPrint(
+                os.path.basename(inspect.currentframe().f_code.co_filename),
+                str(inspect.currentframe().f_lineno), err_msg)
     else:
         uiexec_log_path = ansdrv.getAnsible_out_Dir() + "/exec.log"  # 使ってる？
         uierror_log_path = ansdrv.getAnsible_out_Dir() + "/error.log"  # 使ってる？
@@ -1131,7 +1133,7 @@ def createTmpZipFile(execution_no, zip_data_source_dir, zip_type, zip_file_pfx):
             False, err_msg, zip_file_name, zip_temp_save_dir
 
         # [処理]結果ディレクトリを圧縮(圧縮ファイル:{})
-        g.applogger.debug(g.appmsg.get_log_message("MSG-10783", [execution_no, os.path.basename(zip_temp_save_path)]))
+        g.applogger.debug(g.appmsg.get_log_message("MSG-10783", [zip_type, os.path.basename(zip_temp_save_path)]))
     return True, err_msg, zip_file_name
 
 
@@ -1201,40 +1203,21 @@ def InstanceRecodeUpdate(wsDb, driver_id, execution_no, execute_data, update_col
     # 作業状況/開始日時
     if update_column_name == "FILE_INPUT":
         ExecStsInstTableConfig[RestNameConfig["FILE_INPUT"]] = execute_data["FILE_INPUT"]  # 入力データ/投入データ
-        dt = "{:0>4}/{:0>2}/{:0>2} {:0>2}:{:0>2}:{:0>2}".format(execute_data['TIME_START'].year,
-                                                                execute_data['TIME_START'].month,
-                                                                execute_data['TIME_START'].day,
-                                                                execute_data['TIME_START'].hour,
-                                                                execute_data['TIME_START'].minute,
-                                                                execute_data['TIME_START'].second)
-        ExecStsInstTableConfig[RestNameConfig["TIME_START"]] = dt
+        ExecStsInstTableConfig[RestNameConfig["TIME_START"]] = execute_data['TIME_START'].strftime('%Y/%m/%d %H:%M:%S')
         if "MULTIPLELOG_MODE" in execute_data:
             ExecStsInstTableConfig[RestNameConfig["MULTIPLELOG_MODE"]] = execute_data["MULTIPLELOG_MODE"]
     # 作業状況/終了日時
     if update_column_name == "FILE_RESULT":
         ExecStsInstTableConfig[RestNameConfig["FILE_RESULT"]] = execute_data["FILE_RESULT"]  # 出力データ/結果データ
-        dt = "{:0>4}/{:0>2}/{:0>2} {:0>2}:{:0>2}:{:0>2}".format(execute_data['TIME_END'].year,
-                                                                execute_data['TIME_END'].month,
-                                                                execute_data['TIME_END'].day,
-                                                                execute_data['TIME_END'].hour,
-                                                                execute_data['TIME_END'].minute,
-                                                                execute_data['TIME_END'].second)
-        ExecStsInstTableConfig[RestNameConfig["TIME_END"]] = dt
+        ExecStsInstTableConfig[RestNameConfig["TIME_END"]] = execute_data['TIME_END'].strftime('%Y/%m/%d %H:%M:%S')
         # MULTIPLELOG_MODEとLOGFILELIST_JSONが廃止レコードになっているので0にする
         if "MULTIPLELOG_MODE" in execute_data:
             ExecStsInstTableConfig[RestNameConfig["MULTIPLELOG_MODE"]] = execute_data["MULTIPLELOG_MODE"]
         if "LOGFILELIST_JSON" in execute_data:
             ExecStsInstTableConfig[RestNameConfig["LOGFILELIST_JSON"]] = execute_data["LOGFILELIST_JSON"]
 
-    # 最終更新日時
-    dt = "{:0>4}/{:0>2}/{:0>2} {:0>2}:{:0>2}:{:0>2}.{:0>6}".format(execute_data['LAST_UPDATE_TIMESTAMP'].year,
-                                                                   execute_data['LAST_UPDATE_TIMESTAMP'].month,
-                                                                   execute_data['LAST_UPDATE_TIMESTAMP'].day,
-                                                                   execute_data['LAST_UPDATE_TIMESTAMP'].hour,
-                                                                   execute_data['LAST_UPDATE_TIMESTAMP'].minute,
-                                                                   execute_data['LAST_UPDATE_TIMESTAMP'].second,
-                                                                   execute_data['LAST_UPDATE_TIMESTAMP'].microsecond)
-    ExecStsInstTableConfig[RestNameConfig["LAST_UPDATE_TIMESTAMP"]] = dt
+    # 最終更新日時a
+    ExecStsInstTableConfig[RestNameConfig["LAST_UPDATE_TIMESTAMP"]] = execute_data['LAST_UPDATE_TIMESTAMP'].strftime('%Y/%m/%d %H:%M:%S.%f')
 
     parameters = {
         "parameter": ExecStsInstTableConfig,
