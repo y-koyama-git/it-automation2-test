@@ -103,7 +103,7 @@ class FloatColumn(Column):
                 vlen = int(len(srt_val))
                 if "." in srt_val or "-" in srt_val:
                     vlen -= 1
-                if int(max_digit) <= vlen:
+                if int(max_digit) < vlen:
                     retBool = False
                     msg = g.appmsg.get_api_message('MSG-00018', [max_digit, vlen])
                     return retBool, msg
