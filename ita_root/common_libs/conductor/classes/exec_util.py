@@ -1966,7 +1966,8 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             exec_node_cnt = all_node_status_info.get('exec_node_cnt')
             nomal_end_cnt = all_node_status_info.get('nomal_end_cnt')
             end_node_type_list = all_node_status_info.get('end_node_type_list')
-            # error_node_conditional_flg = all_node_status_info.get('error_node_conditional_flg')
+            error_node_conditional_flg = all_node_status_info.get('error_node_conditional_flg')
+            exec_node = all_node_status_info.get('exec_node')
 
             # 実施中Node数
             exec_node_cnt = len(status_count.get('2')) + len(status_count.get('3')) + len(status_count.get('4')) + len(status_count.get('11'))
@@ -1977,8 +1978,33 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
 
             # 実施中なら終了させない
             if exec_node_cnt != 0:
-                retBool = False
-                return retBool,
+                if error_node_conditional_flg is True:
+                    retBool = False
+                    return retBool,
+                else:
+                    # conditional無しで異常系終了時の待ち
+                    for node_name in exec_node:
+                        node_instance_id = instance_data.get('node').get(node_name).get('node_instance_id')
+                        node_type = instance_data.get('node').get(node_name).get('node_type')
+                        # 実行中のNodeを異常終了に変更(movement, call以外)
+                        if node_type not in ['call', 'movement']:
+                            # 最新再取得
+                            tmp_result = self.get_filter_node_one(conductor_instance_id, node_instance_id)
+                            if tmp_result[0] is False:
+                                raise Exception()
+                            node_filter_data = tmp_result[1]
+                            
+                            n_status_id = instance_info_data.get('dict').get('node_status').get('6')
+                            # Node更新
+                            node_filter_data['parameter']['status_id'] = n_status_id
+                            # Node Update
+                            tmp_result = self.node_instance_exec_maintenance([node_filter_data], 'Update')
+                            if tmp_result[0] is not True:
+                                raise Exception()
+                        else:
+                            # 実行中のmovement, callのステータス反映待ち
+                            retBool = False
+                            return retBool,
 
             if nomal_end_cnt == node_cnt:
                 # START->END 完走
@@ -2089,12 +2115,19 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             # 異常終了系Node数
             # error_node_cnt = len(status_count.get('6')) + len(status_count.get('7')) + len(status_count.get('8')) + len(status_count.get('12'))
             
+            # 実施中Node
+            exec_node = []
+            exec_node.extend(status_count.get('3'))
+            exec_node.extend(status_count.get('4'))
+            exec_node = set(exec_node)
+
             result.setdefault("node_cnt", node_cnt)
             result.setdefault("status_count", status_count)
             result.setdefault("exec_node_cnt", exec_node_cnt)
             result.setdefault("nomal_end_cnt", nomal_end_cnt)
             result.setdefault("end_node_type_list", end_node_type_list)
             result.setdefault("error_node_conditional_flg", error_node_conditional_flg)
+            result.setdefault("exec_node", exec_node)
 
         except Exception as e:
             g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
