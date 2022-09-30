@@ -80,6 +80,7 @@ COLNAME_REQUIRED_ITEM = 'REQUIRED_ITEM'
 COLNAME_INPUT_ITEM = 'INPUT_ITEM'
 COLNAME_VIEW_ITEM = 'VIEW_ITEM'
 COLNAME_AUTO_INPUT = 'AUTO_INPUT'
+COLNAME_SENSITIVE_COL_NAME = 'SENSITIVE_COL_NAME'
 COLNAME_UNIQUE_CONSTRAINT = 'UNIQUE_CONSTRAINT'
 COLNAME_BEFORE_VALIDATE_REGISTER = 'BEFORE_VALIDATE_REGISTER'
 COLNAME_AFTER_VALIDATE_REGISTER = 'AFTER_VALIDATE_REGISTER'
@@ -1226,7 +1227,6 @@ class loadTable():
                 tmp_result = self.objdbca.table_lock([self.get_table_name()])
 
             for tmp_parameters in list_parameters:
-                eno = list_parameters.index(tmp_parameters)
                 cmd_type = tmp_parameters.get("type")
                 
                 parameters = tmp_parameters
@@ -1372,8 +1372,7 @@ class loadTable():
                 target_uuid_key = self.get_rest_key(primary_key)
                 entry_parameter[target_uuid_key] = target_uuid
             # 各カラム単位の基本処理（前）、個別処理（前）を実施
-            for rest_key in list(entry_parameter.keys()):
-                rest_val = entry_parameter.get(rest_key)
+            for rest_key, rest_val in list(entry_parameter.items()):
                 if rest_key in self.restkey_list:
                     target_col_option = {
                         'uuid': target_uuid,
@@ -1419,17 +1418,36 @@ class loadTable():
                         # entry_file[rest_key] = target_col_option.get('file_data')
 
                         if rest_val is not None:
-                            # VALUE 変換処理不要ならVALUE変更無し
-                            tmp_exec = objcolumn.convert_value_input(rest_val)
-                            if tmp_exec[0] is True:
-                                entry_parameter[rest_key] = tmp_exec[2]
+                            if self.get_col_class_name(rest_key) in ['SensitiveSingleTextColumn', 'SensitiveMultiTextColumn']:
+                                sensitive_col_name = objcolumn.get_objcol().get(COLNAME_SENSITIVE_COL_NAME)
+                                sensitive_settings = entry_parameter.get(sensitive_col_name)
+                                # SENSITIVEがONの場合
+                                if sensitive_settings == '1':
+                                    tmp_exec = objcolumn.convert_value_input(rest_val)
+                                    if tmp_exec[0] is True:
+                                        entry_parameter[rest_key] = tmp_exec[2]
+                                    else:
+                                        dict_msg = {
+                                            'status_code': '',
+                                            'msg_args': '',
+                                            'msg': tmp_exec[1],
+                                        }
+                                        self.set_message(dict_msg, rest_key, MSG_LEVEL_ERROR)
+                                else:
+                                    entry_parameter[rest_key] = rest_val
+
                             else:
-                                dict_msg = {
-                                    'status_code': '',
-                                    'msg_args': '',
-                                    'msg': tmp_exec[1],
-                                }
-                                self.set_message(dict_msg, rest_key, MSG_LEVEL_ERROR)
+                                # VALUE 変換処理不要ならVALUE変更無し
+                                tmp_exec = objcolumn.convert_value_input(rest_val)
+                                if tmp_exec[0] is True:
+                                    entry_parameter[rest_key] = tmp_exec[2]
+                                else:
+                                    dict_msg = {
+                                        'status_code': '',
+                                        'msg_args': '',
+                                        'msg': tmp_exec[1],
+                                    }
+                                    self.set_message(dict_msg, rest_key, MSG_LEVEL_ERROR)
 
             # メニュー共通処理:レコード操作前 組み合わせ一意制約
             self.exec_unique_constraint(entry_parameter, target_uuid)
@@ -1693,11 +1711,7 @@ class loadTable():
                     for jsonkey, jsonval in json_rows.items():
                         objcolumn = self.get_columnclass(jsonkey)
                         # ID → VALUE 変換処理不要ならVALUE変更無し
-                        if self.get_col_class_name(jsonkey) not in ['PasswordColumn', 'SensitiveSingleTextColumn', 'SensitiveMultiTextColumn', 'PasswordIDColumn', 'JsonPasswordIDColumn']:  # noqa: E501
-                            tmp_exec = objcolumn.convert_value_output(jsonval)
-                            if tmp_exec[0] is True:
-                                jsonval = tmp_exec[2]
-                        else:
+                        if self.get_col_class_name(jsonkey) in ['PasswordColumn', 'PasswordIDColumn', 'JsonPasswordIDColumn']:
                             # 内部処理用
                             if mode in ['input']:
                                 if jsonval is not None:
@@ -1705,6 +1719,23 @@ class loadTable():
                                     jsonval = util.ky_decrypt(jsonval)    # noqa: F405
                             else:
                                 jsonval = None
+                        elif self.get_col_class_name(jsonkey) in ['SensitiveSingleTextColumn', 'SensitiveMultiTextColumn']:
+                            objcol = self.get_objcol(jsonkey)
+                            sensitive_col_name = objcol.get(COLNAME_SENSITIVE_COL_NAME)
+                            sensitive_settings = rows.get(self.get_col_name(sensitive_col_name))
+                            # SENSITIVEがONの場合
+                            if sensitive_settings == '1':
+                                # 内部処理用
+                                if mode in ['input']:
+                                    if col_val is not None:
+                                        objcolumn = self.get_columnclass(jsonkey)
+                                        col_val = util.ky_decrypt(col_val)    # noqa: F405
+                                else:
+                                    col_val = None
+                        else:
+                            tmp_exec = objcolumn.convert_value_output(jsonval)
+                            if tmp_exec[0] is True:
+                                jsonval = tmp_exec[2]
 
                         rest_parameter.setdefault(jsonkey, jsonval)
                         if mode not in ['excel', 'excel_jnl']:
@@ -1732,12 +1763,7 @@ class loadTable():
                     objcolumn = self.get_columnclass(rest_key)
 
                     # ID → VALUE 変換処理不要ならVALUE変更無し
-                    if self.get_col_class_name(rest_key) not in ['PasswordColumn', 'SensitiveSingleTextColumn', 'SensitiveMultiTextColumn']:
-                        if mode not in ['input']:
-                            tmp_exec = objcolumn.convert_value_output(col_val)
-                            if tmp_exec[0] is True:
-                                col_val = tmp_exec[2]
-                    else:
+                    if self.get_col_class_name(rest_key) in ['PasswordColumn']:
                         # 内部処理用
                         if mode in ['input']:
                             if col_val is not None:
@@ -1745,6 +1771,23 @@ class loadTable():
                                 col_val = util.ky_decrypt(col_val)    # noqa: F405
                         else:
                             col_val = None
+                    elif self.get_col_class_name(rest_key) in ['SensitiveSingleTextColumn', 'SensitiveMultiTextColumn']:
+                        sensitive_col_name = objcol.get(COLNAME_SENSITIVE_COL_NAME)
+                        sensitive_settings = rows.get(self.get_col_name(sensitive_col_name))
+                        # SENSITIVEがONの場合
+                        if sensitive_settings == '1':
+                            # 内部処理用
+                            if mode in ['input']:
+                                if col_val is not None:
+                                    objcolumn = self.get_columnclass(rest_key)
+                                    col_val = util.ky_decrypt(col_val)    # noqa: F405
+                            else:
+                                col_val = None
+                    else:
+                        if mode not in ['input']:
+                            tmp_exec = objcolumn.convert_value_output(col_val)
+                            if tmp_exec[0] is True:
+                                col_val = tmp_exec[2]
 
                     if mode in ['input']:
                         rest_parameter.setdefault(rest_key, col_val)
