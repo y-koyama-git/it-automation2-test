@@ -1760,7 +1760,11 @@ def collect_excel_filter(objdbca, organization_id, workspace_id, menu, menu_reco
     
     for i, (key, value) in enumerate(filter_parameter.items()):
         tmp = list(value.values())[0]
-        ws_filter.cell(row=1, column=4 + i, value=key)
+        filter_name = key
+        if key in header_order:
+            ind = header_order.index(key)
+            filter_name = excel_header_list[-1][ind]
+        ws_filter.cell(row=1, column=4 + i, value=filter_name)
         if key.lower() == 'discard':
             if tmp == '0':
                 # 廃止含まず
@@ -1775,11 +1779,12 @@ def collect_excel_filter(objdbca, organization_id, workspace_id, menu, menu_reco
                 msg = g.appmsg.get_api_message('MSG-30018')
                 ws_filter.cell(row=2, column=4 + i, value=msg)
         else:
-            if len(list(value.values())[0]) > 1:
-                for j, val in enumerate(list(value.values())[0]):
-                    ws_filter.cell(row=2 + j, column=4 + i, value=list(value.values())[0][j])
-            else:
-                ws_filter.cell(row=2, column=4 + i, value=list(value.values())[0][0])
+            if type(tmp) is list:
+                for j, val in enumerate(tmp):
+                    ws_filter.cell(row=2 + j, column=4 + i, value=tmp[j])
+            elif type(tmp) is dict:
+                filter_range = tmp.get('START', '') + '～' + tmp.get('END', '')
+                ws_filter.cell(row=2, column=4 + i, value=filter_range)
     
     wb.save(file_path)  # noqa: E303
     
