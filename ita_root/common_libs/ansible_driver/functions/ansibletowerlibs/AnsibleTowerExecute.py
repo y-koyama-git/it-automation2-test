@@ -16,7 +16,6 @@
 from flask import g
 
 from common_libs.ansible_driver.classes.AnscConstClass import AnscConst
-# from common_libs.ansible_driver.classes.AnsrConstClass import AnsrConst
 from common_libs.ansible_driver.classes.gitlab import GitLabAgent
 from common_libs.ansible_driver.classes.ansibletowerlibs.RestApiCaller import RestApiCaller
 from common_libs.ansible_driver.classes.ansibletowerlibs.ExecuteDirector import ExecuteDirector
