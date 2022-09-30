@@ -358,23 +358,23 @@ setTable( mode ) {
             if ( tb.option.sheetType !== 'reference') {
                 const tableHeaderMenuList = {
                     Main: [],
-                    Sub: [{ name: 'filterToggle', icon: 'filter', title: 'フィルタ', action: 'default', toggle: { init: 'off', on:'閉じる', off:'開く'}}]
+                    Sub: [{ name: 'filterToggle', icon: 'filter', title: getMessage.FTE00001, action: 'default', toggle: { init: 'off', on:getMessage.FTE00002, off:getMessage.FTE00003}}]
                 };            
                 if ( tb.mode === 'select') {
-                    tableHeaderMenuList.Main.push({ message: '選択してください。', action: 'message'});
+                    tableHeaderMenuList.Main.push({ message: getMessage.FTE00004, action: 'message'});
                 }
                 if ( tb.mode === 'execute') {
-                    tableHeaderMenuList.Main.push({ className: 'tablePositive', name: 'tableRun', icon: 'square_next', title: '作業実行', action: 'positive', width: '160px', disabled: true });
-                    tableHeaderMenuList.Main.push({ className: 'tablePositive', name: 'tableDryrun', icon: 'square_next', title: 'ドライラン', action: 'positive', width: '160px', disabled: true });
-                    tableHeaderMenuList.Main.push({ className: 'tablePositive', name: 'tableParameter', icon: 'detail', title: 'パラメータ確認', action: 'positive', width: '160px', disabled: true });
+                    tableHeaderMenuList.Main.push({ className: 'tablePositive', name: 'tableRun', icon: 'square_next', title: getMessage.FTE00005, action: 'positive', width: '160px', disabled: true });
+                    tableHeaderMenuList.Main.push({ className: 'tablePositive', name: 'tableDryrun', icon: 'square_next', title: getMessage.FTE00006, action: 'positive', width: '160px', disabled: true });
+                    tableHeaderMenuList.Main.push({ className: 'tablePositive', name: 'tableParameter', icon: 'detail', title: getMessage.FTE00007, action: 'positive', width: '160px', disabled: true });
                 }
                 if ( tb.mode === 'view') {
                     // 権限チェック
-                    if ( tb.flag.insert ) tableHeaderMenuList.Main.push({ name: 'tableNew', icon: 'plus', title: '登録', action: 'positive', width: '200px'});
-                    if ( tb.flag.update ) tableHeaderMenuList.Main.push({ name: 'tableEdit', icon: 'edit', title: '編集', action: 'positive', width: '200px', 'disabled': true });
+                    if ( tb.flag.insert ) tableHeaderMenuList.Main.push({ name: 'tableNew', icon: 'plus', title: getMessage.FTE00008, action: 'positive', width: '200px'});
+                    if ( tb.flag.update ) tableHeaderMenuList.Main.push({ name: 'tableEdit', icon: 'edit', title: getMessage.FTE00009, action: 'positive', width: '200px', 'disabled': true });
 
                     if ( tableHeaderMenuList.Main.length === 0 ) {
-                         tableHeaderMenuList.Main.push({ message: 'このメニューは閲覧のみ可能です。', action: 'message'});
+                         tableHeaderMenuList.Main.push({ message: getMessage.FTE00010, action: 'message'});
                     }
                 }            
                 tb.$.header.html( tb.tableHeaderMenuHtml( tableHeaderMenuList ) );
@@ -438,23 +438,23 @@ setTable( mode ) {
         case 'edit': {            
             const tableHeaderMenuList = {
                 Main: [
-                    { name: 'tableOk', icon: 'detail', title: '編集確認', action: 'positive', width: '240px' }
+                    { name: 'tableOk', icon: 'detail', title: getMessage.FTE00011, action: 'positive', width: '240px' }
                 ],
                 Sub: [
                 ]
             };
             if ( tb.flag.insert ) {
-                tableHeaderMenuList.Main.push({ name: 'tableAdd',icon: 'plus', title: '追加', action: 'default', separate: true });
-                tableHeaderMenuList.Main.push({ name: 'tableDup', icon: 'copy', title: '複製', action: 'duplicat', disabled: true });
-                tableHeaderMenuList.Main.push({ name: 'tableDel', icon: 'minus', title: '削除', action: 'danger', disabled: true });
+                tableHeaderMenuList.Main.push({ name: 'tableAdd',icon: 'plus', title: getMessage.FTE00012, action: 'default', separate: true });
+                tableHeaderMenuList.Main.push({ name: 'tableDup', icon: 'copy', title: getMessage.FTE00013, action: 'duplicat', disabled: true });
+                tableHeaderMenuList.Main.push({ name: 'tableDel', icon: 'minus', title: getMessage.FTE00014, action: 'danger', disabled: true });
             }
             if ( tb.flag.disuse ) {
-                tableHeaderMenuList.Main.push({ name: 'tableDiscard', icon: 'cross', title: '廃止', action: 'warning', disabled: true });
+                tableHeaderMenuList.Main.push({ name: 'tableDiscard', icon: 'cross', title: getMessage.FTE00015, action: 'warning', disabled: true });
             }
             if ( tb.flag.reuse ) {
-                tableHeaderMenuList.Main.push({ name: 'tableRestore', icon: 'circle', title: '復活', action: 'restore', disabled: true });
+                tableHeaderMenuList.Main.push({ name: 'tableRestore', icon: 'circle', title: getMessage.FTE00016, action: 'restore', disabled: true });
             }
-            tableHeaderMenuList.Main.push({ name: 'tableCancel', icon: 'cross', title: '編集キャンセル', action: 'normal', separate: true });
+            tableHeaderMenuList.Main.push({ name: 'tableCancel', icon: 'cross', title: getMessage.FTE00017, action: 'normal', separate: true });
             tb.$.header.html( tb.tableHeaderMenuHtml( tableHeaderMenuList ) );
             
             // メニューボタン
@@ -505,11 +505,11 @@ setTable( mode ) {
                         case 'tableCancel':
                             if ( Object.keys( tb.edit.input ).length ) {
                                 fn.alert(
-                                    'キャンセル確認',
-                                    '編集中のデータがありますが破棄しますか？',
+                                    getMessage.FTE00018,
+                                    getMessage.FTE00019,
                                     'confirm', {
-                                        ok: { text: '破棄する', action: 'danger'},
-                                        cancel: { text: '編集に戻る', action: 'normal'}
+                                        ok: { text: getMessage.FTE00020, action: 'danger'},
+                                        cancel: { text: getMessage.FTE00021, action: 'normal'}
                                     }).then(function( flag ){
                                     if ( flag ) {
                                         tb.changeViewMode.call( tb );
@@ -534,11 +534,11 @@ setTable( mode ) {
         case 'diff': {
             const tableHeaderMenuList = {
                 Main: [
-                    { name: 'tableOk', icon: 'check', title: '編集反映', action: 'positive', width: '240px'},
-                    { name: 'tableCancel', icon: 'arrow01_left',title: '登録・編集に戻る', action: 'normal', separate: true }
+                    { name: 'tableOk', icon: 'check', title: getMessage.FTE00022, action: 'positive', width: '240px'},
+                    { name: 'tableCancel', icon: 'arrow01_left',title: getMessage.FTE00023, action: 'normal', separate: true }
                 ],
                 Sub: [
-                    { name: 'tableChangeValue', icon: 'circle_info',title: '変更前', action: 'default', toggle: { init: 'off', on:'非表示', off:'表示'}}
+                    { name: 'tableChangeValue', icon: 'circle_info',title: getMessage.FTE00024, action: 'default', toggle: { init: 'off', on:getMessage.FTE00025, off:getMessage.FTE00026}}
                 ]
             };
             tb.$.header.html( tb.tableHeaderMenuHtml( tableHeaderMenuList ) );
@@ -548,8 +548,8 @@ setTable( mode ) {
             const tableHeaderMenuList = {
                 Main: [
                     { name: 'tableInputHistoryId', icon: null, title: tb.idName, action: 'input'},
-                    { name: 'tableShowHistory', icon: 'clock', title: '履歴表示', action: 'default', disabled: true, width: '200px' },
-                    { name: 'tableResetHistory', icon: 'clear',title: '履歴リセット', action: 'normal', disabled: true, width: '200px' }
+                    { name: 'tableShowHistory', icon: 'clock', title: getMessage.FTE00027, action: 'default', disabled: true, width: '200px' },
+                    { name: 'tableResetHistory', icon: 'clear',title: getMessage.FTE00028, action: 'normal', disabled: true, width: '200px' }
                 ],
                 Sub: []
             };
@@ -557,8 +557,8 @@ setTable( mode ) {
             
             const historyMessage = `<div class="historyStandByMessage">`
             + fn.html.icon('clock')
-            + `対象の${tb.idName}を入力し、<br>`
-            + `履歴表示を押下してください。</div>`;
+            + getMessage.FTE00029 + `${tb.idName}` + getMessage.FTE00030 + `<br>`
+            + getMessage.FTE00031 + `</div>`;
             tb.$.container.addClass('historyStandBy');
             tb.$.message.html( historyMessage );
             
@@ -684,7 +684,7 @@ tableHtml() {
             tb.data.filterHeadColspan++;
         break;
         case 'select': case 'execute':
-            html[0] += fn.html.cell('選択', ['tHeadTh', 'tHeadLeftSticky'], 'th', headRowspan );
+            html[0] += fn.html.cell(getMessage.FTE00032, ['tHeadTh', 'tHeadLeftSticky'], 'th', headRowspan );
             tb.data.filterHeadColspan++;
         break;
         case 'edit': {
@@ -694,12 +694,12 @@ tableHtml() {
             }
         } break;
         case 'diff':
-            html[0] += fn.html.cell('区分', ['tHeadTh', 'tHeadLeftSticky'], 'th', headRowspan );
+            html[0] += fn.html.cell(getMessage.FTE00033, ['tHeadTh', 'tHeadLeftSticky'], 'th', headRowspan );
         break;
         case 'history':
-            html[0] += fn.html.cell('内容', ['tHeadTh', 'tHeadLeftSticky', 'tHeadLeftStickyLast'], 'th', headRowspan );
-            html[0] += fn.html.cell('履歴通番', ['tHeadTh'], 'th', headRowspan );
-            html[0] += fn.html.cell('変更日時', ['tHeadTh'], 'th', headRowspan );
+            html[0] += fn.html.cell(getMessage.FTE00034, ['tHeadTh', 'tHeadLeftSticky', 'tHeadLeftStickyLast'], 'th', headRowspan );
+            html[0] += fn.html.cell(getMessage.FTE00035, ['tHeadTh'], 'th', headRowspan );
+            html[0] += fn.html.cell(getMessage.FTE00036, ['tHeadTh'], 'th', headRowspan );
         break;
     }
 
@@ -758,7 +758,7 @@ tableHtml() {
                     // 必須を付けない要素
                     const autoInputColumns = [ tb.idNameRest, 'last_update_date_time', 'last_updated_user', 'discard'];
                     if ( autoInputColumns.indexOf( column.column_name_rest ) === -1 ) {
-                        name += '<span class="tHeadRequired">必須</span>';
+                        name += '<span class="tHeadRequired">' + getMessage.FTE00037 + '</span>';
                     }
                 }
                 // 廃止、ID列を固定
@@ -777,7 +777,7 @@ tableHtml() {
                 if ( column.column_name_rest ) attr.rest = column.column_name_rest;
                 if ( column.description ) attr.title = fn.cv( column.description, '', true );
                 if ( column.column_name_rest === 'discard') {
-                    name = '廃止';
+                    name = getMessage.FTE00038;
                     className.push('discardCell');
                 }
                 html[i] += fn.html.cell( name, className, 'th', rowspan, 1, attr );
@@ -813,7 +813,7 @@ filterHtml() {
           keys = ( tb.option.sheetType !== 'reference')? tb.data.columnKeys: tb.data.referenceFilterKeys,
           initSetFilter = tb.option.initSetFilter;
     
-    const filterIcon = `${fn.html.icon('filter')}<span class="tHeadFilterTitle">フィルタ</span>`,
+    const filterIcon = `${fn.html.icon('filter')}<span class="tHeadFilterTitle">` + getMessage.FTE00001 + `</span>`,
           rows = [],
           rowClassName = ['tHeadTr', 'filterTr'],
           className = ['tHeadFilter', 'tHeadLeftSticky', 'tHeadFilterHeader'];
@@ -828,7 +828,7 @@ filterHtml() {
     const pulldownOpen = function( name, rest ) {
         return ``
         + `<div class="filterSelectArea">`
-            + fn.html.button(`${fn.html.icon('menuList')}プルダウン検索`, ['filterPulldownOpenButton', 'itaButton'], { type: name, rest: rest })
+            + fn.html.button(`${fn.html.icon('menuList')}` + getMessage.FTE00039, ['filterPulldownOpenButton', 'itaButton'], { type: name, rest: rest })
         + `</div>`;
     }
     
@@ -920,9 +920,9 @@ filterHtml() {
 
         if ( rest === 'discard') {
             const list = {
-                '0': '全レコード',
-                '1': '廃止含まず',
-                '2': '廃止のみ'
+                '0': getMessage.FTE00040,
+                '1': getMessage.FTE00041,
+                '2': getMessage.FTE00042
             };
             cellHtml.push( fn.html.select( list, ['filterInput', 'filterInputDiscard'], list[initValue], name, { type: 'discard', rest: rest } ) );
         } else {
@@ -1015,14 +1015,14 @@ filterHtml() {
     };
     
     const menuList = [
-        { name: 'filter', title: 'フィルタ', action: 'restore'},
-        { name: 'clear', title: 'フィルタクリア', action: 'negative'},
-        { name: 'auto', title: 'オートフィルタ'}
+        { name: 'filter', title: getMessage.FTE00043, action: 'restore'},
+        { name: 'clear', title: getMessage.FTE00044, action: 'negative'},
+        { name: 'auto', title: getMessage.FTE00045}
     ];
     
     if ( tb.mode === 'view') {
-        menuList.push({ name: 'excel', title: 'Excelダウンロード', action: 'default', separate: true, disabled: true }),
-        menuList.push({ name: 'json', title: 'JSONダウンロード', action: 'default', disabled: true })
+        menuList.push({ name: 'excel', title: getMessage.FTE00046, action: 'default', separate: true, disabled: true }),
+        menuList.push({ name: 'json', title: getMessage.FTE00047, action: 'default', disabled: true })
     };
     
     const filterMenuHtml = fn.html.cell( createFilterMenuHtml( menuList ),
@@ -1052,7 +1052,7 @@ filterDownloadButtonCheck() {
     if ( ( excelLimit === null || tb.data.count <= excelLimit ) && tb.data.count >= 1 ) {
         $excel.removeClass('popup').prop('disabled', false ).removeAttr('title');
     } else if ( excelLimit !== null ) {
-        $excel.addClass('popup').attr('title', `Excel出力最大行数（${excelLimit}行）を超過しているためダウンロードできません。`).prop('disabled', true );
+        $excel.addClass('popup').attr('title', getMessage.FTE00048 + `（${excelLimit}` + getMessage.FTE00049 + `）` + getMessage.FTE00050).prop('disabled', true );
     } else {
         $excel.prop('disabled', true );
     }
@@ -1076,7 +1076,7 @@ referenceFilter() {
         const column = tb.info.column_info[ key ];
         let name = fn.cv( column.column_name, '', true );
         
-        if ( column.column_name_rest === 'base_datetime') name = 'オペレーション' + name;
+        if ( column.column_name_rest === 'base_datetime') name = getMessage.FTE00051 + name;
                       
         thead.push(  fn.html.cell( name, 'tHeadTh', 'th') );
     }
@@ -1404,7 +1404,7 @@ setTableEvents() {
             if ( !$button.is('.on') ) {
                 $button.addClass('on').attr({
                     'data-action': 'restore',
-                    'title': 'パスワード入力'
+                    'title': getMessage.FTE00052
                 });
                 $button.find('.inner').html( fn.html.icon('ellipsis'));
                 $wrap.addClass('inputPasswordDelete');
@@ -1412,7 +1412,7 @@ setTableEvents() {
             } else {
                 $button.removeClass('on').attr({
                     'data-action': 'danger',
-                    'title': '入力済みパスワードの削除'
+                    'title': getMessage.FTE00053
                 });
                 $button.find('.inner').html( fn.html.icon('cross'));
                 $wrap.removeClass('inputPasswordDelete');
@@ -1906,11 +1906,11 @@ requestTbody() {
 
             // リミットチェック
             if ( printLimitNum !== -1 && tb.data.count > printLimitNum ) {
-                alert(WD.TABLE.limit);
+                alert(getMessage.FTE00067);
                 return false;
             //表示確認
             } else if ( printConfirmNum !== -1 && tb.data.count >= printConfirmNum ) {
-                if ( !confirm(WD.TABLE.confirm) ) {
+                if ( !confirm(getMessage.FTE00066) ) {
                     return false;
                 }
             }
@@ -1964,9 +1964,9 @@ getFilterParameter() {
                     filterParams[ rest ].RANGE.END = fn.date( value, 'yyyy/MM/dd HH:mm:ss');
                 break;
                 case 'discard':
-                    if ( value === '全レコード') {
+                    if ( value === getMessage.FTE00040) {
                         filterParams[ rest ].NORMAL = '';
-                    } else if ( value === '廃止含まず') {
+                    } else if ( value === getMessage.FTE00041) {
                         filterParams[ rest ].NORMAL = '0';
                     } else {
                         filterParams[ rest ].NORMAL = '1';
@@ -2137,7 +2137,7 @@ setTbody() {
         tb.$.container.addClass('noData');
         tb.$.message.html(`<div class="noDataMessage">`
         + fn.html.icon('stop')
-        + `表示できる内容がありません。`
+        + getMessage.FTE00054
         + `</div>`);
     } else {
         tb.$.container.removeClass('noData');
@@ -2184,8 +2184,8 @@ setInitFilterStandBy() {
     
     tb.$.message.html(`<div class="initFilterStandByMessage">`
     + fn.html.icon('circle_info')
-    + `初期フィルタがオフです。<br>`
-    + `表示するにはフィルタしてください。</div>`);
+    + getMessage.FTE00055 + `<br>`
+    + getMessage.FTE00056 + `</div>`);
     
     tb.workEnd();
     tb.$.table.addClass('tableReady');
@@ -2313,13 +2313,13 @@ tbodyHtml() {
             case 'view': {
                 const viewMenu = [];
                 if ( tb.flag.update ) {
-                    viewMenu.push({ type: 'rowEdit', text: '編集', action: 'default', id: rowId, className: 'tBodyRowMenuTb'});
+                    viewMenu.push({ type: 'rowEdit', text: getMessage.FTE00009, action: 'default', id: rowId, className: 'tBodyRowMenuTb'});
                 }
                 if ( tb.flag.insert ) {
-                    viewMenu.push({ type: 'rowDup', text: '複製', action: 'duplicat', id: rowId, className: 'tBodyRowMenuTb'});
+                    viewMenu.push({ type: 'rowDup', text: getMessage.FTE00013, action: 'duplicat', id: rowId, className: 'tBodyRowMenuTb'});
                 }
                 if ( tb.flag.history ) {
-                    viewMenu.push({ type: 'rowHistory', text: '履歴', action: 'history', id: rowId, className: 'tBodyRowMenuUi'});
+                    viewMenu.push({ type: 'rowHistory', text: getMessage.FTE00057, action: 'history', id: rowId, className: 'tBodyRowMenuUi'});
                 }
                 if ( tb.flag.update ) {
                     rowHtml.push( rowCheckInput() );
@@ -2784,7 +2784,7 @@ editConfirmCellHtml( parameter, columnKey ) {
     if ( password.indexOf( columnType ) !== -1 ) {
 
         if ( parameter[ columnName ] !== undefined && parameter[ columnName ] === null ) {
-            return '<span class="passwordDeleteText">削除</span>';
+            return '<span class="passwordDeleteText">' + getMessage.FTE00014 + '</span>';
         } else if ( value !== '' && type !== 'registration') {
             return beforeAfter('********', '********');
         } else {
@@ -2841,13 +2841,13 @@ footerHtml() {
     <div class="tableFooterInner">
         <div class="tableFooterBlock pagingAllNum">
             <dl class="tableFooterList">
-                <dt class="tableFooterTitle"><span class="footerText pagingAllTitle">フィルタ結果件数</span></dt>
-                <dd class="tableFooterItem tableFooterData"><span class="footerText pagingAllNumNumber">0 件</span></dd>
+                <dt class="tableFooterTitle"><span class="footerText pagingAllTitle">` + getMessage.FTE00058 + `</span></dt>
+                <dd class="tableFooterItem tableFooterData"><span class="footerText pagingAllNumNumber">` + getMessage.FTE00059 + `</span></dd>
             </dl>
         </div>
         <div class="tableFooterBlock pagingOnePageNum">
             <dl class="tableFooterList">
-                <dt class="tableFooterTitle"><span class="footerText">1ページに表示する件数</span></dt>
+                <dt class="tableFooterTitle"><span class="footerText">` + getMessage.FTE00060 + `</span></dt>
                 <dd class="tableFooterItem tableFooterData">
                     <select class="pagingOnePageNumSelect input">
                         ${onePageNumOptions.join('')}
@@ -2868,7 +2868,7 @@ footerHtml() {
                         <span class="pagingCurrentPage">0</span>
                         <span class="pagingSeparate">/</span>
                         <span class="pagingMaxPageNumber">0</span>
-                        <span class="pagingPageJumpNumber">ページ</span>
+                        <span class="pagingPageJumpNumber">` + getMessage.FTE00061 + `</span>
                     </div>
                 </li>
                 <li class="tableFooterItem">
@@ -2892,11 +2892,11 @@ updateFooterStatus() {
     
     
     if ( tb.mode === 'edit' || tb.mode === 'diff') {
-        tb.$.footer.find('.pagingAllTitle').text('編集件数');
+        tb.$.footer.find('.pagingAllTitle').text(getMessage.FTE00062);
     } else {
-        tb.$.footer.find('.pagingAllTitle').text('フィルタ結果件数');
+        tb.$.footer.find('.pagingAllTitle').text(getMessage.FTE00058);
     }
-    tb.$.footer.find('.pagingAllNumNumber').text( tb.paging.num.toLocaleString() + ' 件');
+    tb.$.footer.find('.pagingAllNumNumber').text( tb.paging.num.toLocaleString() + getMessage.FTE00063);
     tb.$.footer.find('.pagingOnePageNumSelect').val( tb.paging.onePageNum );
     
     const $paging = tb.$.footer.find('.pagingMove');
@@ -3108,7 +3108,7 @@ reflectEdits() {
         width: '100%',
         height: '100%',
         header: {
-            title: '編集確認',
+            title: getMessage.FTE00011,
         }
     };
     
@@ -3241,7 +3241,7 @@ editOk() {
                 result.data = editData; 
                 reject( result );
                 //バリデーションエラー
-                alert(WD.TABLE.invalid);
+                alert(getMessage.FTE00068);
             });
     });
 }
@@ -3257,19 +3257,19 @@ execute( type ) {
         switch ( type ) {
             case 'run':
                 return {
-                    title: '作業実行',
+                    title: getMessage.FTE00005,
                     rest: `/menu/${tb.params.menuNameRest}/driver/execute/`
                 };
             break;
             case 'dryrun':
                 return {
-                    title: 'ドライラン',
+                    title: getMessage.FTE00006,
                     rest: `/menu/${tb.params.menuNameRest}/driver/execute_dry_run/`
                 };
             break;
             case 'parameter':
                 return {
-                    title: 'パラメータ確認',
+                    title: getMessage.FTE00007,
                     rest: `/menu/${tb.params.menuNameRest}/driver/execute_check_parameter/`
                 };
             break;
@@ -3319,7 +3319,9 @@ editError( error ) {
         errorMessage = JSON.parse(error.message);
     } catch ( e ) {
         //JSONを作成
-        errorMessage = {"0":{"共通":[error.message]}};
+        let key = getMessage.FTE00064;
+        //errorMessage = {"0":{key:[error.message]}};
+        errorMessage["0"][key] = error.message;
     }
 
     //一意のキーの値を取り出す
@@ -3364,14 +3366,14 @@ editError( error ) {
     tb.$.errorMessage.html(`
     <div class="errorBorder"></div>
     <div class="errorTableContainer">
-        <div class="errorTitle"><span class="errorTitleInner">${fn.html.icon('circle_exclamation')}バリデーションエラー</span></div>
+        <div class="errorTitle"><span class="errorTitleInner">${fn.html.icon('circle_exclamation')}` + getMessage.FTE00065 + `</span></div>
         <table class="table errorTable">
             <thead class="thead">
                 <tr class="tHeadTr tr">
-                <th class="tHeadTh tHeadLeftSticky th"><div class="ci">${WD.TABLE.insert}</div></th>
+                <th class="tHeadTh tHeadLeftSticky th"><div class="ci">${getMessage.FTE00069}</div></th>
                 <th class="tHeadTh tHeadLeftSticky th"><div class="ci">${id_name}</div></th>
-                <th class="tHeadTh th tHeadErrorColumn"><div class="ci">${WD.TABLE.err_row}</div></th>
-                <th class="tHeadTh th tHeadErrorBody"><div class="ci">${WD.TABLE.err_details}</div></th>
+                <th class="tHeadTh th tHeadErrorColumn"><div class="ci">${getMessage.FTE00070}</div></th>
+                <th class="tHeadTh th tHeadErrorBody"><div class="ci">${getMessage.FTE00071}</div></th>
                 </tr>
             </thead>
             <tbody class="tbody">
