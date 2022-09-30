@@ -170,13 +170,13 @@ def get_execution_info(objdbca, target, execution_no):
                 lcstr = Path(log_file_path).read_text(encoding="utf-8")
                 execution_info['progress']['execution_log']['exec_log'][log] = lcstr
     else:
-        log_file_path = path + '/out/exec_log'
+        log_file_path = path + '/out/exec.log'
         if os.path.isfile(log_file_path):
             if os.path.isfile(log_file_path):
                 lcstr = Path(log_file_path).read_text(encoding="utf-8")
-                execution_info['progress']['execution_log']['exec_log']['exec_log'] = lcstr
+                execution_info['progress']['execution_log']['exec_log']['exec.log'] = lcstr
     
-    log_file_path = path + '/out/error_log'
+    log_file_path = path + '/out/error.log'
     if os.path.isfile(log_file_path):
         lcstr = Path(log_file_path).read_text(encoding="utf-8")
         execution_info['progress']['execution_log']['error_log'] = lcstr
