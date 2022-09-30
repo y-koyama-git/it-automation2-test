@@ -209,8 +209,7 @@ def main_logic(wsDb: DBConnectWs, execution_no, driver_id):  # noqa: C901
             g.applogger.info(g.appmsg.get_log_message("BKY-10004", [execute_data["STATUS_ID"], execution_no]))
         else:
             wsDb.db_rollback()
-            log_err("InstanceRecodeUpdate:" + str(result[1]))
-            # エラー時の処理が抜けている
+            return False, "InstanceRecodeUpdate->" + str(result[1])
     else:
         # 失敗
         return False, result_data
@@ -260,7 +259,7 @@ def main_logic(wsDb: DBConnectWs, execution_no, driver_id):  # noqa: C901
                 g.applogger.info(g.appmsg.get_log_message("BKY-10004", [clone_execute_data["STATUS_ID"], execution_no]))
             else:
                 wsDb.db_rollback()
-                log_err("InstanceRecodeUpdate:" + str(result[1]))
+                return False, "InstanceRecodeUpdate->" + str(result[1])
 
         if clone_execute_data['STATUS_ID'] in [ansc_const.COMPLETE, ansc_const.FAILURE, ansc_const.EXCEPTION, ansc_const.SCRAM]:
             break
