@@ -781,7 +781,7 @@ def getAnsiblePlaybookOptionParameter(wsDb, option_parameter):  # noqa: C901
     job_template_property_info = getJobTemplateProperty(wsDb)
 
     param = "-__dummy__ " + option_parameter.strip() + ' '
-    param_arr = re.split(r'((\s)-)', param)
+    param_arr = re.split(r'\s-', param)
     # 無効なオプションパラメータが設定されていないか判定
     for param_string in param_arr:
         if param_string and param_string.strip() == '-__dummy__':
@@ -925,8 +925,7 @@ def getAnsiblePlaybookOptionParameter(wsDb, option_parameter):  # noqa: C901
                     m = m + 1
 
             # 末尾の','を削除
-            if values_param[-1] == ',':
-                values_param = values_param[:-1]
+            values_param = values_param.rstrip(',')
 
             # リストのデータを書き換え
             n = 0
