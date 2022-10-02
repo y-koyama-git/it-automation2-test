@@ -25,3 +25,5 @@ from .json_column_class import JsonColumn  # noqa: F401
 from .role_id_class import RoleIDColumn  # noqa: F401
 from .environment_id_class import EnvironmentIDColumn  # noqa: F401
 from .json_id_class import JsonIDColumn  # noqa: F401
+from .password_id_class import PasswordIDColumn  # noqa: F401
+from .json_password_id_class import JsonPasswordIDColumn  # noqa: F401

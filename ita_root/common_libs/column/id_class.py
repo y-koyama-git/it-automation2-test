@@ -78,7 +78,6 @@ class IDColumn(Column):
         else:
             id_data_list = self.search_id_data_list()
             self.set_id_data_list(id_data_list)
-            self.data_list_set_flg = True
             return id_data_list
 
     def set_id_data_list(self, id_data_list):
@@ -118,6 +117,12 @@ class IDColumn(Column):
 
         for record in return_values:
             values[record[ref_pkey_name]] = record[ref_col_name]
+        
+        # 自テーブル名と参照先テーブル名が同一の場合、data_list_set_flgをFalseに設定する
+        if self.table_name == ref_table_name:
+            self.data_list_set_flg = False
+        else:
+            self.data_list_set_flg = True
 
         return values
 
