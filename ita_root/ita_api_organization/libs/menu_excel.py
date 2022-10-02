@@ -623,7 +623,18 @@ def create_excel_headerlist(lang, ws, depth, retList_t_common_menu_column_link, 
         for j, dict_menu_column in enumerate(retList_t_common_menu_column_link):
             column_name = dict_menu_column.get('COLUMN_NAME_' + lang.upper())
             column_name_rest = dict_menu_column.get('COLUMN_NAME_REST')
+            input_item = dict_menu_column.get('INPUT_ITEM')
+            view_item = dict_menu_column.get('VIEW_ITEM')
+            column_class = dict_menu_column.get('COLUMN_CLASS')
+
+            if input_item == '2' and view_item == '0':
+                # excelに表示しない
+                continue
             
+            if column_class == '23':
+                # excelに表示しない
+                continue
+
             # 廃止フラグ
             msg = g.appmsg.get_api_message('MSG-30015')
             if column_name == msg:
@@ -752,18 +763,34 @@ def create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_colum
     # カラム位置調整用フラグ
     column_flg = False
     dataVaridationDict = {}
+    skip_cnt = 0
     for i, dict_menu_column in enumerate(retList_t_common_menu_column_link):
         column_name = dict_menu_column.get('COLUMN_NAME_' + lang.upper())
         column_name_rest = dict_menu_column.get('COLUMN_NAME_REST')
+        column_class = dict_menu_column.get('COLUMN_CLASS')
+        auto_input = dict_menu_column.get('AUTO_INPUT')
+        input_item = dict_menu_column.get('INPUT_ITEM')
+        required_item = dict_menu_column.get('REQUIRED_ITEM')
+        view_item = dict_menu_column.get('VIEW_ITEM')
         column_num = 0
         
+        if input_item == '2' and view_item == '0':
+            # excelに表示しない
+            skip_cnt += 1
+            continue
+
+        if column_class == '23':
+            # excelに表示しない
+            skip_cnt += 1
+            continue
+
         # 廃止フラグ
         msg = g.appmsg.get_api_message('MSG-30015')
         if column_name == msg:
                 column_num = 4
                 column_flg = True
         else:
-            column_num = startClm + i + 1
+            column_num = startClm + i + 1 - skip_cnt
             if column_flg:
                 column_num -= 1
         
@@ -794,10 +821,6 @@ def create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_colum
         
         # 登録
         # 更新
-        column_class = dict_menu_column.get('COLUMN_CLASS')
-        auto_input = dict_menu_column.get('AUTO_INPUT')
-        input_item = dict_menu_column.get('INPUT_ITEM')
-        required_item = dict_menu_column.get('REQUIRED_ITEM')
         tmp = '×'
         if auto_input != '1' and input_item == '1' and required_item == '1':
             tmp = '●'
@@ -886,17 +909,32 @@ def create_column_info_trace_history(lang, ws, startRow, startClm, retList_t_com
     column_flg = False
     # 登録不可の行を記憶しておく
     gray_column = []
+    skip_cnt = 0
     for i, dict_menu_column in enumerate(retList_t_common_menu_column_link):
         column_name = dict_menu_column.get('COLUMN_NAME_' + lang.upper())
+        auto_input = dict_menu_column.get('AUTO_INPUT')
+        input_item = dict_menu_column.get('INPUT_ITEM')
+        view_item = dict_menu_column.get('VIEW_ITEM')
+        column_class = dict_menu_column.get('COLUMN_CLASS')
         column_num = 0
         
+        if input_item == '2' and view_item == '0':
+            # excelに表示しない
+            skip_cnt += 1
+            continue
+
+        if column_class == '23':
+            # excelに表示しない
+            skip_cnt += 1
+            continue
+
         # 廃止フラグ
         msg = g.appmsg.get_api_message('MSG-30015')
         if column_name == msg:
             column_num = 3
             column_flg = True
         else:
-            column_num = startClm + i + 1
+            column_num = startClm + i + 1 - skip_cnt
             if column_flg:
                 column_num -= 1
         
@@ -925,8 +963,6 @@ def create_column_info_trace_history(lang, ws, startRow, startClm, retList_t_com
         ws.cell(row=startRow, column=column_num, value=dict_menu_column.get('DESCRIPTION_' + lang.upper()))
         
         # 最後に列をグレーにするために登録不可の行を記憶しておく
-        auto_input = dict_menu_column.get('AUTO_INPUT')
-        input_item = dict_menu_column.get('INPUT_ITEM')
         if auto_input == '1' or input_item == '0':
             gray_column.append(get_column_letter(column_num))
     
@@ -1724,7 +1760,11 @@ def collect_excel_filter(objdbca, organization_id, workspace_id, menu, menu_reco
     
     for i, (key, value) in enumerate(filter_parameter.items()):
         tmp = list(value.values())[0]
-        ws_filter.cell(row=1, column=4 + i, value=key)
+        filter_name = key
+        if key in header_order:
+            ind = header_order.index(key)
+            filter_name = excel_header_list[-1][ind]
+        ws_filter.cell(row=1, column=4 + i, value=filter_name)
         if key.lower() == 'discard':
             if tmp == '0':
                 # 廃止含まず
@@ -1739,11 +1779,12 @@ def collect_excel_filter(objdbca, organization_id, workspace_id, menu, menu_reco
                 msg = g.appmsg.get_api_message('MSG-30018')
                 ws_filter.cell(row=2, column=4 + i, value=msg)
         else:
-            if len(list(value.values())[0]) > 1:
-                for j, val in enumerate(list(value.values())[0]):
-                    ws_filter.cell(row=2 + j, column=4 + i, value=list(value.values())[0][j])
-            else:
-                ws_filter.cell(row=2, column=4 + i, value=list(value.values())[0][0])
+            if type(tmp) is list:
+                for j, val in enumerate(tmp):
+                    ws_filter.cell(row=2 + j, column=4 + i, value=tmp[j])
+            elif type(tmp) is dict:
+                filter_range = tmp.get('START', '') + '～' + tmp.get('END', '')
+                ws_filter.cell(row=2, column=4 + i, value=filter_range)
     
     wb.save(file_path)  # noqa: E303
     

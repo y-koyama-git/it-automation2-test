@@ -241,6 +241,7 @@ def collect_menu_info(objdbca, menu, menu_record={}, menu_table_link_record={}, 
                 'ref_col_name': record.get('REF_COL_NAME'),
                 'ref_sort_conditions': record.get('REF_SORT_CONDITIONS'),
                 'ref_multi_lang': record.get('REF_MULTI_LANG'),
+                'sensitive_coloumn_name': record.get('SENSITIVE_COL_NAME'),
                 'col_name': record.get('COL_NAME'),
                 'button_action': record.get('BUTTON_ACTION'),
                 'save_type': record.get('SAVE_TYPE'),
@@ -609,8 +610,8 @@ def collect_search_candidates(objdbca, menu, column, menu_record={}, menu_table_
     save_type = str(ret[0].get('SAVE_TYPE'))
     
     # パスワードカラム系の場合は499を返却
-    # 8(PasswordColumn), 15(MaskColumn), 16(SensitiveSingleTextColumn), 17(SensitiveMultiTextColumn), 25(PasswordIDColumn), 26(JsonPasswordIDColumn)
-    sensitive_column_list = ["8", "15", "16", "17", "25", "26"]
+    # 8(PasswordColumn), 15(MaskColumn), 16(SensitiveSingleTextColumn), 17(SensitiveMultiTextColumn), 20(FileUploadEncryptColumn), 25(PasswordIDColumn), 26(JsonPasswordIDColumn)
+    sensitive_column_list = ["8", "15", "16", "17", "20", "25", "26"]
     if column_class_id in sensitive_column_list:
         log_msg_args = [menu, column]
         api_msg_args = [menu, column]
