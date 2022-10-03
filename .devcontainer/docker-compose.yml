@@ -1,4 +1,4 @@
-version: '3.1'
+version: '3.7'
 services:
   ita-api-organization:
     user: 1000:1000
