@@ -52,8 +52,14 @@ def main_logic(organization_id, workspace_id, wsDb):
     """
     main logic
     """
+    container_base = os.getenv('CONTAINER_BASE')
+    if container_base == 'docker':
+        ansibleAg = DockerMode()
+    else:
+        ansibleAg = KubernetesMode()
+
     # 実行中のコンテナの状態確認
-    if child_process_exist_check(wsDb) is False:
+    if child_process_exist_check(wsDb, ansibleAg) is False:
         g.applogger.debug(g.appmsg.get_log_message("MSG-10059"))
         return False
 
@@ -61,7 +67,7 @@ def main_logic(organization_id, workspace_id, wsDb):
     num_of_run_instance = len(get_running_process(wsDb))
 
     # 未実行（実行待ち）の作業を実行
-    result = run_unexecuted(wsDb, num_of_run_instance, organization_id, workspace_id)
+    result = run_unexecuted(wsDb, ansibleAg, num_of_run_instance, organization_id, workspace_id)
     if result[0] is False:
         g.applogger.error(result[1])
         return False
@@ -69,7 +75,7 @@ def main_logic(organization_id, workspace_id, wsDb):
     return True
 
 
-def child_process_exist_check(wsDb):
+def child_process_exist_check(wsDb: DBConnectWs, ansibleAg):
     """
     実行中の子プロの起動確認
     
@@ -145,12 +151,6 @@ def child_process_exist_check(wsDb):
 
             # コンテナが残っている場合に備えて掃除
             # ゴミ掃除に失敗しても処理は続ける
-            container_base = os.getenv('CONTAINER_BASE')
-            if container_base == 'docker':
-                ansibleAg = DockerMode()
-            else:
-                ansibleAg = KubernetesMode()
-
             result = ansibleAg.is_container_running(execution_no)
             if result[0] is True:
                 result = ansibleAg.container_kill(execution_no)
@@ -223,7 +223,7 @@ def get_running_process(wsDb):
     return records
 
 
-def run_unexecuted(wsDb, num_of_run_instance, organization_id, workspace_id):
+def run_unexecuted(wsDb: DBConnectWs, ansibleAg, num_of_run_instance, organization_id, workspace_id):
     """
     未実行（実行待ち）の作業を実行
     
@@ -231,6 +231,8 @@ def run_unexecuted(wsDb, num_of_run_instance, organization_id, workspace_id):
         bool
         err_msg
     """
+    ansibleAg.unused_allclean()
+
     condition = """WHERE `DISUSE_FLAG`=0 AND (
         ( `TIME_BOOK` IS NULL AND `STATUS_ID` = %s ) OR
         ( `TIME_BOOK` <= NOW(6) AND `STATUS_ID` = %s )

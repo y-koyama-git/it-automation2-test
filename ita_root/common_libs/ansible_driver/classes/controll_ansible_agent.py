@@ -65,6 +65,13 @@ class AnsibleAgent(ABC):
         """
         pass
 
+    @abstractclassmethod
+    def unused_allclean(self):
+        """
+        未使用のコンテナー、ネットワーク、イメージをすべて削除
+        """
+        pass
+
 
 class DockerMode(AnsibleAgent):
 
@@ -201,6 +208,22 @@ class DockerMode(AnsibleAgent):
             if cp.returncode != 0:
                 # cp.check_returncode()  # 例外を発生させたい場合
                 return False, {"return_code": cp.returncode, "stderr": cp.stderr}
+
+        return True, cp.stdout
+
+    def unused_allclean(self):
+        """
+        未使用のコンテナー、ネットワーク、イメージをすべて削除
+        """
+        g.applogger.debug("unused_allclean")
+
+        command = ["/usr/local/bin/docker", "system", "prune", "--force"]
+        command = ["sudo"] + command
+
+        cp = subprocess.run(command, capture_output=True, text=True)
+        if cp.returncode != 0:
+            g.applogger.debug("unused_allclean->error:{}" % cp.stderr)
+            return False, cp.stderr
 
         return True, cp.stdout
 
@@ -348,3 +371,6 @@ class KubernetesMode(AnsibleAgent):
             return 1, None, str(e)
 
         return cp.returncode, status,
+
+    def unused_allclean(self):
+        pass
