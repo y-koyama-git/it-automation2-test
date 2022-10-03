@@ -883,8 +883,6 @@ class SubValueAutoReg():
         VariableColumnAry['T_ANSC_TEMPLATE_FILE']['ANS_TEMPLATE_VARS_NAME'] = 0
         VariableColumnAry['T_ANSC_CONTENTS_FILE'] = {}
         VariableColumnAry['T_ANSC_TEMPLATE_FILE']['CONTENTS_FILE_VARS_NAME'] = 0
-        VariableColumnAry['T_ANSC_GLOBAL_VAR'] = {}
-        VariableColumnAry['T_ANSC_GLOBAL_VAR']['VARS_NAME'] = 0
         
         # オペ+作業+ホスト+変数の組合せの代入順序 重複確認用
         lv_varsAssChkList = {}
@@ -975,21 +973,26 @@ class SubValueAutoReg():
                 for col_data in in_tabColNameToValAssRowList[table_name][col_name].values():
                     # IDcolumnの場合は参照元から具体値を取得する
                     if not col_data['REF_TABLE_NAME'] is None and not col_data['REF_TABLE_NAME'] == "":
-                        sql = "SELECT " + col_data['REF_COL_NAME'] + " "
-                        sql = sql + "FROM " + col_data['REF_TABLE_NAME'] + " "
-                        where = "WHERE " + col_data['REF_PKEY_NAME'] + "=%" + col_data['REF_PKEY_NAME'] + " AND DISUSE_FLAG='0'"
-                        count = WS_DB.table_count(col_data['REF_TABLE_NAME'], where, [col_val_key])
+                        tmp_col_val_key = json.loads(col_val_key).values()
+                        where = "WHERE " + col_data['REF_PKEY_NAME'] + " IN ("
+                        in_str = ""
+                        for value in tmp_col_val_key:
+                            in_str += "'" + value + "',"
+                        if in_str:
+                            in_str = in_str[:-1]
+                        where += in_str + ") AND DISUSE_FLAG = '0'"
+                        count = WS_DB.table_count(col_data['REF_TABLE_NAME'], where, [])
                         
                         col_val = ""
                         # 0件ではない場合
                         if not count == 0:
-                            data_list = WS_DB.table_select(col_data['REF_TABLE_NAME'], where, [col_val_key])
+                            data_list = WS_DB.table_select(col_data['REF_TABLE_NAME'], where, [])
                             for tgt_row in data_list:
                                 col_val = tgt_row[col_data['REF_COL_NAME']]
                                 # TPF/CPF変数カラム判定
                                 if col_data['REF_TABLE_NAME'] in VariableColumnAry:
                                     if col_data['REF_COL_NAME'] in VariableColumnAry[col_data['REF_TABLE_NAME']]:
-                                        col_val = "'{{ col_val }}'"
+                                        col_val = "'{{" + col_val + "}}'"
                         else:
                             # プルダウン選択先のレコードが廃止されている
                             msgstr = g.appmsg.get_api_message("MSG-10438", [in_tableNameToMenuIdList[table_name], row[AnscConst.DF_ITA_LOCAL_PKEY], col_name])
@@ -1115,7 +1118,7 @@ class SubValueAutoReg():
                                             in_col_list['MVMT_VAR_LINK_ID'],
                                             in_col_list['COL_SEQ_COMBINATION_ID'],
                                             in_col_list['ASSIGN_SEQ'],
-                                            col_name,
+                                            in_col_val,
                                             in_col_row_id,
                                             in_col_class,
                                             in_col_filepath,
@@ -1756,6 +1759,7 @@ class SubValueAutoReg():
 
         inout_tableNameToMenuIdList = {}
         inout_tabColNameToValAssRowList = {}
+        idx = 0
         for data in data_list:
             # CMDB代入値紐付メニューが廃止されているか判定
             if data['TBL_DISUSE_FLAG'] != '0':
@@ -1851,9 +1855,11 @@ class SubValueAutoReg():
             if data['COLUMN_CLASS'] == 'PasswordColumn':
                 value_sensitive_flg = AnscConst.DF_SENSITIVE_ON
             
-            inout_tabColNameToValAssRowList[data['TABLE_NAME']] = {}
-            inout_tabColNameToValAssRowList[data['TABLE_NAME']][data['COL_NAME']] = {}
-            inout_tabColNameToValAssRowList[data['TABLE_NAME']][data['COL_NAME']]['data'] = {
+            if data['TABLE_NAME'] not in inout_tabColNameToValAssRowList:
+                inout_tabColNameToValAssRowList[data['TABLE_NAME']] = {}
+            if data['COL_NAME'] not in inout_tabColNameToValAssRowList[data['TABLE_NAME']]:
+                inout_tabColNameToValAssRowList[data['TABLE_NAME']][data['COL_NAME']] = {}
+            inout_tabColNameToValAssRowList[data['TABLE_NAME']][data['COL_NAME']][idx] = {
                                                                             'COLUMN_ID': data['COLUMN_ID'],
                                                                             'COL_TYPE': data['COL_TYPE'],
                                                                             'COLUMN_CLASS': data['COLUMN_CLASS'],
@@ -1877,7 +1883,8 @@ class SubValueAutoReg():
             pk_name = WS_DB.table_columns_get(data['TABLE_NAME'])
             inout_tableNameToPKeyNameList[data['TABLE_NAME']] = {}
             inout_tableNameToPKeyNameList[data['TABLE_NAME']] = pk_name[1][0]
-        
+            idx += 1
+
         return True, inout_tableNameToMenuIdList, inout_tabColNameToValAssRowList, inout_tableNameToPKeyNameList
     
     def valAssColumnValidate(self, 
@@ -1963,71 +1970,6 @@ class SubValueAutoReg():
         
         return True, inout_vars_attr
 
-    def getTemplateVarList(self, WS_DB):
-        """
-        代入値自動登録とパラメータシートから具体値に設定されているTPF変数名を抜出す
-        
-        Arguments:
-            WS_DB: WorkspaceDBインスタンス
-
-        Returns:
-            value_list: 抽出した変数リスト
-        """
-        
-        value_list = {}
-        sql = " SELECT "
-        sql += "  MOVEMENT_ID, "
-        sql += "  MVMT_VAR_LINK_ID "
-        sql += "  FROM T_ANSR_VALUE_AUTOREG "
-        sql += "  WHERE DISUSE_FLAG ='0' "
-        
-        data_list = WS_DB.sql_execute(sql)
-        
-        for row in data_list:
-            # 変数名
-            sql = "SELECT VARS_NAME FROM V_ANSR_VAL_VARS_LINK WHERE MVMT_VAR_LINK_ID = " + row['MVMT_VAR_LINK_ID']
-
-            data_list = WS_DB.sql_execute(sql, [])
-            for data in data_list:
-                vars_name = data['VARS_NAME']
-                ret = vars_name.find('TPF_')
-            if ret == 0:
-                # テンプレート変数が記述されていることを記録
-                value_list[row['MOVEMENT_ID']] = {}
-                value_list[row['MOVEMENT_ID']] = {'TPF_VAR_NAME': vars_name}
-            else:
-                value_list[row['MOVEMENT_ID']] = {'TPF_VAR_NAME': ""}
-        
-        return value_list
-    
-    def getTargetHostList(self, WS_DB):
-        """
-        代入値自動登録とパラメータシートから具体値に設定されている作業対象ホストを抜出す
-        
-        Arguments:
-            WS_DB: WorkspaceDBインスタンス
-
-        Returns:
-            value_list: 抽出した変数リスト
-        """
-        
-        value_list = {}
-        
-        sql = " SELECT "
-        sql += "  OPERATION_ID, "
-        sql += "  MOVEMENT_ID, "
-        sql += "  SYSTEM_ID "
-        sql += "  FROM  T_ANSR_TGT_HOST "
-        sql += "  WHERE DISUSE_FLAG ='0' "
-        
-        data_list = WS_DB.sql_execute(sql)
-        
-        for row in data_list:
-            value_list[row['MOVEMENT_ID']] = {}
-            value_list[row['MOVEMENT_ID']] = {row['OPERATION_ID']: row['SYSTEM_ID']}
-        
-        return value_list
-
     def extract_tpl_vars(self, var_extractor, varsAssRecord, template_list, host_list):
 
         # 処理対象外のデータかを判定
@@ -2038,7 +1980,7 @@ class SubValueAutoReg():
 
         movement_id = varsAssRecord['MOVEMENT_ID']
         vars_line_array = [] # [{行番号:変数名}, ...]
-        is_success, vars_line_array = var_extractor.SimpleFillterVerSearch("TPL_", varsAssRecord['VARS_ENTRY'], vars_line_array, [], [])
+        is_success, vars_line_array = var_extractor.SimpleFillterVerSearch("TPF_", varsAssRecord['VARS_ENTRY'], vars_line_array, [], [])
         if len(vars_line_array) == 1:
             if movement_id not in template_list:
                 template_list[movement_id] = {}
