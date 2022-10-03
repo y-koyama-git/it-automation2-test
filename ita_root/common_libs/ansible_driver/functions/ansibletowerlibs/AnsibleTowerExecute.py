@@ -15,6 +15,7 @@
 
 from flask import g
 
+from common_libs.common.util import get_timestamp
 from common_libs.ansible_driver.classes.AnscConstClass import AnscConst
 from common_libs.ansible_driver.classes.gitlab import GitLabAgent
 from common_libs.ansible_driver.classes.ansibletowerlibs.RestApiCaller import RestApiCaller
@@ -204,15 +205,20 @@ def AnsibleTowerExecution(
                 toProcessRow['LAST_UPDATE_USER'] = db_access_user_id
                 if process_was_scrammed:
                     # 緊急停止時
+                    toProcessRow['TIME_START'] = get_timestamp()
+                    toProcessRow['TIME_END'] = get_timestamp()
                     toProcessRow['STATUS_ID'] = AnscConst.SCRAM
 
                 elif process_has_error:
                     # 異常時
+                    toProcessRow['TIME_START'] = get_timestamp()
+                    toProcessRow['TIME_END'] = get_timestamp()
                     toProcessRow['STATUS_ID'] = AnscConst.FAILURE
                     status = AnscConst.FAILURE
 
                 else:
                     # 正常時
+                    toProcessRow['TIME_START'] = get_timestamp()
                     toProcessRow['STATUS_ID'] = AnscConst.PROCESSING
                     status = AnscConst.PROCESSING
 
