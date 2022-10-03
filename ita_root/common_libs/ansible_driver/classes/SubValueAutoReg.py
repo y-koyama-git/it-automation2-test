@@ -973,15 +973,20 @@ class SubValueAutoReg():
                 for col_data in in_tabColNameToValAssRowList[table_name][col_name].values():
                     # IDcolumnの場合は参照元から具体値を取得する
                     if not col_data['REF_TABLE_NAME'] is None and not col_data['REF_TABLE_NAME'] == "":
-                        sql = "SELECT " + col_data['REF_COL_NAME'] + " "
-                        sql = sql + "FROM " + col_data['REF_TABLE_NAME'] + " "
-                        where = "WHERE " + col_data['REF_PKEY_NAME'] + "=%" + col_data['REF_PKEY_NAME'] + " AND DISUSE_FLAG='0'"
-                        count = WS_DB.table_count(col_data['REF_TABLE_NAME'], where, [col_val_key])
+                        tmp_col_val_key = json.loads(col_val_key).values()
+                        where = "WHERE " + col_data['REF_PKEY_NAME'] + " IN ("
+                        in_str = ""
+                        for value in tmp_col_val_key:
+                            in_str += "'" + value + "',"
+                        if in_str:
+                            in_str = in_str[:-1]
+                        where += in_str + ") AND DISUSE_FLAG = '0'"
+                        count = WS_DB.table_count(col_data['REF_TABLE_NAME'], where, [])
                         
                         col_val = ""
                         # 0件ではない場合
                         if not count == 0:
-                            data_list = WS_DB.table_select(col_data['REF_TABLE_NAME'], where, [col_val_key])
+                            data_list = WS_DB.table_select(col_data['REF_TABLE_NAME'], where, [])
                             for tgt_row in data_list:
                                 col_val = tgt_row[col_data['REF_COL_NAME']]
                                 # TPF/CPF変数カラム判定
@@ -1113,7 +1118,7 @@ class SubValueAutoReg():
                                             in_col_list['MVMT_VAR_LINK_ID'],
                                             in_col_list['COL_SEQ_COMBINATION_ID'],
                                             in_col_list['ASSIGN_SEQ'],
-                                            col_name,
+                                            in_col_val,
                                             in_col_row_id,
                                             in_col_class,
                                             in_col_filepath,
@@ -1754,6 +1759,7 @@ class SubValueAutoReg():
 
         inout_tableNameToMenuIdList = {}
         inout_tabColNameToValAssRowList = {}
+        idx = 0
         for data in data_list:
             # CMDB代入値紐付メニューが廃止されているか判定
             if data['TBL_DISUSE_FLAG'] != '0':
@@ -1849,9 +1855,11 @@ class SubValueAutoReg():
             if data['COLUMN_CLASS'] == 'PasswordColumn':
                 value_sensitive_flg = AnscConst.DF_SENSITIVE_ON
             
-            inout_tabColNameToValAssRowList[data['TABLE_NAME']] = {}
-            inout_tabColNameToValAssRowList[data['TABLE_NAME']][data['COL_NAME']] = {}
-            inout_tabColNameToValAssRowList[data['TABLE_NAME']][data['COL_NAME']]['data'] = {
+            if data['TABLE_NAME'] not in inout_tabColNameToValAssRowList:
+                inout_tabColNameToValAssRowList[data['TABLE_NAME']] = {}
+            if data['COL_NAME'] not in inout_tabColNameToValAssRowList[data['TABLE_NAME']]:
+                inout_tabColNameToValAssRowList[data['TABLE_NAME']][data['COL_NAME']] = {}
+            inout_tabColNameToValAssRowList[data['TABLE_NAME']][data['COL_NAME']][idx] = {
                                                                             'COLUMN_ID': data['COLUMN_ID'],
                                                                             'COL_TYPE': data['COL_TYPE'],
                                                                             'COLUMN_CLASS': data['COLUMN_CLASS'],
@@ -1875,7 +1883,8 @@ class SubValueAutoReg():
             pk_name = WS_DB.table_columns_get(data['TABLE_NAME'])
             inout_tableNameToPKeyNameList[data['TABLE_NAME']] = {}
             inout_tableNameToPKeyNameList[data['TABLE_NAME']] = pk_name[1][0]
-        
+            idx += 1
+
         return True, inout_tableNameToMenuIdList, inout_tabColNameToValAssRowList, inout_tableNameToPKeyNameList
     
     def valAssColumnValidate(self, 
