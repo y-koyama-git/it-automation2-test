@@ -657,7 +657,7 @@ class Column():
                         
             else:
                 # 通常のカラムの場合
-                where_str = " where `{}` = %s ".format(self.col_name)
+                where_str = " WHERE `DISUSE_FLAG` = 0 AND `{}` = %s ".format(self.col_name)
                 bind_value_list = [val]
                 
                 if 'uuid' in option:
