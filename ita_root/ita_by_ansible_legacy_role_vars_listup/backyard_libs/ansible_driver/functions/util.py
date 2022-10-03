@@ -55,9 +55,14 @@ def extract_variable_for_movement(mov_records, mov_matl_lnk_records, registerd_r
         # ロール変数の追加
         if matl_lnk['ROLE_ID'] in key_convert_dict:
             role_varmgr_key = key_convert_dict[matl_lnk['ROLE_ID']]
-            role_varmgr = role_varmgr_dict[role_varmgr_key]
 
-            mov_vars_mgr.merge_variable_list(role_varmgr.export_var_list())
+            if role_varmgr_key in role_varmgr_dict:
+                role_varmgr = role_varmgr_dict[role_varmgr_key]
+                mov_vars_mgr.merge_variable_list(role_varmgr.export_var_list())
+            else:
+                # データ不整合（ロールパッケージ管理のVAR_STRUCT_ANAL_JSON_STRINGカラム内 "Role_name_list" に無いロールがMovementロール紐づけに存在）
+                g.applogger.debug("Data mismatch between role_package table(json_string column) and material_link table.")
+
         else:
             # データ不整合（ロール名管理に無いデータがMovementロール紐づけに存在）
             g.applogger.debug("Data mismatch between role_name table and material_link table.")

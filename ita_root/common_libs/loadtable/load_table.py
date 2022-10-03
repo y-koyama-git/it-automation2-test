@@ -1780,7 +1780,7 @@ class loadTable():
                             if mode in ['input']:
                                 if col_val is not None:
                                     objcolumn = self.get_columnclass(rest_key)
-                                    col_val = util.ky_decrypt(col_val)    # noqa: F405
+                                    col_val = util.ky_encrypt(col_val)    # noqa: F405
                             else:
                                 col_val = None
                     else:

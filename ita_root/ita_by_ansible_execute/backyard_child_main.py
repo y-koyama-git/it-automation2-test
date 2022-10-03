@@ -50,7 +50,6 @@ def backyard_child_main(organization_id, workspace_id):
     """
     # コマンドラインから引数を受け取る["自身のファイル名", "organization_id", "workspace_id", …, …]
     args = sys.argv
-    # print(args)
     execution_no = args[3]
     driver_id = args[4]
 
@@ -147,12 +146,12 @@ def main_logic(wsDb: DBConnectWs, execution_no, driver_id):  # noqa: C901
     # 		代入値自動登録とパラメータシートからデータを抜く
     # 		該当のオペレーション、Movementのデータを代入値管理に登録
     # 一時的に呼ばないようにパッチ
-    # comment out sub_value_auto_reg = SubValueAutoReg()
-    # comment out try:
-    # comment out     sub_value_auto_reg.GetDataFromParameterSheet("1", execute_data["OPERATION_ID"], execute_data["MOVEMENT_ID"], execution_no, wsDb)
-    # comment out except ValidationException as e:
-    # comment out     err_msg = g.appmsg.get_log_message(e)
-    # comment out     return False, err_msg
+    sub_value_auto_reg = SubValueAutoReg()
+    try:
+        sub_value_auto_reg.GetDataFromParameterSheet("1", execute_data["OPERATION_ID"], execute_data["MOVEMENT_ID"], execution_no, wsDb)
+    except ValidationException as e:
+        err_msg = g.appmsg.get_log_message(e)
+        return False, err_msg
 
     # 実行モードが「パラメータ確認」の場合は終了
     if run_mode == ansc_const.CHK_PARA:
@@ -666,9 +665,7 @@ def call_CreateAnsibleExecFiles(ansdrv: CreateAnsibleExecFiles, execute_data, dr
         return False, g.appmsg.get_log_message("BKY-00004", ["CreateAnsibleExecFiles.AnsibleEnginVirtualenvPathCheck", "error occured"])
 
     result = ansdrv.getDBHostList(
-        # 一時的なパッチ
-        # comment out execution_no,
-        "EXE01",
+        execution_no,
         movement_id,
         operation_id,
         hostlist,
@@ -723,9 +720,7 @@ def call_CreateAnsibleExecFiles(ansdrv: CreateAnsibleExecFiles, execute_data, dr
         # データベースから変数情報を取得する。
         #   $host_vars:        変数一覧返却配列
         #                      [ホスト名(IP)][ 変数名 ]=>具体値
-                                         # 一時的なパッチ
-        result = ansdrv.getDBRoleVarList(# comment out execution_no,
-                                         "EXE01",
+        result = ansdrv.getDBRoleVarList(execution_no,
                                          movement_id, operation_id, host_vars, MultiArray_vars_list, All_vars_list)
         retBool, host_vars, MultiArray_vars_list, All_vars_list = result
         if retBool is False:
@@ -991,7 +986,6 @@ def getJobTemplateProperty(wsDb):
 
 def makeJobTemplateProperty(key_string, property_type, param_arr, err_msg_arr, excist_list, tag_skip_value_key, verbose_cnt):
     res_retBool = True
-    err_msg_arr = []
 
     for param_string in param_arr:
         chk_param_string = '-' + param_string + ' '
@@ -1017,13 +1011,13 @@ def makeJobTemplateProperty(key_string, property_type, param_arr, err_msg_arr, e
                     tag_skip_value_key.append(property_arr[1].strip())
 
             elif property_type == ansc_const.DF_JobTemplateVerbosityProperty:
-                property_arr = re.split(r'^(v)*', param_string)
-                if property_arr[1] and len(property_arr[1].strip()) != 0:
-                    err_msg_arr.append(g.appmsg.get_log_message("MSG-10555", [chk_param_string]))
-                    res_retBool = False
+                # v以外の文字列があったらエラーにする
+                for ch in param_string.strip():
+                    if ch != 'v':
+                        err_msg_arr.append(g.appmsg.get_log_message("MSG-10555", [chk_param_string]))
+                        res_retBool = False
                 else:
                     verbose_cnt = verbose_cnt + len(param_string.strip())
-
             elif property_type == ansc_const.DF_JobTemplatebooleanTrueProperty:
                 if property_arr[1] and len(property_arr[1]).strip() != 0:
                     err_msg_arr.append(g.appmsg.get_log_message("MSG-10555", [chk_param_string]))

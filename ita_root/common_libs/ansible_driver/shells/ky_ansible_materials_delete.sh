@@ -59,7 +59,7 @@ if [ "${RAS_FILE_PASSWD}" != "undefine" ]; then
     exit 100
   fi
   # expect
-  expect ${BASE_DIR}/backyards/ansible_driver/ky_ansible_ssh_add.exp 1>/dev/null 2>>/dev/stderr
+  expect ${BASE_DIR}/common_libs/ansible_driver/shells/ky_ansible_ssh_add.exp 1>/dev/null 2>>/dev/stderr
   EXIT_CODE=$?
   if [ ${EXIT_CODE}  -ne 0 ]; then
     # passphrase不正
@@ -76,7 +76,7 @@ if [ "${RAS_FILE_PASSWD}" != "undefine" ]; then
     exit 100
   fi
 fi
-expect ${BASE_DIR}/backyards/ansible_driver/ky_ansible_materials_delete.exp
+expect ${BASE_DIR}/common_libs/ansible_driver/shells/ky_ansible_materials_delete.exp
 RET_CODE=$?
 if [ "${RAS_FILE_PASSWD}" != "undefine" ]; then
   eval `ssh-agent -k` 1>/dev/null
