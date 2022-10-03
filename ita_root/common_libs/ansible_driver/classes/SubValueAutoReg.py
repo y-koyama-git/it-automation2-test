@@ -228,23 +228,6 @@ class SubValueAutoReg():
             lv_phoLinkList[varsAssRecord['OPERATION_ID']] = {}
             lv_phoLinkList[varsAssRecord['OPERATION_ID']][varsAssRecord['MOVEMENT_ID']] = {}
             lv_phoLinkList[varsAssRecord['OPERATION_ID']][varsAssRecord['MOVEMENT_ID']][varsAssRecord['SYSTEM_ID']] = {}
-            
-            
-        # 代入値管理から不要なデータを削除する
-        # トレースメッセージ
-        traceMsg = g.appmsg.get_api_message("MSG-10809")
-        frame = inspect.currentframe().f_back
-        g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-        
-        ret = self.deleteVarsAssign(lv_VarsAssignRecodes, execution_no, WS_DB)
-        if ret == 0:
-            error_flag = 1
-            raise ValidationException("MSG-10372")
-        
-        ret = self.deleteVarsAssign(lv_ArryVarsAssignRecodes, execution_no, WS_DB)
-        if ret == 0:
-            error_flag = 1
-            raise ValidationException("MSG-10372")
         
         del lv_tableNameToMenuIdList
         del lv_VarsAssignRecodes
@@ -286,17 +269,6 @@ class SubValueAutoReg():
                     if ret[0] == 0:
                         error_flag = 1
                         raise ValidationException("MSG-10373")
-        
-        # 作業対象ホストから不要なデータを削除する
-        # トレースメッセージ
-        traceMsg = g.appmsg.get_api_message("MSG-10811")
-        frame = inspect.currentframe().f_back
-        g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-        
-        ret = self.deletePhoLink(lv_PhoLinkRecodes, execution_no, WS_DB)
-        if ret == 0:
-            error_flag = 1
-            raise ValidationException("MSG-10374")
         
         del lv_phoLinkList
         del lv_PhoLinkRecodes
@@ -343,91 +315,6 @@ class SubValueAutoReg():
     
     def addStg1PhoLink(self, in_phoLinkData, in_PhoLinkRecodes, execution_no, WS_DB):
         """
-        作業対象ホストの全データ読込
-        
-        Arguments:
-            in_phoLinkData: 作業対象ホスト更新情報配列
-            in_PhoLinkRecodes: 作業対象ホストの全データ配列
-            WS_DB: WorkspaceDBインスタンス
-
-        Returns:
-            is success:(bool)
-            in_PhoLinkRecodes: 作業対象ホストの全データ配列
-        """
-        global strCurTablePhoLnk
-        global strJnlTablePhoLnk
-        global strSeqOfCurTablePhoLnk
-        global strSeqOfJnlTablePhoLnk
-        global arrayConfigOfPhoLnk
-        global arrayValueTmplOfPhoLnk
-        
-        db_valautostup_user_id = g.USER_ID
-        
-        key = in_phoLinkData["OPERATION_ID"] + "_"
-        key += in_phoLinkData["MOVEMENT_ID"] + "_"
-        key += in_phoLinkData["SYSTEM_ID"] + "_0"
-        
-        objmenu = load_table.loadTable(WS_DB, "target_host_ansible_role")
-        
-        if key not in in_PhoLinkRecodes:
-            # 廃止レコードを復活または新規レコード追加
-            ret = self.addStg2PhoLink(in_phoLinkData, in_PhoLinkRecodes, execution_no, WS_DB)
-            in_PhoLinkRecodes = ret[1]
-            return ret[0], in_PhoLinkRecodes
-        else:
-            tgt_row = in_PhoLinkRecodes[key]
-            # 同一なので処理終了
-            del in_PhoLinkRecodes[key]
-            
-            # 最終更新者が自分でない場合、更新処理はスキップする
-            if not tgt_row["LAST_UPDATE_USER"] == db_valautostup_user_id:
-                # トレースメッセージ
-                traceMsg = g.appmsg.get_api_message("MSG-10828", [tgt_row['PHO_LINK_ID']])
-                frame = inspect.currentframe().f_back
-                g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-                
-                # 更新処理はスキップ
-                return True, in_PhoLinkRecodes
-            
-            # トレースメッセージ
-            traceMsg = g.appmsg.get_api_message("MSG-10847", [tgt_row['PHO_LINK_ID'],
-                                                        tgt_row['OPERATION_ID'],
-                                                        tgt_row['MOVEMENT_ID'],
-                                                        tgt_row['SYSTEM_ID']])
-            frame = inspect.currentframe().f_back
-            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-            
-            tgt_row['DISUSE_FLAG'] = "0"
-            tgt_row['LAST_UPDATE_USER'] = db_valautostup_user_id
-            
-            tgt_row = self.getLoadtableRegisterValue(tgt_row, False, WS_DB)
-            
-            parameter = {
-                "operation": tgt_row['OPERATION_NAME'],
-                "execution_no": execution_no,
-                "movement": tgt_row['MOVEMENT_NAME'],
-                "host": tgt_row['HOST_NAME'],
-                "discard": tgt_row['DISUSE_FLAG'],
-                "remarks": tgt_row['NOTE'],
-                "last_update_date_time": str(tgt_row['LAST_UPDATE_TIMESTAMP']).replace('-', '/'),
-                "last_updated_user": tgt_row['LAST_UPDATE_USER']
-            }
-
-            parameters = {
-                "parameter": parameter,
-                "file": {},
-                "type": "Update"
-            }
-            retAry = objmenu.exec_maintenance(parameters, tgt_row['PHO_LINK_ID'], "", False, False)
-            
-            result = retAry[0]
-            if result is False:
-                raise AppException("499-00701", [retAry], [retAry])
-        
-        return True, in_PhoLinkRecodes
-
-    def addStg2PhoLink(self, in_phoLinkData, in_PhoLinkRecodes, execution_no, WS_DB):
-        """
         作業対象ホストの廃止レコードを復活または新規レコード追加
         
         Arguments:
@@ -455,159 +342,45 @@ class SubValueAutoReg():
         key += in_phoLinkData["SYSTEM_ID"] + "_1"
         
         objmenu = load_table.loadTable(WS_DB, "target_host_ansible_role")
+        tgt_row = arrayValue
         
-        if key not in in_PhoLinkRecodes:
-            action = "INSERT"
-            tgt_row = arrayValue
-            
-            # トレースメッセージ
-            traceMsg = g.appmsg.get_api_message("MSG-10821", [in_phoLinkData['OPERATION_ID'], in_phoLinkData["MOVEMENT_ID"], in_phoLinkData["SYSTEM_ID"]])
-            frame = inspect.currentframe().f_back
-            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-        else:
-            # 廃止なので復活する。
-            action = "UPDATE"
-            tgt_row = in_PhoLinkRecodes[key]
-            
-            del in_PhoLinkRecodes[key]
-            
-            # トレースメッセージ
-            traceMsg = g.appmsg.get_api_message("MSG-10822", [in_phoLinkData['OPERATION_ID'], in_phoLinkData["MOVEMENT_ID"], in_phoLinkData["SYSTEM_ID"]])
-            frame = inspect.currentframe().f_back
-            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
+        # 更新対象の作業対象ホスト管理主キー値を退避
+        inout_phoLinkId = str(WS_DB._uuid_create())
         
-        if action == "INSERT":
-            # 更新対象の作業対象ホスト管理主キー値を退避
-            inout_phoLinkId = str(WS_DB._uuid_create())
-            
-            # 登録する情報設定
-            tgt_row['PHO_LINK_ID'] = inout_phoLinkId
-            tgt_row['OPERATION_ID'] = in_phoLinkData['OPERATION_ID']
-            tgt_row['MOVEMENT_ID'] = in_phoLinkData['MOVEMENT_ID']
-            tgt_row['SYSTEM_ID'] = in_phoLinkData['SYSTEM_ID']
+        # 登録する情報設定
+        tgt_row['PHO_LINK_ID'] = inout_phoLinkId
+        tgt_row['OPERATION_ID'] = in_phoLinkData['OPERATION_ID']
+        tgt_row['MOVEMENT_ID'] = in_phoLinkData['MOVEMENT_ID']
+        tgt_row['SYSTEM_ID'] = in_phoLinkData['SYSTEM_ID']
         
         tgt_row['DISUSE_FLAG'] = "0"
         tgt_row['LAST_UPDATE_USER'] = db_valautostup_user_id
         
         tgt_row = self.getLoadtableRegisterValue(tgt_row, False, WS_DB)
-        if action == "INSERT":
-            parameter = {
-                "item_no": tgt_row['PHO_LINK_ID'],
-                "operation": tgt_row['OPERATION_NAME'],
-                "execution_no": execution_no,
-                "movement": tgt_row['MOVEMENT_NAME'],
-                "host": tgt_row['HOST_NAME'],
-                "discard": tgt_row['DISUSE_FLAG'],
-                "remarks": tgt_row['NOTE'],
-                "last_update_date_time": str(tgt_row['LAST_UPDATE_TIMESTAMP']).replace('-', '/'),
-                "last_updated_user": tgt_row['LAST_UPDATE_USER']
-            }
+        parameter = {
+            "item_no": tgt_row['PHO_LINK_ID'],
+            "operation": tgt_row['OPERATION_NAME'],
+            "execution_no": execution_no,
+            "movement": tgt_row['MOVEMENT_NAME'],
+            "host": tgt_row['HOST_NAME'],
+            "discard": tgt_row['DISUSE_FLAG'],
+            "remarks": tgt_row['NOTE'],
+            "last_update_date_time": str(tgt_row['LAST_UPDATE_TIMESTAMP']).replace('-', '/'),
+            "last_updated_user": tgt_row['LAST_UPDATE_USER']
+        }
 
-            parameters = {
-                "parameter": parameter,
-                "file": {},
-                "type": "Register"
-            }
-            retAry = objmenu.exec_maintenance(parameters, "", "", False, False)
+        parameters = {
+            "parameter": parameter,
+            "file": {},
+            "type": "Register"
+        }
+        retAry = objmenu.exec_maintenance(parameters, "", "", False, False)
             
-            result = retAry[0]
-            if result is False:
-                raise AppException("499-00701", [retAry], [retAry])
-        elif action == "UPDATE":
-            parameter = {
-                "operation": tgt_row['OPERATION_NAME'],
-                "execution_no": execution_no,
-                "movement": tgt_row['MOVEMENT_NAME'],
-                "host": tgt_row['HOST_NAME'],
-                "discard": tgt_row['DISUSE_FLAG'],
-                "remarks": tgt_row['NOTE'],
-                "last_update_date_time": str(tgt_row['LAST_UPDATE_TIMESTAMP']).replace('-', '/'),
-                "last_updated_user": tgt_row['LAST_UPDATE_USER']
-            }
-
-            parameters = {
-                "parameter": parameter,
-                "file": {},
-                "type": "Update"
-            }
-            retAry = objmenu.exec_maintenance(parameters, tgt_row['PHO_LINK_ID'], "", False, False)
-            
-            result = retAry[0]
-            if result is False:
-                raise AppException("499-00701", [retAry], [retAry])
+        result = retAry[0]
+        if result is False:
+            raise AppException("499-00701", [retAry], [retAry])
         
         return True, in_PhoLinkRecodes
-    
-    def deletePhoLink(self, in_PhoLinkRecodes, execution_no, WS_DB):
-        """
-        作業管理対象ホスト管理から不要なレコードを廃止
-        
-        Arguments:
-            in_PhoLinkRecodes: 不要な作業管理対象ホストの配列
-            WS_DB: WorkspaceDBインスタンス
-
-        Returns:
-            is success:(bool)
-        """
-        global strCurTablePhoLnk
-        global strJnlTablePhoLnk
-        global strSeqOfCurTablePhoLnk
-        global strSeqOfJnlTablePhoLnk
-        global arrayConfigOfPhoLnk
-        global arrayValueTmplOfPhoLnk
-        
-        db_valautostup_user_id = g.USER_ID
-        
-        objmenu = load_table.loadTable(WS_DB, "target_host_ansible_role")
-        
-        for key, tgt_row in in_PhoLinkRecodes.items():
-            if tgt_row['DISUSE_FLAG'] == '1':
-                # 廃止レコードはなにもしない。
-                continue
-            
-            # トレースメッセージ
-            traceMsg = g.appmsg.get_api_message("MSG-10823", [tgt_row['PHO_LINK_ID']])
-            frame = inspect.currentframe().f_back
-            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-            
-            # 最終更新者が自分でない場合、廃止処理はスキップする。
-            if not tgt_row['LAST_UPDATE_USER'] == db_valautostup_user_id:
-                # トレースメッセージ
-                traceMsg = g.appmsg.get_api_message("MSG-10828", [tgt_row['PHO_LINK_ID']])
-                frame = inspect.currentframe().f_back
-                g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-                
-                #更新処理はスキップ
-                continue
-            
-            tgt_row['DISUSE_FLAG'] = "1"
-            tgt_row['LAST_UPDATE_USER'] = db_valautostup_user_id
-            
-            tgt_row = self.getLoadtableRegisterValue(tgt_row, False, WS_DB)
-            
-            parameter = {
-                "operation": tgt_row['OPERATION_NAME'],
-                "execution_no": execution_no,
-                "movement": tgt_row['MOVEMENT_NAME'],
-                "host": tgt_row['HOST_NAME'],
-                "discard": tgt_row['DISUSE_FLAG'],
-                "remarks": tgt_row['NOTE'],
-                "last_update_date_time": str(tgt_row['LAST_UPDATE_TIMESTAMP']).replace('-', '/'),
-                "last_updated_user": tgt_row['LAST_UPDATE_USER']
-            }
-
-            parameters = {
-                "parameter": parameter,
-                "file": {},
-                "type": "Update"
-            }
-            retAry = objmenu.exec_maintenance(parameters, tgt_row['PHO_LINK_ID'], "", False, False)
-            
-            result = retAry[0]
-            if result is False:
-                raise AppException("499-00701", [retAry], [retAry])
-            
-            return True
     
     def createQuerySelectCMDB(self, in_tableNameToMenuIdList, in_tabColNameToValAssRowList, in_tableNameToPKeyNameList):
         """
@@ -694,6 +467,7 @@ class SubValueAutoReg():
         
         sqlUtnBody = "SELECT "
         sqlUtnBody += " ASSIGN_ID, "
+        sqlUtnBody += " EXECUTION_NO, "
         sqlUtnBody += " OPERATION_ID, "
         sqlUtnBody += " MOVEMENT_ID, "
         sqlUtnBody += " SYSTEM_ID, "
@@ -727,7 +501,8 @@ class SubValueAutoReg():
                 row['VARS_ENTRY_FILE_MD5'] = self.md5_file(col_filepath)
                 
             if row["COL_SEQ_COMBINATION_ID"] is None or len(row["COL_SEQ_COMBINATION_ID"]) == 0:
-                key = row["OPERATION_ID"] + "_"
+                key = row["EXECUTION_NO"] + "_"
+                key += row["OPERATION_ID"] + "_"
                 key += row["MOVEMENT_ID"] + "_"
                 key += row["SYSTEM_ID"] + "_"
                 key += row["MVMT_VAR_LINK_ID"] + "_"
@@ -735,7 +510,8 @@ class SubValueAutoReg():
                 key += str(row["ASSIGN_SEQ"]) + "_"
                 key += row["DISUSE_FLAG"]
             else:
-                key = row["OPERATION_ID"] + "_"
+                key = row["EXECUTION_NO"] + "_"
+                key += row["OPERATION_ID"] + "_"
                 key += row["MOVEMENT_ID"] + "_"
                 key += row["SYSTEM_ID"] + "_"
                 key += row["MVMT_VAR_LINK_ID"] + "_"
@@ -850,132 +626,74 @@ class SubValueAutoReg():
         
         global vg_FileUPloadColumnBackupFilePath
         global db_update_flg
+        global arrayValueTmplOfVarAss
+        
+        arrayValue = arrayValueTmplOfVarAss
         db_valautostup_user_id = g.USER_ID
-        
-        key = in_varsAssignList["OPERATION_ID"] + "_"
-        key += in_varsAssignList["MOVEMENT_ID"] + "_"
-        key += in_varsAssignList["SYSTEM_ID"] + "_"
-        key += in_varsAssignList["MVMT_VAR_LINK_ID"] + "_" 
-        key += "" + "_"
-        key += str(in_varsAssignList["ASSIGN_SEQ"]) + "_0"
-        
+
         objmenu = load_table.loadTable(WS_DB, "subst_value_list_ansible_role")
         
-        hit_flg = False
-        action = ""
+        tgt_row = arrayValue
+        # 登録する情報設定
+        tgt_row['ASSIGN_ID'] = str(WS_DB._uuid_create())
+        tgt_row['OPERATION_ID'] = in_varsAssignList['OPERATION_ID']
+        tgt_row['MOVEMENT_ID'] = in_varsAssignList['MOVEMENT_ID']
+        tgt_row['SYSTEM_ID'] = in_varsAssignList['SYSTEM_ID']
+        tgt_row['MVMT_VAR_LINK_ID'] = in_varsAssignList['MVMT_VAR_LINK_ID']
+        tgt_row['ASSIGN_SEQ'] = in_varsAssignList['ASSIGN_SEQ']
         
-        val_list = {}
-        
-        # 代入値管理に登録されているか判定
-        if key in in_VarsAssignRecodes:
-            # 具体値が一致しているか判定
-            tgt_row = in_VarsAssignRecodes[key]
-            ret = self.chkSubstitutionValueListRecodedifference(tgt_row, in_varsAssignList)
-            diff = ret[0]
-            befFileDel = ret[1]
-            AftFileCpy = ret[2]
-            
-            if diff == 0:
-                # 代入値管理に必要なレコードを削除
-                del in_VarsAssignRecodes[key]
-                
-                # トレースメッセージ
-                traceMsg = g.appmsg.get_api_message("MSG-10815", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
-                                                            in_varsAssignList['MVMT_VAR_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
-                frame = inspect.currentframe().f_back
-                g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-                
-                return True, in_VarsAssignRecodes
-            else:
-                hit_flg = True
-                
-                # 具体値を退避
-                val_list = [in_varsAssignList['VARS_ENTRY'], in_VarsAssignRecodes[key]['VARS_ENTRY']]
-                del in_VarsAssignRecodes[key]
-                
-        # 代入値管理に有効レコードが未登録か判定
-        if hit_flg == 0:
-            # 廃止レコードの復活または新規レコード追加する。
-            ret = self.addStg2StdListVarsAssign(in_varsAssignList, in_tableNameToMenuIdList, in_VarsAssignRecodes, execution_no, WS_DB)
-        else:
-            action = "UPDATE"
-            
-            # 最終更新者が自分でない場合、更新処理はスキップする
-            if not tgt_row['LAST_UPDATE_USER'] == db_valautostup_user_id:
-                # トレースメッセージ
-                traceMsg = g.appmsg.get_api_message("MSG-10835", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
-                                                            in_varsAssignList['MVMT_VAR_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
-                frame = inspect.currentframe().f_back
-                g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-                
-                # 更新処理はスキップ
-                return True
-            
-            # トレースメッセージ
-            traceMsg = g.appmsg.get_api_message("MSG-10814", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
-                                                        in_varsAssignList['MVMT_VAR_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
-            frame = inspect.currentframe().f_back
-            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-            
-        VARS_ENTRY_USE_TPFVARS = "0"
         # 具体値にテンプレート変数が記述されているか判定
-        if type(val_list) is list:
-            for val in val_list:
-                ret = val.find('TPF_')
-                if ret == 0:
-                    # テンプレート変数が記述されていることを記録
-                    VARS_ENTRY_USE_TPFVARS = "1"
-                    db_update_flg = True
-                    break
-        else:
-            for val in val_list.values():
-                ret = val.find('TPF_')
-                if ret == 0:
-                    # テンプレート変数が記述されていることを記録
-                    VARS_ENTRY_USE_TPFVARS = "1"
-                    db_update_flg = True
-                    break
+        VARS_ENTRY_USE_TPFVARS = "0"
+        ret = in_varsAssignList['VARS_ENTRY'].find('TPF_')
+        if ret == 0:
+            # テンプレート変数が記述されていることを記録
+            VARS_ENTRY_USE_TPFVARS = "1"
+            db_update_flg = True
         
-        if action == "UPDATE":
-            tgt_row['VARS_ENTRY'] = in_varsAssignList['VARS_ENTRY']
-            tgt_row['COL_SEQ_COMBINATION_ID'] = in_varsAssignList['COL_SEQ_COMBINATION_ID']
+        # ロール管理ジャーナルに登録する情報設定
+        tgt_row['VARS_ENTRY'] = in_varsAssignList['VARS_ENTRY']
+        tgt_row['COL_SEQ_COMBINATION_ID'] = in_varsAssignList['COL_SEQ_COMBINATION_ID']
+        if in_varsAssignList['COL_FILEUPLOAD_PATH']:
             tgt_row["VARS_ENTRY_FILE"] = in_varsAssignList['VARS_ENTRY_FILE']
-            tgt_row["SENSITIVE_FLAG"] = in_varsAssignList['SENSITIVE_FLAG']
-            tgt_row["VARS_ENTRY_USE_TPFVARS"] = VARS_ENTRY_USE_TPFVARS
-            tgt_row['DISUSE_FLAG'] = "0"
-            tgt_row['LAST_UPDATE_USER'] = db_valautostup_user_id
-        
-            tgt_row = self.getLoadtableRegisterValue(tgt_row, True, WS_DB)
-            parameter = {
-                "execution_no": execution_no,
-                "operation": tgt_row['OPERATION_NAME'],
-                "movement": tgt_row['MOVEMENT_NAME'],
-                "host": tgt_row['HOST_NAME'],
-                "variable_name": tgt_row['VARS_NAME'],
-                "value": tgt_row['VARS_ENTRY'],
-                "sensitive_setting": tgt_row['FLAG_NAME'],
-                "substitution_order": tgt_row['ASSIGN_SEQ'],
-                "template_variables_used": tgt_row['VARS_ENTRY_USE_TPFVARS'],
-                "remarks": tgt_row['NOTE'],
-                "discard": tgt_row['DISUSE_FLAG'],
-                "last_update_date_time": str(tgt_row['LAST_UPDATE_TIMESTAMP']).replace('-', '/'),
-                "last_updated_user": tgt_row['LAST_UPDATE_USER']
-            }
+        else:
+            tgt_row["VARS_ENTRY_FILE"] = ""
+        tgt_row["SENSITIVE_FLAG"] = in_varsAssignList['SENSITIVE_FLAG']
+        tgt_row["VARS_ENTRY_USE_TPFVARS"] = VARS_ENTRY_USE_TPFVARS
+        tgt_row['DISUSE_FLAG'] = "0"
+        tgt_row['LAST_UPDATE_USER'] = db_valautostup_user_id
 
-            parameters = {
-                "parameter": parameter,
-                "type": "Update"
-            }
+        tgt_row = self.getLoadtableRegisterValue(tgt_row, True, WS_DB)
+        parameter = {
+            "item_no": tgt_row['ASSIGN_ID'],
+            "execution_no": execution_no,
+            "operation": tgt_row['OPERATION_NAME'],
+            "movement": tgt_row['MOVEMENT_NAME'],
+            "host": tgt_row['HOST_NAME'],
+            "variable_name": tgt_row['VARS_NAME'],
+            "value": tgt_row['VARS_ENTRY'],
+            "sensitive_setting": tgt_row['FLAG_NAME'],
+            "substitution_order": tgt_row['ASSIGN_SEQ'],
+            "template_variables_used": tgt_row['VARS_ENTRY_USE_TPFVARS'],
+            "remarks": tgt_row['NOTE'],
+            "discard": tgt_row['DISUSE_FLAG'],
+            "last_update_date_time": str(tgt_row['LAST_UPDATE_TIMESTAMP']).replace('-', '/'),
+            "last_updated_user": tgt_row['LAST_UPDATE_USER']
+        }
+
+        parameters = {
+            "parameter": parameter,
+            "type": "Register"
+        }
             
-            if not tgt_row['VARS_ENTRY_FILE'] == "":
-                parameter["file"] = "VARS_ENTRY_FILE"
-                parameters["file"] = {"vars_entry_file": tgt_row['VARS_ENTRY_FILE']}
+        if not tgt_row['VARS_ENTRY_FILE'] == "":
+            parameter["file"] = "VARS_ENTRY_FILE"
+            parameters["file"] = {"vars_entry_file": tgt_row['VARS_ENTRY_FILE']}
+                
+        retAry = objmenu.exec_maintenance(parameters, "", "", False, False)
             
-            retAry = objmenu.exec_maintenance(parameters, tgt_row['ASSIGN_ID'], "", False, False)
-            
-            result = retAry[0]
-            if result is False:
-                raise AppException("499-00701", [retAry], [retAry])
+        result = retAry[0]
+        if result is False:
+            raise AppException("499-00701", [retAry], [retAry])
         
         return True, in_VarsAssignRecodes
 
@@ -1011,344 +729,7 @@ class SubValueAutoReg():
         
         return diff, befFileDel, AftFileCpy
     
-    def addStg2StdListVarsAssign(self, in_varsAssignList, in_tableNameToMenuIdList, in_ArryVarsAssignRecodes, execution_no, WS_DB):
-        """
-        代入値管理（一般変数・複数具体値変数）の廃止レコードの復活またき新規レコード追加
-        
-        Arguments:
-            in_varsAssignList: 代入値管理更新情報配列
-            in_varsAssignList: テーブル名配列
-            in_ArryVarsAssignRecodes: 代入値管理の全テータ配列
-            WS_DB: WorkspaceDBインスタンス
-
-        Returns:
-            is success:(bool)
-            in_ArryVarsAssignRecodes: 代入値管理の全テータ配列
-        """
-
-        global arrayValueTmplOfVarAss
-        global vg_FileUPloadColumnBackupFilePath
-        global db_update_flg
-        
-        arrayValue = arrayValueTmplOfVarAss
-        db_valautostup_user_id = g.USER_ID
-        
-        key = in_varsAssignList["OPERATION_ID"] + "_"
-        key += in_varsAssignList["MOVEMENT_ID"] + "_"
-        key += in_varsAssignList["SYSTEM_ID"] + "_"
-        key += in_varsAssignList["MVMT_VAR_LINK_ID"] + "_" 
-        key += "" + "_"
-        key += str(in_varsAssignList["ASSIGN_SEQ"]) + "_1"
-        
-        objmenu = load_table.loadTable(WS_DB, "subst_value_list_ansible_role")
-
-        befFileDel = False
-        AftFileCpy = False
-        
-        # 代入値管理に登録されているか判定
-        if key not in in_ArryVarsAssignRecodes:
-            action = "INSERT"
-            tgt_row = arrayValue
-            
-            if in_varsAssignList['COL_CLASS'] == 'FileUploadColumn' and in_varsAssignList['REG_TYPE']  == 'Value':
-                in_varsAssignList['VARS_ENTRY_FILE'] = in_varsAssignList['VARS_ENTRY']
-                in_varsAssignList['VARS_ENTRY'] = ""
-                if not in_varsAssignList['VARS_ENTRY_FILE'] == "":
-                    AftFileCpy = True
-            else:
-                in_varsAssignList['VARS_ENTRY_FILE'] = ""
-            
-            # トレースメッセージ
-            traceMsg = g.appmsg.get_api_message("MSG-10812", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
-                                                            in_varsAssignList['MVMT_VAR_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
-            frame = inspect.currentframe().f_back
-            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-        else:
-            # 廃止レコードがあるので復活する。
-            action = "UPDATE"
-            tgt_row = in_ArryVarsAssignRecodes[key]
-            
-            ret = self.chkSubstitutionValueListRecodedifference(tgt_row, in_varsAssignList)
-            befFileDel = ret[1]
-            AftFileCpy = ret[2]
-            
-            del in_ArryVarsAssignRecodes[key]
-            
-            # トレースメッセージ
-            traceMsg = g.appmsg.get_api_message("MSG-10813", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
-                                                            in_varsAssignList['MVMT_VAR_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
-            frame = inspect.currentframe().f_back
-            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-        
-        if action == "INSERT":
-            
-            # 登録する情報設定
-            tgt_row['ASSIGN_ID'] = str(WS_DB._uuid_create())
-            tgt_row['OPERATION_ID'] = in_varsAssignList['OPERATION_ID']
-            tgt_row['MOVEMENT_ID'] = in_varsAssignList['MOVEMENT_ID']
-            tgt_row['SYSTEM_ID'] = in_varsAssignList['SYSTEM_ID']
-            tgt_row['MVMT_VAR_LINK_ID'] = in_varsAssignList['MVMT_VAR_LINK_ID']
-            tgt_row['ASSIGN_SEQ'] = in_varsAssignList['ASSIGN_SEQ']
-        
-        # 具体値にテンプレート変数が記述されているか判定
-        VARS_ENTRY_USE_TPFVARS = "0"
-        ret = in_varsAssignList['VARS_ENTRY'].find('TPF_')
-        if ret == 0:
-            # テンプレート変数が記述されていることを記録
-            VARS_ENTRY_USE_TPFVARS = "1"
-            db_update_flg = True
-        
-        # ロール管理ジャーナルに登録する情報設定
-        tgt_row['VARS_ENTRY'] = in_varsAssignList['VARS_ENTRY']
-        tgt_row['COL_SEQ_COMBINATION_ID'] = in_varsAssignList['COL_SEQ_COMBINATION_ID']
-        tgt_row["VARS_ENTRY_FILE"] = in_varsAssignList['VARS_ENTRY_FILE']
-        tgt_row["SENSITIVE_FLAG"] = in_varsAssignList['SENSITIVE_FLAG']
-        tgt_row["VARS_ENTRY_USE_TPFVARS"] = VARS_ENTRY_USE_TPFVARS
-        tgt_row['DISUSE_FLAG'] = "0"
-        tgt_row['LAST_UPDATE_USER'] = db_valautostup_user_id
-
-        tgt_row = self.getLoadtableRegisterValue(tgt_row, True, WS_DB)
-        if action == "INSERT":
-            parameter = {
-                "item_no": tgt_row['ASSIGN_ID'],
-                "execution_no": execution_no,
-                "operation": tgt_row['OPERATION_NAME'],
-                "movement": tgt_row['MOVEMENT_NAME'],
-                "host": tgt_row['HOST_NAME'],
-                "variable_name": tgt_row['VARS_NAME'],
-                "value": tgt_row['VARS_ENTRY'],
-                "sensitive_setting": tgt_row['FLAG_NAME'],
-                "substitution_order": tgt_row['ASSIGN_SEQ'],
-                "template_variables_used": tgt_row['VARS_ENTRY_USE_TPFVARS'],
-                "remarks": tgt_row['NOTE'],
-                "discard": tgt_row['DISUSE_FLAG'],
-                "last_update_date_time": str(tgt_row['LAST_UPDATE_TIMESTAMP']).replace('-', '/'),
-                "last_updated_user": tgt_row['LAST_UPDATE_USER']
-            }
-
-            parameters = {
-                "parameter": parameter,
-                "type":"Register"
-            }
-            
-            if not tgt_row['VARS_ENTRY_FILE'] == "":
-                parameter["file"] = "VARS_ENTRY_FILE"
-                parameters["file"] = {"vars_entry_file": tgt_row['VARS_ENTRY_FILE']}
-                
-            retAry = objmenu.exec_maintenance(parameters, "", "", False, False)
-            
-            result = retAry[0]
-            if result is False:
-                raise AppException("499-00701", [retAry], [retAry])
-        elif action == "UPDATE":
-            parameter = {
-                "execution_no": execution_no,
-                "operation": tgt_row['OPERATION_NAME'],
-                "movement": tgt_row['MOVEMENT_NAME'],
-                "host": tgt_row['HOST_NAME'],
-                "variable_name": tgt_row['VARS_NAME'],
-                "value": tgt_row['VARS_ENTRY'],
-                "sensitive_setting": tgt_row['FLAG_NAME'],
-                "substitution_order": tgt_row['ASSIGN_SEQ'],
-                "template_variables_used": tgt_row['VARS_ENTRY_USE_TPFVARS'],
-                "remarks": tgt_row['NOTE'],
-                "discard": tgt_row['DISUSE_FLAG'],
-                "last_update_date_time": str(tgt_row['LAST_UPDATE_TIMESTAMP']).replace('-', '/'),
-                "last_updated_user": tgt_row['LAST_UPDATE_USER']
-            }
-
-            parameters = {
-                "parameter": parameter,
-                "type": "Update"
-            }
-            
-            if not tgt_row['VARS_ENTRY_FILE'] == "":
-                parameter["file"] = "VARS_ENTRY_FILE"
-                parameters["file"] = {"vars_entry_file": tgt_row['VARS_ENTRY_FILE']}
-            
-            retAry = objmenu.exec_maintenance(parameters, tgt_row['ASSIGN_ID'], "", False, False)
-            
-            result = retAry[0]
-            if result is False:
-                raise AppException("499-00701", [retAry], [retAry])
-        
-        return True, in_ArryVarsAssignRecodes
-    
     def addStg1ArrayVarsAssign(self, in_varsAssignList, in_tableNameToMenuIdList, in_ArryVarsAssignRecodes, execution_no, WS_DB):
-        """
-        代入値管理（多次元配列変数）を更新する。
-        
-        Arguments:
-            in_varsAssignList: 代入値管理更新情報配列
-            in_tableNameToMenuIdList: テーブル名配列
-            in_ArryVarsAssignRecodes: 代入値管理の全テータ配列
-            WS_DB: WorkspaceDBインスタンス
-
-        Returns:
-            is success:(bool)
-            in_ArryVarsAssignRecodes: 代入値管理の全テータ配列
-        """
-        
-        global vg_FileUPloadColumnBackupFilePath
-        global db_update_flg
-
-        db_valautostup_user_id = g.USER_ID
-        
-        key = in_varsAssignList["OPERATION_ID"] + "_"
-        key += in_varsAssignList["MOVEMENT_ID"] + "_"
-        key += in_varsAssignList["SYSTEM_ID"] + "_"
-        key += in_varsAssignList["MVMT_VAR_LINK_ID"] + "_"
-        key += in_varsAssignList["COL_SEQ_COMBINATION_ID"] + "_"
-        key += str(in_varsAssignList["ASSIGN_SEQ"]) + "_0"
-        
-        objmenu = load_table.loadTable(WS_DB, "subst_value_list_ansible_role")
-        
-        val_list = {}
-        
-        hit_flg = False
-        # 代入値管理に登録されているか判定
-        if key in in_ArryVarsAssignRecodes:
-            # 具体値が一致しているか判定
-            tgt_row = in_ArryVarsAssignRecodes[key]
-            
-            ret = self.chkSubstitutionValueListRecodedifference(tgt_row, in_varsAssignList)
-            diff = ret[0]
-            befFileDel = ret[1]
-            AftFileCpy = ret[2]
-            
-            if diff == 0:
-                FREE_LOG = g.appmsg.get_api_message("MSG-10815", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
-                                                            in_varsAssignList['MVMT_VAR_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
-                frame = inspect.currentframe().f_back
-                g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + FREE_LOG)
-                
-                # 代入値管理に必要なレコードはリストから削除
-                del in_ArryVarsAssignRecodes[key]
-                return True
-            
-            hit_flg = True
-            
-            # 具体値を退避
-            val_list = {}
-            val_list[0] = in_ArryVarsAssignRecodes[key]['VARS_ENTRY']
-            val_list[1] = in_varsAssignList['VARS_ENTRY']
-            
-            # 代入値管理に必要なレコードはリストから削除
-            del in_ArryVarsAssignRecodes[key]
-            
-        # 代入値管理に有効レコードが未登録か判定
-        if hit_flg == 0:
-            # 廃止レコードの復活または新規レコード追加する。
-            return self.addStg2ArrayVarsAssign(in_varsAssignList, in_tableNameToMenuIdList, in_ArryVarsAssignRecodes, execution_no, WS_DB)
-        else:
-            action = "UPDATE"
-            
-            # 最終更新者が自分でない場合、更新処理はスキップする
-            if not tgt_row['LAST_UPDATE_USER'] == db_valautostup_user_id:
-                # トレースメッセージ
-                traceMsg = g.appmsg.get_api_message("MSG-10835", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
-                                                            in_varsAssignList['MVMT_VAR_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
-                frame = inspect.currentframe().f_back
-                g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-                
-                # 更新処理はスキップ
-                return True
-            
-            # トレースメッセージ
-            traceMsg = g.appmsg.get_api_message("MSG-10814", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
-                                                        in_varsAssignList['MVMT_VAR_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
-            frame = inspect.currentframe().f_back
-            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-            
-        VARS_ENTRY_USE_TPFVARS = "0"
-        # 具体値にテンプレート変数が記述されているか判定
-        for val in val_list.values():
-            ret = val.find('TPF_')
-            if ret == 0:
-                # テンプレート変数が記述されていることを記録
-                VARS_ENTRY_USE_TPFVARS = "1"
-                db_update_flg = True
-                break
-        
-        # ロール管理ジャーナルに登録する情報設定
-        tgt_row['VARS_ENTRY'] = in_varsAssignList['VARS_ENTRY']
-        tgt_row['COL_SEQ_COMBINATION_ID'] = in_varsAssignList['COL_SEQ_COMBINATION_ID']
-        tgt_row["VARS_ENTRY_FILE"] = in_varsAssignList['VARS_ENTRY_FILE']
-        tgt_row["SENSITIVE_FLAG"] = in_varsAssignList['SENSITIVE_FLAG']
-        tgt_row["VARS_ENTRY_USE_TPFVARS"] = VARS_ENTRY_USE_TPFVARS
-        tgt_row['DISUSE_FLAG'] = "0"
-        tgt_row['LAST_UPDATE_USER'] = db_valautostup_user_id
-        
-        tgt_row = self.getLoadtableRegisterValue(tgt_row, True, WS_DB)
-        if action == "INSERT":
-            parameter = {
-                "item_no": tgt_row['ASSIGN_ID'],
-                "execution_no": execution_no,
-                "operation": tgt_row['OPERATION_NAME'],
-                "movement": tgt_row['MOVEMENT_NAME'],
-                "host": tgt_row['HOST_NAME'],
-                "variable_name": tgt_row['VARS_NAME'],
-                "member_variable_name": tgt_row['COL_COMBINATION_MEMBER_ALIAS'],
-                "value": tgt_row['VARS_ENTRY'],
-                "sensitive_setting": tgt_row['FLAG_NAME'],
-                "substitution_order": tgt_row['ASSIGN_SEQ'],
-                "template_variables_used": tgt_row['VARS_ENTRY_USE_TPFVARS'],
-                "remarks": tgt_row['NOTE'],
-                "discard": tgt_row['DISUSE_FLAG'],
-                "last_update_date_time": str(tgt_row['LAST_UPDATE_TIMESTAMP']).replace('-', '/'),
-                "last_updated_user": tgt_row['LAST_UPDATE_USER']
-            }
-
-            parameters = {
-                "parameter": parameter,
-                "type": "Register"
-            }
-            
-            if not tgt_row['VARS_ENTRY_FILE'] == "":
-                parameter["file"] = "VARS_ENTRY_FILE"
-                parameters["file"] = {"vars_entry_file": tgt_row['VARS_ENTRY_FILE']}
-                
-            retAry = objmenu.exec_maintenance(parameters, "", "", False, False)
-            
-            result = retAry[0]
-            if result is False:
-                raise AppException("499-00701", [retAry], [retAry])
-        elif action == "UPDATE":
-            parameter = {
-                "execution_no": execution_no,
-                "operation": tgt_row['OPERATION_NAME'],
-                "movement": tgt_row['MOVEMENT_NAME'],
-                "host": tgt_row['HOST_NAME'],
-                "variable_name": tgt_row['VARS_NAME'],
-                "member_variable_name": tgt_row['COL_COMBINATION_MEMBER_ALIAS'],
-                "value": tgt_row['VARS_ENTRY'],
-                "sensitive_setting": tgt_row['FLAG_NAME'],
-                "substitution_order": tgt_row['ASSIGN_SEQ'],
-                "template_variables_used": tgt_row['VARS_ENTRY_USE_TPFVARS'],
-                "remarks": tgt_row['NOTE'],
-                "discard": tgt_row['DISUSE_FLAG'],
-                "last_update_date_time": str(tgt_row['LAST_UPDATE_TIMESTAMP']).replace('-', '/'),
-                "last_updated_user": tgt_row['LAST_UPDATE_USER']
-            }
-
-            parameters = {
-                "parameter": parameter,
-                "type":"Update"
-            }
-            
-            if not tgt_row['VARS_ENTRY_FILE'] == "":
-                parameter["file"] = "VARS_ENTRY_FILE"
-                parameters["file"] = {"vars_entry_file": tgt_row['VARS_ENTRY_FILE']}
-            
-            retAry = objmenu.exec_maintenance(parameters, tgt_row['ASSIGN_ID'], "", False, False)
-            
-            result = retAry[0]
-            if result is False:
-                raise AppException("499-00701", [retAry], [retAry])
-        
-        return True, in_ArryVarsAssignRecodes
-    
-    def addStg2ArrayVarsAssign(self, in_varsAssignList, in_tableNameToMenuIdList, in_ArryVarsAssignRecodes, execution_no, WS_DB):
         """
         代入値管理（多次元配列変数）の廃止レコードの復活またき新規レコード追加
         
@@ -1378,53 +759,19 @@ class SubValueAutoReg():
         key += str(in_varsAssignList["ASSIGN_SEQ"]) + "_1"
         
         objmenu = load_table.loadTable(WS_DB, "subst_value_list_ansible_role")
-
-        befFileDel = False
-        AftFileCpy = False
         
-        # 代入値管理に登録されているか判定
-        if key not in in_ArryVarsAssignRecodes:
-            action = "INSERT"
-            tgt_row = arrayValue
+        tgt_row = arrayValue
             
-            if in_varsAssignList['COL_CLASS'] == 'FileUploadColumn' and in_varsAssignList['REG_TYPE']  == 'Value':
-                in_varsAssignList['VARS_ENTRY_FILE'] = in_varsAssignList['VARS_ENTRY']
-                in_varsAssignList['VARS_ENTRY'] = ""
-                if not in_varsAssignList['VARS_ENTRY_FILE'] == "":
-                    AftFileCpy = True
-            else:
-                in_varsAssignList['VARS_ENTRY_FILE'] = ""
+        # DBの項目ではないがFileUploadCloumn用のディレクトリ作成で必要な項目の初期化
+        tgt_row['VARS_ENTRY_FILE_PATH'] = ""
             
-            # トレースメッセージ
-            traceMsg = g.appmsg.get_api_message("MSG-10812", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
-                                                            in_varsAssignList['MVMT_VAR_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
-            frame = inspect.currentframe().f_back
-            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-        else:
-            # 廃止レコードがあるので復活する。
-            action = "UPDATE"
-            tgt_row = in_ArryVarsAssignRecodes[key]
-            
-            del in_ArryVarsAssignRecodes[key]
-            
-            # トレースメッセージ
-            traceMsg = g.appmsg.get_api_message("MSG-10813", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
-                                                            in_varsAssignList['MVMT_VAR_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
-            frame = inspect.currentframe().f_back
-            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-        
-        if action == "INSERT":
-            
-            # DBの項目ではないがFileUploadCloumn用のディレクトリ作成で必要な項目の初期化
-            tgt_row['VARS_ENTRY_FILE_PATH']   = ""
-            
-            # 登録する情報設定
-            tgt_row['ASSIGN_ID'] = str(WS_DB._uuid_create())
-            tgt_row['OPERATION_ID'] = in_varsAssignList['OPERATION_ID']
-            tgt_row['MOVEMENT_ID'] = in_varsAssignList['MOVEMENT_ID']
-            tgt_row['SYSTEM_ID'] = in_varsAssignList['SYSTEM_ID']
-            tgt_row['MVMT_VAR_LINK_ID'] = in_varsAssignList['MVMT_VAR_LINK_ID']
-            tgt_row['ASSIGN_SEQ'] = in_varsAssignList['ASSIGN_SEQ']
+        # 登録する情報設定
+        tgt_row['ASSIGN_ID'] = str(WS_DB._uuid_create())
+        tgt_row['OPERATION_ID'] = in_varsAssignList['OPERATION_ID']
+        tgt_row['MOVEMENT_ID'] = in_varsAssignList['MOVEMENT_ID']
+        tgt_row['SYSTEM_ID'] = in_varsAssignList['SYSTEM_ID']
+        tgt_row['MVMT_VAR_LINK_ID'] = in_varsAssignList['MVMT_VAR_LINK_ID']
+        tgt_row['ASSIGN_SEQ'] = in_varsAssignList['ASSIGN_SEQ']
         
         # 具体値にテンプレート変数が記述されているか判定
         VARS_ENTRY_USE_TPFVARS = "0"
@@ -1437,167 +784,51 @@ class SubValueAutoReg():
         # ロール管理ジャーナルに登録する情報設定
         tgt_row['VARS_ENTRY'] = in_varsAssignList['VARS_ENTRY']
         tgt_row['COL_SEQ_COMBINATION_ID'] = in_varsAssignList['COL_SEQ_COMBINATION_ID']
-        tgt_row["VARS_ENTRY_FILE"] = in_varsAssignList['VARS_ENTRY_FILE']
+        if in_varsAssignList['COL_FILEUPLOAD_PATH']:
+            tgt_row["VARS_ENTRY_FILE"] = in_varsAssignList['VARS_ENTRY_FILE']
+        else:
+            tgt_row["VARS_ENTRY_FILE"] = ""
+
         tgt_row["SENSITIVE_FLAG"] = in_varsAssignList['SENSITIVE_FLAG']
         tgt_row["VARS_ENTRY_USE_TPFVARS"] = VARS_ENTRY_USE_TPFVARS
         tgt_row['DISUSE_FLAG'] = "0"
         tgt_row['LAST_UPDATE_USER'] = db_valautostup_user_id
         
         tgt_row = self.getLoadtableRegisterValue(tgt_row, True, WS_DB)
-        if action == "INSERT":
-            parameter = {
-                "item_no": tgt_row['ASSIGN_ID'],
-                "execution_no": execution_no,
-                "operation": tgt_row['OPERATION_NAME'],
-                "movement": tgt_row['MOVEMENT_NAME'],
-                "host": tgt_row['HOST_NAME'],
-                "variable_name": tgt_row['VARS_NAME'],
-                "member_variable_name": tgt_row['COL_COMBINATION_MEMBER_ALIAS'],
-                "value": tgt_row['VARS_ENTRY'],
-                "sensitive_setting": tgt_row['FLAG_NAME'],
-                "substitution_order": tgt_row['ASSIGN_SEQ'],
-                "template_variables_used": tgt_row['VARS_ENTRY_USE_TPFVARS'],
-                "remarks": tgt_row['NOTE'],
-                "discard": tgt_row['DISUSE_FLAG'],
-                "last_update_date_time": str(tgt_row['LAST_UPDATE_TIMESTAMP']).replace('-', '/'),
-                "last_updated_user": tgt_row['LAST_UPDATE_USER']
-            }
+        parameter = {  
+            "item_no": tgt_row['ASSIGN_ID'],
+            "execution_no": execution_no,
+            "operation": tgt_row['OPERATION_NAME'],
+            "movement": tgt_row['MOVEMENT_NAME'],
+            "host": tgt_row['HOST_NAME'],
+            "variable_name": tgt_row['VARS_NAME'],
+            "member_variable_name": tgt_row['COL_COMBINATION_MEMBER_ALIAS'],
+            "value": tgt_row['VARS_ENTRY'],
+            "sensitive_setting": tgt_row['FLAG_NAME'],
+            "substitution_order": tgt_row['ASSIGN_SEQ'],
+            "template_variables_used": tgt_row['VARS_ENTRY_USE_TPFVARS'],
+            "remarks": tgt_row['NOTE'],
+            "discard": tgt_row['DISUSE_FLAG'],
+            "last_update_date_time": str(tgt_row['LAST_UPDATE_TIMESTAMP']).replace('-', '/'),
+            "last_updated_user": tgt_row['LAST_UPDATE_USER']
+        }
 
-            parameters = {
-                "parameter": parameter,
-                "type":"Register"
-            }
-            
-            if not tgt_row['VARS_ENTRY_FILE'] == "":
-                parameter["file"] = "VARS_ENTRY_FILE"
-                parameters["file"] = {"vars_entry_file": tgt_row['VARS_ENTRY_FILE']}
-            
-            retAry = objmenu.exec_maintenance(parameters, "", "", False, False)
-            
-            result = retAry[0]
-            if result is False:
-                raise AppException("499-00701", [retAry], [retAry])
-        elif action == "UPDATE":
-            parameter = {
-                "execution_no": execution_no,
-                "operation": tgt_row['OPERATION_NAME'],
-                "movement": tgt_row['MOVEMENT_NAME'],
-                "host": tgt_row['HOST_NAME'],
-                "variable_name": tgt_row['VARS_NAME'],
-                "member_variable_name": tgt_row['COL_COMBINATION_MEMBER_ALIAS'],
-                "value": tgt_row['VARS_ENTRY'],
-                "sensitive_setting": tgt_row['FLAG_NAME'],
-                "substitution_order": tgt_row['ASSIGN_SEQ'],
-                "template_variables_used": tgt_row['VARS_ENTRY_USE_TPFVARS'],
-                "remarks": tgt_row['NOTE'],
-                "discard": tgt_row['DISUSE_FLAG'],
-                "last_update_date_time": str(tgt_row['LAST_UPDATE_TIMESTAMP']).replace('-', '/'),
-                "last_updated_user": tgt_row['LAST_UPDATE_USER']
-            }
-
-            parameters = {
-                "parameter": parameter,
-                "type": "Update"
-            }
-            
-            if not tgt_row['VARS_ENTRY_FILE'] == "":
-                parameter["file"] = "VARS_ENTRY_FILE"
-                parameters["file"] = {"vars_entry_file": tgt_row['VARS_ENTRY_FILE']}
-            
-            retAry = objmenu.exec_maintenance(parameters, tgt_row['ASSIGN_ID'], "", False, False)
-            
-            result = retAry[0]
-            if result is False:
-                raise AppException("499-00701", [retAry], [retAry])
+        parameters = {
+            "parameter": parameter,
+            "type":"Register"
+        }
+        
+        if not tgt_row['VARS_ENTRY_FILE'] == "":
+            parameter["file"] = "VARS_ENTRY_FILE"
+            parameters["file"] = {"vars_entry_file": tgt_row['VARS_ENTRY_FILE']}
+        
+        retAry = objmenu.exec_maintenance(parameters, "", "", False, False)
+        
+        result = retAry[0]
+        if result is False:
+            raise AppException("499-00701", [retAry], [retAry])
         
         return True, in_ArryVarsAssignRecodes
-    
-    def deleteVarsAssign(self, lv_VarsAssignRecodes, execution_no, WS_DB):
-        """
-        代入値管理から不要なレコードを廃止
-        
-        Arguments:
-            in_VarsAssignRecodes: 代入値管理の全テータ配列
-            WS_DB: WorkspaceDBインスタンス
-
-        Returns:
-            is success:(bool)
-        """
-        
-        global vg_FileUPloadColumnBackupFilePath
-        global db_update_flg
-        
-        db_valautostup_user_id = g.USER_ID
-        
-        objmenu = load_table.loadTable(WS_DB, "subst_value_list_ansible_role")
-        
-        for key, tgt_row in lv_VarsAssignRecodes.items():
-            if tgt_row['DISUSE_FLAG'] == '1':
-                # 廃止レコードはなにもしない。
-                continue
-        
-            # 最終更新者が自分でない場合、廃止処理はスキップする。
-            if not tgt_row["LAST_UPDATE_USER"] == db_valautostup_user_id:
-                # トレースメッセージ
-                traceMsg = g.appmsg.get_api_message("MSG-10827", [tgt_row['ASSIGN_ID']])
-                frame = inspect.currentframe().f_back
-                g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-            
-                # 更新処理はスキップ
-                continue
-        
-            # 廃止レコードにする。
-            
-            # トレースメッセージ
-            traceMsg = g.appmsg.get_api_message("MSG-10820", [tgt_row['ASSIGN_ID']])
-            frame = inspect.currentframe().f_back
-            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-            
-            # 具体値にテンプレート変数が記述されているか判定
-            if db_update_flg == 0:
-                ret = tgt_row['VARS_ENTRY'].find('TPF_')
-                if ret == 0:
-                    # テンプレート変数が記述されていることを記録
-                    db_update_flg = True
-
-            tgt_row['DISUSE_FLAG'] = '1'
-            tgt_row['LAST_UPDATE_USER'] = db_valautostup_user_id
-
-            tgt_row = self.getLoadtableRegisterValue(tgt_row, True, WS_DB)
-            # ロール管理ジャーナルに登録する情報設定
-            parameter = {
-                "execution_no": execution_no,
-                "operation": tgt_row['OPERATION_NAME'],
-                "movement": tgt_row['MOVEMENT_NAME'],
-                "host": tgt_row['HOST_NAME'],
-                "variable_name": tgt_row['VARS_NAME'],
-                "member_variable_name": tgt_row['COL_COMBINATION_MEMBER_ALIAS'],
-                "value": tgt_row['VARS_ENTRY'],
-                "sensitive_setting": tgt_row['FLAG_NAME'],
-                "substitution_order": tgt_row['ASSIGN_SEQ'],
-                "template_variables_used": tgt_row['VARS_ENTRY_USE_TPFVARS'],
-                "remarks": tgt_row['NOTE'],
-                "discard": tgt_row['DISUSE_FLAG'],
-                "last_update_date_time": str(tgt_row['LAST_UPDATE_TIMESTAMP']).replace('-', '/'),
-                "last_updated_user": tgt_row['LAST_UPDATE_USER']
-            }
-
-            parameters = {
-                "parameter": parameter,
-                "type": "Update"
-            }
-                
-            if not tgt_row['VARS_ENTRY_FILE'] == "":
-                parameter["file"] = "VARS_ENTRY_FILE"
-                parameters["file"] = {"vars_entry_file": tgt_row['VARS_ENTRY_FILE']}
-            
-            retAry = objmenu.exec_maintenance(parameters, tgt_row['ASSIGN_ID'], "", False, False)
-            
-            result = retAry[0]
-            if result is False:
-                raise AppException("499-00701", [retAry], [retAry])
-        
-        return True
     
     def getIFInfoDB(self, WS_DB):
         """
@@ -1773,10 +1004,12 @@ class SubValueAutoReg():
                     col_class = ret[1]
                     col_filepath = ""
                     col_file_md5 = ""
-                    if col_class == "FileUploadColumn":
+                    if col_class == "FileUploadColumn" or col_class == "FileUploadEncryptColumn":
+                        # メニューID取得
+                        upload_menu_id = self.getUploadfilesMenuID(in_tableNameToMenuIdList[table_name], WS_DB)
                         col_filepath = ""
                         if not col_val == "":
-                            col_filepath = "/uploadfiles" + in_tableNameToMenuIdList[table_name] + col_name_rest
+                            col_filepath = "/uploadfiles/" + upload_menu_id + "/" + col_name_rest + "/" + row[AnscConst.DF_ITA_LOCAL_PKEY]
                             if not os.path.exists(col_filepath):
                                 msgstr = g.appmsg.get_api_message("MSG-10166", [table_name, col_name, col_row_id, col_filepath])
                                 frame = inspect.currentframe().f_back
@@ -1858,6 +1091,7 @@ class SubValueAutoReg():
         Retruns:
             str: ファイルのMD5ハッシュ値
         """
+
         if g.LANGUAGE == 'ja':
             col_name = in_col_list['COLUMN_NAME_JA']
         else:
@@ -2091,6 +1325,35 @@ class SubValueAutoReg():
             column_class = data['COLUMN_CLASS_NAME']
         
         return column_name_rest, column_class
+
+    def getUploadfilesMenuID(self, in_menu_id, WS_DB):
+        """
+        紐付メニューの入力用メニューのメニューID取得
+        
+        Arguments:
+            in_menu_id: 紐付メニューID
+            WS_DB: WorkspaceDBインスタンス
+
+        Returns:
+            out_menu_id: 入力用メニューID
+        """
+
+        out_menu_id = ""
+
+        sql = " SELECT TBL_A.MENU_ID, "
+        sql += " FROM T_COMN_MENU TBL_A "
+        sql += " WHERE TBL_A.MENU_NAME_JA = ( "
+        sql += "  SELECT TBL_B.MENU_NAME_JA "
+        sql += "  FROM T_COMN_MENU TBL_B "
+        sql += "  WHERE TBL_B.MENU_ID = '" + in_menu_id + "')"
+        sql += " AND TBL_A.MENU_GROUP_ID = '502'"
+        
+        data_list = WS_DB.sql_execute(sql)
+
+        for data in data_list:
+            out_menu_id = data['MENU_ID']
+        
+        return out_menu_id
 
     def getNullDataHandlingID(self, in_null_data_handling_flg, WS_DB):
         """
@@ -2612,7 +1875,8 @@ class SubValueAutoReg():
         
             # テーブルの主キー名退避
             pk_name = WS_DB.table_columns_get(data['TABLE_NAME'])
-            inout_tableNameToPKeyNameList = {data['TABLE_NAME']: pk_name[1][0]}
+            inout_tableNameToPKeyNameList[data['TABLE_NAME']] = {}
+            inout_tableNameToPKeyNameList[data['TABLE_NAME']] = pk_name[1][0]
         
         return True, inout_tableNameToMenuIdList, inout_tabColNameToValAssRowList, inout_tableNameToPKeyNameList
     
