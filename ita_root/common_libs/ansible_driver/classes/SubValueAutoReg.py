@@ -883,8 +883,6 @@ class SubValueAutoReg():
         VariableColumnAry['T_ANSC_TEMPLATE_FILE']['ANS_TEMPLATE_VARS_NAME'] = 0
         VariableColumnAry['T_ANSC_CONTENTS_FILE'] = {}
         VariableColumnAry['T_ANSC_TEMPLATE_FILE']['CONTENTS_FILE_VARS_NAME'] = 0
-        VariableColumnAry['T_ANSC_GLOBAL_VAR'] = {}
-        VariableColumnAry['T_ANSC_GLOBAL_VAR']['VARS_NAME'] = 0
         
         # オペ+作業+ホスト+変数の組合せの代入順序 重複確認用
         lv_varsAssChkList = {}
@@ -989,7 +987,7 @@ class SubValueAutoReg():
                                 # TPF/CPF変数カラム判定
                                 if col_data['REF_TABLE_NAME'] in VariableColumnAry:
                                     if col_data['REF_COL_NAME'] in VariableColumnAry[col_data['REF_TABLE_NAME']]:
-                                        col_val = "'{{ col_val }}'"
+                                        col_val = "'{{" + col_val + "}}'"
                         else:
                             # プルダウン選択先のレコードが廃止されている
                             msgstr = g.appmsg.get_api_message("MSG-10438", [in_tableNameToMenuIdList[table_name], row[AnscConst.DF_ITA_LOCAL_PKEY], col_name])
@@ -1963,71 +1961,6 @@ class SubValueAutoReg():
         
         return True, inout_vars_attr
 
-    def getTemplateVarList(self, WS_DB):
-        """
-        代入値自動登録とパラメータシートから具体値に設定されているTPF変数名を抜出す
-        
-        Arguments:
-            WS_DB: WorkspaceDBインスタンス
-
-        Returns:
-            value_list: 抽出した変数リスト
-        """
-        
-        value_list = {}
-        sql = " SELECT "
-        sql += "  MOVEMENT_ID, "
-        sql += "  MVMT_VAR_LINK_ID "
-        sql += "  FROM T_ANSR_VALUE_AUTOREG "
-        sql += "  WHERE DISUSE_FLAG ='0' "
-        
-        data_list = WS_DB.sql_execute(sql)
-        
-        for row in data_list:
-            # 変数名
-            sql = "SELECT VARS_NAME FROM V_ANSR_VAL_VARS_LINK WHERE MVMT_VAR_LINK_ID = " + row['MVMT_VAR_LINK_ID']
-
-            data_list = WS_DB.sql_execute(sql, [])
-            for data in data_list:
-                vars_name = data['VARS_NAME']
-                ret = vars_name.find('TPF_')
-            if ret == 0:
-                # テンプレート変数が記述されていることを記録
-                value_list[row['MOVEMENT_ID']] = {}
-                value_list[row['MOVEMENT_ID']] = {'TPF_VAR_NAME': vars_name}
-            else:
-                value_list[row['MOVEMENT_ID']] = {'TPF_VAR_NAME': ""}
-        
-        return value_list
-    
-    def getTargetHostList(self, WS_DB):
-        """
-        代入値自動登録とパラメータシートから具体値に設定されている作業対象ホストを抜出す
-        
-        Arguments:
-            WS_DB: WorkspaceDBインスタンス
-
-        Returns:
-            value_list: 抽出した変数リスト
-        """
-        
-        value_list = {}
-        
-        sql = " SELECT "
-        sql += "  OPERATION_ID, "
-        sql += "  MOVEMENT_ID, "
-        sql += "  SYSTEM_ID "
-        sql += "  FROM  T_ANSR_TGT_HOST "
-        sql += "  WHERE DISUSE_FLAG ='0' "
-        
-        data_list = WS_DB.sql_execute(sql)
-        
-        for row in data_list:
-            value_list[row['MOVEMENT_ID']] = {}
-            value_list[row['MOVEMENT_ID']] = {row['OPERATION_ID']: row['SYSTEM_ID']}
-        
-        return value_list
-
     def extract_tpl_vars(self, var_extractor, varsAssRecord, template_list, host_list):
 
         # 処理対象外のデータかを判定
@@ -2038,7 +1971,7 @@ class SubValueAutoReg():
 
         movement_id = varsAssRecord['MOVEMENT_ID']
         vars_line_array = [] # [{行番号:変数名}, ...]
-        is_success, vars_line_array = var_extractor.SimpleFillterVerSearch("TPL_", varsAssRecord['VARS_ENTRY'], vars_line_array, [], [])
+        is_success, vars_line_array = var_extractor.SimpleFillterVerSearch("TPF_", varsAssRecord['VARS_ENTRY'], vars_line_array, [], [])
         if len(vars_line_array) == 1:
             if movement_id not in template_list:
                 template_list[movement_id] = {}
