@@ -23,8 +23,8 @@ def menu_column_group_valid(objdbca, objtable, option):
     entry_parameter = option.get('entry_parameter').get('parameter')
     current_parameter = option.get('current_parameter').get('parameter')
     cmd_type = option.get("cmd_type")
-    column_group_name_ja = entry_parameter.get('column_group_name_ja')
-    column_group_name_en = entry_parameter.get('column_group_name_en')
+    column_group_name_ja = entry_parameter.get('column_group_name_ja') if entry_parameter.get('column_group_name_ja') else ""
+    column_group_name_en = entry_parameter.get('column_group_name_en') if entry_parameter.get('column_group_name_en') else ""
     # ---------親カラムグループ---------
     parent_column_group = entry_parameter.get("parent_column_group")
     entry_uuid = entry_parameter.get("uuid")
