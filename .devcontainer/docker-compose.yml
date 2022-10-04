@@ -98,7 +98,6 @@ services:
       - GITLAB_HOST=${GITLAB_HOST}
       - GITLAB_PORT=${GITLAB_PORT}
       - GITLAB_ROOT_TOKEN=${GITLAB_ROOT_TOKEN}
-    init: true
   ita-by-ansible-legacy-role-vars-listup:
     user: 1000:1000
     build:

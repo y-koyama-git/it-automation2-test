@@ -32,6 +32,7 @@ const fn = ( function() {
     const modalInstance = {},
           operationInstance = {},
           conductorInstance = {};
+    let messageInstance = null;
     
     // Contentローディングフラグ
     let contentLoadingFlag = false;
@@ -231,34 +232,54 @@ fetch: function( url, token, method = 'GET', json ) {
                         });
                     } else {
                         errorCount++;
-                        if( response.status === 499 ) {
+                        
+                        switch ( response.status ) {
                             //バリデーションエラーは呼び出し元に返す
-                             response.json().then(function( result ){
-                                console.log( result );
-                                console.groupEnd('Fetch response');
-                                
-                                reject( result );
-                            }).catch(function( e ) {
+                            case 499:
+                                response.json().then(function( result ){
+                                    console.log( result );
+                                    console.groupEnd('Fetch response');
+
+                                    reject( result );
+                                }).catch(function( e ) {
+                                    cmn.systemErrorAlert();
+                                });
+                            break;
+                            // 権限無しの場合、トップページに戻す
+                            case 401:
+                                response.json().then(function( result ){
+                                    console.log( result );
+                                    console.groupEnd('Fetch response');
+
+                                    if ( !iframeFlag ) {
+                                        alert(result.message);
+                                        location.replace('/' + organization_id + '/workspaces/' + workspace_id + '/ita/');
+                                    } else {
+                                        cmn.iframeMessage( result.message );
+                                    }
+                                }).catch(function( e ) {
+                                    cmn.systemErrorAlert();
+                                });
+                            break;
+                            // ワークスペース一覧に飛ばす
+                            case 403:
+                                response.json().then(function( result ){
+                                    console.log( result );
+                                    console.groupEnd('Fetch response');
+
+                                    if ( !iframeFlag ) {
+                                        alert(result.message);
+                                        window.location.href = `/${organization_id}/platform/workspaces`;
+                                    } else {
+                                        cmn.iframeMessage( result.message );
+                                    }
+                                }).catch(function( e ) {
+                                    cmn.systemErrorAlert();
+                                });
+                            break;
+                            // その他のエラー
+                            default:
                                 cmn.systemErrorAlert();
-                            }); 
-                        } else if ( response.status === 401 ){
-                            //権限無しの場合、トップページに戻す
-                            response.json().then(function( result ){
-                                console.log( result );
-                                console.groupEnd('Fetch response');
-                                
-                                if ( !iframeFlag ) {
-                                    alert(result.message);
-                                    location.replace('/' + organization_id + '/workspaces/' + workspace_id + '/ita/');
-                                } else {
-                                    cmn.iframeMessage( result.message );
-                                }
-                            }).catch(function( e ) {
-                                cmn.systemErrorAlert();
-                            });
-                        } else {
-                            //その他のエラー
-                            cmn.systemErrorAlert();
                         }
                     }
                 }
@@ -286,10 +307,10 @@ fetch: function( url, token, method = 'GET', json ) {
 */
 systemErrorAlert: function() {
     if ( windowFlag ) {
-        cmn.gotoErrPage( WD.COMMON.sys_err );
+        cmn.gotoErrPage( getMessage.FTE10030 );
     } else {
-        window.console.error( WD.COMMON.sys_err );
-        throw new Error( WD.COMMON.sys_err );
+        console.error( getMessage.FTE10030 );
+        throw new Error( getMessage.FTE10030 );
     }
 },
 /*
@@ -600,7 +621,7 @@ fileSelect: function( type = 'base64', limitFileSize, accept ){
                             size: file.size
                         });
                     } catch( e ) {
-                        reject('JSONの形式が正しくありません。');
+                        reject( getMessage.FTE10021 );
                     }                    
                 };
 
@@ -669,6 +690,7 @@ storage: {
     },
     'set': function( key, value, type ) {
         if ( type === undefined ) type = 'local';
+        key = cmn.createStorageKey( key );
         const storage = ( type === 'local')? localStorage: ( type === 'session')? sessionStorage: undefined;
         if ( storage !== undefined ) {
             try {
@@ -683,6 +705,7 @@ storage: {
     },
     'get': function( key, type ) {
         if ( type === undefined ) type = 'local';
+        key = cmn.createStorageKey( key );
         const storage = ( type === 'local')? localStorage: ( type === 'session')? sessionStorage: undefined;
         if ( storage !== undefined ) {
             if ( storage.getItem( key ) !== null  ) {
@@ -696,6 +719,7 @@ storage: {
     },
     'remove': function( key, type ) {
         if ( type === undefined ) type = 'local';
+        key = cmn.createStorageKey( key );
         const storage = ( type === 'local')? localStorage: ( type === 'session')? sessionStorage: undefined;
         if ( storage !== undefined ) {
             storage.removeItem( key )
@@ -714,12 +738,16 @@ storage: {
         return keys;
     }
 },
+createStorageKey: function( key ) {
+    key = `${organization_id}_${workspace_id}_${key}`;
+    return key;
+},
 /*
 ##################################################
    Alert, Confirm
 ##################################################
 */
-alert: function( title, elements, type = 'alert', buttons = { ok: { text: '閉じる', action: 'normal'}} ) {
+alert: function( title, elements, type = 'alert', buttons = { ok: { text: getMessage.FTE10043, action: 'normal'}} ) {
     return new Promise(function( resolve ){
         const funcs = {};
         
@@ -757,7 +785,7 @@ alert: function( title, elements, type = 'alert', buttons = { ok: { text: '閉�
 ##################################################
 */
 calendar: function( setDate, currentDate, startDate, endDate ){
-    const weekText = ['日','月','火','水','木','金','土'],
+    const weekText = getMessage.FTE10036,
           weekClass = ['sun','mon','tue','wed','thu','fri','sat'];
     
     if ( startDate ) startDate = fn.date( startDate, 'yyyy/MM/dd');
@@ -855,7 +883,7 @@ calendar: function( setDate, currentDate, startDate, endDate ){
 ##################################################
 */
 datePicker: function( timeFlag, className, date, start, end ) {
-    const monthText = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+    const monthText = getMessage.FTE10037;
     
     let initDate;
     if ( date && !isNaN( new Date( date ) ) ) {
@@ -1041,8 +1069,8 @@ datePicker: function( timeFlag, className, date, start, end ) {
     
     $datePicker.append(`<div class="datePickerMenu">
         <ul class="datePickerMenuList">
-            <li class="datePickerMenuItem">${fn.html.button('現在', ['datePickerMenuButton', 'itaButton'], { type: 'current', action: 'normal', style: 'width:100%'})}</li>
-            <li class="datePickerMenuItem">${fn.html.button('クリア', ['datePickerMenuButton', 'itaButton'], { type: 'clear', action: 'normal', style: 'width:100%'})}</li>
+            <li class="datePickerMenuItem">${fn.html.button( getMessage.FTE10039, ['datePickerMenuButton', 'itaButton'], { type: 'current', action: 'normal', style: 'width:100%'})}</li>
+            <li class="datePickerMenuItem">${fn.html.button( getMessage.FTE10040, ['datePickerMenuButton', 'itaButton'], { type: 'clear', action: 'normal', style: 'width:100%'})}</li>
         </ul>
     </div>`);
     
@@ -1138,8 +1166,8 @@ datePickerDialog: function( type, timeFlag, title, date ){
         };
         
         const buttons = {
-            ok: { text: '反映', action: 'default', style: 'width:160px;'},
-            cancel: { text: 'キャンセル', action: 'normal'}
+            ok: { text: getMessage.FTE10038, action: 'default', style: 'width:160px;'},
+            cancel: { text: getMessage.FTE10026, action: 'normal'}
         };
         
         const config = {
@@ -1332,8 +1360,8 @@ faderEvent: function( $item ) {
 */
 html: {
     icon: function( type, className ) {
-        className = classNameCheck( className );
-        return `<span class="icon icon-${type} ${className.join(' ')}"></span>`;
+        className = classNameCheck( className, `icon icon-${type}`);
+        return `<span class="${className.join(' ')}"></span>`;
     },
     button: function( element, className, attrs = {}, toggle ) {
         const attr = inputCommon( null, null, attrs );
@@ -1422,7 +1450,7 @@ html: {
         // パスワード削除
         if ( option.deleteToggle ) {
             const deleteClass = ['itaButton', 'inputPasswordDeleteToggleButton', 'popup'],
-                  deleteAttrs = { action: 'danger', title: '入力済みパスワードの削除'};
+                  deleteAttrs = { action: 'danger', title: getMessage.FTE10041 };
             let iconName = 'cross';
             
             if ( attrs.disabled ) deleteAttrs.disabled = 'disabled';
@@ -1462,10 +1490,10 @@ html: {
         + `</div>`;
         
         if ( option.before || option.after ) {
-          const before = ( option.before )? `<div class="inputFaderBefore">${option.before}</div>`: '',
-                after =  ( option.after )? `<div class="inputFaderAfter">${option.after}</div>`: '';
-        
-          input = `${before}${input}${after}`;
+            const before = ( option.before )? `<div class="inputFaderBefore">${option.before}</div>`: '',
+                  after =  ( option.after )? `<div class="inputFaderAfter">${option.after}</div>`: '';
+
+            input = `${before}${input}${after}`;
         }
         
         return `<div class="inputFaderWrap">`
@@ -1476,6 +1504,15 @@ html: {
                 + `<div class="inputFaderRangeTooltip"></div>`
             + `</div>`
         + `</div>`;    
+    },
+    inputButton: function( className, input, button ) {
+        className = classNameCheck( className, 'inputButtonWrap');
+        input.className = classNameCheck( input.className, 'inputButtonInput');
+        button.className = classNameCheck( button.className, 'inputButtonButton');
+        return `<div class="${className.join(' ')}">`
+            + `<div class="inputButtonInputWrap">${cmn.html.inputText( input.className, input.value, input.name, input.attrs, input.option )}</div>`
+            + `<div class="inputButtonButtonWrap">${cmn.html.iconButton( button.icon, button.element, button.className, button.attr, button.toggle )}</div>`
+        + `</div>`;
     },
     textarea: function( className, value, name, attrs = {}, widthAdjustmentFlag ) {
         const attr = inputCommon( null, name, attrs );
@@ -1626,14 +1663,14 @@ html: {
         + `</div>`;
     },
     required: function() {
-        return `<span class="required">必須</span>`;
+        return `<span class="required">${getMessage.FTE10057}</span>`;
     },
     operationItem: function( item ){
         const itemHtml = [],
               itemStyle = [],
               itemClass = ['operationMenuItem'],
               itemAttr = {};
-
+        
         // item
         if ( item.className ) itemClass.push( item.className );
         if ( item.separate ) itemClass.push('operationMenuSeparate');
@@ -1641,7 +1678,7 @@ html: {
         if ( itemStyle.length ) itemAttr.style = itemStyle.join(';');
         itemAttr.class = itemClass.join(' ');
         
-        const itemAttrs = bindAttrs( itemAttr ); 
+        const itemAttrs = bindAttrs( itemAttr );
         
         // button
         if ( item.button ) {
@@ -1660,10 +1697,19 @@ html: {
             const input = item.input,
                   inputClass = ['operationMenuInput'],
                   inputOption = { widthAdjustment: true, before: input.before, after: input.after };
+            if ( input.className ) inputClass.push( input.className );
             itemHtml.push( cmn.html.inputText( inputClass, input.value, null, null, inputOption ) );            
         }
+        
+        // check
+        if ( item.check ) {
+            const check = item.check,
+                  checkClass = ['operationMenuInput'];
+            if ( check.className ) checkClass.push( check.className );
+            itemHtml.push( cmn.html.checkboxText( checkClass, check.value, check.name, check.name ) );            
+        }
 
-        return `<li ${itemAttrs}>${itemHtml.join('')}</li>`;
+        return `<li ${itemAttrs.join(' ')}>${itemHtml.join('')}</li>`;
     },
     operationMenu: function( menu, className ) {
         className = classNameCheck( className, 'operationMenuList');
@@ -1725,11 +1771,11 @@ resultModal: function( result ) {
             mode: 'modeless',
             position: 'center',
             header: {
-                title: '登録成功'
+                title: getMessage.FTE10042
             },
             width: '480px',
             footer: {
-                button: { ok: { text: '閉じる', action: 'normal'}}
+                button: { ok: { text: getMessage.FTE10043, action: 'normal'}}
             }
         };
         const html = []
@@ -1781,8 +1827,8 @@ errorModal: function( error, pageName ) {
                 <thead class="thead">
                     <tr class="tHeadTr tr">
                         <th class="tHeadTh tHeadLeftSticky th"><div class="ci">No.</div></th>
-                        <th class="tHeadTh th"><div class="ci">エラー列</div></th>
-                        <th class="tHeadTh th"><div class="ci">エラー内容</div></th>
+                        <th class="tHeadTh th"><div class="ci">${getMessage.FTE10043}</div></th>
+                        <th class="tHeadTh th"><div class="ci">${getMessage.FTE10045}</div></th>
                     </tr>
                 </thead>
                 <tbody class="tbody">
@@ -1803,13 +1849,13 @@ errorModal: function( error, pageName ) {
             mode: 'modeless',
             position: 'center',
             header: {
-                title: '登録失敗'
+                title: getMessage.FTE10046
             },
             width: 'auto',
             footer: {
                 button: {
-                  download: { text: 'エラーログJSONダウンロード', action: 'default'},
-                  ok: { text: '閉じる', action: 'normal'}
+                  download: { text: getMessage.FTE10047, action: 'default'},
+                  ok: { text: getMessage.FTE10043, action: 'normal'}
               }
             }
         };
@@ -1952,8 +1998,8 @@ setCommonEvents: function() {
                 $p.remove();
                 $t.off('pointerleave.popup click.popup').attr('title', title );
             });
-
-            $t.on('click', function(){
+            
+            $t.on('click.popup', function(){
                 if ( $t.attr('data-popup') === 'click') {
                    if ( $t.is('.popupHide') ) {
 
@@ -2053,18 +2099,21 @@ initSelectModal: function( title, menu, selectConfig ) {
     return new Promise(function( resolve, reject ) {
         const modalConfig = {
             mode: 'modeless',
-            width: '100%',
-            height: '100%',
+            width: 'auto',
+            position: 'center',
+            visibility: false,
             header: {
                 title: title
             },
             footer: {
                 button: {
-                    ok:  { text: '選択決定', action: 'default'},
-                    cancel: { text: 'キャンセル', action: 'normal'}
+                    ok:  { text: getMessage.FTE10048, action: 'positive', className: 'dialogPositive', style: `width:200px`},
+                    cancel: { text: getMessage.FTE10026, action: 'normal'}
                 }
             }
         };
+        
+        const processingModal = cmn.processingModal( title );
         
         const modal = new Dialog( modalConfig );
         modal.open();
@@ -2082,6 +2131,23 @@ initSelectModal: function( title, menu, selectConfig ) {
             const tableId = `SE_${menu.toUpperCase()}${( selectConfig.sub )? `_${selectConfig.sub}`: ``}`,
                   table = new DataTable( tableId, 'select', info, params );
             modal.setBody( table.setup() );
+            
+            // 選択チェック
+            table.$.container.on(`${table.id}selectChange`, function(){
+                if ( table.select.select.length ) {
+                    modal.buttonPositiveDisabled( false);
+                } else {
+                    modal.buttonPositiveDisabled( true );
+                }
+            });
+            
+            // 初期表示の場合は読み込み完了後に表示
+            $( window ).one( tableId + '__tableReady', function(){
+                processingModal.close();
+                modal.hide();
+                modal.$.dialog.removeClass('hiddenDialog');
+                modal.show();
+            });
             
             resolve({
                 modal: modal,
@@ -2136,13 +2202,13 @@ executeModalOpen: function( modalId, menu, executeConfig ) {
                                 <td class="commonTd">${executeConfig.selectId}</td>
                             </tr>
                             <tr class="commonTr">
-                                <th class="commonTh">名称</th>
+                                <th class="commonTh">${getMessage.FTE10055}</th>
                                 <td class="commonTd">${executeConfig.selectName}</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
-                <div class="commonTitle">オペレーション ${cmn.html.required()}</div>
+                <div class="commonTitle">${getMessage.FTE10049} ${cmn.html.required()}</div>
                 <div class="commonBody">
                     <table class="commonTable">
                         <tbody class="commonTbody">
@@ -2151,23 +2217,23 @@ executeModalOpen: function( modalId, menu, executeConfig ) {
                                 <td class="commonTd executeOperetionId"></td>
                             </tr>
                             <tr class="commonTr">
-                                <th class="commonTh">名称</th>
+                                <th class="commonTh">${getMessage.FTE10055}</th>
                                 <td class="commonTd executeOperetionName"></td>
                             </tr>
                         </tbody>
                     </table>
                     <ul class="commonMenuList">
                         <li class="commonMenuItem">
-                            ${fn.html.button( fn.html.icon('menuList') + ' オペレーション選択', ['itaButton', 'commonButton executeOperetionSelectButton'], { action: 'default', style: `width:100%`})}
+                            ${fn.html.button( fn.html.icon('menuList') + ' ' + getMessage.FTE10050, ['itaButton', 'commonButton executeOperetionSelectButton'], { action: 'default', style: `width:100%`})}
                         </li>
                     </ul>
                 </div>
-                <div class="commonTitle">スケジュール</div>
+                <div class="commonTitle">${getMessage.FTE10052}</div>
                 <div class="commonBody">
                     <div class="commonInputArea">
                         ${fn.html.dateInput( true, 'executeSchedule', '')}
                     </div>
-                    <p class="commonParagraph">予約日時を指定する場合は、日時フォーマット(yyyy/MM/dd HH:mm:ss)で入力して下さい。<br>ブランクの場合は即時実行となります。</p>
+                    <p class="commonParagraph">${getMessage.FTE10051}</p>
                 </div>
             </div>`;
 
@@ -2175,25 +2241,25 @@ executeModalOpen: function( modalId, menu, executeConfig ) {
                 mode: 'modeless',
                 position: 'center',
                 header: {
-                    title: executeConfig.title + '設定'
+                    title: executeConfig.title + getMessage.FTE10056
                 },
                 width: '480px',
                 footer: {
                     button: {
                         ok: { text: executeConfig.title, action: 'positive', className: 'dialogPositive',  style: `width:200px`},
-                        cancel: { text: '閉じる', action: 'normal'}
+                        cancel: { text: getMessage.FTE10043, action: 'normal'}
                     }
                 }
             };
             modalInstance[ modalId ] = new Dialog( config, funcs );
             
             modalInstance[ modalId ].open( html );
-            cmn.setDatePickerEvent( modalInstance[ modalId ].$.dbody.find('.executeSchedule'), 'スケジュール');
+            cmn.setDatePickerEvent( modalInstance[ modalId ].$.dbody.find('.executeSchedule'), getMessage.FTE10052 );
             
             // オペレーション選択
             modalInstance[ modalId ].$.dbody.find('.executeOperetionSelectButton').on('click', function(){
-                cmn.selectModalOpen( 'operation', 'オペレーション選択', menu, executeConfig.operation ).then(function( selectResult ){
-                    if ( selectResult ) {
+                cmn.selectModalOpen( 'operation', getMessage.FTE10050, menu, executeConfig.operation ).then(function( selectResult ){
+                    if ( selectResult && selectResult[0] ) {
                         modalInstance[ modalId ].$.dbody.find('.executeOperetionId').text( selectResult[0].id );
                         modalInstance[ modalId ].$.dbody.find('.executeOperetionName').text( selectResult[0].name );
                         
@@ -2214,10 +2280,32 @@ executeModalOpen: function( modalId, menu, executeConfig ) {
 ##################################################
 */
 message: function( type, message, title, icon, closeTime ) {
-    const msg = new Message( type, message, title, icon, closeTime );
-    msg.open();
+    if ( !messageInstance ) {
+        messageInstance = new Message();
+    }
+    messageInstance.add( type, message, title, icon, closeTime );
+},
+messageClear: function() {
+    if ( messageInstance ) {
+        messageInstance.clear();
+    }
+},
+/*
+##################################################
+   共通エラー処理
+##################################################
+*/
+commonErrorAlert: function( error ) {
     
-    return msg;
+    console.error( error );
+    
+    if ( error.message ) {
+        if ( e.message !== 'Failed to fetch' && windowFlag ) {
+            alert( error.message );
+        } else {
+            console.error( error.message );
+        }
+    }
 },
 /*
 ##################################################
@@ -2249,9 +2337,11 @@ gotoErrPage: function( message ) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 contentLoadingStart() {
+    document.body.classList.add('loading');
     contentLoadingFlag = true;
 },
 contentLoadingEnd() {
+    document.body.classList.remove('loading');
     contentLoadingFlag = false;
 },
 checkContentLoading() {
@@ -2281,7 +2371,7 @@ modalIframe: function( menu, title, option = {}){
             },
             footer: {
                 button: {
-                    cancel: { text: '閉じる', action: 'normal'}
+                    cancel: { text: getMessage.FTE10043, action: 'normal'}
                 }
             }
         };
@@ -2363,8 +2453,6 @@ createConductor: function( menu, target, mode, conductorId, option ) {
     if ( !conductorInstance[ conductorId ] ) {
         conductorInstance[ conductorId ] = new Conductor( menu, target, mode, conductorId, option );
         return conductorInstance[ conductorId ];
-    } else {
-        alert('指定のConductorはすでに開いています。');
     }
 },
 /*
@@ -2376,8 +2464,6 @@ removeConductor: function( conductorId ) {
     if ( conductorInstance[ conductorId ] ) {
         $(`.conductor[data-conductor="${conductorId}"]`).remove();
         conductorInstance[ conductorId ] = null;
-    } else {
-        alert('指定のConductorは作成されていません。');
     }
 },
 /*
@@ -2389,6 +2475,7 @@ modalConductor: function( menu, mode, conductorId, option ) {
     if ( !conductorInstance[ conductorId ] ) {
         const modalFuncs = {
             cancel: function() {
+                cd.$.body.find(`[id^="cd-${cd.id}-popup-node-"]`).remove();
                 modalInstance[ conductorId ] = null;
                 conductorInstance[ conductorId ] = null;
                 modal.close();
@@ -2403,7 +2490,7 @@ modalConductor: function( menu, mode, conductorId, option ) {
             },
             footer: {
                 button: {
-                    cancel: { text: '閉じる', action: 'normal'}
+                    cancel: { text: getMessage.FTE10043, action: 'normal'}
                 }
             }
         };
@@ -2419,8 +2506,6 @@ modalConductor: function( menu, mode, conductorId, option ) {
         const cd = conductorInstance[ conductorId ];
         cd.setup();
 
-    } else {
-        alert('指定のConductorはすでに開いています。');
     }
 },
 
@@ -2500,39 +2585,148 @@ class Log {
    Constructor
 ##################################################
 */
-constructor( log, max ) {
+constructor( id, max ) {
     const lg = this;
-    
-    lg.log = log;
-    lg.max = max;
+    lg.max = fn.cv( max, 1000 );
+    lg.id = id;
 }
 /*
 ##################################################
    Setup
 ##################################################
 */
-setup() {
+setup( className ) {
     const lg = this;
     
     const menu = {
         Main: [
-            { input: { className: '', before: 'ログ検索' } }
+            { input: { className: 'logSearchInput', before: getMessage.FTE10053 } },
+            { check: { className: 'logSearchHidden', value: getMessage.FTE10053, name: lg.id + 'logSearchHidden'} }
         ],
         Sub: []
     };
     
+    lg.start = 0;
+    lg.searchString = '';
+    
+    const containerClassName = ['operationLogContainer'];
+    if ( className ) containerClassName.push( className );
+    
     const $log = $(`
-    <div class="operationLogContainer">
-        ${fn.html.operationMenu( menu )}
+    <div class="${containerClassName.join(' ')}"${( lg.id )? ` id="${lg.id}"`: ``}>
+        ${fn.html.operationMenu( menu, 'operationLogMenu')}
         <div class="operationLogBody">
-            <div class="operationLog"></div>
+            <div class="operationLog">
+                <ol class="operationLogList" data-search="">
+                </ol>
+            </div>
+        </div>
+        <div class="operationLogFooter">
+            <div class="operationLogFooterInner">
+                <div class="operationLogFooterBlock">
+                    <dl class="operationLogFooterList">
+                        <dt class="operationLogFooterTitle"><span class="operationLogFooterText">ログ行数</span></dt>
+                        <dd class="operationLogFooterItem"><span class="operationLogFooterText operationLogLinesNumber">0</span></dd>
+                    </dl>
+                </div>
+                <div class="operationLogFooterBlock">
+                    <dl class="operationLogFooterList">
+                        <dt class="operationLogFooterTitle"><span class="operationLogFooterText">進行状態表示行数</span></dt>
+                        <dd class="operationLogFooterItem"><span class="operationLogFooterText operationLogMaxLinesNumber">${lg.max.toLocaleString()}</span></dd>
+                    </dl>
+                </div>
+            </div>
         </div>
     </div>`);
     
     lg.$ = {};
     lg.$.log = $log.find('.operationLog');
+    lg.$.logList = $log.find('.operationLogList');
+    lg.$.max = $log.find('.operationLogMaxLinesNumber');
+    lg.$.num = $log.find('.operationLogLinesNumber');
+    lg.$.search = $log.find('.logSearchInput');
+    lg.$.filter = $log.find('.logSearchHidden ');
+    
+    
+    lg.$.search.on('change', function(){
+        lg.searchString = $( this ).val();
+        if ( lg.searchString !== '') {
+            lg.regexp = new RegExp(`(${fn.regexpEscape( fn.escape( lg.searchString ) )})`, 'gi')
+        } else {
+            lg.regexp = null;
+        }
+        lg.search();
+    });
+    
+    lg.$.filter.on('change', function(){
+        const flag = $( this ).prop('checked');
+        lg.$.logList.attr('data-filter', flag );
+    });
+    
     
     return $log;
+}
+/*
+##################################################
+   Log 検索
+##################################################
+*/
+search() {
+    const lg = this;    
+    
+    if ( lg.$.logList.attr('data-search') !== lg.searchString ) {
+        lg.$.logList.find('.operationLogItem').each(function(){
+            const $list = $( this ),
+                  $text = $list.find('.operationLogText'),
+                  id = $text.attr('data-id'),
+                  text = fn.cv( lg.logSplit[id], '', true );
+
+            if ( lg.regexp && lg.regexp.test( text ) ) {
+                $list.addClass('logSearchMatch');
+                $text.html( text.replace( lg.regexp, lg.replacer ) );
+            } else if ( $list.is('.logSearchMatch') ) {
+                $list.removeClass('logSearchMatch');
+                $text.html( text );
+            }
+        });
+        lg.$.logList.attr('data-search', lg.searchString );
+    }
+}
+/*
+##################################################
+   Log 検索置換関数
+##################################################
+*/
+replacer( match, p1, offset, str ) {
+    // Check &xxx;
+    const entitieGreater = str.indexOf(';', offset ),
+          entitieLesser = str.indexOf('&', offset );
+
+    if( entitieGreater < entitieLesser || ( entitieGreater != -1 && entitieLesser == -1 ) ) {
+        return match;
+    } else {
+        return '<span class="logSearch">' + match + '</span>';
+    }
+}
+/*
+##################################################
+   Log line
+##################################################
+*/
+logLine( id ) {
+    const lg = this;
+    
+    const itemClass = ['operationLogItem'];
+    let log = fn.cv( lg.logSplit[id], '', true );
+    if ( lg.regexp && lg.regexp.test( log ) ) {
+        log = log.replace( lg.regexp, lg.replacer );
+        itemClass.push('logSearchMatch');
+    }
+    
+    return `<li class="${itemClass.join(' ')}">
+        <div class="operationLogNumber">${(id + 1).toLocaleString()}</div>
+        <div class="operationLogText" data-id="${id}">${log}</div>
+    </li>`
 }
 /*
 ##################################################
@@ -2542,7 +2736,70 @@ setup() {
 update( log ) {
     const lg = this;
     
-    lg.$.log( log );
+    // ログを改行で分割
+    lg.logSplit = log.split(/\r\n|\n/);
+    lg.lines = lg.logSplit.length;
+    
+    // 最後の行が空白の場合削除
+    if ( lg.logSplit[ lg.lines - 1 ] === '') {
+        lg.logSplit.pop();
+        lg.lines -= 1;
+    }
+    
+    // 行数表示
+    lg.$.num.text( lg.lines.toLocaleString() );
+    
+    // 進行状態表示行数内にする
+    if ( lg.lines - lg.start > lg.max ) {
+        lg.start = lg.lines - lg.max;
+    }
+    
+    // HTML
+    const logHtml = [];
+    for ( let i = lg.start; i < lg.lines; i++ ) {
+        logHtml.push( lg.logLine( i ) );
+    }
+    lg.start = lg.lines;
+    
+    // スクロールチェック
+    const logArea = lg.$.log.get(0),
+          logHeight = logArea.clientHeight,
+          scrollTop = logArea.scrollTop,
+          scrollHeight = logArea.scrollHeight,
+          scrollFlag = ( logHeight < scrollHeight && scrollTop >= scrollHeight - logHeight )? true: false;
+    
+    lg.$.logList.append( logHtml.join('') );  
+    
+    // 追加後進行状態表示行数を超えた部分を削除
+    if ( lg.lines > lg.max ) {
+        const itemLength = lg.$.logList.find('.operationLogItem').length;
+        lg.$.logList.find('.operationLogItem').slice( 0, itemLength - lg.max ).remove();
+    }  
+    
+    // 検索
+    lg.search();
+    
+    // 追加後にスクロール可能になった場合スクロール
+    // 最下部にいる場合のみ追加分スクロール
+    const afterScrollHeight = logArea.scrollHeight;
+    if ( ( logHeight === scrollHeight && logHeight < afterScrollHeight ) || scrollFlag ) {
+        lg.$.log.animate({ scrollTop:  afterScrollHeight - logHeight }, 200 );
+    }
+}
+/*
+##################################################
+   Update
+##################################################
+*/
+clear() {
+    const lg = this;
+    lg.logSplit = null;
+    lg.lines = 0;
+    lg.searchString = '';
+    lg.regexp = null;
+    
+    lg.$.num.text( 0 );
+    lg.$.logList.empty();
 }
 
 }
@@ -2561,33 +2818,33 @@ class Message {
 constructor( type, title, message, icon, closeTime = 5000 ) {
     const ms = this;
     
-    ms.type = type;
-    ms.message = message;
-    ms.title = title;
-    if ( icon ) {
-        ms.icon = icon;
-    } else {
-        switch ( type ) {
-            case 'success': ms.icon = 'check'; break;
-            case 'warning': ms.icon = 'circle_exclamation'; break;
-            case 'danger': ms.icon = 'circle_exclamation'; break;
-            case 'unkown': ms.icon = 'circle_question'; break;
-            default: ms.icon = 'circle_info';
-        }        
-    }
-    ms.closeTime = closeTime;
-    
     ms.$ = {};
     ms.$.window = $( window );
     ms.$.body = $('body');
+    
+    ms.message = {};
+    ms.number = 0;
 }
 /*
 ##################################################
    Open
 ##################################################
 */
-open() {
+add( type, title, message, icon, closeTime = 5000 ) {
     const ms = this;
+    
+    const num = ms.number++;
+    ms.message[ num ] = {};
+    
+    if ( !icon ) {
+        switch ( type ) {
+            case 'success': icon = 'check'; break;
+            case 'warning': icon = 'attention'; break;
+            case 'danger': icon = 'attention'; break;
+            case 'unkown': icon = 'circle_question'; break;
+            default: icon = 'circle_info';
+        }        
+    }
     
     // Container
     if ( !fn.exists('#messageContainer') ) {
@@ -2596,24 +2853,23 @@ open() {
     
     const html = [];
     html.push(`<div class="messageTime">${fn.date( new Date(), 'yyyy/MM/dd HH:mm:ss')}</div>`);
-    if ( ms.icon ) html.push(`<div class="messageIcon">${fn.html.icon( ms.icon )}</div>`);
-    if ( ms.title ) html.push(`<div class="messageTitle">${ms.title}</div>`);
-    if ( ms.message ) html.push(`<div class="messageBody">${ms.message}</div>`);
+    if ( icon ) html.push(`<div class="messageIcon">${fn.html.icon( icon )}</div>`);
+    if ( title ) html.push(`<div class="messageTitle">${title}</div>`);
+    if ( message ) html.push(`<div class="messageBody">${message}</div>`);
     html.push(`<div class="messageClose"><button class="messageCloseButton">${fn.html.icon('cross')}</button></div>`);
     
-    ms.$.container = $('#messageContainer');
-    ms.$.message = $(`<div class="messageItem" data-message="${ms.type}">${html.join('')}</div>`);
+    ms.message[ num ].$ = $(`<div class="messageItem" data-message="${type}">${html.join('')}</div>`);
+    $('#messageContainer').append( ms.message[ num ].$ );
     
-    ms.$.container.append( ms.$.message );
-    if ( ms.closeTime !== 0 ) {
-        ms.timerId = setTimeout(function(){
-            ms.close();
-        }, ms.closeTime );
+    if ( closeTime !== 0 ) {
+        ms.message[ num ].timer = setTimeout(function(){
+            ms.close( num );
+        }, closeTime );
     }
     
-    ms.$.message.find('.messageCloseButton').on('click', function(){
-        if ( ms.timerId ) clearTimeout( ms.timerId );
-        ms.close();
+    ms.message[ num ].$.find('.messageCloseButton').on('click', function(){
+        if ( ms.message[ num ].timer ) clearTimeout( ms.message[ num ].timer );
+        ms.close( num );
     });
 }
 /*
@@ -2621,9 +2877,11 @@ open() {
    Close
 ##################################################
 */
-close() {
+close( number ) {
     const ms = this;
-    ms.$.message.fadeOut( 300 );
+    ms.message[ number ].$.fadeOut( 300 );
+    delete ms.message[ number ];
+    
     /*
     ms.$.message.fadeOut( 300, function(){
         ms.$.message.remove();
@@ -2633,6 +2891,17 @@ close() {
         }
     });
     */
+}
+/*
+##################################################
+   Clear
+##################################################
+*/
+clear() {
+    const ms = this;
+    for ( const key in ms.message ) {
+        ms.close( key );
+    }
 }
 
 }

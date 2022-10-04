@@ -258,8 +258,15 @@ setup() {
     tb.paging.num = 0; // 件数
     tb.paging.pageNum = 1; // 表示するページ
     tb.paging.pageMaxNum = 1; // 最大ページ数
-    tb.paging.onePageNum = 25; // １頁に表示する数
     tb.setPagingEvent(); // イベント
+    
+    // 1頁に表示する数
+    const onePageNum = fn.storage.get('onePageNum');
+    if ( onePageNum ) {
+        tb.paging.onePageNum = onePageNum; 
+    } else {
+        tb.paging.onePageNum = 25; 
+    }
     
     // ソート
     tb.sort = [];
@@ -631,7 +638,7 @@ tableHeaderMenuHtml( headerList ) {
                     html.push(`<li class="${itemClassName.join(' ')}">${input}</li>`);
                 } break;
                 case 'message':
-                    html.push(`<li class="tableHeaderMessage">${item.message}</li>`);
+                    html.push(`<li class="${itemClassName.join(' ')}"><div class="tableHeaderMessage"><div class="tableHeaderMessageIcon">${fn.html.icon('circle_info')}</div><div class="tableHeaderMessageText">${item.message}</div></div></li>`);
                 break;
                 default:
                     html.push(`<li class="${itemClassName.join(' ')}">${fn.html.button( title, buttonClassName, attr, toggle )}</li>`);
@@ -748,7 +755,7 @@ tableHtml() {
                 }
                 // ソート
                 if ( tb.mode === 'view' || tb.mode === 'select' || tb.mode === 'execute') {
-                    const notSort = ['ButtonColumn', 'PasswordColumn', 'MaskColumn', 'SensitiveSingleTextColumn', 'SensitiveMultiTextColumn'];
+                    const notSort = ['ButtonColumn', 'PasswordColumn', 'PasswordIDColumn', 'JsonPasswordIDColumn', 'MaskColumn', 'SensitiveSingleTextColumn', 'SensitiveMultiTextColumn'];
                     if ( notSort.indexOf( column.column_type ) === -1 ) {
                         className.push('tHeadSort');
                     }
@@ -1044,8 +1051,10 @@ filterHtml() {
 filterDownloadButtonCheck() {
     const tb = this;
     
-    const $excel = tb.$.thead.find('.filterMenuButton[data-type="excel"]'),
-          $json =  tb.$.thead.find('.filterMenuButton[data-type="json"]');
+    const $filterTarget = ( tb.option.sheetType !== 'reference')? tb.$.thead: tb.$.header;
+    
+    const $excel = $filterTarget.find('.filterMenuButton[data-type="excel"]'),
+          $json =  $filterTarget.find('.filterMenuButton[data-type="json"]');
     
     const excelLimit = tb.info.menu_info.xls_print_limit;
     
@@ -1098,6 +1107,49 @@ referenceFilter() {
 setTableEvents() {
     const tb = this;
     
+    /*
+    ------------------------------
+    EDIT以外
+    ------------------------------
+    */
+    if ( tb.mode !== 'edit') {
+        // リンクファイルダウンロード
+        tb.$.tbody.on('click', '.tableViewDownload', function(e){
+            e.preventDefault();
+            
+            const $a = $( this ),
+                  fileName = $a.text(),
+                  id = $a.attr('data-id'),
+                  rest = $a.attr('data-rest');
+            
+            const params = tb.data.body.find(function( item ){
+                if ( tb.mode !== 'history') {
+                    return String( item.parameter[ tb.idNameRest ] ) === id;
+                } else {
+                    return String( item.parameter.journal_id ) === id;
+                }
+            });
+            
+            let file;
+            
+            if ( params !== undefined ) {
+                // 編集確認かつ入力データがない場合
+                if ( tb.mode === 'diff' && params.file[rest] === undefined ) {
+                    if ( tb.option && tb.option.before[ id ] && tb.option.before[ id ].file[ rest ] ) {
+                        file = tb.option.before[ id ].file[ rest ];
+                    }
+                } else {
+                    if ( params !== undefined && params.file[rest] !== undefined && params.file[rest] !== null ) {
+                        file = params.file[rest];
+                    }
+                }            
+            }
+            
+            if ( file ) {
+                fn.download('base64', file, fileName );
+            }            
+        });
+    }
     /*
     ------------------------------
     VIEW モード
@@ -1170,27 +1222,6 @@ setTableEvents() {
                     break;
                 }
             }
-        });
-        
-        // リンクファイルダウンロード
-        tb.$.tbody.on('click', '.tableViewDownload', function(e){
-            e.preventDefault();
-            
-            const $a = $( this ),
-                  fileName = $a.text(),
-                  id = $a.attr('data-id'),
-                  rest = $a.attr('data-rest');
-            
-            const params = tb.data.body.find(function( item ){
-                return String( item.parameter[ tb.idNameRest ] ) === id;
-            });
-            
-            if ( params !== undefined && params.file[rest] !== undefined && params.file[rest] !== null ) {
-                fn.download('base64', params.file[rest], fileName );
-            } else {
-                // error
-            }
-            
         });
           
         // フィルタカレンダー
@@ -1315,7 +1346,7 @@ setTableEvents() {
             fn.fileSelect().then(function( result ){
                 
                 if ( maxSize && maxSize < result.size ) {
-                    
+                    alert('');
                 } else {
                     const changeFlag = tb.setInputFile( result.name, result.base64, id, key, tb.data.body );
                     
@@ -1446,7 +1477,7 @@ setTableEvents() {
                 const $check = $( this ).find('.tBodyRowCheck'),
                       checked = $check.prop('checked');
 
-                if ( !$( e.target ).closest('.tBodyRowCheck').length ) {
+                if ( !$( e.target ).closest('.checkboxWrap').length ) {
                     $check.focus().prop('checked', !checked ).change();
                 }
             }
@@ -1510,7 +1541,7 @@ setTableEvents() {
                       checked = $radio.prop('checked');
                       
                 if ( !checked ) {
-                    if ( !$( e.target ).closest('.tBodyRowRadio').length ) {
+                    if ( !$( e.target ).closest('.radioWrap').length ) {
                         $radio.focus().prop('checked', true ).change();
                     }
                 } else {
@@ -1531,6 +1562,7 @@ setTableEvents() {
                     name: name
                 };
                 tb.selectModeMenuCheck();
+                tb.$.container.trigger(`${tb.id}selectChange`);
             }
         });
     }
@@ -1636,9 +1668,10 @@ setInputFile( fileName, fileBase64, id, rest, beforeData ) {
     tb.checkNewInputDataSet( id, beforeData );
     
     // 変更があれば追加、なければ削除
-    const beforeFile = tb.edit.input[id]['before'].file[rest];
+    const beforeFileName = tb.edit.input[id]['before'].parameter[rest],
+          beforeFile = tb.edit.input[id]['before'].file[rest];
     let changeFlag = false;
-    if ( beforeFile !== fileBase64 ) {
+    if ( beforeFile !== fileBase64 || beforeFileName !== fileName ) {
         tb.edit.input[id]['after'].file[rest] = fileBase64;
         tb.edit.input[id]['after'].parameter[rest] = fileName;
         changeFlag = true;
@@ -1930,8 +1963,9 @@ getFilterParameter() {
     const tb = this;
     
     // フィルターの内容を取得
-    const filterParams = {};    
-    tb.$.thead.find('.filterInput').each(function(){            
+    const $filterTarget = ( tb.option.sheetType !== 'reference')? tb.$.thead: tb.$.header,
+          filterParams = {};
+    $filterTarget.find('.filterInput').each(function(){            
         const $input = $( this ),
               value = $input.val(),
               rest = $input.attr('data-rest'),
@@ -2275,7 +2309,7 @@ tbodyHtml() {
           list = tb.data.body;
 
     const html = [];
-    
+
     for ( const item of list ) {
         const rowHtml = [],
               rowParameter = item.parameter,
@@ -2291,10 +2325,18 @@ tbodyHtml() {
         // モード別列
         const rowCheckInput = function( type = 'check') {
             // チェック状態
-            const attrs = {},
-                  checkMode = ( tb.mode === '');
-            if ( tb.select[ tb.mode ].indexOf( rowId ) !== -1 ) {
-                attrs['checked'] = 'checked';
+            const attrs = {};
+            if ( tb.mode === 'select' || tb.mode === 'execute') {
+                const selectId = tb.select[ tb.mode ].find(function( item ){
+                    return item.id === rowId;
+                });
+                if ( selectId ) {
+                    attrs['checked'] = 'checked';
+                }
+            } else {
+                if ( tb.select[ tb.mode ].indexOf( rowId ) !== -1 ) {
+                    attrs['checked'] = 'checked';
+                }
             }
             // selectモード
             if ( tb.mode === 'select' || tb.mode === 'execute') {
@@ -2333,7 +2375,13 @@ tbodyHtml() {
                 }
             break;
             case 'diff': {
-                const type = fn.html.span(`editType ${tb.option.type[rowId]}`, WD.TABLE[ tb.option.type[rowId] ]);
+                const typeText = {
+                    register: getMessage.FTE00072,
+                    update: getMessage.FTE00073,
+                    discard: getMessage.FTE00074,
+                    restore: getMessage.FTE00075
+                };
+                const type = fn.html.span(`editType ${tb.option.type[rowId]}`, typeText[ tb.option.type[rowId] ]);
                 rowHtml.push( fn.html.cell( type, ['tBodyLeftSticky', 'tBodyRowEditType', 'tBodyTh'], 'th') );
             } break;
             case 'history':
@@ -2350,7 +2398,7 @@ tbodyHtml() {
         }
 
         for ( const columnKey of tb.data.columnKeys ) {
-            rowHtml.push( tb.cellHtml( rowParameter, columnKey, journal ) );
+            rowHtml.push( tb.cellHtml( item, columnKey, journal ) );
         }
         html.push( fn.html.row( rowHtml.join(''), rowClassName ) ); 
         
@@ -2362,7 +2410,7 @@ tbodyHtml() {
    Cell HTML
 ##################################################
 */
-cellHtml( parameter, columnKey, journal ) {
+cellHtml( item, columnKey, journal ) {
     const tb = this;
     
     const columnInfo = tb.info.column_info[ columnKey ],
@@ -2396,21 +2444,21 @@ cellHtml( parameter, columnKey, journal ) {
             if ( columnInfo.column_type === 'ButtonColumn') {
                 className.push('tBodyTdButton');
             }
-            return fn.html.cell( tb.viewCellHtml( parameter, columnKey ), className, cellType );
+            return fn.html.cell( tb.viewCellHtml( item, columnKey ), className, cellType );
         case 'select': case 'execute':
-            return fn.html.cell( tb.viewCellHtml( parameter, columnKey ), className, cellType );
+            return fn.html.cell( tb.viewCellHtml( item, columnKey ), className, cellType );
         break;
         case 'history':
-            return fn.html.cell( tb.viewCellHtml( parameter, columnKey, journal ), className, cellType );
+            return fn.html.cell( tb.viewCellHtml( item, columnKey, journal ), className, cellType );
         case 'edit':
-            if ( ( columnName !== 'discard' && parameter.discard === '1' ) && columnName !== 'remarks' ) {
-                return fn.html.cell( tb.viewCellHtml( parameter, columnKey ), className, cellType );
+            if ( ( columnName !== 'discard' && item.discard === '1' ) && columnName !== 'remarks' ) {
+                return fn.html.cell( tb.viewCellHtml( item, columnKey ), className, cellType );
             } else {
                 className.push('tBodyTdInput');
-                return fn.html.cell( tb.editCellHtml( parameter, columnKey ), className, cellType );
+                return fn.html.cell( tb.editCellHtml( item, columnKey ), className, cellType );
             }
         case 'diff':
-            return fn.html.cell( tb.editConfirmCellHtml( parameter, columnKey ), className, cellType );
+            return fn.html.cell( tb.editConfirmCellHtml( item, columnKey ), className, cellType );
     }
 }
 /*
@@ -2441,15 +2489,22 @@ discardCheck( id ) {
    View mode cell HTML
 ##################################################
 */
-viewCellHtml( parameter, columnKey, journal ) {
+viewCellHtml( item, columnKey, journal ) {
     const tb = this;
+    
+    const parameter = item.parameter,
+          file = item.file;
     
     const columnInfo = tb.info.column_info[ columnKey ],
           columnName = columnInfo.column_name_rest,
-          columnType = columnInfo.column_type,
           autoInput = '<span class="tBodyAutoInput"></span>';
+        
+    let columnType = columnInfo.column_type,
+        value =  fn.cv( parameter[ columnName ], '');
     
-    let value = fn.cv( parameter[ columnName ], '', true );
+    if ( fn.typeof( value ) === 'string') {
+        value = fn.escape( value );
+    }
     
     // 変更履歴
     const checkJournal = function( val ) {
@@ -2470,11 +2525,26 @@ viewCellHtml( parameter, columnKey, journal ) {
         return autoInput;
     }
     
+    // Sensitiveカラムはフラグによって表示を分ける
+    if ( ['SensitiveSingleTextColumn', 'SensitiveMultiTextColumn'].indexOf( columnType ) !== -1 ) {
+        const flagTarget = columnInfo.sensitive_coloumn_name,
+              sensitiveFlag = parameter[ flagTarget ];
+        if ( sensitiveFlag === 'True') {
+            columnType = 'PasswordColumn';
+        } else {
+            if ( columnType === 'SensitiveSingleTextColumn') {
+                columnType = 'SingleTextColumn';
+            } else {
+                columnType = 'MultiTextColumn';
+            }
+        }
+    }    
+    
     switch ( columnType ) {
         // そのまま表示
         case 'SingleTextColumn': case 'NumColumn': case 'FloatColumn':
         case 'IDColumn': case 'HostInsideLinkTextColumn': case 'LinkIDColumn':
-        case 'LastUpdateUserColumn': case 'RoleIDColumn': case 'JsonColumn': 
+        case 'LastUpdateUserColumn': case 'RoleIDColumn':
         case 'EnvironmentIDColumn': case 'TextColumn':
         case 'DateColumn': case 'DateTimeColumn':
         case 'FileUploadEncryptColumn': case 'JsonIDColumn':
@@ -2493,19 +2563,35 @@ viewCellHtml( parameter, columnKey, journal ) {
             }
             
         // ********で表示
-        case 'PasswordColumn': case 'MaskColumn':
-        case 'SensitiveSingleTextColumn': case 'SensitiveMultiTextColumn':
-            return '********';
+        case 'PasswordColumn': case 'PasswordIDColumn': case 'JsonPasswordIDColumn': case 'MaskColumn':
+            return `<div class="passwordColumn">********</div>`;
             
         // ファイル名がリンクになっていてダウンロード可能
-        case 'FileUploadColumn':
-            const id = parameter[ tb.idNameRest ];
-            return checkJournal(`<a href="${value}" class="tableViewDownload" data-id="${id}" data-rest="${columnName}">${value}</a>`);
-        
+        case 'FileUploadColumn': {
+            const id = ( tb.mode !== 'history')? parameter[ tb.idNameRest ]: parameter.journal_id;
+            if ( file[ columnName ] ) {
+                return checkJournal(`<a href="${value}" class="tableViewDownload" data-id="${id}" data-rest="${columnName}">${value}</a>`);
+            } else {
+                return checkJournal( value );
+            }
+        }
         // ボタン
         case 'ButtonColumn':
             return tb.buttonAction( columnInfo, parameter );
-        break;
+        
+        // JSON
+        case 'JsonColumn':
+            if ( value !== '') {
+                try {
+                    value = JSON.stringify( value );
+                    //if ( value.length > 64 ) value = value.substr( 0, 64 ) + '...';
+                    return checkJournal( value );
+                } catch ( error ) {
+                    return `<div class="jsonError">${error.essage}</div>`
+                }
+            } else {
+                return checkJournal( value );
+            }
         
         // 不明
         default:
@@ -2555,9 +2641,12 @@ buttonAction( columnInfo, parameter ) {
    Edit mode cell HTML
 ##################################################
 */
-editCellHtml( parameter, columnKey ) {
+editCellHtml( item, columnKey ) {
     const tb = this;
     
+    const parameter = item.parameter,
+          file = item.file;
+          
     const rowId = parameter[ tb.idNameRest ],
           columnInfo = tb.info.column_info[ columnKey ],
           columnName = columnInfo.column_name_rest,
@@ -2651,12 +2740,12 @@ editCellHtml( parameter, columnKey ) {
     switch ( columnType ) {
         // 文字列入力（単一行）
         case 'SingleTextColumn': case 'HostInsideLinkTextColumn': case 'JsonColumn':
-        case 'TextColumn':
+        case 'TextColumn': case 'SensitiveSingleTextColumn':
             inputClassName.push('tableEditInputText');
             return fn.html.inputText( inputClassName, value, name, attr, { widthAdjustment: true });
 
         // 文字列入力（複数行）
-        case 'MultiTextColumn': case 'NoteColumn':
+        case 'MultiTextColumn': case 'NoteColumn': case 'SensitiveMultiTextColumn':
             inputClassName.push('tebleEditTextArea');
             return fn.html.textarea( inputClassName, value, name, attr, true );
 
@@ -2690,8 +2779,7 @@ editCellHtml( parameter, columnKey ) {
             }
 
         // パスワード
-        case 'PasswordColumn': case 'MaskColumn':
-        case 'SensitiveSingleTextColumn': case 'SensitiveMultiTextColumn': {
+        case 'PasswordColumn': case 'PasswordIDColumn': case 'JsonPasswordIDColumn': case 'MaskColumn': {
             const deleteToggleFlag = ( !isNaN( rowId ) && Number( rowId ) < 0 )? false: true,
                   deleteFlag = ( inputData && inputData.after.parameter[ columnName ] === null )? true: false;
             inputClassName.push('tableEditInputText');
@@ -2714,18 +2802,21 @@ editCellHtml( parameter, columnKey ) {
    Edit mode confirmation cell HTML
 ##################################################
 */
-editConfirmCellHtml( parameter, columnKey ) { 
+editConfirmCellHtml( item, columnKey ) { 
     const tb = this;
 
+    const parameter = item.parameter,
+          file = item.file;
+          
     const columnInfo = tb.info.column_info[ columnKey ],
           columnName = columnInfo.column_name_rest,
-          columnType = columnInfo.column_type,
           rowId = parameter[ tb.idNameRest ],
           type = ( !isNaN( rowId ) && Number( rowId ) < 0 )? 'registration': 'update',
           beforeData = tb.option.before[ rowId ],
           autoInput = '<span class="tBodyAutoInput"></span>';
     
-    let value = fn.cv( parameter[ columnName ], '', true );
+    let columnType = columnInfo.column_type,
+        value = fn.cv( parameter[ columnName ], '', true );
     
     // ID列処理
     if ( columnName === tb.idNameRest ) {
@@ -2780,15 +2871,15 @@ editConfirmCellHtml( parameter, columnKey ) {
     }
     
     // パスワードカラムは別処理
-    const password = ['PasswordColumn', 'MaskColumn', 'SensitiveSingleTextColumn', 'SensitiveMultiTextColumn'];
+    const password = ['PasswordColumn', 'PasswordIDColumn', 'JsonPasswordIdColumn', 'MaskColumn'];
     if ( password.indexOf( columnType ) !== -1 ) {
 
         if ( parameter[ columnName ] !== undefined && parameter[ columnName ] === null ) {
             return '<span class="passwordDeleteText">' + getMessage.FTE00014 + '</span>';
         } else if ( value !== '' && type !== 'registration') {
-            return beforeAfter('********', '********');
+            return beforeAfter(`<div class="passwordColumn">********</div>`, `<div class="passwordColumn">********</div>`);
         } else {
-            return '********';
+            return `<div class="passwordColumn">********</div>`;
         }
     }
     
@@ -2834,7 +2925,11 @@ footerHtml() {
     const onePageNumList = [ 10, 25, 50, 75, 100 ];
     const onePageNumOptions = [];
     for ( const item of onePageNumList ) {
-        onePageNumOptions.push(`<option value="${item}">${item}</option>`);
+        const id = `${tb.id}_pagingOnePageNumSelectRadio_${item}`,
+              name = `${tb.id}_pagingOnePageNumSelectRadio`;
+        onePageNumOptions.push(`<li class="pagingOnePageNumSelectItem">`
+        + `<input class="pagingOnePageNumSelectRadio" type="radio" id="${id}" name="${name}" value="${item}">`
+        + `<label class="pagingOnePageNumSelectLabel" for="${id}">${item}</label></li>`);
     }
 
     return `
@@ -2849,9 +2944,12 @@ footerHtml() {
             <dl class="tableFooterList">
                 <dt class="tableFooterTitle"><span class="footerText">` + getMessage.FTE00060 + `</span></dt>
                 <dd class="tableFooterItem tableFooterData">
-                    <select class="pagingOnePageNumSelect input">
-                        ${onePageNumOptions.join('')}
-                    </select>
+                    <div class="pagingOnePageNumSelect">
+                        <div class="pagingOnePageNumSelectNumber"></div>
+                        <ul class="pagingOnePageNumSelectList">
+                            ${onePageNumOptions.join('')}
+                        </ul>
+                    </div>
                 </dd>
             </dl>
         </div>
@@ -2897,7 +2995,8 @@ updateFooterStatus() {
         tb.$.footer.find('.pagingAllTitle').text(getMessage.FTE00058);
     }
     tb.$.footer.find('.pagingAllNumNumber').text( tb.paging.num.toLocaleString() + getMessage.FTE00063);
-    tb.$.footer.find('.pagingOnePageNumSelect').val( tb.paging.onePageNum );
+    tb.$.footer.find('.pagingOnePageNumSelectRadio').val([tb.paging.onePageNum]);
+    tb.$.footer.find('.pagingOnePageNumSelectNumber').text( tb.paging.onePageNum );
     
     const $paging = tb.$.footer.find('.pagingMove');
     $paging.find('.pagingCurrentPage').text( tb.paging.pageNum );
@@ -2914,6 +3013,9 @@ updateFooterStatus() {
 }
 setPagingEvent() {
     const tb = this;
+    
+    const $list = tb.$.footer.find('.pagingOnePageNumSelectList');
+    
     tb.$.footer.find('.pagingMoveButton').on('click', function(){
         if ( !tb.checkWork ) {
             tb.workStart('paging');
@@ -2936,12 +3038,33 @@ setPagingEvent() {
             tb.workerPost('page');
         }
     });
-    tb.$.footer.find('.pagingOnePageNumSelect').on('change', function(){
-        tb.workStart('paging');
-        tb.paging.onePageNum = Number( $( this ).val() );
-        tb.workerPost('page');
+    tb.$.footer.find('.pagingOnePageNumSelectRadio').on('change', function(){
+        if ( !tb.checkWork ) {
+            const selectNo = Number( $( this ).val() );
+            tb.workStart('paging');
+            tb.paging.onePageNum = selectNo;
+            tb.$.footer.find('.pagingOnePageNumSelectNumber').text( selectNo );
+            $list.removeClass('pagingOnePageOpen');
+            tb.workerPost('page');
+            fn.storage.set('onePageNum', selectNo );
+        }
     });
-
+    
+    tb.$.footer.find('.pagingOnePageNumSelectNumber').on('click', function(){
+        if ( !tb.checkWork ) {
+            if ( !$list.is('.pagingOnePageOpen') ) {
+                $list.addClass('pagingOnePageOpen');
+                $( window ).on('pointerdown.pagingOnePageNum', function(e){
+                    if ( !$( e.target ).closest('.pagingOnePageNumSelect').length ) {
+                        $( this ).off('pointerdown.pagingOnePageNum');
+                        $list.removeClass('pagingOnePageOpen');
+                    }
+                });
+            } else {
+                $list.removeClass('pagingOnePageOpen');
+            }
+        }
+    });
 }
 /*
 ##################################################
@@ -3212,7 +3335,7 @@ editOk() {
                             }
                         break;
                         // パスワード
-                        case 'PasswordColumn': case 'MaskColumn':
+                        case 'PasswordColumn': case 'PasswordIDColumn': case 'JsonPasswordIDColumn': case 'MaskColumn':
                         case 'SensitiveSingleTextColumn': case 'SensitiveMultiTextColumn':
                             const passwordAfterValue = item.after.parameter[ columnNameRest ];
                             // null -> 削除 { key: null }
