@@ -19,6 +19,7 @@ import json
 import importlib
 import traceback
 import copy
+import re
 
 from flask import g
 from common_libs.column import *  # noqa: F403
@@ -1452,6 +1453,11 @@ class loadTable():
             # メニュー共通処理:レコード操作前 組み合わせ一意制約
             self.exec_unique_constraint(entry_parameter, target_uuid)
 
+            # 復活時にバリデーション＋組み合わせ(current,entryを使用)
+            current_data = {'parameter': current_parametr, 'file': current_file}
+            entry_data = {'parameter': entry_parameter, 'file': entry_file}
+            self.exec_restore_validate(cmd_type, target_uuid, current_data, entry_data)
+
             # メニュー、カラム個別処理:レコード操作前
             target_menu_option = {
                 'uuid': target_uuid,
@@ -1733,9 +1739,10 @@ class loadTable():
                                 else:
                                     col_val = None
                         else:
-                            tmp_exec = objcolumn.convert_value_output(jsonval)
-                            if tmp_exec[0] is True:
-                                jsonval = tmp_exec[2]
+                            if mode not in ['input']:
+                                tmp_exec = objcolumn.convert_value_output(jsonval)
+                                if tmp_exec[0] is True:
+                                    jsonval = tmp_exec[2]
 
                         rest_parameter.setdefault(jsonkey, jsonval)
                         if mode not in ['excel', 'excel_jnl']:
@@ -1874,6 +1881,12 @@ class loadTable():
                     if len(target_uuid) != 0:
                         where_str = where_str + " and `{}` <> %s ".format(primary_key_list[0])
                         bind_value_list.append(target_uuid)
+
+                # 廃止を対象外
+                if len(where_str) != 0:
+                    where_str = where_str + " and `{}` <> 1 ".format("DISUSE_FLAG")
+                else:
+                    where_str = " where `{}` <> 1 ".format("DISUSE_FLAG")
 
                 table_count = self.objdbca.table_select(self.get_table_name(), where_str, bind_value_list)
                 if len(table_count) != 0:
@@ -2219,3 +2232,83 @@ class loadTable():
                 'msg': msg,
             }
             self.set_message(dict_msg, g.appmsg.get_api_message("MSG-00004", []), MSG_LEVEL_ERROR)
+
+    def exec_restore_validate(self, cmd_type, target_uuid, current_data, entry_data):
+        """
+            restore時、カラムバリデーション、組み合わせ一意の実施
+            ARGS:
+                cmd_type:実行種別
+                target_uuid:
+                current_data: {'parameter':{},'file:{}'}
+                entry_data: {'parameter':{},'file:{}'}
+        """
+        if cmd_type == CMD_RESTORE:
+            current_parametr = current_data.get('parameter')
+            current_file = current_data.get('file')
+            entry_parameter = entry_data.get('parameter')
+            entry_file = entry_data.get('file')
+            restore_chk_parameter = dict(current_parametr, **entry_parameter)
+            restore_chk_file = dict(current_file, **entry_file)
+
+            # バリデーション
+            for rest_key, rest_val in list(restore_chk_parameter.items()):
+                if rest_key in self.restkey_list:
+                    objcol = self.get_objcol(rest_key)
+                    if objcol is None:
+                        input_item = '0'
+                        view_item = '2'
+                        auto_input_item = '0'
+                    else:
+                        input_item = objcol.get(COLNAME_INPUT_ITEM)
+                        view_item = objcol.get(COLNAME_VIEW_ITEM)
+                        auto_input_item = objcol.get(COLNAME_AUTO_INPUT)
+                        
+                    if (auto_input_item == '1' or not (input_item == '2' and view_item == '0')):
+                        target_col_option = {
+                            'uuid': target_uuid,
+                            'uuid_jnl': '',
+                            'cmd_type': cmd_type,
+                            'rest_key_name': rest_key,
+                            'col_name': self.get_col_name(rest_key),
+                            'file_name': '',
+                            'file_data': '',
+                            'entry_parameter': {
+                                'parameter': restore_chk_parameter,
+                                'file': restore_chk_file,
+                            },
+                            'current_parameter': {
+                                'parameter': current_parametr,
+                                'file': current_file,
+                            },
+                            'user': self.user
+                        }
+                        # ファイル有無
+                        if restore_chk_file is not None:
+                            if rest_key in restore_chk_file:
+                                target_col_option['file_name'] = rest_val
+                                target_col_option['file_data'] = restore_chk_file.get(rest_key)
+                        # カラムクラス呼び出し
+                        objcolumn = self.get_columnclass(rest_key, cmd_type)
+                        # 2重ID変換失敗済み対応
+                        if isinstance(rest_val, str):
+                            re_pattern = '\((.*)\)'  # noqa: W605
+                            tmp_findall = re.findall(re_pattern, rest_val)
+                            if len(tmp_findall) == 1:
+                                rest_val = tmp_findall[0]
+
+                        # 出力用の値でバリデーション(バリデーションかける値へ変換)
+                        tmp_result = objcolumn.convert_value_output(rest_val)
+                        if tmp_result[0] is True:
+                            rest_val = tmp_result[2]
+
+                        tmp_exec = objcolumn.before_iud_action(rest_val, copy.deepcopy(target_col_option))
+                        if tmp_exec[0] is not True:
+                            dict_msg = {
+                                'status_code': '',
+                                'msg_args': '',
+                                'msg': tmp_exec[1],
+                            }
+                            self.set_message(dict_msg, rest_key, MSG_LEVEL_ERROR)
+
+            # メニュー共通処理: 組み合わせ一意制約
+            self.exec_unique_constraint(restore_chk_parameter, target_uuid)

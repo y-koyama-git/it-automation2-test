@@ -651,7 +651,7 @@ class Column():
                     if not retBool:
                         status_code = 'MSG-00025'
                         str_uuids = ', '.join(map(str, tmp_uuids))
-                        msg_args = [self.rest_key_name, str_uuids]
+                        msg_args = [str_uuids, val]
                         msg = g.appmsg.get_api_message(status_code, msg_args)
                         return retBool, msg
                         
@@ -673,7 +673,7 @@ class Column():
                     retBool = False
                     status_code = 'MSG-00025'
                     str_uuids = ', '.join(map(str, tmp_uuids))
-                    msg_args = [self.rest_key_name, str_uuids]
+                    msg_args = [str_uuids, val]
                     msg = g.appmsg.get_api_message(status_code, msg_args)
                     return retBool, msg
         return retBool,
