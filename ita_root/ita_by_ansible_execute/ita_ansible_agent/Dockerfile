@@ -20,7 +20,16 @@ RUN dnf install -y \
     sshpass \
 &&  pip3.9 install --upgrade pip setuptools \
 &&  pip3.9 install \
-    ansible
+    ansible \
+    pexpect \
+    pywinrm \
+    boto3 \
+    paramiko \
+    boto
+
+COPY ./config/centos8.repo /etc/yum.repos.d/centos8.repo
+
+RUN dnf install -y --enablerepo=baseos expect
 
 COPY ./config/ansible.cfg /etc/ansible/ansible.cfg
 

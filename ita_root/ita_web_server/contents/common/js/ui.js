@@ -233,7 +233,7 @@ topicPath() {
     const topics = [],
           title = [ ui.currentPage.title ];
     if ( ui.currentGroup.link ) {
-        topics.push({ href: ui.params.path, title: WD.UI.MainMenu });
+        topics.push({ href: ui.params.path, title: getMessage.FTE10001 });
         topics.push({ href: `${ui.params.path}?menu=${ui.currentGroup.link}`, title: ui.currentGroup.title });
         title.push( ui.currentGroup.title );
     }
@@ -249,7 +249,7 @@ topicPath() {
         }
         list.push(`<li class="topichPathItem"><span class="topichPathCurrent">${ui.currentPage.title}</span></li>`);
     } else {
-        list.push(`<li class="topichPathItem"><span class="topichPathCurrent">${WD.UI.MainMenu}</span></li>`);
+        list.push(`<li class="topichPathItem"><span class="topichPathCurrent">${getMessage.FTE10001}</span></li>`);
     }
     
     const html = `
@@ -362,7 +362,7 @@ userInfo() {
             </div>
         </div>
         <div class="userInfoBlock userInfoWorkspace">
-            <div class="userInfoTitle">${fn.html.icon('workspace')} ${WD.UI.WsChange}</div>
+            <div class="userInfoTitle">${fn.html.icon('workspace')} ${getMessage.FTE10005}</div>
             <div class="userInfoBody">
                 <ul class="userInfoWorkspaceList">
                     ${workspaceList.join('')}
@@ -370,7 +370,7 @@ userInfo() {
             </div>
         </div>
         <div class="userInfoBlock userInfoRole">
-            <div class="userInfoTitle">${fn.html.icon('role')} ${WD.UI.RoleList}</div>
+            <div class="userInfoTitle">${fn.html.icon('role')} ${getMessage.FTE10006}</div>
             <div class="userInfoBody">
                 <ul class="userInfoRoleList">
                     ${roleList.join('')}
@@ -381,10 +381,10 @@ userInfo() {
             <div class="userInfoBody">
                 <ul class="userInfoMenuList">
                     <li class="userInfoMenuItem">
-                        ${fn.html.button( fn.html.icon('note') + 'バージョン確認', ['userInfoMenuButton', 'itaButton'], { type: 'version', action: 'default'})}
+                        ${fn.html.button( fn.html.icon('note') + getMessage.FTE10033, ['userInfoMenuButton', 'itaButton'], { type: 'version', action: 'default'})}
                     </li>
                     <li class="userInfoMenuItem">
-                        ${fn.html.button( fn.html.icon('logout') + 'ログアウト', ['userInfoMenuButton', 'itaButton'], { type: 'logout', action: 'positive'})}
+                        ${fn.html.button( fn.html.icon('logout') + getMessage.FTE10034, ['userInfoMenuButton', 'itaButton'], { type: 'logout', action: 'positive'})}
                     </li>
                 </div>
             </div>
@@ -406,7 +406,7 @@ checkVersion( version ) {
         <div class="versionLogo"><img class="versionLogoImg" src="/_/ita/imgs/logo.svg" alt="Exastro IT Automation"></div>
         <div class="versionNumber"><span class="versionNumberWrap">Version: ${version.version}</span></div>
         <div class="installedDriver">
-            <div class="driverTitle">インストール済みドライバ</div>
+            <div class="driverTitle">${getMessage.FTE10035}</div>
             <ul class="driverList">
                 ${driverList.join('')}
             </ul>
@@ -438,7 +438,7 @@ sideMenu() {
     ui.createMenuGroupList();
     
     const menus = [
-        { name: 'menuGroup', icon: 'menuGroup', title: 'メニューグループ'},
+        { name: 'menuGroup', icon: 'menuGroup', title: getMessage.FTE10002 },
         { name: 'menuMain', icon: 'menuList', title: ui.currentGroup.title },
         /*{ name: 'menuFavorite', icon: 'star'},
         { name: 'menuHistory', icon: 'history'}*/
@@ -739,7 +739,7 @@ menuMain() {
         // メインメニュー用リスト
         const dashboard = `<li class="menuItem"><a class="menuLink current" href="${ui.params.path}">DashBoard</a></li>`;
         ui.currentPage = {
-            title: WD.UI.MainMenu
+            title: getMessage.FTE10001
         };
         return ui.sideMenuBody( ui.currentPage.title, 'menuList', dashboard );
     }
@@ -818,7 +818,7 @@ menuGroup() {
         }
     }
     
-    return ui.sideMenuBody( WD.UI.MenuGroup, 'menuGroup', list.join(''));
+    return ui.sideMenuBody( getMessage.FTE10002, 'menuGroup', list.join(''));
 }
 /*
 ##################################################
@@ -826,7 +826,7 @@ menuGroup() {
 ##################################################
 */
 menuFavorite(){
-    return this.sideMenuBody( WD.UI.Favorite, 'star', '');
+    return this.sideMenuBody( getMessage.FTE10003, 'star', '');
 }
 /*
 ##################################################
@@ -834,7 +834,7 @@ menuFavorite(){
 ##################################################
 */
 menuHistory(){
-    return this.sideMenuBody( WD.UI.History, 'history', '');
+    return this.sideMenuBody( getMessage.FTE10004, 'history', '');
 }
 /*
 ##################################################
@@ -844,7 +844,7 @@ menuHistory(){
 serachBlock() {
     return `
     <!--<div class="menuSearch">
-        <input class="menuSearchText" data-search="menuMain" placeholder="${WD.UI.MenuSearch}">
+        <input class="menuSearchText" data-search="menuMain" placeholder="${getMessage.FTE10007}">
     </div>-->`;
 }
 /*
@@ -912,7 +912,11 @@ contentTab( list ) {
           section = [];
     
     for ( const item of list ) {
-        tab.push(`<li class="contentMenuItem"><a class="contentMenuLink" href="#${item.name}"><span class="inner">${item.title}</span></a></li>`);
+        const listClass = ['contentMenuItem'];
+        if ( item.className ) listClass.push( item.className );
+        if ( item.view === false ) listClass.push('contentMenuItemToggle hidden');
+        tab.push(`<li class="${listClass.join(' ')}"><a class="contentMenuLink" href="#${item.name}">`
+        + `<span class="contentMenuLinkTab"><span class="contentMenuLinkInner">${item.title}</span></span></a></li>`);
         
         const sectionBody = ( item.type !== 'blank' )? ui[item.name](): '';
         section.push( ui.contentSection( sectionBody, item.name ) );
@@ -1042,12 +1046,12 @@ debugMenu() {
 defaultMenu( sheetType ) {
     const ui = this;
     
-    const contentTab = [{ name: 'dataList', title: WD.UI.List, type: 'blank' }];
+    const contentTab = [{ name: 'dataList', title: getMessage.FTE10008, type: 'blank' }];
     // 履歴タブ
     if ( ui.flag.history ) {
-        contentTab.push({ name: 'changeHistory', title: WD.UI.ChangeHistory, type: 'blank' });
+        contentTab.push({ name: 'changeHistory', title: getMessage.FTE10009, type: 'blank' });
     }
-    contentTab.push({ name: 'dataDownload', title: WD.UI.AllDownload });
+    contentTab.push({ name: 'dataDownload', title: getMessage.FTE10010 });
 
     const title = fn.cv( ui.rest.info.menu_info.menu_name, '', true ),
           menuInfo = fn.cv( ui.rest.info.menu_info.menu_info, '', true );
@@ -1145,20 +1149,25 @@ defaultMenu( sheetType ) {
 ##################################################
 */
 dataDownload() {
+    const ui = this;
+    
     const list = [
-        { title: WD.UI.AllDownloadExcel, description: WD.UI.AllDownloadExcelText, type: 'allDwonloadExcel'},
-        { title: WD.UI.AllDownloadJson, description: WD.UI.AllDownloadJsonText, type: 'allDwonloadJson'}
+        { title: getMessage.FTE10011, description: getMessage.FTE10012, type: 'allDwonloadExcel'},
+        { title: getMessage.FTE10013, description: getMessage.FTE10014, type: 'allDwonloadJson'}
     ];
     
-    if ( this.flag.insert ) {
-        list.push({ title: WD.UI.NewDownloadExcel, description: WD.UI.NewDownloadExcelText, type: 'newDwonloadExcel'});
+    if ( ui.flag.insert ) {
+        list.push({ title: getMessage.FTE10015, description: getMessage.FTE10016, type: 'newDwonloadExcel'});
     } 
     
-    list.push({ title: WD.UI.AllDownloadHistoryExcel, description: WD.UI.AllDownloadHistoryExcelText, type: 'allHistoryDwonloadExcel'});
+    list.push({ title: getMessage.FTE10023, description: getMessage.FTE10024, type: 'allHistoryDwonloadExcel'});
     
-    if ( this.flag.edit ) {
-        list.push({ title: WD.UI.ExcelUpload, description: WD.UI.ExcelUploadText, type: 'excelUpload', action: 'positive'});
-        list.push({ title: WD.UI.JsonUpload, description: WD.UI.JsonUploadText, type: 'jsonUpload', action: 'positive'});
+    if ( ui.flag.edit ) {
+        list.push({ title: getMessage.FTE10017, description: getMessage.FTE10018, type: 'excelUpload', action: 'positive'});
+        list.push({ title: getMessage.FTE10019, description: getMessage.FTE10020, type: 'jsonUpload', action: 'positive'});
+    } else if ( ui.flag.update ) {
+        list.push({ title: getMessage.FTE10017, description: getMessage.FTE10031, type: 'excelUpload', action: 'positive'});
+        list.push({ title: getMessage.FTE10019, description: getMessage.FTE10032, type: 'jsonUpload', action: 'positive'});
     }
     
     const html = [];
@@ -1194,19 +1203,19 @@ fileRegister( $button, type ) {
         
         // 登録するか確認する
         const buttons = {
-            ok: { text: WD.UI.AllUploadStart, action: 'positive'},
-            cancel: { text: WD.UI.AllUploadCancel, action: 'normal'}
+            ok: { text: getMessage.FTE10025, action: 'positive'},
+            cancel: { text: getMessage.FTE10026, action: 'normal'}
         };
         
         const table = { tbody: []};
-        table.tbody.push([WD.UI.AllUploadFileName, selectFile.name ]);
-        table.tbody.push([WD.UI.AllUploadFileSize, selectFile.size.toLocaleString() + ' byte']);
+        table.tbody.push([ getMessage.FTE10027, selectFile.name ]);
+        table.tbody.push([ getMessage.FTE10028, selectFile.size.toLocaleString() + ' byte']);
         
         if ( fileType === 'json') {
             try {
-                table.tbody.push([WD.UI.AllUploadCount, selectFile.json.length.toLocaleString() ]);
+                table.tbody.push([ getMessage.FTE10029, selectFile.json.length.toLocaleString() ]);
             } catch( e ) {
-                throw new Error(WD.UI.JsonUploadErr);
+                throw new Error( getMessage.FTE10021 );
             }
         }
         
@@ -1252,7 +1261,7 @@ fileRegister( $button, type ) {
 executeMenu() {
     const ui = this;
     
-    const title = ui.currentPage.title,
+    const title = fn.cv( ui.rest.info.menu_info.menu_name, '', true ),
           menuInfo = fn.cv( ui.rest.info.menu_info.menu_info, '');
     
     const initSetFilter = fn.getParams().filter,
@@ -1297,11 +1306,11 @@ operationStatusMenu() {
     
     const contentTab = [
         { name: 'operationStatus', title: '作業状態確認', type: 'blank' },
-        { name: 'executeLog', title: '実行ログ', type: 'blank' },
-        { name: 'errorLog', title: 'エラーログ', type: 'blank' }
+        { name: 'executeLog', title: '実行ログ', type: 'blank', view: false, className: 'executeLogTab'},
+        { name: 'errorLog', title: 'エラーログ', type: 'blank', view: false, className: 'errorLogTab' }
     ];
     
-    const title = ui.currentPage.title,
+    const title = fn.cv( ui.rest.info.menu_info.menu_name, '', true ),
           menuInfo = fn.cv( ui.rest.info.menu_info.menu_info, '');
     
     ui.$.content.html( ui.commonContainer( title, menuInfo, ui.contentTab( contentTab ) ) );

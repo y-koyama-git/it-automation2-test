@@ -79,14 +79,15 @@ def menu_column_group_valid(objdbca, objtable, option):
     
     # 復活時、親カラムグループが廃止されていたらエラー
     if cmd_type == "Restore":
-        where_str = "WHERE FULL_COL_GROUP_NAME_{} = %s".format(user_env)
+        where_str = "WHERE CREATE_COL_GROUP_ID = %s"
         current_parent_column_group = current_parameter.get("parent_column_group")
         bind_value_list = [current_parent_column_group]
         return_values = objdbca.table_select(table_name, where_str, bind_value_list)
         
-        if return_values[0].get("DISUSE_FLAG") == "1":
-            retBool = False
-            msg = g.appmsg.get_api_message("MSG-20014", [return_values[0].get("CREATE_COL_GROUP_ID")])
+        if return_values:
+            if return_values[0].get("DISUSE_FLAG") == "1":
+                retBool = False
+                msg = g.appmsg.get_api_message("MSG-20014", [return_values[0].get("CREATE_COL_GROUP_ID")])
     # ---------カラムグループ名---------
     
     # ---------フルカラムグループ名---------

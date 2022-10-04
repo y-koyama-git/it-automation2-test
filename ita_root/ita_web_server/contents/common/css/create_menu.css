@@ -397,7 +397,7 @@ width: 100%;
 height: 24px;
 border: 1px solid #888E92;
 border-radius: 0;
-font-size: 11px;
+font-size: 12px;
 font-family: Consolas, "メイリオ", Meiryo, Osaka, "ＭＳ Ｐゴシック", "MS PGothic", sans-serif;
 color: #333;
 }
@@ -406,13 +406,19 @@ padding: 1px;
 background-color: #AAA;
 }
 .menu-column-config-table {
+display: block;
 width: 100%;
-border-collapse: collapse;
+}
+.menu-column-config-table .input {
+width: 8px; min-width: 100%;
+}
+.menu-column-config-table tbody {
+display: block;
 }
 .menu-column-config-table tr {
-  display: none;
+display: none;
+flex-wrap: wrap;
 }
-
 .menu-column-config-table tr.all,
 .menu-column-config-table[date-select-value="1"] tr.single,
 .menu-column-config-table[date-select-value="2"] tr.multiple,
@@ -425,22 +431,27 @@ border-collapse: collapse;
 .menu-column-config-table[date-select-value="9"] tr.file,
 .menu-column-config-table[date-select-value="10"] tr.link,
 .menu-column-config-table[date-select-value="11"] tr.type3 {
-  display: table-row;
+display: flex;
 }
 .menu-column-config-table th,
 .menu-column-config-table td {
+display: flex;
+align-items: center;
+width: 100%;
 padding: 2px;
 border: 1px solid #AAA;
-font-size: 11px;
+border-bottom: none;
+font-size: 12px;
 font-family: Consolas, "メイリオ", Meiryo, Osaka, "ＭＳ Ｐゴシック", "MS PGothic", sans-serif;
 color: #333;
 }
 .menu-column-config-table th {
-width: 8px;
 padding: 2px 4px;
-background-color: #DDD;
+background-color: var(--black20);
+background-image: linear-gradient(rgba(255,255,255,.4), rgba(255,255,255,0));
+box-shadow: 0 1px 1px rgb( 255,255,255,.5 ) inset;
 vertical-align: middle;
-white-space: nowrap;
+text-align: left;
 line-height: 1.3;
 }
 .menu-column-config-table td {
@@ -451,6 +462,9 @@ background-color: #F2F2F2;
 .menu-column-config-table input[type="number"],
 .config-id {
 line-height: 1;
+}
+.config-number {
+text-align: right;
 }
 .property-number,
 .config-number,
@@ -480,6 +494,24 @@ outline: none;
 min-height: 48px;
 line-height: 1.5;
 resize: vertical;
+}
+.menu-column-config-table .half-cell {
+width: 50%;
+}
+.menu-column-config-table th.half-cell {
+}
+.menu-column-config-table td.half-cell {
+border-left: none;
+}
+.menu-column-config-table .full-head {
+width: 100%;
+padding-top: 4px;
+min-height: 28px;
+}
+.menu-column-config-table .full-body {
+width: 100%;
+padding: 4px;
+border-top: none;
 }
 
 .required-label,
@@ -561,6 +593,7 @@ border-left-color: #666;
 .config-textarea-wrapper {
 position: relative;
 z-index: 1;
+width: 100%;
 }
 .config-textarea-wrapper textarea + span {
 display: flex;
@@ -580,9 +613,10 @@ display: none;
 }
 .reference-block {
 display: flex;
+width: 100%;
 height: 28px;
 }
-.reference-item {
+.menu-column-config-table .reference-item {
 overflow: hidden;
 flex: 1 1 auto;
 min-width: 0; min-height: auto;
@@ -591,6 +625,13 @@ background-color: var(--black10);
 line-height: 26px;
 text-overflow: ellipsis;
 white-space: nowrap;
+}
+.menu-column-config-table .inputDateContainer {
+width: 100%;
+}
+.menu-column-config-table .inputDateBody {
+flex: 1 1 auto;
+min-width: 0;
 }
 .property-button {
 flex: 0 0 32px;
@@ -728,7 +769,7 @@ background-size: 16px 16px;
 border: 1px solid #9CA1A4;
 border-radius: 2px;
 letter-spacing: 0.1em;
-font-size: 11px;
+font-size: 12px;
 font-weight: bold;
 font-family: Consolas, "メイリオ", Meiryo, Osaka, "ＭＳ Ｐゴシック", "MS PGothic", sans-serif;
 color: #9CA1A4;
@@ -947,7 +988,7 @@ background-color: rgba( 255,255,255,.04 );
 .editor-log-content {
 margin: 0; padding: 2px 8px;
 line-height: 1.5;
-font-size: 11px;
+font-size: 12px;
 font-family: Consolas, "メイリオ", Meiryo, Osaka, "ＭＳ Ｐゴシック", "MS PGothic", sans-serif;
 color: #CCC;
 }
@@ -1273,7 +1314,7 @@ border-spacing: 1px;
 padding: 4px 8px;
 line-height: 1.5;
 vertical-align: middle;
-font-size: 11px;
+font-size: 12px;
 font-family: Consolas, "メイリオ", Meiryo, Osaka, "ＭＳ Ｐゴシック", "MS PGothic", sans-serif;
 color: #EEE;
 }
@@ -1343,7 +1384,7 @@ border-radius: 2px;
 box-shadow: 0 0 0 1px #111;
 text-shadow: 1px 1px 1px rgba( 0,0,0,.6 );
 line-height: 30px;
-font-size: 11px;
+font-size: 12px;
 color: #EEE;
 cursor: pointer;
 }
@@ -1448,7 +1489,7 @@ border-bottom-color: rgba( 0,0,0,.2 );
 border-radius: 2px;
 box-shadow: 0 0 0 1px #111;
 text-shadow: 1px 1px 1px rgba( 0,0,0,.6 );
-font-size: 11px;
+font-size: 12px;
 color: #EEE;
 cursor: pointer;
 }
