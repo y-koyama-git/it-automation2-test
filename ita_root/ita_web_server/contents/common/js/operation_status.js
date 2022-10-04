@@ -56,6 +56,7 @@ setRestApiUrls() {
     op.rest = {};
     if ( op.id ) {
         op.rest.info = `/menu/${op.menu}/driver/${op.id}/`;
+        op.rest.cancel = `/menu/${op.menu}/driver/${op.id}/cancel/`;
         op.rest.scram = `/menu/${op.menu}/driver/${op.id}/scram/`;
     }
 }
@@ -84,10 +85,17 @@ static string = {
 setup() {
     const op = this;
     
+    fn.contentLoadingStart();
+    
     op.$ = {};
+    op.$.content = $('#content');
     op.$.operation = $('#operationStatus').find('.sectionBody');
     op.$.executeLog = $('#executeLog').find('.sectionBody');
     op.$.errorLog = $('#errorLog').find('.sectionBody');
+    
+    op.$.tab = op.$.content.find('.contentMenu');
+    op.$.executeTab = op.$.tab.find('.executeLogTab');
+    op.$.errorTab = op.$.tab.find('.errorLogTab');
     
     op.setRestApiUrls();
     
@@ -97,23 +105,24 @@ setup() {
             op.info = info;
             op.operationStatusInit();
             op.operationStatus();
-            op.errorLogInit();
+            op.logInit()
             
             // status_monitoring_cycleごとに更新
             op.monitoring();
             
         }).catch(function( error ){
-            op.operationStatusInit();
-            op.operationMessage();
-            op.errorLogInit();
-            console.error( error )
-            alert( error.message );
+            if ( error.message !== 'Failed to fetch') {
+                alert( error.message );
+                window.location.href = `?menu=${op.menu}`;
+            }
+        }).then(function(){
+            fn.contentLoadingEnd();
         });
     } else {
         history.replaceState( null, null, `?menu=${op.menu}`);
         op.operationStatusInit();
         op.operationMessage();
-        op.errorLogInit();
+        fn.contentLoadingEnd();
     }
 }
 /*
@@ -124,9 +133,13 @@ setup() {
 monitoring() {
     const op = this;
     
+    // 完了、完了(異常)、想定外エラー、緊急停止、予約取消の場合は更新しない
+    const stopId = [ '5', '6', '7', '8', '10'];
+    if ( stopId.indexOf( op.info.status_id ) !== -1 ) return false;
+    
     const cycle = fn.cv( op.info.status_monitoring_cycle, 3000 );
     
-    setTimeout( function(){
+    op.timerId = setTimeout( function(){
         fn.fetch( op.rest.info ).then(function( info ){
             op.info = info;
 
@@ -135,15 +148,14 @@ monitoring() {
             op.executeLogUpdate();
             op.errorLogUpdate();
             
-            // 完了、完了(異常)、想定外エラー、緊急停止、予約取消の場合は更新しない
-            const stopId = [ 5, 6, 7, 8, 10 ];
-
-            if ( stopId.indexOf( op.info.status_id ) === -1 ) {
-                op.monitoring();
-            }
+            fn.contentLoadingEnd();
+            op.monitoring();
+            
         }).catch(function( error ){
-            console.error( error )
-            alert( error.message );
+            if ( error.message !== 'Failed to fetch') {
+                console.error( error );
+                alert( error.message );
+            }
         });
         
     }, cycle );
@@ -162,8 +174,8 @@ operationStatusInit() {
         Main: [
             { input: { className: 'operationId', value: op.id, before: getMessage.FTE05001 } },
             { button: { icon: 'check', text: getMessage.FTE05002, type: 'check', action: 'default', width: '200px'} },
-            { button: { icon: 'cal_off', text: getMessage.FTE05003, type: 'cansel', action: 'default', width: '200px'}, display: 'none', separate: true },
-            { button: { icon: 'stop', text: getMessage.FTE05004, type: 'scram', action: 'danger', width: '200px'}, display: 'none', separate: true }
+            { className: 'standby', button: { icon: 'cal_off', text: getMessage.FTE05003, type: 'cansel', action: 'default', width: '200px'}, separate: true },
+            { className: 'execute', button: { icon: 'stop', text: getMessage.FTE05004, type: 'scram', action: 'danger', width: '200px'}, separate: true }
         ],
         Sub: []
     };
@@ -171,11 +183,14 @@ operationStatusInit() {
     op.$.operationMenu = op.$.operation.find('.operationMenu');
     op.$.operationContainer = op.$.operation.find('.operationStatusContainer');
     
+    op.$.button = op.$.operationMenu.find('.operationMenuButton');
+    
+    
     const $operationNoInput = op.$.operationMenu.find('.operationMenuInput'),
           $operationNoButton = op.$.operationMenu.find('.operationMenuButton[data-type="check"]');
     $operationNoInput.on('input', function(){
-        const value = $operationNoInput.val();
-        if ( value !== '') {
+        const operationNo = $operationNoInput.val();
+        if ( operationNo !== '') {
             $operationNoButton.prop('disabled', false );
         } else {
             $operationNoButton.prop('disabled', true );
@@ -186,18 +201,56 @@ operationStatusInit() {
     }
     
     // メニューボタン
-    op.$.operationMenu.find('.operationMenuButton').on('click', function(){
+    op.$.button.on('click', function(){
         const $button = $( this ),
               type = $button.attr('data-type');
-        switch ( type ) {
-            // 作業状態確認切替
-            case 'check':
-                const value = op.$.operationMenu.find('.operationMenuInput').val();
-                fn.clearCheckOperation( op.id );
-                fn.createCheckOperation( op.menu, value );
-            break;
-            // 予約取消
-            // 緊急停止
+        
+        if ( !fn.checkContentLoading() ) {
+        
+            fn.contentLoadingStart();
+            clearTimeout( op.timerId );
+        
+            switch ( type ) {
+                // 作業状態確認切替
+                case 'check': {
+                    const operationNo = op.$.operationMenu.find('.operationMenuInput').val();
+                    fn.clearCheckOperation( op.id );
+                    fn.createCheckOperation( op.menu, operationNo );
+                } break;
+                // 予約取消
+                case 'cansel':
+                    if ( window.confirm(getMessage.FTE02043) ) {
+                        
+                        fn.fetch( op.rest.cancel, null, 'PATCH', {}).then(function(){
+
+                        }).catch(function( error ){
+                            alert( error.message );
+                        }).then(function(){
+                            console.log('!')
+                            fn.contentLoadiEnd();
+                            op.monitoring();
+                        });
+                    } else {
+                        fn.contentLoadiEnd();
+                        op.monitoring();
+                    }
+                break;
+                // 緊急停止
+                case 'scram':
+                    if ( window.confirm(getMessage.FTE02044) ) {
+                        fn.fetch( op.rest.scram, null, 'PATCH', {}).then(function(){
+                        }).catch(function( error ){
+                            alert( error.message );
+                        }).then(function(){
+                              fn.contentLoadiEnd();
+                              op.monitoring();
+                        });
+                    } else {
+                        fn.contentLoadiEnd();
+                        op.monitoring();
+                    }
+                break;
+            }
         }
     });
 }
@@ -219,12 +272,6 @@ operationMessage() {
     
     op.$.operationContainer.html( html );
 }
-/*
-##################################################
-   Operation menu check
-##################################################
-*/
-
 /*
 ##################################################
    Operation status
@@ -457,6 +504,19 @@ operationStatus() {
         fn.modalIframe( target.menu, target.title, { filter: target.filter, iframeMode: target.iframeMode });
     });
     
+    // ファイルダウンロード
+    op.$.operationContainer.on('click', '.operationStatusFileDownload', function( e ){
+        e.preventDefault();
+        
+        const $link = $( this ),
+              rest = $link.attr('data-rest'),
+              fileName = $link.text();
+        
+        if ( op.info.execution_list.file[rest] ) {
+            fn.download('base64', op.info.execution_list.file[rest], fileName );
+        }
+    });
+    
     // ノードのアニメーション完了時
     op.$.node.find('.node-result').on('animationend', function(){
         if ( op.$.node.is('.complete') ) {
@@ -477,6 +537,7 @@ operationStatusUpdate() {
     const op = this;
     
     // 値を更新する
+    const typeFile = Object.keys( op.info.execution_list.file );
     for( const key in op.info.execution_list.parameter ) {
         const value = op.info.execution_list.parameter[ key ];
         if ( value ) {
@@ -484,7 +545,12 @@ operationStatusUpdate() {
                   currentValue = $data.eq(0).text();
             // 変更がある場合のみ内容を更新する
             if ( $data.length && currentValue !== value ) {
-                $data.text( value );
+                if ( typeFile.indexOf( key ) !== -1 ) {
+                    const fileName = fn.escape( value );
+                    $data.html(`<a href="${fileName}" data-rest="${key}" class="link operationStatusFileDownload">${fileName}</a>`);
+                } else {
+                    $data.text( value );
+                }
             }
         }
     }
@@ -501,12 +567,22 @@ operationStatusUpdate() {
     09 未実行(予約)
     10 予約取消
     */
+    const statudId = op.info.status_id;
     
     // ホスト確認、代入値確認ボタン
-    if ( ['1', '2', '10'].indexOf( op.info.status_id ) === -1 ) {
-        op.$.operationContainer.find('.hostButton, .valueButton').prop('disabled', false );
-    } else {
+    if ( ['1', '2', '9', '10'].indexOf( statudId ) !== -1 ) {
         op.$.operationContainer.find('.hostButton, .valueButton').prop('disabled', true );
+    } else {
+        op.$.operationContainer.find('.hostButton, .valueButton').prop('disabled', false );
+    }
+    
+    // 予約取消、緊急停止ボタン
+    if ( ['9'].indexOf( statudId ) !== -1 && op.info.execution_list.parameter.scheduled_date_time !== null ) {
+        op.$.operation.attr('data-mode', 'standby');
+    } else if ( ['3','4'].indexOf( statudId ) !== -1 ) {
+        op.$.operation.attr('data-mode', 'execute');
+    } else {
+        op.$.operation.attr('data-mode', '');
     }
     
     // ノードの状態を更新する
@@ -536,6 +612,26 @@ operationStatusUpdate() {
     }
     
 }
+
+
+/*
+##################################################
+   log
+##################################################
+*/
+logInit() {
+    const op = this;
+    
+    // 進行状態表示行数
+    if ( op.info ) { 
+        op.logMax = fn.cv( op.info.number_of_rows_to_display_progress_status, 1000 );
+    } else {
+        op.logMax = 0;
+    }
+    
+    op.executeLogInit();
+    op.errorLogInit();
+}
 /*
 ##################################################
    Execute log
@@ -543,11 +639,62 @@ operationStatusUpdate() {
 */
 executeLogInit() {
     const op = this;
-    op.execute = new Log();
-    op.$.executeLog.html( op.execute.setup() );
+    
+    if ( op.info ) {
+        op.executeLog = {};
+
+        op.$.executeLog.html(`
+        <div class="executeLogContainer">
+            <div class="executeLogSelect">
+                <ul class="executeLogSelectList">
+                </ul>
+            </div>
+            <div class="executeLogContent">
+            </div>
+        </div>`);
+
+        op.$.executeLogSelectList = op.$.executeLog.find('.executeLogSelectList');
+        op.$.executeLogContent = op.$.executeLog.find('.executeLogContent');
+
+        // ログ切替
+        op.$.executeLogSelectList.on('click', '.executeLogSelectLink', function( e ){
+            e.preventDefault();
+
+            const $link = $( this ),
+                  file = $link.attr('href');
+
+            op.$.executeLog.find('.logOpen').removeClass('logOpen').removeAttr('tabindex');
+            $link.addClass('tabOpen').attr('tabindex', -1 );
+            op.$.executeLog.find( file ).addClass('logOpen');
+            console.log(op.$.executeLog.find( file ))
+        });
+
+        op.executeLogUpdate();
+    }
 }
 executeLogUpdate() {
-    
+    const op = this;
+
+    if ( op.info.progress.execution_log && op.info.progress.execution_log.exec_log ) {
+        if ( Object.keys( op.info.progress.execution_log.exec_log ).length ) {
+            for ( const filename in op.info.progress.execution_log.exec_log ) {
+                if ( !op.executeLog[ filename ] ) {
+                    const executeLogId = 'executeLog_' + filename.replace(/\./, '_'),
+                          firstFlag = ( op.$.executeLog.find('.executeLogSection').length === 0 )? true: false;
+                    op.executeLog[ filename ] = new Log( executeLogId, op.logMax );
+                    op.$.executeLogSelectList.append(`<li class="executeLogSelectItem"><a class="executeLogSelectLink" href="#${executeLogId}">${filename}</a></li>`);
+                    op.$.executeLogContent.append( op.executeLog[ filename ].setup('executeLogSection', executeLogId ) );
+                    
+                    if ( firstFlag ) {
+                        op.$.executeTab.removeClass('hidden');
+                        op.$.executeLogSelectList.find('.executeLogSelectLink').addClass('logOpen').attr('tabindex', -1 );
+                        op.$.executeLogContent.find('.executeLogSection').addClass('logOpen');
+                    }
+                }  
+                op.executeLog[ filename ].update( op.info.progress.execution_log.exec_log[ filename ] );
+            }
+        }
+    }
 }
 /*
 ##################################################
@@ -555,17 +702,22 @@ executeLogUpdate() {
 ##################################################
 */
 errorLogInit() {
-    const op = this;    
-    op.errorLog = new Log( );
-    op.$.errorLog.html( op.errorLog.setup() );
-    op.errorLogUpdate();
+    const op = this;
+    
+    if ( op.info ) {
+        op.errorLogUpdate();
+    }
 }
 errorLogUpdate() {
     const op = this;
-    
-    // エラーログがあるか？
-    if ( op.info && op.info.execution_log && op.info.execution_log.error_log ) {
-        op.errorLog.update( op.info.execution_log.error_log );
+
+    if ( op.info.progress.execution_log && op.info.progress.execution_log.error_log ) {
+        if ( !op.errorLog ) {
+            op.$.errorTab.removeClass('hidden');
+            op.errorLog = new Log('errorLog', op.logMax );
+            op.$.errorLog.html( op.errorLog.setup() );
+        }
+        op.errorLog.update( op.info.progress.execution_log.error_log );
     }
 }
 

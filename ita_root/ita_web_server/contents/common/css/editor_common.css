@@ -222,6 +222,12 @@ background-position: -24px -96px;
 .mouse-right {
 background-position: -36px -96px;
 }
+.editor-message {
+flex: 1 1 auto;
+display: flex;
+justify-content: center;
+align-items: center;
+}
 
 /* -------------------------------------------------- *
 
@@ -473,6 +479,9 @@ background-color: rgba( 0,0,0,.2 );
 line-height: 1.5;
 word-break: break-all;
 color: #EEE;
+}
+.editorAutoInput {
+color: #999;
 }
 .panel-span-noborder {
 display: inline-flex;
@@ -1129,7 +1138,6 @@ border-bottom: 1px solid rgba( 255,255,255,.05 );
 .editor-log-content-level > .error-log-row:last-child {
 border-bottom: none;
 }
-
 /* -------------------------------------------------- *
 
    Scroll bar
