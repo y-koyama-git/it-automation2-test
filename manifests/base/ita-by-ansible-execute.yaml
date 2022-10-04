@@ -57,7 +57,7 @@ spec:
       shareProcessNamespace: true
       containers:
         - name: ita-by-ansible-execute
-          image: exastro/it-automation2-test-ita-by-ansible-execute:build.c39041.20220915-113901
+          image: exastro/it-automation2-test-ita-by-ansible-execute:Integration-test.9b3983.20220921-113111
           imagePullPolicy: Always
           resources:
             requests:
@@ -88,8 +88,16 @@ spec:
           volumeMounts:
             - name: persistent-storage
               mountPath: /storage
+            - name: contaier-volume
+              mountPath: /tmp
+            - name: emptydir-vol
+              mountPath: /home/app_user
       volumes:
         - name: persistent-storage
           persistentVolumeClaim:
             claimName: ita-pvc
+        - name: contaier-volume
+          emptyDir: {}
+        - name: emptydir-vol
+          emptyDir: {}
 
