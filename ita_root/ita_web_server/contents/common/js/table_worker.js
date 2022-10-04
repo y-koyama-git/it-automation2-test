@@ -143,13 +143,27 @@ sort() {
             const name = sort[ order ],
                   flag = ( order === 'ASC')? -1: 1;
             tw.result.sort(function( a, b ){
-                let paramA = a.parameter[ name ], paramB = b.parameter[ name ];
-                if ( !isNaN( paramA ) && !isNaN( paramB ) ) {
-                    paramA = Number( paramA );
-                    paramB = Number( paramB );
+                let paramA = fn.cv( a.parameter[ name ], ''),
+                    paramB = fn.cv( b.parameter[ name ], '');
+                
+                if ( fn.typeof( paramA ) === 'object' ||  fn.typeof( paramA ) === 'array' ||
+                     fn.typeof( paramB ) === 'object' ||  fn.typeof( paramB ) === 'array') {
+                    try {
+                        paramA = ( paramA !== '')? JSON.stringify( paramA ): '';
+                        paramB = ( paramB !== '')? JSON.stringify( paramB ): '';
+                    } catch ( error ) {
+                        paramA = '';
+                        paramB = '';
+                        console.warn('journal error. (JSON.stringify error)');
+                    }
                 } else {
-                    paramA = String( paramA );
-                    paramB = String( paramB );
+                    if ( !isNaN( paramA ) && !isNaN( paramB ) ) {
+                        paramA = Number( paramA );
+                        paramB = Number( paramB );
+                    } else {
+                        paramA = String( paramA );
+                        paramB = String( paramB );
+                    }
                 }
                 
                 if ( paramA < paramB ) {
@@ -239,7 +253,8 @@ duplicatSelectData() {
    tw.result.forEach(function( val ){
         const id = String( val.parameter[ tw.data.idName ] );
         if ( tw.data.select.indexOf( id ) !== -1 ) {
-            const parameters = {};
+            const parameters = {},
+                  files = {};
             for ( const key in val.parameter ) {
                 if ( key === tw.data.idName ) {
                     parameters[ key ] = String( tw.data.addId-- );
@@ -254,8 +269,16 @@ duplicatSelectData() {
                     parameters[ key ] = null;
                 }
             }
+            for ( const key in val.file ) {
+                // 入力済みのデータがあるか
+                if ( tw.data.input && tw.data.input[id] && tw.data.input[id].after.file[ key ] ) {
+                    files[ key ] = tw.data.input[id].after.file[ key ];
+                } else {
+                    files[ key ] = val.file[ key ];
+                }
+            }
             newData.unshift({
-                file: {},
+                file: files,
                 parameter: parameters
             });
         }
@@ -282,9 +305,27 @@ historyDiff() {
             const a = r[ i ].parameter,
                   b = r[ i + 1 ].parameter;
             for ( const k in a ) {
-                if ( a[ k ] !== b[ k ] ) {
-                    if ( !r[ i ].journal ) r[ i ].journal = {};
-                    r[ i ].journal[ k ] = b[ k ];
+                // チェック用に一旦変換する
+                let pa = fn.cv( a[ k ], ''),
+                    pb = fn.cv( b[ k ], '');
+                // 配列、オブジェクトの場合は文字列化
+                if ( fn.typeof( pa ) === 'object' || fn.typeof( pb ) === 'array' ||
+                     fn.typeof( pb ) === 'object' || fn.typeof( pb ) === 'array') {
+                    try {
+                        pa = ( pa !== '')? JSON.stringify( pa ): '',
+                        pb = ( pb !== '')? JSON.stringify( pb ): '';
+                        if ( pa !== pb ) {
+                            if ( !r[ i ].journal ) r[ i ].journal = {};
+                            r[ i ].journal[ k ] = b[ k ];
+                        }
+                    } catch ( error ) {
+                        console.warn('journal error. (JSON.stringify error)');
+                    }
+                } else {
+                    if ( pa !== pb ) {
+                        if ( !r[ i ].journal ) r[ i ].journal = {};
+                        r[ i ].journal[ k ] = b[ k ];
+                    }
                 }
             }
         }

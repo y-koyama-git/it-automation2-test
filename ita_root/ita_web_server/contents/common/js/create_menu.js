@@ -209,7 +209,7 @@ panelContainerHtml( editorMode ) {
                 <tbody>
                     <tr>
                         <th class="panel-th">` + getMessage.FTE01010 + `</th>
-                        <td class="panel-td"><span id="create-menu-id" class="panel-span">` + getMessage.FTE01011 + `</span></td>
+                        <td class="panel-td"><span id="create-menu-id" class="panel-span"><span class="editorAutoInput">${getMessage.FTE01011}</span></span></td>
                     </tr>
                 </tbody>
             </table>
@@ -237,11 +237,11 @@ panelContainerHtml( editorMode ) {
                     </tr>
                     <tr>
                         <th class="panel-th">` + getMessage.FTE01017 + `</th>
-                        <td class="panel-td"><span id="create-menu-last-modified" class="panel-span">` + getMessage.FTE01011 + `</span></td>
+                        <td class="panel-td"><span id="create-menu-last-modified" class="panel-span"><span class="editorAutoInput">${getMessage.FTE01011}</span></span></td>
                     </tr>
                     <tr>
                         <th class="panel-th">` + getMessage.FTE01018 + `</th>
-                        <td class="panel-td"><span id="create-last-update-user" class="panel-span">` + getMessage.FTE01011 + `</span></td>
+                        <td class="panel-td"><span id="create-last-update-user" class="panel-span"><span class="editorAutoInput">${getMessage.FTE01011}</span></span></td>
                     </tr>
                 </tbody>
             </table>
@@ -306,7 +306,7 @@ panelContainerHtml( editorMode ) {
                 <tbody>
                     <tr>
                         <th class="panel-th">` + getMessage.FTE01010 + `</th>
-                        <td class="panel-td"><span id="create-menu-id" class="panel-span" data-value="">` + getMessage.FTE01011 + `</span></td>
+                        <td class="panel-td"><span id="create-menu-id" class="panel-span" data-value=""><span class="editorAutoInput">${getMessage.FTE01011}</span></span></td>
                     </tr>
                 </tbody>
             </table>
@@ -346,11 +346,11 @@ panelContainerHtml( editorMode ) {
                     </tr>
                     <tr>
                         <th class="panel-th">` + getMessage.FTE01017 + `</th>
-                        <td class="panel-td" colspan="3"><span id="create-menu-last-modified" class="panel-span" data-value="">` + getMessage.FTE01011 + `</span></td>
+                        <td class="panel-td" colspan="3"><span id="create-menu-last-modified" class="panel-span" data-value=""><span class="editorAutoInput">${getMessage.FTE01011}</span></span></td>
                     </tr>
                     <tr>
                         <th class="panel-th">` + getMessage.FTE01018 + `</th>
-                        <td class="panel-td" colspan="3"><span id="create-last-update-user" class="panel-span" data-value="">` + getMessage.FTE01011 + `</span></td>
+                        <td class="panel-td" colspan="3"><span id="create-last-update-user" class="panel-span" data-value=""><span class="editorAutoInput">${getMessage.FTE01011}</span></span></td>
                     </tr>
                 </tbody>
             </table>
@@ -424,7 +424,7 @@ panelContainerHtml( editorMode ) {
                 <tbody>
                     <tr>
                         <th class="panel-th">` + getMessage.FTE01010 + `</th>
-                        <td class="panel-td" colspan="3"><span id="create-menu-id" class="panel-span" data-value="">` + getMessage.FTE01011 + `</span></td>
+                        <td class="panel-td" colspan="3"><span id="create-menu-id" class="panel-span" data-value=""><span class="editorAutoInput">${getMessage.FTE01011}</span></span></td>
                     </tr>
                 </tbody>
             </table>
@@ -464,11 +464,11 @@ panelContainerHtml( editorMode ) {
                     </tr>
                     <tr>
                         <th class="panel-th">` + getMessage.FTE01017 + `</th>
-                        <td class="panel-td" colspan="3"><span id="create-menu-last-modified" class="panel-span" data-value="">` + getMessage.FTE01011 + `</span></td>
+                        <td class="panel-td" colspan="3"><span id="create-menu-last-modified" class="panel-span" data-value=""><span class="editorAutoInput">${getMessage.FTE01011}</span></span></td>
                     </tr>
                     <tr>
                         <th class="panel-th">` + getMessage.FTE01018 + `</th>
-                        <td class="panel-td" colspan="3"><span id="create-last-update-user" class="panel-span" data-value="">` + getMessage.FTE01011 + `</span></td>
+                        <td class="panel-td" colspan="3"><span id="create-last-update-user" class="panel-span" data-value=""><span class="editorAutoInput">${getMessage.FTE01011}</span></span></td>
                     </tr>
                 </tbody>
             </table>
@@ -559,8 +559,8 @@ panelContainerHtml( editorMode ) {
 editorOperationMenuHtml( editorMode, createManagementMenuID ) {
     const menuList = {
         Sub: [
-            { className: 'fullscreen-on', button: { className: 'menu-editor-menu-button', icon: '', text: getMessage.FTE01148, type: 'fullscreen', action: 'default', width: '120px'}},
-            { className: 'fullscreen-off', button: { className: 'menu-editor-menu-button', icon: '', text: getMessage.FTE01149, type: 'fullscreen', action: 'default', width: '120px'}}
+            { className: 'fullscreen-on', button: { className: 'menu-editor-menu-button', icon: 'expansion', text: getMessage.FTE01148, type: 'fullscreen', action: 'default', width: '120px'}},
+            { className: 'fullscreen-off', button: { className: 'menu-editor-menu-button', icon: 'shrink', text: getMessage.FTE01149, type: 'fullscreen', action: 'default', width: '120px'}}
         ]
     };
     if ( editorMode === 'new' || editorMode === 'diversion'){
@@ -1084,137 +1084,143 @@ if ( menuEditorMode !== 'view') {
     $('#create-menu-type').html( selectParamTargetHTML );
 }
 
-const columnHTML = ''
-  + '<div class="menu-column" data-rowpan="1" data-item-id="" style="min-width: 280px">'
-    + '<div class="menu-column-header">'
-      + columnHeaderHTML
-    + '</div>'
-    + '<div class="menu-column-body">'
-      + '<div class="menu-column-type" title="' + textEntities(getMessage.FTE01109,1) + '">'
-        + '<select class="input menu-column-type-select" id="menu-column-type-select"'+modeDisabled+''+modeKeepData+'>' + inputMethodHTML + '</select>'
-      + '</div>'
-      + '<div class="menu-column-config">'
-        + '<table class="menu-column-config-table" date-select-value="1">'
-          + '<tr class="multiple single link" title="' + textEntities(getMessage.FTE01110,1) + '">'
-            + '<th>' + textCode('0011') + fn.html.required() + '</th>'
-            + '<td><input class="input config-number max-byte" type="number" data-min="1" data-max="8192" value=""'+modeDisabled+'></td>'
-          + '</tr>'
-          + '<tr class="multiple single" title="' + textEntities(getMessage.FTE01111,1) + '">'
-            + '<th>' + textCode('0012') + '</th>'
-            + '<td><input class="input config-text regex" type="text" value=""'+modeDisabled+'></td>'
-          + '</tr>'
-          + '<tr class="number-int" title="' + textEntities(getMessage.FTE01112,1) + '">'
-            + '<th>' + textCode('0013') + '</th>'
-            + '<td><input class="input config-number int-min-number" data-min="-2147483648" data-max="2147483647" type="number" value=""'+modeDisabled+'></td>'
-          + '</tr>'
-          + '<tr class="number-int" title="' + textEntities(getMessage.FTE01113,1) + '">'
-            + '<th>' + textCode('0014') + '</th>'
-            + '<td><input class="input config-number int-max-number" data-min="-2147483648" data-max="2147483647"  type="number" value=""'+modeDisabled+'></td>'
-          + '</tr>'
-          + '<tr class="number-float" title="' + textEntities(getMessage.FTE01114,1) + '">'
-            + '<th>' + textCode('0013') + '</th>'
-            + '<td><input class="input config-number float-min-number" data-min="-99999999999999" data-max="99999999999999"  type="number" value=""'+modeDisabled+'></td>'
-          + '</tr>'
-          + '<tr class="number-float" title="' + textEntities(getMessage.FTE01115,1) + '">'
-            + '<th>' + textCode('0014') + '</th>'
-            + '<td><input class="input config-number float-max-number" data-min="-99999999999999" data-max="99999999999999"  type="number" value=""'+modeDisabled+'></td>'
-          + '</tr>'
-          + '<tr class="number-float" title="' + textEntities(getMessage.FTE01116,1) + '">'
-            + '<th>' + textCode('0015') + '</th>'
-            + '<td><input class="input config-number digit-number" data-min="1" data-max="14" type="number" value=""'+modeDisabled+'></td>'
-          + '</tr>'
-          + '<tr class="select" title="' + textEntities(getMessage.FTE01117,1) + '">'
-            + '<th>' + textCode('0016') + fn.html.required() + '</th>'
-            + '<td>'
-              + '<select class="input config-select pulldown-select"'+modeDisabled+''+modeKeepData+'>' + selectPulldownListHTML + '</select>'
-            + '</td>'
-          + '</tr>'
-          + '<tr class="select reference" title="' + textEntities(getMessage.FTE01118,1) + '">'
-            + '<th>' + textCode('0043') + '</th>'
-            + '<td>'
-              + '<div class="reference-block">'
-                + '<span type="text" class="input config-text reference-item" type="text" data-reference-item-id '+modeDisabled+''+modeKeepData+'></span>'
-                + '<button class="itaButton button reference-item-select property-button popup" data-action="normal" title="' + textCode('0045') + '"' + modeDisabled + modeKeepData + '><div class="inner">' + fn.html.icon('menuList') + '</div></button>'
-              + '</div>'  
-            + '</td>'
-          + '</tr>'
-          /*
-          + '<tr class="select reference" title="' + textEntities(getMessage.FTE01118,1) + '">'
-            + '<td><button class="reference-item-select property-button" '+modeDisabled+''+modeKeepData+'>' + textCode('0045') + '</button></td>'
-          + '</tr>'
-          */
-          + '<tr class="password" title="' + textEntities(getMessage.FTE01110,1) + '">'
-            + '<th>' + textCode('0011') + fn.html.required() + '</th>'
-            + '<td><input class="input config-number password-max-byte" type="number" data-min="1" data-max="8192" value=""'+modeDisabled+'></td>'
-          + '</tr>'
-          + '<tr class="file" title="' + textEntities(getMessage.FTE01119,1) + '">'
-            + '<th>' + textCode('0042') + fn.html.required() + '</th>'
-            + '<td><input class="input config-number file-max-size" data-min="1" data-max="4294967296"  type="number" value=""'+modeDisabled+'></td>'
-          + '</tr>'
-          + '</tr>'
-          //+ '<tr class="type3" title="' + textEntities("作成対象「パラメータシート(オペレーションあり)」で作成したメニューの項目の中から参照する項目を選択します。\n選択した項目の中から同一オペレーションの値を参照します。",1) + '">'
-            //+ '<th>' + textCode('0051') + fn.html.required() + '</th>'
-            //+ '<td>'
-              //+ '<select class="config-select type3-reference-menu"'+modeDisabled+''+modeKeepData+'>' + type3PulldownListHTML + '</select>'
-            //+ '</td>'
-          //+ '</tr>'
-          + '<tr class="type3" title="' + textEntities(getMessage.FTE01120,1) + '">'
-            + '<th>' + textCode('0052') + fn.html.required() + '</th>'
-            + '<td class="type3-item-area">'
-              + '<select class="input config-select type3-reference-item"'+modeDisabled+''+modeKeepData+'></select>'
-            + '</td>'
-          + '</tr>'
-          + '<tr class="single" title="' + textEntities(getMessage.FTE01121,1) + '">'
-            + '<th>' + textCode('0050') + '</th>'
-            + '<td><input class="input config-text single-default-value" type="text" value=""'+modeDisabled+'></td>'
-          + '</tr>'
-          + '<tr class="multiple" title="' + textEntities(getMessage.FTE01121,1) + '">'
-            + '<th>' + textCode('0050') + '</th>'
-            + '<td><textarea class="input config-textarea multiple-default-value"'+modeDisabled+'></textarea></td>'
-          + '</tr>'
-          + '<tr class="number-int" title="' + textEntities(getMessage.FTE01122,1) + '">'
-            + '<th>' + textCode('0050') + '</th>'
-            + '<td><input class="input config-number int-default-value" data-min="-2147483648" data-max="2147483647" type="number" value=""'+modeDisabled+'></td>'
-          + '</tr>'
-          + '<tr class="number-float" title="' + textEntities(getMessage.FTE01123,1) + '">'
-            + '<th>' + textCode('0050') + '</th>'
-            + '<td><input class="input config-number float-default-value" data-min="-99999999999999" data-max="99999999999999" type="number" value=""'+modeDisabled+'></td>'
-          + '</tr>'
-          + '<tr class="date-time" title="' + textEntities(getMessage.FTE01124,1) + '">'
-            + '<th>' + textCode('0050') + '</th>'
-            + '<td>' + fn.html.dateInput( true, 'callDateTimePicker datetime-default-value config-text', '', 'dateTime') + '</td>'
-          + '</tr>'
-          + '<tr class="date" title="' + textEntities(getMessage.FTE01124,1) + '">'
-            + '<th>' + textCode('0050') + '</th>'
-            + '<td>' + fn.html.dateInput( false, 'callDateTimePicker date-default-value config-text', '', 'date') + '</td>'
-          + '</tr>'
-          + '<tr class="link" title="' + textEntities(getMessage.FTE01125,1) + '">'
-            + '<th>' + textCode('0050') + '</th>'
-            + '<td><input class="input config-text link-default-value" type="text" value=""'+modeDisabled+'></td>'
-          + '</tr>'
-          + '<tr class="select" title="' + textEntities(getMessage.FTE01126,1) + '">'
-            + '<th>' + textCode('0050') + '</th>'
-            + '<td class="pulldown-default-area">'
-              + '<select class="input config-select pulldown-default-select"'+modeDisabled+'></select>'
-            + '</td>'
-          + '</tr>'
-          + '<tr class="single multiple number-int number-float date-time date password select file link">'
-            + '<td colspan="2">'
-              + '<label class="required-label'+onHover+'" title="' + textEntities(getMessage.FTE01127,1) + '"'+modeDisabled+modeKeepData+'><input class="config-checkbox required'+disbledCheckbox+'" type="checkbox"'+modeDisabled+''+modeKeepData+'><span></span>' + textCode('0017') + '</label>'
-              + '<label class="unique-label'+onHover+'" title="' + textEntities(getMessage.FTE01128,1) + '"'+modeDisabled+modeKeepData+'><input class="config-checkbox unique'+disbledCheckbox+'" type="checkbox"'+modeDisabled+''+modeKeepData+'><span></span>' + textCode('0018') + '</label>'
-            + '</td>'
-          + '</tr>'
-          + '<tr class="all" title="' + textEntities(getMessage.FTE01129,1) + '">'
-            + '<td colspan="2"><div class="config-textarea-wrapper"><textarea class="input config-textarea explanation"'+modeDisabled+'></textarea><span>' + textCode('0019') + '</span></div></td>'
-          + '</tr>'
-          + '<tr class="all" title="' + textEntities(getMessage.FTE01130,1) + '">'
-            + '<td colspan="2"><div class="config-textarea-wrapper"><textarea class="input config-textarea note"'+modeDisabled+'></textarea><span>' + textCode('0020') + '</span></div></td>'
-          + '</tr>'
-        + '</table>'
-      + '</div>'
-    + '</div>'
-    + '<div class="column-resize"></div>'
-  + '</div>';
+const columnHTML = `
+<div class="menu-column" data-rowpan="1" data-item-id="" style="min-width: 260px;">
+    <div class="menu-column-header">${columnHeaderHTML}</div>
+    <div class="menu-column-body">
+        <div class="menu-column-type" title="${textEntities(getMessage.FTE01109,1)}">
+            <select class="input menu-column-type-select" id="menu-column-type-select"${modeDisabled}${modeKeepData}>${inputMethodHTML}</select>
+        </div>
+        <div class="menu-column-config">
+            <table class="menu-column-config-table" date-select-value="1">
+                <tbody>
+                    <tr class="multiple single link" title="${textEntities(getMessage.FTE01110,1)}">
+                        <th class="half-cell"><span class="config-title">${textCode('0011') + fn.html.required()}</span></th>
+                        <td class="half-cell"><input class="input config-number max-byte" type="number" data-min="1" data-max="8192" value=""${modeDisabled}></td>
+                    </tr>
+                    <tr class="multiple single" title="${textEntities(getMessage.FTE01111,1)}">
+                        <th class="full-head"><span class="config-title">${textCode('0012')}</span></th>
+                        <td class="full-body"><input class="input config-text regex" type="text" value=""${modeDisabled}></td>
+                    </tr>
+                    <tr class="number-int" title="${textEntities(getMessage.FTE01112,1)}">
+                        <th class="half-cell"><span class="config-title">${textCode('0013')}</span></th>
+                        <td class="half-cell"><input class="input config-number int-min-number" data-min="-2147483648" data-max="2147483647" type="number" value=""${modeDisabled}></td>
+                    </tr>
+                    <tr class="number-int" title="${textEntities(getMessage.FTE01113,1)}">
+                        <th class="half-cell"><span class="config-title">${textCode('0014')}</span></th>
+                        <td class="half-cell"><input class="input config-number int-max-number" data-min="-2147483648" data-max="2147483647"  type="number" value=""${modeDisabled}></td>
+                    </tr>
+                    <tr class="number-float" title="${textEntities(getMessage.FTE01114,1)}">
+                        <th class="half-cell"><span class="config-title">${textCode('0013')}</span></th>
+                        <td class="half-cell"><input class="input config-number float-min-number" data-min="-99999999999999" data-max="99999999999999"  type="number" value=""${modeDisabled}></td>
+                    </tr>
+                    <tr class="number-float" title="'${textEntities(getMessage.FTE01115,1)}">
+                        <th class="half-cell"<span class="config-title">>${textCode('0014')}</span></th>
+                        <td class="half-cell"><input class="input config-number float-max-number" data-min="-99999999999999" data-max="99999999999999"  type="number" value=""${modeDisabled}></td>
+                    </tr>
+                    <tr class="number-float" title="${textEntities(getMessage.FTE01116,1)}">
+                        <th class="half-cell"><span class="config-title">${textCode('0015')}</span></th>
+                        <td class="half-cell"><input class="input config-number digit-number" data-min="1" data-max="14" type="number" value=""${modeDisabled}></td>
+                    </tr>
+                    <tr class="select" title="${textEntities(getMessage.FTE01117,1)}">
+                        <th class="full-head"><span class="config-title">${textCode('0016') + fn.html.required()}</span></th>
+                        <td class="full-body">
+                            <select class="input config-select pulldown-select"${modeDisabled}${modeKeepData}>${selectPulldownListHTML}</select>
+                        </td>
+                    </tr>
+                    <tr class="select reference" title="${textEntities(getMessage.FTE01118,1)}">
+                        <th class="full-head"><span class="config-title">${textCode('0043')}</span></th>
+                        <td class="full-body">
+                            <div class="reference-block">
+                                <span type="text" class="input config-text reference-item" type="text" data-reference-item-id ${modeDisabled}${modeKeepData}></span>
+                                <button class="itaButton button reference-item-select property-button popup" data-action="normal" title="${textCode('0045')}"${modeDisabled}${modeKeepData}>
+                                    <div class="inner">${fn.html.icon('menuList')}</div>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr class="password" title="${textEntities(getMessage.FTE01110,1)}">
+                        <th class="full-head"><span class="config-title">${textCode('0011') + fn.html.required()}</span></th>
+                        <td class="full-body"><input class="input config-number password-max-byte" type="number" data-min="1" data-max="8192" value=""${modeDisabled}></td>
+                    </tr>
+                    <tr class="file" title="${textEntities(getMessage.FTE01119,1)}">
+                        <th class="full-head"><span class="config-title">${textCode('0042') + fn.html.required()}</span></th>
+                        <td class="full-body"><input class="input config-number file-max-size" data-min="1" data-max="4294967296"  type="number" value=""${modeDisabled}></td>
+                    </tr>
+                    <tr class="type3" title="${textEntities(getMessage.FTE01120,1)}">
+                        <th class="full-head"><span class="config-title">${textCode('0052') + fn.html.required()}</span></th>
+                        <td class="full-body type3-item-area">
+                            <select class="input config-select type3-reference-item"${modeDisabled}${modeKeepData}></select>
+                        </td>
+                    </tr>
+                    <tr class="single" title="${textEntities(getMessage.FTE01121,1)}">
+                        <th class="full-head"><span class="config-title">${textCode('0050')}</span></th>
+                        <td class="full-body"><input class="input config-text single-default-value" type="text" value=""${modeDisabled}></td>
+                    </tr>
+                    <tr class="multiple" title="${textEntities(getMessage.FTE01121,1)}">
+                        <th class="full-head"><span class="config-title">${textCode('0050')}</span></th>
+                        <td class="full-body"><textarea class="input config-textarea multiple-default-value"${modeDisabled}></textarea></td>
+                    </tr>
+                    <tr class="number-int" title="${textEntities(getMessage.FTE01122,1)}">
+                        <th class="half-cell"><span class="config-title">${textCode('0050')}</span></th>
+                        <td class="half-cell"><input class="input config-number int-default-value" data-min="-2147483648" data-max="2147483647" type="number" value=""${modeDisabled}></td>
+                    </tr>
+                    <tr class="number-float" title="${textEntities(getMessage.FTE01123,1)}">
+                        <th class="half-cell"><span class="config-title">${textCode('0050')}</span></th>
+                        <td class="half-cell"><input class="input config-number float-default-value" data-min="-99999999999999" data-max="99999999999999" type="number" value=""${modeDisabled}></td>
+                    </tr>
+                    <tr class="date-time" title="${textEntities(getMessage.FTE01124,1)}">
+                        <th class="full-head"><span class="config-title">${textCode('0050')}</span></th>
+                        <td class="full-body">${fn.html.dateInput( true, 'callDateTimePicker datetime-default-value config-text', '', 'dateTime')}</td>
+                    </tr>
+                    <tr class="date" title="${textEntities(getMessage.FTE01124,1)}">
+                        <th class="full-head"><span class="config-title">${textCode('0050')}</span></th>
+                        <td class="full-body">${fn.html.dateInput( false, 'callDateTimePicker date-default-value config-text', '', 'date')}</td>
+                    </tr>
+                    <tr class="link" title="${textEntities(getMessage.FTE01125,1)}">
+                        <th class="full-head"><span class="config-title">${textCode('0050')}</span></th>
+                        <td class="full-body"><input class="input config-text link-default-value" type="text" value=""${modeDisabled}></td>
+                    </tr>
+                    <tr class="select" title="${textEntities(getMessage.FTE01126,1)}">
+                        <th class="full-head">${textCode('0050')}</th>
+                        <td class="full-body pulldown-default-area">
+                            <select class="input config-select pulldown-default-select"${modeDisabled}></select>
+                        </td>
+                    </tr>
+                    <tr class="single multiple number-int number-float date-time date password select file link">
+                        <td colspan="2">
+                            <label class="required-label${onHover}" title="${textEntities(getMessage.FTE01127,1)}"${modeDisabled}${modeKeepData}>
+                                <input class="config-checkbox required${disbledCheckbox}" type="checkbox"${modeDisabled}${modeKeepData}>
+                                <span></span>${textCode('0017')}
+                            </label>
+                            <label class="unique-label${onHover}" title="${textEntities(getMessage.FTE01128,1)}"${modeDisabled}${modeKeepData}>
+                                <input class="config-checkbox unique${disbledCheckbox}" type="checkbox"${modeDisabled}${modeKeepData}>
+                                <span></span>${textCode('0018')}
+                            </label>
+                        </td>
+                    </tr>
+                    <tr class="all" title="${textEntities(getMessage.FTE01129,1)}">
+                        <td colspan="2">
+                            <div class="config-textarea-wrapper">
+                                <textarea class="input config-textarea explanation"${modeDisabled}></textarea>
+                                <span>${textCode('0019')}</span>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr class="all" title="${textEntities(getMessage.FTE01130,1)}">
+                        <td colspan="2">
+                            <div class="config-textarea-wrapper">
+                                <textarea class="input config-textarea note"${modeDisabled}></textarea>
+                                <span>${textCode('0020')}</span>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="column-resize"></div>
+</div>`;
 
 // カウンター
 let itemCounter = 1,
@@ -2175,7 +2181,7 @@ const emptyCheck = function() {
 const resetSelect2 = function( $target ) {
     if ( $target.find('.select2-container').length ) {
       // select2要素を削除
-      $target.find('.config-select').removeClass('select2-hidden-accessible').removeAttr('tabindex aria-hidden');
+      $target.find('.config-select').removeClass('select2-hidden-accessible').removeAttr('tabindex aria-hidden data-select2-id');
       $target.find('.select2-container').remove();
       // select2を再適用
       $target.find('.config-select').select2();
@@ -2211,8 +2217,6 @@ $menuEditor.on('click', '.menu-column-copy', function(){
   // 追加を待つ
   $clone.ready( function() {
     
-    resetSelect2( $clone );
-    
     $clone.find('.hover').removeClass('hover');
     
     // IDをプラス・名前にコピー番号を追加
@@ -2240,10 +2244,9 @@ $menuEditor.on('click', '.menu-column-copy', function(){
       $input.attr('value', $input.val() );
       titleInputChange( $input );
     });
+    
+    resetSelect2( $clone );
 
-    //日付と時日時の初期値入力欄にdatetimepickerを設定
-    //$clone.find(".callDateTimePicker").datetimepicker({format:'Y/m/d H:i:s', step:5, lang:LangStream});
-    //$clone.find(".callDateTimePicker2").datetimepicker({timepicker:false, format:'Y/m/d', lang:LangStream});
     // プルダウン選択の初期値取得eventを再適用する
     resetEventPulldownDefaultValue( $menuTable );
     // パラメータ参照の項目取得eventを再適用する
@@ -2670,7 +2673,7 @@ const repeatRemoveConfirm = function() {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 const $columnResizeLine = $('#column-resize'),
-      defMinWidth = 280;
+      defMinWidth = 260;
 $menuEditor.on('mousedown', '.column-resize', function( e ) {
   
   // 左クリックチェック
@@ -3650,11 +3653,7 @@ const createRegistrationData = function( type ){
                   }
                   createMenuJSON['column'][key]['pulldown_selection_default_value'] = $column.find('.pulldown-default-select').val();
                   let reference_item = $column.find('.reference-item').attr('data-reference-item-id');
-                  if (reference_item){
-                    reference_item = reference_item.split(',');
-                  }else{
-                    reference_item = null
-                  }
+                  reference_item = reference_item.split(',');
                   createMenuJSON['column'][key]['reference_item'] = reference_item;
                   break;
                 case '8':

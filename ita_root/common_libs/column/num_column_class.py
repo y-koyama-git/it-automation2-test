@@ -97,11 +97,7 @@ class NumColumn(Column):
                         # Noneの際,int範囲(-2147483648～2147483647)外の場合、設定上書き
                         if min_num is None:
                             min_num = -2147483648
-                        elif -2147483648 > min_num:
-                            min_num = -2147483648
                         if max_num is None:
-                            max_num = 2147483647
-                        elif 2147483647 < max_num:
                             max_num = 2147483647
 
                 if min_num is None and max_num is None:

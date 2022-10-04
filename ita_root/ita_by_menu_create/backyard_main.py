@@ -1286,6 +1286,11 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             if not res_valid:
                 raise Exception(msg)
             
+            # カラムクラスが「5:日時」「6:日付」の場合は代入値自動登録対象外とするため、autoreg_hide_itemを1とする。
+            autoreg_hide_item = 0
+            if column_class == "5" or column_class == "6":
+                autoreg_hide_item = 1
+            
             data_list = {
                 "MENU_ID": menu_uuid,
                 "COLUMN_NAME_JA": record.get('COLUMN_NAME_JA'),
@@ -1310,7 +1315,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "VIEW_ITEM": 1,  # True
                 "UNIQUE_ITEM": record.get('UNIQUED'),
                 "REQUIRED_ITEM": record.get('REQUIRED'),
-                "AUTOREG_HIDE_ITEM": 0,  # False
+                "AUTOREG_HIDE_ITEM": autoreg_hide_item,
                 "AUTOREG_ONLY_ITEM": 0,  # False
                 "INITIAL_VALUE": initial_value,
                 "VALIDATE_OPTION": validate_option,
@@ -1348,6 +1353,12 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                             res_valid, msg = _check_column_validation(objdbca, menu_uuid, ref_column_name_rest)
                             if not res_valid:
                                 raise Exception(msg)
+                            
+                            # カラムクラスが「5:日時」「6:日付」の場合は代入値自動登録対象外とするため、autoreg_hide_itemを1とする。
+                            autoreg_hide_item = 0
+                            if column_class == "5" or column_class == "6":
+                                autoreg_hide_item = 1
+                            
                             data_list = {
                                 "MENU_ID": menu_uuid,
                                 "COLUMN_NAME_JA": ref_item_record.get('COLUMN_NAME_JA'),
@@ -1372,7 +1383,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                                 "VIEW_ITEM": 1,  # True
                                 "UNIQUE_ITEM": 0,  # False
                                 "REQUIRED_ITEM": 0,  # False
-                                "AUTOREG_HIDE_ITEM": 0,  # False
+                                "AUTOREG_HIDE_ITEM": autoreg_hide_item,
                                 "AUTOREG_ONLY_ITEM": 0,  # False
                                 "INITIAL_VALUE": None,
                                 "VALIDATE_OPTION": None,
