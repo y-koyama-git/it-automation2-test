@@ -222,7 +222,7 @@ class DockerMode(AnsibleAgent):
 
         cp = subprocess.run(command, capture_output=True, text=True)
         if cp.returncode != 0:
-            g.applogger.debug("unused_allclean->error:{}" % cp.stderr)
+            g.applogger.debug("unused_allclean->error:%s" % cp.stderr)
             return False, cp.stderr
 
         return True, cp.stdout
