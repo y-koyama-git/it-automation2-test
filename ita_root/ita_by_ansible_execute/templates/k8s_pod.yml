@@ -47,8 +47,8 @@ spec:
     - name: volume-subpath
       mountPath: {{ container_mount_path_conductor }}
       subPath: {{ host_mount_path_conductor }}
-    volumes:
-    - name: volume-subpath
-      persistentVolumeClaim:
-        claimName: ita-pvc
+  volumes:
+  - name: volume-subpath
+    persistentVolumeClaim:
+      claimName: ita-pvc
   restartPolicy: Never
