@@ -33,3 +33,7 @@ services:
       - NO_PROXY=localhost,127.0.0.1,ita-api-organization,ita-api-admin,ita-web-server
       - no_proxy=localhost,127.0.0.1,ita-api-organization,ita-api-admin,ita-web-server
       - EXEC_DIR={{ container_mount_path_driver }}
+networks:
+  default:
+    name: devcontainer_default
+    external: true
