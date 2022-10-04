@@ -80,6 +80,7 @@ COLNAME_REQUIRED_ITEM = 'REQUIRED_ITEM'
 COLNAME_INPUT_ITEM = 'INPUT_ITEM'
 COLNAME_VIEW_ITEM = 'VIEW_ITEM'
 COLNAME_AUTO_INPUT = 'AUTO_INPUT'
+COLNAME_SENSITIVE_COL_NAME = 'SENSITIVE_COL_NAME'
 COLNAME_UNIQUE_CONSTRAINT = 'UNIQUE_CONSTRAINT'
 COLNAME_BEFORE_VALIDATE_REGISTER = 'BEFORE_VALIDATE_REGISTER'
 COLNAME_AFTER_VALIDATE_REGISTER = 'AFTER_VALIDATE_REGISTER'
@@ -1226,7 +1227,6 @@ class loadTable():
                 tmp_result = self.objdbca.table_lock([self.get_table_name()])
 
             for tmp_parameters in list_parameters:
-                eno = list_parameters.index(tmp_parameters)
                 cmd_type = tmp_parameters.get("type")
                 
                 parameters = tmp_parameters
@@ -1324,7 +1324,7 @@ class loadTable():
                 tmp_rows = self.get_target_rows(target_uuid)
                 
                 if len(tmp_rows) != 1:
-                    status_code = '499-00205'
+                    status_code = 'MSG-00007'
                     msg_args = [target_uuid]
                     msg = g.appmsg.get_api_message(status_code, msg_args)
                     dict_msg = {
@@ -1372,8 +1372,7 @@ class loadTable():
                 target_uuid_key = self.get_rest_key(primary_key)
                 entry_parameter[target_uuid_key] = target_uuid
             # 各カラム単位の基本処理（前）、個別処理（前）を実施
-            for rest_key in list(entry_parameter.keys()):
-                rest_val = entry_parameter.get(rest_key)
+            for rest_key, rest_val in list(entry_parameter.items()):
                 if rest_key in self.restkey_list:
                     target_col_option = {
                         'uuid': target_uuid,
@@ -1419,17 +1418,36 @@ class loadTable():
                         # entry_file[rest_key] = target_col_option.get('file_data')
 
                         if rest_val is not None:
-                            # VALUE 変換処理不要ならVALUE変更無し
-                            tmp_exec = objcolumn.convert_value_input(rest_val)
-                            if tmp_exec[0] is True:
-                                entry_parameter[rest_key] = tmp_exec[2]
+                            if self.get_col_class_name(rest_key) in ['SensitiveSingleTextColumn', 'SensitiveMultiTextColumn']:
+                                sensitive_col_name = objcolumn.get_objcol().get(COLNAME_SENSITIVE_COL_NAME)
+                                sensitive_settings = entry_parameter.get(sensitive_col_name)
+                                # SENSITIVEがONの場合
+                                if sensitive_settings == '1':
+                                    tmp_exec = objcolumn.convert_value_input(rest_val)
+                                    if tmp_exec[0] is True:
+                                        entry_parameter[rest_key] = tmp_exec[2]
+                                    else:
+                                        dict_msg = {
+                                            'status_code': '',
+                                            'msg_args': '',
+                                            'msg': tmp_exec[1],
+                                        }
+                                        self.set_message(dict_msg, rest_key, MSG_LEVEL_ERROR)
+                                else:
+                                    entry_parameter[rest_key] = rest_val
+
                             else:
-                                dict_msg = {
-                                    'status_code': '',
-                                    'msg_args': '',
-                                    'msg': tmp_exec[1],
-                                }
-                                self.set_message(dict_msg, rest_key, MSG_LEVEL_ERROR)
+                                # VALUE 変換処理不要ならVALUE変更無し
+                                tmp_exec = objcolumn.convert_value_input(rest_val)
+                                if tmp_exec[0] is True:
+                                    entry_parameter[rest_key] = tmp_exec[2]
+                                else:
+                                    dict_msg = {
+                                        'status_code': '',
+                                        'msg_args': '',
+                                        'msg': tmp_exec[1],
+                                    }
+                                    self.set_message(dict_msg, rest_key, MSG_LEVEL_ERROR)
 
             # メニュー共通処理:レコード操作前 組み合わせ一意制約
             self.exec_unique_constraint(entry_parameter, target_uuid)
@@ -1488,7 +1506,7 @@ class loadTable():
 
             for rest_key in list(entry_parameter.keys()):
                 if self.chk_restkey(rest_key) is not True:
-                    status_code = '499-00209'
+                    status_code = 'MSG-00026'
                     msg_args = [rest_key]
                     msg = g.appmsg.get_api_message(status_code, msg_args)
                     dict_msg = {
@@ -1621,7 +1639,7 @@ class loadTable():
         else:
             # 実行種別エラー
             retBool = False
-            status_code = '499-00210'
+            status_code = 'MSG-00027'
             msg_args = [cmd_type]
             msg = g.appmsg.get_api_message(status_code, msg_args)
             dict_msg = {
@@ -1692,9 +1710,32 @@ class loadTable():
                 if json_rows:
                     for jsonkey, jsonval in json_rows.items():
                         objcolumn = self.get_columnclass(jsonkey)
-                        tmp_exec = objcolumn.convert_value_output(jsonval)
-                        if tmp_exec[0] is True:
-                            jsonval = tmp_exec[2]
+                        # ID → VALUE 変換処理不要ならVALUE変更無し
+                        if self.get_col_class_name(jsonkey) in ['PasswordColumn', 'PasswordIDColumn', 'JsonPasswordIDColumn']:
+                            # 内部処理用
+                            if mode in ['input']:
+                                if jsonval is not None:
+                                    objcolumn = self.get_columnclass(jsonkey)
+                                    jsonval = util.ky_decrypt(jsonval)    # noqa: F405
+                            else:
+                                jsonval = None
+                        elif self.get_col_class_name(jsonkey) in ['SensitiveSingleTextColumn', 'SensitiveMultiTextColumn']:
+                            objcol = self.get_objcol(jsonkey)
+                            sensitive_col_name = objcol.get(COLNAME_SENSITIVE_COL_NAME)
+                            sensitive_settings = rows.get(self.get_col_name(sensitive_col_name))
+                            # SENSITIVEがONの場合
+                            if sensitive_settings == '1':
+                                # 内部処理用
+                                if mode in ['input']:
+                                    if col_val is not None:
+                                        objcolumn = self.get_columnclass(jsonkey)
+                                        col_val = util.ky_decrypt(col_val)    # noqa: F405
+                                else:
+                                    col_val = None
+                        else:
+                            tmp_exec = objcolumn.convert_value_output(jsonval)
+                            if tmp_exec[0] is True:
+                                jsonval = tmp_exec[2]
 
                         rest_parameter.setdefault(jsonkey, jsonval)
                         if mode not in ['excel', 'excel_jnl']:
@@ -1722,16 +1763,31 @@ class loadTable():
                     objcolumn = self.get_columnclass(rest_key)
 
                     # ID → VALUE 変換処理不要ならVALUE変更無し
-                    if self.get_col_class_name(rest_key) not in ['PasswordColumn', 'SensitiveSingleTextColumn', 'SensitiveMultiTextColumn']:
-                        tmp_exec = objcolumn.convert_value_output(col_val)
-                        if tmp_exec[0] is True:
-                            col_val = tmp_exec[2]
-                    else:
+                    if self.get_col_class_name(rest_key) in ['PasswordColumn']:
                         # 内部処理用
                         if mode in ['input']:
                             if col_val is not None:
                                 objcolumn = self.get_columnclass(rest_key)
                                 col_val = util.ky_decrypt(col_val)    # noqa: F405
+                        else:
+                            col_val = None
+                    elif self.get_col_class_name(rest_key) in ['SensitiveSingleTextColumn', 'SensitiveMultiTextColumn']:
+                        sensitive_col_name = objcol.get(COLNAME_SENSITIVE_COL_NAME)
+                        sensitive_settings = rows.get(self.get_col_name(sensitive_col_name))
+                        # SENSITIVEがONの場合
+                        if sensitive_settings == '1':
+                            # 内部処理用
+                            if mode in ['input']:
+                                if col_val is not None:
+                                    objcolumn = self.get_columnclass(rest_key)
+                                    col_val = util.ky_encrypt(col_val)    # noqa: F405
+                            else:
+                                col_val = None
+                    else:
+                        if mode not in ['input']:
+                            tmp_exec = objcolumn.convert_value_output(col_val)
+                            if tmp_exec[0] is True:
+                                col_val = tmp_exec[2]
 
                     if mode in ['input']:
                         rest_parameter.setdefault(rest_key, col_val)
@@ -1825,7 +1881,7 @@ class loadTable():
                     for table_count_rows in table_count:
                         list_uuids.append(table_count_rows.get(primary_key_list[0]))
                     
-                    status_code = '499-00204'
+                    status_code = 'MSG-00006'
                     msg_args = [str(dict_bind_kv), str(list_uuids)]
                     msg = g.appmsg.get_api_message(status_code, msg_args)
                     dict_msg = {
@@ -1989,7 +2045,7 @@ class loadTable():
             lastupdatetime_current = current_parameter.get('last_update_date_time')
             lastupdatetime_parameter = entry_parameter.get('last_update_date_time')
             if lastupdatetime_parameter is None:
-                status_code = '499-00211'
+                status_code = 'MSG-00028'
                 msg_args = [lastupdatetime_parameter]
                 msg = g.appmsg.get_api_message(status_code, msg_args)
                 dict_msg = {
@@ -2011,7 +2067,7 @@ class loadTable():
                 # 更新系の追い越し判定
                 if lastupdatetime_current != lastupdatetime_parameter:
                     # if (lastupdatetime_current < lastupdatetime_parameter) is False:
-                    status_code = '499-00203'
+                    status_code = 'MSG-00005'
                     msg_args = [target_uuid]
                     msg = g.appmsg.get_api_message(status_code, msg_args)
                     dict_msg = {
@@ -2021,7 +2077,7 @@ class loadTable():
                     }
                     self.set_message(dict_msg, g.appmsg.get_api_message("MSG-00004", []), MSG_LEVEL_ERROR)
         except ValueError as msg_args:
-            status_code = '499-00211'
+            status_code = 'MSG-00028'
             msg_args = [lastupdatetime_parameter]
             msg = g.appmsg.get_api_message(status_code, msg_args)
             dict_msg = {
@@ -2058,7 +2114,7 @@ class loadTable():
 
                 # 廃止→廃止の場合エラー
                 if cmd_type == CMD_DISCARD and discard_row in ['1', 1] and discard_parameter in ['1', 1]:
-                    status_code = '499-00206'
+                    status_code = 'MSG-00023'
                     msg_args = [target_uuid]
                     msg = g.appmsg.get_api_message(status_code, msg_args)
                     dict_msg = {
@@ -2122,7 +2178,7 @@ class loadTable():
         # 不正なキーがある場合エラー
         if len(err_keys) != 0:
             err_keys = ",".join(map(str, err_keys))
-            status_code = '499-00212'
+            status_code = 'MSG-00029'
             msg_args = [err_keys]
             msg = g.appmsg.get_api_message(status_code, msg_args)
             dict_msg = {
@@ -2148,11 +2204,11 @@ class loadTable():
             if len(required_restkey_list) <= len(parameter):
                 for required_restkey in required_restkey_list:
                     if required_restkey not in parameter:
-                        status_code = '499-00207'
+                        status_code = 'MSG-00024'
                         msg_args = [required_restkey]
                         msg = g.appmsg.get_api_message(status_code, [msg_args])
             else:
-                status_code = '499-00207'
+                status_code = 'MSG-00024'
                 msg_args = [",".join(required_restkey_list)]
                 msg = g.appmsg.get_api_message(status_code, [msg_args])
 

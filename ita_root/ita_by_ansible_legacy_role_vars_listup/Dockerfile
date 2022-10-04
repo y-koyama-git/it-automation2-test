@@ -41,6 +41,7 @@ RUN dnf install -y \
     pytz \
     pymysql \
     python-dotenv \
+    chardet \
 &&  groupadd $GROUPNAME \
 &&  useradd -m -s /bin/bash -g $GROUPNAME $USERNAME
 

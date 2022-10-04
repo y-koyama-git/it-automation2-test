@@ -15,8 +15,9 @@ version: '3.1'
 services:
   platform-auth:
     user: 1000:1000
-    image: exastro/exastro-common-auth-platform-auth:Integration-test.83aff2.20220912-164019
+    image: exastro/exastro-common-auth-platform-auth:Integration-test.64653e.20220922-181308
     environment:
+      - TZ=Asia/Tokyo
       - LISTEN_PORT=38000
       - LISTEN_PORT_PF_MNG=38001
       # - PYTHONPATH=/app/
@@ -54,8 +55,9 @@ services:
       - "0.0.0.0:38000:38000"
       - "0.0.0.0:38001:38001"
   keycloak:
-    image: exastro/exastro-common-auth-keycloak:0.1.0.47d4d2.20220825-163604
+    image: exastro/exastro-common-auth-keycloak:Integration-test.64653e.20220922-181417
     environment:
+      - TZ=Asia/Tokyo
       - KEYCLOAK_USER=admin
       - KEYCLOAK_PASSWORD=password
       - PROXY_ADDRESS_FORWARDING=true
@@ -68,26 +70,29 @@ services:
       platform-db:
         condition: service_healthy
   platform-db:
-    image: exastro/exastro-common-auth-platform-db:Integration-test.83aff2.20220912-164019
+    image: exastro/exastro-common-auth-platform-db:Integration-test.64653e.20220922-181307
     healthcheck:
       test: mysqladmin ping --silent && mysql -u $${KEYCLOAK_DB_USER} -p$${KEYCLOAK_DB_PASSWORD} -D $${KEYCLOAK_DB_DATABASE} -e 'select 1;'
     volumes:
       - ../.volumes/platform-db/data:/var/lib/mysql
     environment:
+      - TZ=Asia/Tokyo
       - MYSQL_ROOT_PASSWORD=password
       - KEYCLOAK_DB_DATABASE=keycloak
       - KEYCLOAK_DB_USER=keycloak
       - KEYCLOAK_DB_PASSWORD=password
   platform-web:
     user: 1000:1000
-    image: exastro/exastro-common-auth-platform-web:Integration-test.83aff2.20220912-164019
+    image: exastro/exastro-common-auth-platform-web:Integration-test.64653e.20220922-181307
     environment:
+      - TZ=Asia/Tokyo
       - LISTEN_PORT=80
 
   platform-api:
     user: 1000:1000
-    image: exastro/exastro-common-auth-platform-api:Integration-test.83aff2.20220912-164127
+    image: exastro/exastro-common-auth-platform-api:Integration-test.64653e.20220922-181431
     environment:
+      - TZ=Asia/Tokyo
       - LISTEN_PORT=8000
       # - PYTHONPATH=/app/
       - CONFIG_API_PATH=/app/api.conf

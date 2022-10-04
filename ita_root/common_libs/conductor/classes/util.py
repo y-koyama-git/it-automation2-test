@@ -374,7 +374,7 @@ class ConductorCommonLibs():
                     block_err_msg_args.append('note is too long')
 
             if len(block_err_msg_args) != 0:
-                err_msg_args.append('{}({})'.format(key, ','.join(block_err_msg_args)))
+                err_msg_args.append('{}:{}'.format(key, ','.join(block_err_msg_args)))
             else:
                 # make node_id_list
                 self._node_id_list.append(block_1['id'])
@@ -436,6 +436,7 @@ class ConductorCommonLibs():
                 err_msg_args.append(','.join(block_err_msg_args))
 
         if len(err_msg_args) != 0:
+            return False, g.appmsg.get_api_message('MSG-40028')
             return False, ','.join(err_msg_args)
         else:
             return True,
@@ -980,8 +981,6 @@ class ConductorCommonLibs():
         res.update(self.edge_datas)
         
         chk_num_2 = len(res)
-        self.debug_storage([ chk_num_1 , chk_num_2])
-
         if chk_num_1 != chk_num_2:
             msg = g.appmsg.get_api_message('MSG-40013')
             return False, msg
@@ -1216,10 +1215,3 @@ class ConductorCommonLibs():
         except Exception:
             return False
         return call_conductor_id_List
-
-    def debug_storage(self, msg):
-        import inspect, os
-        info = inspect.getouterframes(inspect.currentframe())[1]
-        msg_line = "{} ({}:{})".format(msg, os.path.basename(info.filename), info.lineno)
-        with open('/storage/debug.log', 'a') as f:
-            print("{}".format(msg_line), file=f)

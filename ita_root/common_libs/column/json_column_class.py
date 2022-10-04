@@ -18,6 +18,7 @@ import os
 import sys
 import json
 
+from flask import g
 from .column_class import Column
 
 """
@@ -79,37 +80,32 @@ class JsonColumn(Column):
         min_length = 0
         max_length = None
         tmp_val = ''
-        try:
-            if isinstance(val, dict):
-                tmp_val = json.dumps(val, ensure_ascii=False)
+        if isinstance(val, dict):
+            tmp_val = json.dumps(val, ensure_ascii=False)
 
-            if tmp_val is not None:
-                # カラムの閾値を取得
-                objcols = self.get_objcols()
-                if objcols is not None:
-                    if self.get_rest_key_name() in objcols:
-                        dict_valid = self.get_dict_valid()
-                        # 閾値(文字列長)
-                        max_length = dict_valid.get('max_length')
-                        min_length = dict_valid.get('min_length')
-                        if min_length is None:
-                            min_length = 0
-                        if max_length is None:
-                            min_length = 1024 * 10
-                # 文字列長
-                if max_length is not None:
-                    check_val = len(str(tmp_val).encode('utf-8'))
-                    if check_val != 0:
-                        if int(min_length) <= check_val <= int(max_length):
-                            retBool = True
-                        else:
-                            retBool = False
-                            msg = "文字長エラー (閾値:{}<値<{}, 値{})[{}]".format(min_length, max_length, check_val, self.rest_key_name)
-                            return retBool, msg
-        except Exception:
-            retBool = False
-            msg = "{} error".format(self.rest_key_name)
-            return retBool, msg
+        if tmp_val is not None:
+            # カラムの閾値を取得
+            objcols = self.get_objcols()
+            if objcols is not None:
+                if self.get_rest_key_name() in objcols:
+                    dict_valid = self.get_dict_valid()
+                    # 閾値(文字列長)
+                    max_length = dict_valid.get('max_length')
+                    min_length = dict_valid.get('min_length')
+                    if min_length is None:
+                        min_length = 0
+                    if max_length is None:
+                        min_length = 1024 * 10
+            # 文字列長
+            if max_length is not None:
+                check_val = len(str(tmp_val).encode('utf-8'))
+                if check_val != 0:
+                    if int(min_length) <= check_val <= int(max_length):
+                        retBool = True
+                    else:
+                        retBool = False
+                        msg = g.appmsg.get_api_message('MSG-00008', [max_length, check_val])
+                        return retBool, msg
         
         return retBool,
 
@@ -124,7 +120,13 @@ class JsonColumn(Column):
         retBool = True
         msg = ''
         try:
-            str_val = json.dumps(val, ensure_ascii=False)
+            if self.get_save_type() == "JSON":
+                str_val = val
+            else:
+                if isinstance(val, str):
+                    str_val = val
+                else:
+                    str_val = json.dumps(val, ensure_ascii=False)
         except Exception:
             str_val = val
         finally:
@@ -143,10 +145,15 @@ class JsonColumn(Column):
         retBool = True
         msg = ''
         try:
-            json_val = json.loads(val)
+            if self.get_save_type() == "JSON":
+                if isinstance(val, str):
+                    json_val = json.loads(val)
+                else:
+                    json_val = val
+            else:
+                json_val = json.loads(val)
         except Exception:
             json_val = val
         finally:
             val = json_val
-
         return retBool, msg, val

@@ -22,6 +22,7 @@ from common_libs.column import *  # noqa: F403
 from common_libs.conductor.classes.util import ConductorCommonLibs  # noqa: F401
 
 from common_libs.ansible_driver.functions.rest_libs import *  # noqa: F403
+from common_libs.ansible_driver.classes.AnscConstClass import AnscConst
 
 import json
 import uuid
@@ -231,7 +232,7 @@ class ConductorExecuteLibs():
                 # conductor_class_name
                 if conductor_class_name is not None:
                     table_name = 'T_COMN_CONDUCTOR_CLASS'
-                    where_str = "where `CONDUCTOR_NAME` in (%s) "
+                    where_str = "where `CONDUCTOR_NAME` in (%s) and `DISUSE_FLAG` = 0 "
                     bind_value_list = [conductor_class_name]
                     tmp_result = self.objdbca.table_select(table_name, where_str, bind_value_list)
                     if len(tmp_result) != 1:
@@ -248,7 +249,7 @@ class ConductorExecuteLibs():
                 # operation_name
                 if operation_name is not None:
                     table_name = 'T_COMN_OPERATION'
-                    where_str = "where `OPERATION_NAME` in (%s) "
+                    where_str = "where `OPERATION_NAME` in (%s) and `DISUSE_FLAG` = 0"
                     bind_value_list = [operation_name]
                     tmp_result = self.objdbca.table_select(table_name, where_str, bind_value_list)
                     if len(tmp_result) != 1:
@@ -270,7 +271,7 @@ class ConductorExecuteLibs():
                 # conductor_class_id
                 if conductor_class_id is not None:
                     table_name = 'T_COMN_CONDUCTOR_CLASS'
-                    where_str = "where `CONDUCTOR_CLASS_ID` in (%s) "
+                    where_str = "where `CONDUCTOR_CLASS_ID` in (%s) and `DISUSE_FLAG` = 0"
                     bind_value_list = [parameter.get('conductor_class_id')]
                     tmp_result = self.objdbca.table_select(table_name, where_str, bind_value_list)
                     if len(tmp_result) != 1:
@@ -311,8 +312,14 @@ class ConductorExecuteLibs():
                         pattern = r'\b\d{4}/\d{2}/\d{2}\b \b\d{2}:\b\d{2}:\b\d{2}'
                         tmp_result = re.findall(pattern, schedule_date)  # noqa: F405
                         if len(tmp_result) != 1:
-                            raise Exception()
-                        tmp_schedule_date = tmp_result[0]
+                            pattern = r'\b\d{4}/\d{2}/\d{2}\b \b\d{2}:\b\d{2}'
+                            tmp_result = re.findall(pattern, schedule_date)  # noqa: F405
+                            if len(tmp_result) != 1:
+                                raise Exception()
+                            else:
+                                tmp_schedule_date = tmp_result[0] + ':00'
+                        else:
+                            tmp_schedule_date = tmp_result[0]
                         datetime.strptime(tmp_schedule_date, '%Y/%m/%d %H:%M:%S')
                     except Exception:
                         retBool = False
@@ -325,12 +332,14 @@ class ConductorExecuteLibs():
                     retBool = False
                     tmp_msg_ags = '{}'.format('conductor_data')
                     msg_ags.append(tmp_msg_ags)
-    
+            if len(msg_ags) != 0:
+                raise Exception()
         except Exception:
-            retBool = False
-
-        finally:
             result = [', '.join(msg_ags)]
+            status_code = '499-00814'
+            log_msg_args = result
+            api_msg_args = result
+            raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
 
         return retBool, result, parameter,
 
@@ -410,6 +419,8 @@ class ConductorExecuteLibs():
             # operation_id 簡易チェック
             if operation_id in get_list_data.get('operation'):
                 operation_name = get_list_data.get('operation').get(operation_id).get('OPERATION_NAME')
+            else:
+                raise Exception()
 
             # conductor_class_id 簡易チェック, conductor名, 備考(作業実行画面優先)
             if conductor_class_id in get_list_data.get('conductor'):
@@ -417,6 +428,8 @@ class ConductorExecuteLibs():
                 conductor_remarks = get_list_data.get('conductor').get(conductor_class_id).get('NOTE')
                 if 'note' in conductor_data.get('conductor'):
                     conductor_remarks = conductor_data.get('conductor').get('note')
+            else:
+                raise Exception()
 
             # Conductor初期ステータス設定(未実行,未実行(予約))
             if schedule_date is None:
@@ -450,6 +463,7 @@ class ConductorExecuteLibs():
                     raise Exception()
                 top_conductor_instance_id = tmp_result[1].get('parent_id')
                 top_conductor_instance_name = tmp_result[1].get('parent_name')
+                user_name = tmp_result[1].get('execution_user')
             else:
                 # 通常実行時
                 parent_conductor_instance_id = None
@@ -484,7 +498,7 @@ class ConductorExecuteLibs():
                 "time_book": schedule_date,
                 # "time_start": None,
                 # "time_end": None,
-                # "execution_log": None,
+                "execution_log": [],
                 # "notification_log": None,
                 "remarks": conductor_remarks
                 # "discard": 0,
@@ -623,11 +637,14 @@ class ConductorExecuteLibs():
             type_, value, traceback_ = sys.exc_info()
             msg = traceback.format_exception(type_, value, traceback_)
             g.applogger.error(msg)
-            
-            conductor_class_id = parameter.get('conductor_class_id')
-            operation_id = parameter.get('operation_id')
+            if parameter.get('conductor_class_name') is None:
+                conductor_class_id = parameter.get('conductor_class_name')
+                operation_id = parameter.get('operation_name')
+            else:
+                conductor_class_id = parameter.get('conductor_class_id')
+                operation_id = parameter.get('operation_id')
             schedule_date = parameter.get('schedule_date')
-            status_code = "499-00805"
+            status_code = "499-00804"
             log_msg_args = [conductor_class_id, operation_id, schedule_date]
             api_msg_args = [conductor_class_id, operation_id, schedule_date]
             raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
@@ -716,7 +733,7 @@ class ConductorExecuteLibs():
                 
             objcclass = self.objmenus.get('objcclass')
             # maintenance呼び出し(pk uuid.uuid()を外部実行 )
-            tmp_result = objcclass.exec_maintenance(conductor_parameter, target_uuid, cmd_type, True)
+            tmp_result = objcclass.exec_maintenance(conductor_parameter, target_uuid, cmd_type, True, False)
             objcclass.set_error_message()
             if tmp_result[0] is not True:
                 raise Exception()
@@ -745,7 +762,7 @@ class ConductorExecuteLibs():
                 
             objconductor = self.objmenus.get('objconductor')
             # maintenance呼び出し(pk uuid.uuid()を外部実行 )
-            tmp_result = objconductor.exec_maintenance(conductor_parameter, target_uuid, cmd_type, True)
+            tmp_result = objconductor.exec_maintenance(conductor_parameter, target_uuid, cmd_type, True, False)
             objconductor.set_error_message()
             if tmp_result[0] is not True:
                 return tmp_result
@@ -781,7 +798,7 @@ class ConductorExecuteLibs():
                     cmd_type = self.cmd_type
 
                 # maintenance呼び出し
-                tmp_result = objnode.exec_maintenance(parameters, target_uuid, cmd_type)
+                tmp_result = objnode.exec_maintenance(parameters, target_uuid, cmd_type, False, False)
                 objnode.set_error_message()
                 if tmp_result[0] is not True:
                     return tmp_result
@@ -813,11 +830,17 @@ class ConductorExecuteLibs():
                             msg_json.setdefault(ekey, einfo)
                         else:
                             for node_err in einfo:
-                                node_err_json = json.loads(node_err)
-                                for tmp_node_err in node_err_json:
-                                    tmp_node_err_json = json.loads(tmp_node_err)
-                                    for node_name, node_msg in tmp_node_err_json.items():
-                                        msg_json.setdefault(node_name, node_msg.splitlines())
+                                try:
+                                    node_err_json = json.loads(node_err)
+                                    for tmp_node_err in node_err_json:
+                                        try:
+                                            tmp_node_err_json = json.loads(tmp_node_err)
+                                            for node_name, node_msg in tmp_node_err_json.items():
+                                                msg_json.setdefault(node_name, node_msg.splitlines())
+                                        except Exception:
+                                            msg_json.setdefault(g.appmsg.get_api_message("MSG-00004", []), tmp_node_err)
+                                except Exception:
+                                    msg_json.setdefault(g.appmsg.get_api_message("MSG-00004", []), node_err)
                 result = json.dumps(msg_json, ensure_ascii=False)
             except Exception:
                 result = msg
@@ -920,6 +943,7 @@ class ConductorExecuteLibs():
                                 tmp_arr.setdefault("orchestra_name", orchestra_name)
                             result['dict'][target_key].setdefault(id, name)
                             result['list'][target_key].append(tmp_arr)
+                            result['dict_name'].setdefault(target_key, {})
                             result['dict_name'][target_key].setdefault(name, id)
                 else:
                     result.setdefault(target_key, {})
@@ -942,6 +966,9 @@ class ConductorExecuteLibs():
             result['list'].setdefault('operation', [])
             result['dict'].setdefault('movement', {})
             result['list'].setdefault('movement', [])
+            result['dict_name'].setdefault('conductor', {})
+            result['dict_name'].setdefault('operation', {})
+            result['dict_name'].setdefault('movement', {})
             if conductor_instance_id != '':
                 result_ci_filter = objconductor.rest_filter(filter_parameter)
                 if result_ci_filter[0] == '000-00000':
@@ -959,6 +986,7 @@ class ConductorExecuteLibs():
                             tmp_arr = {"id": p_id, "name": p_name}
                             result['dict']['conductor'].setdefault(p_id, p_name)
                             result['list']['conductor'].append(tmp_arr)
+                            result['dict_name']['conductor'].setdefault(name, id)
 
                         # operation
                         id = ci_p.get('operation_id')
@@ -966,7 +994,7 @@ class ConductorExecuteLibs():
                         tmp_arr = {"id": id, "name": name}
                         result['dict']['operation'].setdefault(id, name)
                         result['list']['operation'].append(tmp_arr)
-
+                        result['dict_name']['operation'].setdefault(name, id)
                 # node instanceからクラス一覧生成
                 filter_parameter = {
                     "conductor_instance_id": {"LIST": [conductor_instance_id]}
@@ -983,6 +1011,7 @@ class ConductorExecuteLibs():
                             tmp_arr = {"id": id, "name": name}
                             result['dict']['movement'].setdefault(id, name)
                             result['list']['movement'].append(tmp_arr)
+                            result['dict_name']['movement'].setdefault(name, id)
                             
                         # conductor
                         id = ni_p.get('instance_source_conductor_id')
@@ -991,6 +1020,7 @@ class ConductorExecuteLibs():
                             tmp_arr = {"id": id, "name": name}
                             result['dict']['conductor'].setdefault(id, name)
                             result['list']['conductor'].append(tmp_arr)
+                            result['dict_name']['conductor'].setdefault(name, id)
 
                         # operation
                         id = ni_p.get('operation_id')
@@ -999,6 +1029,7 @@ class ConductorExecuteLibs():
                             tmp_arr = {"id": id, "name": name}
                             result['dict']['operation'].setdefault(id, name)
                             result['list']['operation'].append(tmp_arr)
+                            result['dict_name']['operation'].setdefault(name, id)
                         
         except Exception as e:
             g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
@@ -1039,6 +1070,10 @@ class ConductorExecuteLibs():
             class_settings = {}
             node_status = {}
 
+            tmp_result = self.is_conductor_instance_id(conductor_instance_id)
+            if tmp_result is False:
+                raise Exception()
+
             orchestra_info = self.get_orchestra_info()
             # conductor
             filter_parameter = {
@@ -1062,7 +1097,7 @@ class ConductorExecuteLibs():
                             "time_book": ci_p.get('time_book'),
                             "time_start": ci_p.get('time_start'),
                             "time_end": ci_p.get('time_end'),
-                            # "execution_log": ci_p.get('execution_log'),
+                            "execution_log": ci_p.get('execution_log'),
                             "remarks": ci_p.get('remarks'),
                         }
 
@@ -1196,8 +1231,10 @@ class ConductorExecuteLibs():
                 retBool = False
             parent_id = tmp_result[1].get('parameter').get('parent_conductor_instance_id')
             parent_name = tmp_result[1].get('parameter').get('parent_conductor_instance_name')
+            execution_user = tmp_result[1].get('parameter').get('execution_user')
             result.setdefault('parent_id', parent_id)
             result.setdefault('parent_name', parent_name)
+            result.setdefault('execution_user', execution_user)
         except Exception as e:
             g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
             type_, value, traceback_ = sys.exc_info()
@@ -1219,6 +1256,7 @@ class ConductorExecuteLibs():
         result = {}
         parent_id = parent_conductor_instance_id
         parent_name = parent_conductor_instance_name
+        execution_user = ""
 
         try:
             while parent_id is not None:
@@ -1226,9 +1264,11 @@ class ConductorExecuteLibs():
                 if tmp_result[0] is True:
                     tmp_parent_id = tmp_result[1].get('parent_id')
                     tmp_parent_name = tmp_result[1].get('parent_name')
+                    execution_user = tmp_result[1].get('execution_user')
                     if tmp_parent_id is None:
                         result.setdefault('parent_id', parent_id)
                         result.setdefault('parent_name', parent_name)
+                        result.setdefault('execution_user', execution_user)
                         break
                     else:
                         parent_id = tmp_parent_id
@@ -1315,7 +1355,7 @@ class ConductorExecuteLibs():
                         "file": {},
                         "parameter": tmp_parameter
                     }
-                    tmp_result = objconductor.exec_maintenance(conductor_parameter, self.target_uuid, self.cmd_type)
+                    tmp_result = objconductor.exec_maintenance(conductor_parameter, conductor_instance_id, 'Update', False, False)
                     objconductor.set_error_message()
                     if tmp_result[0] is not True:
                         status_code = "499-00807"
@@ -1345,7 +1385,7 @@ class ConductorExecuteLibs():
                         "file": {},
                         "parameter": tmp_parameter
                     }
-                    tmp_result = objconductor.exec_maintenance(conductor_parameter, self.target_uuid, self.cmd_type)
+                    tmp_result = objconductor.exec_maintenance(conductor_parameter, conductor_instance_id, 'Update', False, False)
                     objconductor.set_error_message()
                     if tmp_result[0] is not True:
                         status_code = "499-00807"
@@ -1370,7 +1410,7 @@ class ConductorExecuteLibs():
                                 "file": {},
                                 "parameter": tmp_parameter
                             }
-                            tmp_result = objnode.exec_maintenance(node_parameter, node_instance_id, self.cmd_type)
+                            tmp_result = objnode.exec_maintenance(node_parameter, node_instance_id, 'Update', False, False)
                             objconductor.set_error_message()
                             if tmp_result[0] is not True:
                                 status_code = "499-00807"
@@ -1453,11 +1493,21 @@ class ConductorExecuteLibs():
                 orchestra_id = row.get('ORCHESTRA_ID')
                 orchestra_name = row.get('ORCHESTRA_NAME')
                 orchestra_path = row.get('ORCHESTRA_PATH')
+                # orchestra_id->driver_idの紐付
+                if orchestra_id in ["1", "Ansible Legacy"]:
+                    driver_id = AnscConst.DF_LEGACY_DRIVER_ID
+                if orchestra_id in ["2", "Ansible Pioneer"]:
+                    driver_id = AnscConst.DF_PIONEER_DRIVER_ID
+                if orchestra_id in ["3", "Ansible Legacy Role"]:
+                    driver_id = AnscConst.DF_LEGACY_ROLE_DRIVER_ID
+
                 result['id'].setdefault(
                     orchestra_id,
                     {
                         "id": orchestra_id,
                         "name": orchestra_name,
+                        "path": orchestra_path,
+                        "driver_id": driver_id,
                     }
                 )
 
@@ -1466,7 +1516,8 @@ class ConductorExecuteLibs():
                     {
                         "id": orchestra_id,
                         "name": orchestra_name,
-                        "path": orchestra_path
+                        "path": orchestra_path,
+                        "driver_id": driver_id,
                     }
                 )
                 action_info = orchestra_action_info.get(orchestra_id)
@@ -1492,21 +1543,21 @@ class ConductorExecuteLibs():
         try:
             result = {
                 "1": {
-                    'menu': 'execution_list_ansible_legacy',
+                    'menu': 'check_operation_status_ansible',
                     'path': 'ansible/legacy',
                     'execute': 'T_COMN_MOVEMENT',
                     'abort': '',
                     'status': ''
                 },
                 "2": {
-                    'menu': 'execution_list_ansible_pioneer',
+                    'menu': 'check_operation_status_ansible_pioneer',
                     'path': 'ansible/pioneer',
                     'execute': 'T_COMN_MOVEMENT',
                     'post_abort': '',
                     'status': ''
                 },
                 "3": {
-                    'menu': 'execution_list_ansible_role',
+                    'menu': 'check_operation_status_ansible_role',
                     'path': 'ansible/legacy_role',
                     'execute': 'T_COMN_MOVEMENT',
                     'abort': '',
@@ -1703,7 +1754,8 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             if tmp_result[0] is not True:
                 raise Exception()
             strage_path = os.environ.get('STORAGEPATH')  # noqa: F405
-            tmp_conductor_storage_path = tmp_result[1].get('CONDUCTOR_STORAGE_PATH_ITA')
+            tmp_conductor_storage_path = '%%%%%ITA_DRIVER_DIRECTORY%%%%%/conductor'
+            # tmp_result[1].get('CONDUCTOR_STORAGE_PATH_ITA')
             base_storage_path = "{}/{}/{}/".format(strage_path, self.organization_id, self.workspace_id).replace('//', '/')
             conductor_storage_path = tmp_conductor_storage_path.replace('%%%%%ITA_DRIVER_DIRECTORY%%%%%', base_storage_path).replace('//', '/')
             base_conductor_storage_path = "{}".format(conductor_storage_path).replace('//', '/')
@@ -1891,7 +1943,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
         try:
             # 参照系リスト取得
             instance_info_data = self.get_instance_info_data()
-
+            instance_data = self.get_instance_data(conductor_instance_id)
             # 正常終了
             conductor_end_status = '6'
 
@@ -1902,39 +1954,20 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             # all_end_node_list = tmp_result[1]
             # ENDNodeの終了タイプ
             # end_types = all_end_node_list.get('end_types')
-            
+
             # 全Nodeからの終了ステータスを判定
             # 全Nodeのステータス取得
-            tmp_result = self.get_execute_all_node_list(conductor_instance_id)
+            tmp_result = self.chk_all_node_status_info(conductor_instance_id)
             if tmp_result[0] is not True:
                 raise Exception()
-            target_all_node_list = tmp_result[1]
-            status_count = {}
-            status_count.setdefault("1", [])
-            status_count.setdefault("2", [])
-            status_count.setdefault("3", [])
-            status_count.setdefault("4", [])
-            status_count.setdefault("5", [])
-            status_count.setdefault("6", [])
-            status_count.setdefault("7", [])
-            status_count.setdefault("8", [])
-            status_count.setdefault("11", [])
-            status_count.setdefault("12", [])
-            status_count.setdefault("13", [])
-
-            # ステータス毎振り分け
-            node_cnt = 0
-            end_node_type_list = []
-            for node_id, node_info in target_all_node_list.get('node_list').items():
-                status_id = node_info.get('status')
-                status_count[status_id].append(node_id)
-                node_type = node_info.get('node_type')
-                end_type = node_info.get('end_type')
-                if status_id in ['5'] and node_type == 'end':
-                    end_node_type_list.append(end_type)
-                
-                # Node総数
-                node_cnt = node_cnt + 1
+            all_node_status_info = tmp_result[1]
+            node_cnt = all_node_status_info.get('node_cnt')
+            status_count = all_node_status_info.get('status_count')
+            exec_node_cnt = all_node_status_info.get('exec_node_cnt')
+            nomal_end_cnt = all_node_status_info.get('nomal_end_cnt')
+            end_node_type_list = all_node_status_info.get('end_node_type_list')
+            error_node_conditional_flg = all_node_status_info.get('error_node_conditional_flg')
+            exec_node = all_node_status_info.get('exec_node')
 
             # 実施中Node数
             exec_node_cnt = len(status_count.get('2')) + len(status_count.get('3')) + len(status_count.get('4')) + len(status_count.get('11'))
@@ -1945,8 +1978,33 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
 
             # 実施中なら終了させない
             if exec_node_cnt != 0:
-                retBool = False
-                return retBool,
+                if error_node_conditional_flg is True:
+                    retBool = False
+                    return retBool,
+                else:
+                    # conditional無しで異常系終了時の待ち
+                    for node_name in exec_node:
+                        node_instance_id = instance_data.get('node').get(node_name).get('node_instance_id')
+                        node_type = instance_data.get('node').get(node_name).get('node_type')
+                        # 実行中のNodeを異常終了に変更(movement, call以外)
+                        if node_type not in ['call', 'movement']:
+                            # 最新再取得
+                            tmp_result = self.get_filter_node_one(conductor_instance_id, node_instance_id)
+                            if tmp_result[0] is False:
+                                raise Exception()
+                            node_filter_data = tmp_result[1]
+                            
+                            n_status_id = instance_info_data.get('dict').get('node_status').get('6')
+                            # Node更新
+                            node_filter_data['parameter']['status_id'] = n_status_id
+                            # Node Update
+                            tmp_result = self.node_instance_exec_maintenance([node_filter_data], 'Update')
+                            if tmp_result[0] is not True:
+                                raise Exception()
+                        else:
+                            # 実行中のmovement, callのステータス反映待ち
+                            retBool = False
+                            return retBool,
 
             if nomal_end_cnt == node_cnt:
                 # START->END 完走
@@ -1986,6 +2044,98 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             g.applogger.error(msg)
             retBool = False
         return retBool,
+
+    def chk_all_node_status_info(self, conductor_instance_id):
+        """
+            全ノードのステータス集計チェック
+            ARGS:
+                conductor_instance_id: conductor_instance_id
+            RETRUN:
+                retBool, result
+        """
+        retBool = True
+        result = {}
+        try:
+            # 参照系リスト取得
+            instance_info_data = self.get_instance_info_data()
+            instance_data = self.get_instance_data(conductor_instance_id)
+                        
+            # 全Nodeからの終了ステータスを判定
+            # 全Nodeのステータス取得
+            tmp_result = self.get_execute_all_node_list(conductor_instance_id)
+            if tmp_result[0] is not True:
+                raise Exception()
+            target_all_node_list = tmp_result[1]
+            status_count = {}
+            status_count.setdefault("1", [])
+            status_count.setdefault("2", [])
+            status_count.setdefault("3", [])
+            status_count.setdefault("4", [])
+            status_count.setdefault("5", [])
+            status_count.setdefault("6", [])
+            status_count.setdefault("7", [])
+            status_count.setdefault("8", [])
+            status_count.setdefault("11", [])
+            status_count.setdefault("12", [])
+            status_count.setdefault("13", [])
+            
+            # ステータス毎振り分け
+            node_cnt = 0
+            end_node_type_list = []
+            error_node_conditional_flg = True
+            for node_id, node_info in target_all_node_list.get('node_list').items():
+                status_id = node_info.get('status')
+                status_count[status_id].append(node_id)
+                node_type = node_info.get('node_type')
+                end_type = node_info.get('end_type')
+                # 完了(正常終了以外)のMomvent,call で次がconditional
+                if status_id in ['6', '7', '8', '12', '14'] and node_type in ['movement', 'call']:
+                    node_name = node_info.get('node_name')
+                    target_in_out_node = self.get_in_out_node(conductor_instance_id, node_name)
+                    if target_in_out_node is not False:
+                        # 次のNodeにConditional含むか判定
+                        for tname, tinfo in target_in_out_node.get('out').items():
+                            tnode = tinfo.get('targetNode')
+                            tnode_type = instance_data.get('conductor_class').get(tnode).get('type')
+                            if tnode_type == 'conditional-branch':
+                                error_node_conditional_flg = True
+                            else:
+                                error_node_conditional_flg = False
+
+                if status_id in ['5'] and node_type == 'end':
+                    end_node_type_list.append(end_type)
+                
+                # Node総数
+                node_cnt = node_cnt + 1
+
+            # 実施中Node数
+            exec_node_cnt = len(status_count.get('2')) + len(status_count.get('3')) + len(status_count.get('4')) + len(status_count.get('11'))
+            # 正常終了Node数
+            nomal_end_cnt = len(status_count.get('5')) + len(status_count.get('13'))
+            # 異常終了系Node数
+            # error_node_cnt = len(status_count.get('6')) + len(status_count.get('7')) + len(status_count.get('8')) + len(status_count.get('12'))
+            
+            # 実施中Node
+            exec_node = []
+            exec_node.extend(status_count.get('3'))
+            exec_node.extend(status_count.get('4'))
+            exec_node = set(exec_node)
+
+            result.setdefault("node_cnt", node_cnt)
+            result.setdefault("status_count", status_count)
+            result.setdefault("exec_node_cnt", exec_node_cnt)
+            result.setdefault("nomal_end_cnt", nomal_end_cnt)
+            result.setdefault("end_node_type_list", end_node_type_list)
+            result.setdefault("error_node_conditional_flg", error_node_conditional_flg)
+            result.setdefault("exec_node", exec_node)
+
+        except Exception as e:
+            g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
+            type_, value, traceback_ = sys.exc_info()
+            msg = traceback.format_exception(type_, value, traceback_)
+            g.applogger.error(msg)
+            retBool = False
+        return retBool, result,
 
     def get_abort_status(self, conductor_instance_id):
         """
@@ -2049,7 +2199,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
         try:
             g.applogger.debug(addline_msg('{}'.format(sys._getframe().f_code.co_name)))
             tmp_str_execution_log = parameter['parameter']['execution_log']
-            
+            tmp_execution_log_list = []
             if tmp_str_execution_log is None:
                 tmp_execution_log_list = [str_msg]
             elif isinstance(tmp_str_execution_log, list):
@@ -2063,8 +2213,10 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                         tmp_execution_log_list = [str_msg]
                 except Exception:
                     tmp_execution_log_list = [str_msg]
-            if len(tmp_execution_log_list) != 0:
-                parameter['parameter']['execution_log'] = json.dumps(tmp_execution_log_list, ensure_ascii=False)
+            if tmp_execution_log_list is not None:
+                if len(tmp_execution_log_list) != 0:
+                    # parameter['parameter']['execution_log'] = json.dumps(tmp_execution_log_list, ensure_ascii=False)
+                    parameter['parameter']['execution_log'] = tmp_execution_log_list
         except Exception as e:
             g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
             type_, value, traceback_ = sys.exc_info()
@@ -2235,9 +2387,12 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
         retBool = True
         result = {}
         try:
+            tmp_result = self.is_conductor_instance_id(conductor_instance_id)
+            if tmp_result is False:
+                raise Exception()
+            
             # 対象MV取得
             tmp_result = self.get_execute_mv_node_list(conductor_instance_id)
-            print(tmp_result)
             if tmp_result[0] is not True:
                 raise Exception()
             
@@ -2430,9 +2585,11 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
         try:
             instance_data = self.get_instance_data(conductor_instance_id)
             conductor_class = instance_data.get('conductor_class')
-            node_skip = conductor_class.get(node_name).get('skip')
+            node_skip = conductor_class.get(node_name).get('skip_flag')
             if node_skip is None:
                 node_skip = 'False'
+            elif node_skip in [1, '1']:
+                node_skip = 'True'
         except Exception as e:
             g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
             type_, value, traceback_ = sys.exc_info()
@@ -2612,7 +2769,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             # 実行Terminalを判定 + 不使用terminal先のNodeを取得
             node_name = node_options.get('node_name')
             tmp_node_status = node_options.get('instance_info_data').get('dict').get('node_status')
-            tmp_node_status_keys = [k for k, v in tmp_node_status.items() if v == in_node_status_id]
+            tmp_node_status_keys = [k for k, v in tmp_node_status.items() if k == str(in_node_status_id)]
             in_node_status_key = tmp_node_status_keys[0]
 
             node_terminals = node_options.get('instance_data').get('conductor_class').get(node_name).get('terminal')
@@ -2745,6 +2902,15 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                 n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('13')
                 # filter
                 node_filter_data = node_options.get('all_node_filter').get('name').get(node_name)
+                conductor_instance_id = node_filter_data.get('parameter').get('conductor_instance_id')
+                node_instance_id = node_filter_data.get('parameter').get('node_instance_id')
+
+                # 最新再取得
+                tmp_result = self.get_filter_node_one(conductor_instance_id, node_instance_id)
+                if tmp_result[0] is False:
+                    raise Exception()
+                node_filter_data = tmp_result[1]
+                
                 # Node更新
                 node_filter_data['parameter']['status_id'] = n_status_id
                 tmp_time = get_now_datetime()
@@ -2797,9 +2963,11 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             # orchestra 取得
             orchestra_info = self.get_orchestra_info()
             action_config = orchestra_info.get('name').get(orchestra_id).get(action_type)
+            driver_id = orchestra_info.get('name').get(orchestra_id).get('driver_id')
+
             if action_type == 'execute':
-                # operation_id = action_options.get('operation_id')
-                operation_name = action_options.get('operation_name')
+                operation_id = action_options.get('operation_id')
+                # operation_name = action_options.get('operation_name')
                 movement_id = action_options.get('movement_id')
                 # movement_name = action_options.get('movement_name')
                 conductor_id = action_options.get('conductor_id')
@@ -2812,12 +2980,20 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                 rows = self.objdbca.table_select(table_name, where_str, [movement_id])
                 for row in rows:
                     movement_row = row
+
+                operation_row = {}
+                where_str = textwrap.dedent("""
+                    WHERE `DISUSE_FLAG` = 0 AND `OPERATION_ID` = %s
+                """).format().strip()
+                table_name = "T_COMN_OPERATION"
+                rows = self.objdbca.table_select(table_name, where_str, [operation_id])
+                
+                for row in rows:
+                    operation_row = row
+
                 # 作業実行
-                try:
-                    tmp_execute = insert_execution_list(self.objdbca, "1", orchestra_id, operation_name, movement_row, None, conductor_id, conductor_name)  # noqa: F405 E501
-                    tmp_result = tmp_execute.get('execution_no')
-                except Exception:
-                    pass
+                tmp_execute = insert_execution_list(self.objdbca, 1, driver_id, operation_row, movement_row, None, conductor_id, conductor_name)  # noqa: F405 E501
+                tmp_result = tmp_execute.get('execution_no')
 
             elif action_type == 'abort':
                 execution_id = action_options.get('execution_id')
@@ -2883,7 +3059,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             conductor_update_status = self.get_conductor_update_status(conductor_instance_id)
             current_status_id = conductor_filter['parameter']['status_id']
             
-            #
+            # execution_log
             if 'execution_log' in conductor_filter['parameter']:
                 execution_logs = self.get_conductor_update_msg(conductor_instance_id, 'execution_log')
                 for execution_log in execution_logs:
@@ -3176,15 +3352,16 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('3')
             node_options['next_node_exec_flg'] = '1'
 
-            if skip == bool_master_true:
+            # 緊急停止(Nodeのステータス変更のみ)
+            if abort_status == bool_master_true:
+                n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('8')
+                c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('9')
+                self.set_conductor_update_status(conductor_instance_id, c_status_id)
+                node_options['next_node_exec_flg'] = None
+            elif skip == bool_master_true:
                 n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('13')
             else:
-                # 緊急停止(Nodeのステータス変更のみ)
-                if abort_status is not None:
-                    n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('8')
-                    c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('9')
-                    self.set_conductor_update_status(conductor_instance_id, c_status_id)
-                    node_options['next_node_exec_flg'] = None
+                pass
 
             # Node Update
             node_filter_data['parameter']['status_id'] = n_status_id
@@ -3254,15 +3431,16 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             else:
                 c_status_id = end_type
             
-            if skip == bool_master_true:
+            # 緊急停止(Nodeのステータス変更のみ)
+            if abort_status == bool_master_true:
+                n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('8')
+                c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('9')
+                self.set_conductor_update_status(conductor_instance_id, c_status_id)
+                node_options['next_node_exec_flg'] = None
+            elif skip == bool_master_true:
                 n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('13')
             else:
-                # 緊急停止(Nodeのステータス変更のみ)
-                if abort_status is not None:
-                    n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('8')
-                    c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('9')
-                    self.set_conductor_update_status(conductor_instance_id, c_status_id)
-                    node_options['next_node_exec_flg'] = None
+                pass
 
             # Node Update
             node_filter_data['parameter']['status_id'] = n_status_id
@@ -3356,93 +3534,94 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             action_options.setdefault("conductor_name", conductor_name)
 
             execute_flg = False
-            # ##################### 強制SKIP対応 #####################
-            skip = 'True'
-            # ##################### 強制SKIP対応 #####################
-            # SKIP時
-            if skip == bool_master_true:
-                n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('13')
-            else:
-                # 作業未実行時
-                if execution_id is None:
-                    # 緊急停止(Nodeのステータス変更のみ)
-                    if abort_status is not None:
-                        n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('8')
-                        c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('9')
-                        self.set_conductor_update_status(conductor_instance_id, c_status_id)
-                    else:
-                        try:
-                            n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('3')
-                            c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('3')
-                            # MV作業実行
-                            action_type = 'execute'
-                            tmp_result = self.orchestra_action(action_type, orchestrator_id, action_options)
-                            if tmp_result[0] is not True:
-                                raise Exception()
-
-                            execution_id = tmp_result[1].get(action_type)
-                            if execution_id is not None:
-                                execute_flg = True
-                                node_filter_data['parameter']['execution_id'] = execution_id
-                            else:
-                                raise Exception()
-
-                        except Exception:
-                            msg_code = 'MSG-40026'
-                            msg_args = [movement_id, operation_id]
-                            err_msg = g.appmsg.get_api_message(msg_code, msg_args)
-                            self.set_conductor_update_msg(conductor_instance_id, 'execution_log', err_msg)
-                            n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('6')
-                            c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('7')
+            # 作業未実行時
+            if execution_id is None:
+                # 緊急停止(Nodeのステータス変更のみ)
+                if abort_status == bool_master_true:
+                    n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('8')
+                    c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('9')
+                    self.set_conductor_update_status(conductor_instance_id, c_status_id)
+                    node_options['next_node_exec_flg'] = None
+                # SKIP時
+                elif skip == bool_master_true:
+                    n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('13')
                 else:
-                    # 緊急停止
-                    if abort_status is not None:
-                        n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('8')
-                        c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('9')
-                        # 緊急停止発令
-                        self.set_conductor_update_status(conductor_instance_id, c_status_id)
-                        action_type = 'abort'
+                    try:
+                        n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('3')
+                        c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('3')
+                        # MV作業実行
+                        action_type = 'execute'
                         tmp_result = self.orchestra_action(action_type, orchestrator_id, action_options)
                         if tmp_result[0] is not True:
                             raise Exception()
-                        
-                    # ステータス問い合わせ
-                    action_type = 'status'
-                    tmp_result = self.orchestra_action(action_type, orchestrator_id, action_options)
-                    if tmp_result[0] is not True:
-                        raise Exception()
-                    
-                    # ステータス反映 MV->Node
-                    mv_status_id = tmp_result[1].get(action_type)
-                    n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get(mv_status_id)
-                    if mv_status_id in ['3']:
-                        # 3:実行中->3:実行中
-                        c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('3')
-                    elif mv_status_id in ['4']:
-                        # 4:実行中(遅延)->4:実行中(遅延)
-                        c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('4')
-                    elif mv_status_id in ['5']:
-                        # 5:完了->6:正常終了
-                        c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('6')
-                    elif mv_status_id in ['6']:
-                        # 6:完了(異常)->7:異常終了
-                        c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('7')
-                    elif mv_status_id in ['7']:
-                        # 7:想定外エラー->11:想定外エラー
-                        c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('11')
-                    elif mv_status_id in ['8']:
-                        # 8:緊急停止->9:緊急停止
-                        c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('9')
-                    else:
-                        # Conductor使用時に扱わないので異常終了扱い
-                        c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('8')
 
-                    # ステータスファイル取得
-                    if status_file_path is not None:
-                        status_file_info = self.get_status_file(status_file_path)
-                        if status_file_info[0] is True:
-                            node_filter_data['parameter']['status_file'] = status_file_info[1].get('status_file_value')
-                            
+                        execution_id = tmp_result[1].get(action_type)
+                        if execution_id is not None:
+                            execute_flg = True
+                            node_filter_data['parameter']['execution_id'] = execution_id
+                        else:
+                            raise Exception()
+
+                    except Exception:
+                        msg_code = 'MSG-40026'
+                        msg_args = [movement_id, operation_id]
+                        err_msg = g.appmsg.get_api_message(msg_code, msg_args)
+                        self.set_conductor_update_msg(conductor_instance_id, 'execution_log', err_msg)
+                        n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('6')
+                        c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('7')
+            else:
+                # 緊急停止
+                if abort_status == bool_master_true:
+                    n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('8')
+                    c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('9')
+                    node_options['next_node_exec_flg'] = None
+                    # 緊急停止発令
+                    self.set_conductor_update_status(conductor_instance_id, c_status_id)
+                    action_type = 'abort'
+                    tmp_result = self.orchestra_action(action_type, orchestrator_id, action_options)
+
+                # ステータス問い合わせ
+                action_type = 'status'
+                action_options["execution_id"] = execution_id
+                tmp_result = self.orchestra_action(action_type, orchestrator_id, action_options)
+                if tmp_result[0] is not True:
+                    raise Exception()
+                
+                # ステータス反映 MV->Node
+                mv_status_id = tmp_result[1].get(action_type)
+                n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get(mv_status_id)
+                if mv_status_id in ['1', '2', '3']:
+                    # 1:未実行,3:実行中->3:実行中
+                    n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('3')
+                    # 3:実行中->3:実行中
+                    c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('3')
+                    
+                elif mv_status_id in ['4']:
+                    # 4:実行中(遅延)->4:実行中(遅延)
+                    c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('4')
+                elif mv_status_id in ['5']:
+                    # 5:完了->6:正常終了
+                    c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('6')
+                elif mv_status_id in ['6']:
+
+                    # 6:完了(異常)->7:異常終了
+                    c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('7')
+                elif mv_status_id in ['7']:
+                    # 7:想定外エラー->->7:異常終了
+                    c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('7')
+                elif mv_status_id in ['8']:
+                    # 8:緊急停止->9:緊急停止
+                    c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('9')
+                else:
+                    # Conductor使用時に扱わないので異常終了扱い
+                    c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('8')
+
+                # ステータスファイル取得
+                if status_file_path is not None:
+                    status_file_info = self.get_status_file(status_file_path)
+                    if status_file_info[0] is True:
+                        node_filter_data['parameter']['status_file'] = status_file_info[1].get('status_file_value')
+                        
             # ステータス変更時のみ更新
             now_status_id = node_filter_data['parameter']['status_id']
             if n_status_id != now_status_id or execute_flg is True:
@@ -3459,10 +3638,20 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
 
                 self.set_conductor_update_status(conductor_instance_id, c_status_id)
 
+                # 他完了ノードの状況取得
+                tmp_result = self.chk_all_node_status_info(conductor_instance_id)
+                if tmp_result[0] is not True:
+                    raise Exception()
+                all_node_status_info = tmp_result[1]
+                error_node_conditional_flg = all_node_status_info.get('error_node_conditional_flg')
+
                 # next node
                 if n_status_id in end_status_list:
                     if n_status_id in error_status_list and conditional_branch_flg is None:
                         # 異常終了系で、次がConditionalでない場合、実行させない
+                        pass
+                    elif error_node_conditional_flg is False:
+                        # 他の異常終了系ノードで、次がConditionalでない場合、実行させない
                         pass
                     elif merge_flg is not None:
                         node_options['next_node_exec_flg'] = '1'
@@ -3539,131 +3728,127 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('3')
             
             call_execute_flg = False
-            # ##################### 強制SKIP対応 #####################
-            # skip = 'True'
-            # ##################### 強制SKIP対応 #####################
-            # SKIP時
-            if skip == bool_master_true:
-                n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('13')
-            else:
-                # 作業未実行時
-                if execution_id is None:
-                    # 緊急停止(Nodeのステータス変更のみ)
-                    if abort_status is not None:
-                        n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('8')
-                        c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('9')
-                        self.set_conductor_update_status(conductor_instance_id, c_status_id)
-                    else:
-                        
-                        # 作業実行するConductorの情報設定
-                        # conductor class id
-                        call_caonductor_class_id = node_filter_data.get('parameter').get('instance_source_conductor_id')
-                        # operation id
-                        call_operation_id = node_options.get('instance_data').get('conductor').get('operation_id')
-                        
-                        # 個別指定の場合上書き
-                        tmp_call_operation_id = node_filter_data.get('parameter').get('operation_id')
-                        if tmp_call_operation_id is not None:
-                            call_operation_id = tmp_call_operation_id
-                        # conductor data 取得
-                        # call_conductor_data = node_filter_data.get('parameter').get('instance_source_conductor_info')
-                        call_parameter = {
-                            'conductor_class_id': call_caonductor_class_id,
-                            'operation_id': call_operation_id,
-                            'schedule_date': '',
-                            'conductor_data': {},
-                        }
-                        try:
-                            parent_conductor_instance_id = conductor_instance_id
-                            call_create_parameter = self.create_execute_register_parameter(call_parameter, parent_conductor_instance_id)
-                            if call_create_parameter[0] != '000-00000':
-                                raise Exception()
-                            call_conductor_parameter = call_create_parameter[1].get('conductor')
-                            call_node_parameters = call_create_parameter[1].get('node')
-                            call_conductor_instance_id = call_create_parameter[1].get('conductor_instance_id')
-                            
-                            # conductor instanceテーブルへのレコード追加
-                            iem_result = self.conductor_instance_exec_maintenance(call_conductor_parameter)
-                            if iem_result[0] is not True:
-                                raise Exception()
-                            # node instanceテーブルへのレコード追加
-                            iem_result = self.node_instance_exec_maintenance(call_node_parameters)
-                            if iem_result[0] is not True:
-                                raise Exception()
-                            
-                            node_filter_data['parameter']['execution_id'] = call_conductor_instance_id
-                            call_execute_flg = True
-                        except Exception:
-                            msg_code = 'MSG-40027'
-                            msg_args = [call_caonductor_class_id, call_operation_id]
-                            err_msg = g.appmsg.get_api_message(msg_code, msg_args)
-                            self.set_conductor_update_msg(conductor_instance_id, 'execution_log', err_msg)
-                            n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('6')
-                            c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('7')
+
+            # 作業未実行時
+            if execution_id is None:
+                # 緊急停止(Nodeのステータス変更のみ)
+                if abort_status == bool_master_true:
+                    n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('8')
+                    c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('9')
+                    self.set_conductor_update_status(conductor_instance_id, c_status_id)
+                    node_options['next_node_exec_flg'] = None
+                # SKIP時
+                elif skip == bool_master_true:
+                    n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('13')
                 else:
-                    # 緊急停止
-                    if abort_status is not None:
-                        n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('8')
-                        c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('9')
-                        self.set_conductor_update_status(conductor_instance_id, c_status_id)
-
-                        # 緊急停止発令
-                        action_result = self.execute_action('scram', execution_id)
-                        if action_result[0] is not True:
-                            raise Exception()
-
-                    # ##################### Conductor問い合わせ #####################
-                    # Conductor instance取得
-                    tmp_result = self.get_filter_conductor(execution_id)
-                    if tmp_result[0] is not True:
-                        raise Exception()
-                    conductor_filter = tmp_result[1]
-                    call_status_id = conductor_filter.get('parameter').get('status_id')
                     
-                    """
-                    C->N
-                            1:未実行:->1:未実行
-                            2:未実行(予約):->2:準備中
-                            3:実行中:->3:実行中
-                            4:実行中(遅延):->4:実行中(遅延)
-                        *   6:正常終了->5:正常終了
-                        *   7:異常終了->6:異常終了
-                        *   11:想定外エラー->7:想定外エラー
-                        *   9:緊急停止->8:緊急停止
-                        (*   5:一時停止->3:実行中)
-                    """
-                    if call_status_id == node_options.get('instance_info_data').get('dict').get('conductor_status').get('1'):
-                        n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('3')
-                        c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('3')
-                    elif call_status_id == node_options.get('instance_info_data').get('dict').get('conductor_status').get('2'):
-                        n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('3')
-                        c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('3')
-                    elif call_status_id == node_options.get('instance_info_data').get('dict').get('conductor_status').get('3'):
-                        n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('3')
-                        c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('3')
-                    elif call_status_id == node_options.get('instance_info_data').get('dict').get('conductor_status').get('4'):
-                        n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('4')
-                        c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('4')
-                    elif call_status_id == node_options.get('instance_info_data').get('dict').get('conductor_status').get('5'):
-                        n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('3')
-                        c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('3')
-                    elif call_status_id == node_options.get('instance_info_data').get('dict').get('conductor_status').get('6'):
-                        n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('5')
-                        c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('6')
-                    elif call_status_id == node_options.get('instance_info_data').get('dict').get('conductor_status').get('7'):
+                    # 作業実行するConductorの情報設定
+                    # conductor class id
+                    call_caonductor_class_id = node_filter_data.get('parameter').get('instance_source_conductor_id')
+                    # operation id
+                    call_operation_id = node_options.get('instance_data').get('conductor').get('operation_id')
+                    
+                    # 個別指定の場合上書き
+                    tmp_call_operation_id = node_filter_data.get('parameter').get('operation_id')
+                    if tmp_call_operation_id is not None:
+                        call_operation_id = tmp_call_operation_id
+                    # conductor data 取得
+                    # call_conductor_data = node_filter_data.get('parameter').get('instance_source_conductor_info')
+                    call_parameter = {
+                        'conductor_class_id': call_caonductor_class_id,
+                        'operation_id': call_operation_id,
+                        'schedule_date': '',
+                        'conductor_data': {},
+                    }
+                    try:
+                        parent_conductor_instance_id = conductor_instance_id
+                        call_create_parameter = self.create_execute_register_parameter(call_parameter, parent_conductor_instance_id)
+                        if call_create_parameter[0] != '000-00000':
+                            raise Exception()
+                        call_conductor_parameter = call_create_parameter[1].get('conductor')
+                        call_node_parameters = call_create_parameter[1].get('node')
+                        call_conductor_instance_id = call_create_parameter[1].get('conductor_instance_id')
+                        
+                        # conductor instanceテーブルへのレコード追加
+                        iem_result = self.conductor_instance_exec_maintenance(call_conductor_parameter)
+                        if iem_result[0] is not True:
+                            raise Exception()
+                        # node instanceテーブルへのレコード追加
+                        iem_result = self.node_instance_exec_maintenance(call_node_parameters)
+                        if iem_result[0] is not True:
+                            raise Exception()
+                        
+                        node_filter_data['parameter']['execution_id'] = call_conductor_instance_id
+                        call_execute_flg = True
+                    except Exception:
+                        msg_code = 'MSG-40027'
+                        msg_args = [call_caonductor_class_id, call_operation_id]
+                        err_msg = g.appmsg.get_api_message(msg_code, msg_args)
+                        self.set_conductor_update_msg(conductor_instance_id, 'execution_log', err_msg)
                         n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('6')
                         c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('7')
-                    elif call_status_id == node_options.get('instance_info_data').get('dict').get('conductor_status').get('8'):
-                        n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('5')
-                        c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('8')
-                    elif call_status_id == node_options.get('instance_info_data').get('dict').get('conductor_status').get('9'):
-                        n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('8')
-                        c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('9')
-                    elif call_status_id == node_options.get('instance_info_data').get('dict').get('conductor_status').get('11'):
-                        n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('7')
-                        c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('11')
-                    else:
-                        raise Exception()
+            else:
+                # 緊急停止
+                if abort_status == bool_master_true:
+                    n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('8')
+                    c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('9')
+                    self.set_conductor_update_status(conductor_instance_id, c_status_id)
+
+                    # 緊急停止発令
+                    action_result = self.execute_action('scram', execution_id)
+
+                # ##################### Conductor問い合わせ #####################
+                # Conductor instance取得
+                tmp_result = self.get_filter_conductor(execution_id)
+                if tmp_result[0] is not True:
+                    raise Exception()
+                conductor_filter = tmp_result[1]
+                call_status_id = conductor_filter.get('parameter').get('status_id')
+                
+                """
+                C->N
+                        1:未実行:->1:未実行
+                        2:未実行(予約):->2:準備中
+                        3:実行中:->3:実行中
+                        4:実行中(遅延):->4:実行中(遅延)
+                    *   6:正常終了->5:正常終了
+                    *   7:異常終了->6:異常終了
+                    *   11:想定外エラー->7:想定外エラー
+                    *   9:緊急停止->8:緊急停止
+                    (*   5:一時停止->3:実行中)
+                """
+                if call_status_id == node_options.get('instance_info_data').get('dict').get('conductor_status').get('1'):
+                    n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('3')
+                    c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('3')
+                elif call_status_id == node_options.get('instance_info_data').get('dict').get('conductor_status').get('2'):
+                    n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('3')
+                    c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('3')
+                elif call_status_id == node_options.get('instance_info_data').get('dict').get('conductor_status').get('3'):
+                    n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('3')
+                    c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('3')
+                elif call_status_id == node_options.get('instance_info_data').get('dict').get('conductor_status').get('4'):
+                    n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('4')
+                    c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('4')
+                elif call_status_id == node_options.get('instance_info_data').get('dict').get('conductor_status').get('5'):
+                    n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('3')
+                    c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('3')
+                elif call_status_id == node_options.get('instance_info_data').get('dict').get('conductor_status').get('6'):
+                    n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('5')
+                    c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('6')
+                elif call_status_id == node_options.get('instance_info_data').get('dict').get('conductor_status').get('7'):
+                    n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('6')
+                    c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('7')
+                elif call_status_id == node_options.get('instance_info_data').get('dict').get('conductor_status').get('8'):
+                    n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('5')
+                    c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('8')
+                elif call_status_id == node_options.get('instance_info_data').get('dict').get('conductor_status').get('9'):
+                    n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('8')
+                    c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('9')
+                elif call_status_id == node_options.get('instance_info_data').get('dict').get('conductor_status').get('11'):
+                    n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('7')
+                    c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('11')
+                else:
+                    raise Exception()
 
             # ステータス変更時のみ更新
             now_status_id = node_filter_data['parameter']['status_id']
@@ -3681,10 +3866,20 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
 
                 self.set_conductor_update_status(conductor_instance_id, c_status_id)
 
+                # 他完了ノードの状況取得
+                tmp_result = self.chk_all_node_status_info(conductor_instance_id)
+                if tmp_result[0] is not True:
+                    raise Exception()
+                all_node_status_info = tmp_result[1]
+                error_node_conditional_flg = all_node_status_info.get('error_node_conditional_flg')
+
                 # next node
                 if n_status_id in end_status_list:
                     if n_status_id in error_status_list and conditional_branch_flg is None:
                         # 異常終了系で、次がConditionalでない場合、実行させない
+                        pass
+                    elif error_node_conditional_flg is False:
+                        # 他の異常終了系ノードで、次がConditionalでない場合、実行させない
                         pass
                     elif merge_flg is not None:
                         node_options['next_node_exec_flg'] = '1'
@@ -3753,15 +3948,16 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             # Conductor実行中
             c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('3')
 
-            if skip == bool_master_true:
+            # 緊急停止(Nodeのステータス変更のみ)
+            if abort_status == bool_master_true:
+                n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('8')
+                c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('9')
+                self.set_conductor_update_status(conductor_instance_id, c_status_id)
+                node_options['next_node_exec_flg'] = None
+            elif skip == bool_master_true:
                 n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('13')
             else:
-                # 緊急停止(Nodeのステータス変更のみ)
-                if abort_status is not None:
-                    n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('8')
-                    c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('9')
-                    self.set_conductor_update_status(conductor_instance_id, c_status_id)
-                    node_options['next_node_exec_flg'] = None
+                pass
 
             # Node更新
             node_filter_data['parameter']['status_id'] = n_status_id
@@ -3831,15 +4027,16 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             # Conductor実行中
             c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('3')
 
-            if skip == bool_master_true:
+            # 緊急停止(Nodeのステータス変更のみ)
+            if abort_status == bool_master_true:
+                n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('8')
+                c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('9')
+                self.set_conductor_update_status(conductor_instance_id, c_status_id)
+                node_options['next_node_exec_flg'] = None
+            elif skip == bool_master_true:
                 n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('13')
             else:
-                # 緊急停止(Nodeのステータス変更のみ)
-                if abort_status is not None:
-                    n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('8')
-                    c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('9')
-                    self.set_conductor_update_status(conductor_instance_id, c_status_id)
-                    node_options['next_node_exec_flg'] = None
+                pass
 
             # in nodeのステータスを取得
             if len(in_node) == 1:
@@ -3848,10 +4045,6 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                     in_node_info = instance_data.get('node').get(in_node_name)
                     in_node_status_id = in_node_info.get('status_id')
 
-            import random
-            rnum = random.randint(0, len(node_options.get('end_status_list')))
-            in_node_status_id = node_options.get('end_status_list')[rnum]
-            
             tmp_result = self.get_conditional_node_info(node_options, in_node_status_id)
             if tmp_result[0] is False:
                 raise Exception()
@@ -3929,15 +4122,16 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             # Conductor実行中
             c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('3')
 
-            if skip == bool_master_true:
+            # 緊急停止(Nodeのステータス変更のみ)
+            if abort_status == bool_master_true:
+                n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('8')
+                c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('9')
+                self.set_conductor_update_status(conductor_instance_id, c_status_id)
+                node_options['next_node_exec_flg'] = None
+            elif skip == bool_master_true:
                 n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('13')
             else:
-                # 緊急停止(Nodeのステータス変更のみ)
-                if abort_status is not None:
-                    n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('8')
-                    c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('9')
-                    self.set_conductor_update_status(conductor_instance_id, c_status_id)
-                    node_options['next_node_exec_flg'] = None
+                pass
 
             # in nodeのステータスカウント
             in_node_cnt = len(in_node)
@@ -3971,6 +4165,13 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                         "status_id": next_n_status_id
                     }
                     node_options['next_node_list'].setdefault(targetNode, next_target_node_info)
+            elif abort_status == bool_master_true:
+                # Node更新
+                node_filter_data['parameter']['status_id'] = n_status_id
+                node_filter_data['parameter']['time_end'] = get_now_datetime()
+                tmp_result = self.node_instance_exec_maintenance([node_filter_data], 'Update')
+                if tmp_result[0] is not True:
+                    raise Exception()
             else:
                 pass
         except Exception as e:
@@ -4012,7 +4213,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             self.set_conductor_update_status(conductor_instance_id, c_status_id)
 
             # 緊急停止
-            if abort_status is not None:
+            if abort_status == bool_master_true:
                 n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('8')
                 c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('9')
                 self.set_conductor_update_status(conductor_instance_id, c_status_id)
@@ -4058,7 +4259,15 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                         "status_id": next_n_status_id
                     }
                     node_options['next_node_list'].setdefault(targetNode, next_target_node_info)
-
+            elif abort_status == bool_master_true:
+                # Node更新
+                node_filter_data['parameter']['status_id'] = n_status_id
+                node_filter_data['parameter']['time_end'] = get_now_datetime()
+                tmp_result = self.node_instance_exec_maintenance([node_filter_data], 'Update')
+                if tmp_result[0] is not True:
+                    raise Exception()
+            else:
+                pass
         except Exception as e:
             g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
             type_, value, traceback_ = sys.exc_info()
@@ -4107,7 +4316,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                 n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('13')
             else:
                 # 緊急停止(Nodeのステータス変更のみ)
-                if abort_status is not None:
+                if abort_status == bool_master_true:
                     n_status_id = node_options.get('instance_info_data').get('dict').get('node_status').get('8')
                     c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('9')
                     self.set_conductor_update_status(conductor_instance_id, c_status_id)

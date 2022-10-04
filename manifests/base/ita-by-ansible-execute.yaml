@@ -100,4 +100,3 @@ spec:
           emptyDir: {}
         - name: emptydir-vol
           emptyDir: {}
-

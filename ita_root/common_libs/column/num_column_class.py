@@ -93,7 +93,17 @@ class NumColumn(Column):
                         min_num = dict_valid.get('int_min')
                         # 閾値(最大値)
                         max_num = dict_valid.get('int_max')
-                
+
+                        # Noneの際,int範囲(-2147483648～2147483647)外の場合、設定上書き
+                        if min_num is None:
+                            min_num = -2147483648
+                        elif -2147483648 > min_num:
+                            min_num = -2147483648
+                        if max_num is None:
+                            max_num = 2147483647
+                        elif 2147483647 < max_num:
+                            max_num = 2147483647
+
                 if min_num is None and max_num is None:
                     # 最小値、最大値閾値無し
                     retBool = True
@@ -103,8 +113,8 @@ class NumColumn(Column):
                         retBool = True
                     else:
                         retBool = False
-                        status_code = '499-00214'
-                        msg_args = [self.get_rest_key_name(), min_num, max_num, val]
+                        status_code = 'MSG-00019'
+                        msg_args = [min_num, max_num, val]
                         msg = g.appmsg.get_api_message(status_code, msg_args)
                         return retBool, msg
 
@@ -114,8 +124,8 @@ class NumColumn(Column):
                         retBool = True
                     else:
                         retBool = False
-                        status_code = '499-00215'
-                        msg_args = [self.get_rest_key_name(), min_num, val]
+                        status_code = 'MSG-00020'
+                        msg_args = [min_num, val]
                         msg = g.appmsg.get_api_message(status_code, msg_args)
                         return retBool, msg
                 elif max_num is not None:
@@ -124,15 +134,55 @@ class NumColumn(Column):
                         retBool = True
                     else:
                         retBool = False
-                        status_code = '499-00216'
-                        msg_args = [self.get_rest_key_name(), max_num, val]
+                        status_code = 'MSG-00021'
+                        msg_args = [max_num, val]
                         msg = g.appmsg.get_api_message(status_code, msg_args)
                         return retBool, msg
             except ValueError:
                 retBool = False
-                status_code = '499-00217'
-                msg_args = [self.get_rest_key_name(), val]
+                status_code = 'MSG-00031'
+                msg_args = [val]
                 msg = g.appmsg.get_api_message(status_code, msg_args)
                 return retBool, msg
 
         return retBool,
+
+    def convert_value_input(self, val=''):
+        """
+            内部処理用の値へ変換
+            ARGS:
+                val:値
+            RETRUN:
+                retBool, msg, val
+        """
+        retBool = True
+        msg = ''
+        try:
+            if val is not None:
+                val = int(val)
+        except Exception:
+            retBool = False
+            status_code = 'MSG-00031'
+            msg_args = [val]
+            msg = g.appmsg.get_api_message(status_code, msg_args)
+        return retBool, msg, val
+
+    def convert_value_output(self, val=''):
+        """
+            出力用の値へ変換
+            ARGS:
+                val:値
+            RETRUN:
+                retBool, msg, val
+        """
+        retBool = True
+        msg = ''
+        try:
+            if val is not None:
+                val = int(val)
+        except Exception:
+            retBool = False
+            status_code = 'MSG-00031'
+            msg_args = [val]
+            msg = g.appmsg.get_api_message(status_code, msg_args)
+        return retBool, msg, val

@@ -80,7 +80,14 @@ class FileUploadColumn(Column):
         if val is not None:
             if option.get("file_data") is not None:
                 # デコード値
-                decode_option = base64.b64decode(option["file_data"].encode())
+                try:
+                    decode_option = base64.b64decode(option["file_data"].encode())
+                except Exception:
+                    retBool = False
+                    msg = g.appmsg.get_api_message('MSG-00011')
+                    # msg = "base64decodeに失敗しました"
+                    return retBool, msg
+
                 # 禁止拡張子
                 forbidden_extension_arry = self.objdbca.table_select("T_COMN_SYSTEM_CONFIG", "WHERE CONFIG_ID = %s", bind_value_list=['FORBIDDEN_UPLOAD'])
                 
@@ -102,7 +109,7 @@ class FileUploadColumn(Column):
                             retBool = True
                         else:
                             retBool = False
-                            msg = "文字長エラー (閾値:{}<値<{}, 値{})[{}]".format(min_length, max_length, check_val, self.rest_key_name)
+                            msg = g.appmsg.get_api_message('MSG-00008', [max_length, check_val])
                             return retBool, msg
                 
                 # ファイル名のチェック
@@ -112,19 +119,15 @@ class FileUploadColumn(Column):
                         tmp_result = pattern.fullmatch(val)
                         if tmp_result is None:
                             retBool = False
-                            msg = "正規表現エラー (閾値:{},値{})[{}]".format(preg_match, val, self.rest_key_name)
+                            msg = g.appmsg.get_api_message('MSG-00009', [preg_match, val])
                             return retBool, msg
 
                 # バイト数比較
                 if decode_option and upload_max_size is not None:
-                    if len(decode_option) > upload_max_size:
+                    if len(decode_option) > int(upload_max_size):
                         retBool = False
-                        msg = "バイト数超過　(閾値:{},値{})[{}]".format(upload_max_size, len(decode_option), self.rest_key_name)
+                        msg = g.appmsg.get_api_message('MSG-00010', [upload_max_size, len(decode_option)])
                         return retBool, msg
-                else:
-                    retBool = False
-                    msg = "バイト数無し (閾値:{},値{})[{}]".format(upload_max_size, len(decode_option), self.rest_key_name)
-                    return retBool, msg
 
                 # 禁止拡張子チェック
                 if forbidden_extension is not None:
@@ -134,12 +137,12 @@ class FileUploadColumn(Column):
                     # リストの中身を全て小文字に変更
                     forbidden_extensions = list(map(lambda e: e.lower(), forbidden_extensions))
                     if extension_val in forbidden_extensions:
-                        msg = "禁止拡張子(閾値:{},値{})[{}]".format(forbidden_extensions, extension_val, self.rest_key_name)
+                        msg = g.appmsg.get_api_message('MSG-00022', [forbidden_extensions, extension_val])
                         retBool = False
                         return retBool, msg
             else:
                 retBool = False
-                msg = "{}のbase64文字列がありません。".format(val)
+                msg = g.appmsg.get_api_message('MSG-00012', [val])
                 return retBool, msg
         return retBool,
 
@@ -183,7 +186,7 @@ class FileUploadColumn(Column):
                     upload_file(old_dir_path, decode_option)  # noqa: F405
                 else:
                     retBool = False
-                    msg = "ファイルパスの取得エラー"
+                    msg = g.appmsg.get_api_message('MSG-00013', [])
                     return retBool, msg
                 
                 # 更新、復活の場合シンボリックリンクを削除
@@ -202,7 +205,7 @@ class FileUploadColumn(Column):
                             os.unlink(old_file_path)
                         except Exception:
                             retBool = False
-                            msg = "シンボリックリンク削除エラー old_file_path:{}".format(old_file_path)
+                            msg = g.appmsg.get_api_message('MSG-00014', [old_file_path])
                             return retBool, msg
 
                 # シンボリックリンク作成
@@ -210,7 +213,7 @@ class FileUploadColumn(Column):
                     os.symlink(old_dir_path, dir_path)
                 except Exception:
                     retBool = False
-                    msg = "シンボリックリンク作成エラー old_dir_path:{}, dir_path:{}".format(old_dir_path, dir_path)
+                    msg = g.appmsg.get_api_message('MSG-00015', [old_dir_path, dir_path])
                     return retBool, msg
             
         return retBool,
@@ -289,7 +292,7 @@ class FileUploadColumn(Column):
                             os.rmdir(dir_path.replace(val, ''))
                     except Exception:
                         retBool = False
-                        msg = "削除エラー old_dir_path:{}".format(old_dir_path)
+                        msg = g.appmsg.get_api_message('MSG-00016', [old_dir_path])
                         print(msg)
                         # return retBool, msg
                     try:
@@ -310,7 +313,7 @@ class FileUploadColumn(Column):
                                     break
                     except Exception:
                         retBool = False
-                        msg = "シンボリックリンク再生成エラー old_dir_path:{}".format(old_dir_path)
+                        msg = g.appmsg.get_api_message('MSG-00017', [old_dir_path])
                         print(msg)
                         # return retBool, msg
         return retBool, msg

@@ -16,44 +16,79 @@ from common_libs.common.exception import AppException
 
 
 def get_ansible_interface_info(wsDb):
-    # ANSIBLEインタフェース情報を取得
+    """
+    ANSIBLEインタフェース情報を取得
+    
+    Arguments:
+        WsDb: db instance
+    Returns:
+        result: bool
+        record or err_msg:
+    """
     condition = 'WHERE `DISUSE_FLAG`=0'
     records = wsDb.table_select('T_ANSC_IF_INFO', condition)
     record_num = len(records)
 
     if record_num == 0:
-        return False, "ITAANSIBLEH-ERR-50062"
+        return False, "MSG-10048"
     elif record_num != 1:
-        return False, "ITAANSIBLEH-ERR-50063"
+        return False, "MSG-10049"
 
     return True, records[0]
 
 
 def get_conductor_interface_info(wsDb):
-    # Conductorインタフェース情報を取得
+    """
+    Conductorインタフェース情報を取得
+    
+    Arguments:
+        WsDb: db instance
+    Returns:
+        result: bool
+        record or err_msg:
+    """
     condition = 'WHERE `DISUSE_FLAG`=0'
     records = wsDb.table_select('T_COMN_CONDUCTOR_IF_INFO', condition)
     record_num = len(records)
 
     if record_num == 0:
-        return False, "ITAANSIBLEH-ERR-50080"
+        return False, "MSG-10065"
     elif record_num != 1:
-        return False, "ITAANSIBLEH-ERR-50081"
+        return False, "MSG-10066"
 
     return True, records[0]
 
 
 def get_execution_process_info(wsDb, execution_no):
+    """
+    作業実行の情報を取得
+    
+    Arguments:
+        WsDb: db instance
+    Returns:
+        result: bool
+        record or err_msg:
+    """
     condition = "WHERE `DISUSE_FLAG`=0 AND `EXECUTION_NO`=%s"
     records = wsDb.table_select('T_ANSR_EXEC_STS_INST', condition, [execution_no])
 
     if len(records) == 0:
-        return False, "ITAANSIBLEH-ERR-50061"
+        return False, "MSG-10047"
 
     return True, records[0]
 
 
 def update_execution_record(wsDb, data):
+    """
+    作業実行の情報を更新
+    
+    Arguments:
+        WsDb: db instance
+        data: 更新データ
+    Returns:
+        result: bool
+        record:
+    """
     try:
         if "LAST_UPDATE_USER" not in data:
             data["LAST_UPDATE_USER"] = g.USER_ID

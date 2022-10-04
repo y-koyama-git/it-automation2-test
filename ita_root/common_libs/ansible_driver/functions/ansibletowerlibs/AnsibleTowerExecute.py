@@ -15,20 +15,23 @@
 
 from flask import g
 
+from common_libs.common.util import get_timestamp
 from common_libs.ansible_driver.classes.AnscConstClass import AnscConst
-from common_libs.ansible_driver.classes.AnsrConstClass import AnsrConst
 from common_libs.ansible_driver.classes.gitlab import GitLabAgent
 from common_libs.ansible_driver.classes.ansibletowerlibs.RestApiCaller import RestApiCaller
 from common_libs.ansible_driver.classes.ansibletowerlibs.ExecuteDirector import ExecuteDirector
 from common_libs.ansible_driver.classes.ansibletowerlibs.restapi_command.AnsibleTowerRestApiConfig import AnsibleTowerRestApiConfig
 from common_libs.ansible_driver.functions.ansibletowerlibs import AnsibleTowerCommonLib as FuncCommonLib
 
+
 def AnsibleTowerExecution(
     function, ansibleTowerIfInfo, TowerHostList, toProcessRow, exec_out_dir,
     UIExecLogPath, UIErrorLogPath, MultipleLogMark, MultipleLogFileJsonAry,
     status='', JobTemplatePropertyParameterAry=None, JobTemplatePropertyNameAry=None,
-    TowerProjectsScpPath={}, TowerInstanceDirPath={}, error_flag=0, warning_flag=0, dbAccess=None
+    TowerProjectsScpPath={}, TowerInstanceDirPath={}, dbAccess=None
 ):
+    error_flag = 0
+    warning_flag = 0
 
     # 業務処理開始
     restApiCaller = None
@@ -37,6 +40,23 @@ def AnsibleTowerExecution(
     try:
         tgt_execution_no = toProcessRow['EXECUTION_NO']
         db_access_user_id = '20102'
+
+        if 'ANSTWR_HOSTNAME' not in ansibleTowerIfInfo and 'ANSTWR_HOST_ID' in ansibleTowerIfInfo:
+            cols = dbAccess.table_columns_get("T_ANSC_TOWER_HOST")
+            pkey = cols[1][0]
+            cols = (',').join(cols[0])
+            sql = (
+                "SELECT              \n"
+                "  %s                \n"
+                "FROM                \n"
+                "  T_ANSC_TOWER_HOST \n"
+                "WHERE               \n"
+                "  DISUSE_FLAG = '0' \n"
+                "AND                 \n"
+                "  %s = %%s ;        \n"
+            ) % (cols, pkey)
+            ifInfoRows = dbAccess.sql_execute(sql, [ansibleTowerIfInfo['ANSTWR_HOST_ID'], ])
+            ansibleTowerIfInfo['ANSTWR_HOSTNAME'] = ifInfoRows[0]['ANSTWR_HOSTNAME']
 
         ################################
         # 接続トークン取得
@@ -67,7 +87,7 @@ def AnsibleTowerExecution(
         director = None
         if not process_has_error:
             g.applogger.debug("maintenance environment (exec_no: %s)" % (tgt_execution_no))
-            director = ExecuteDirector(restApiCaller, None, None, exec_out_dir, ansibleTowerIfInfo, JobTemplatePropertyParameterAry, JobTemplatePropertyNameAry, TowerProjectsScpPath, TowerInstanceDirPath)
+            director = ExecuteDirector(restApiCaller, None, dbAccess, exec_out_dir, ansibleTowerIfInfo, JobTemplatePropertyParameterAry, JobTemplatePropertyNameAry, TowerProjectsScpPath, TowerInstanceDirPath)
             GitObj = GitLabAgent()
 
         # Tower 接続確認
@@ -185,20 +205,20 @@ def AnsibleTowerExecution(
                 toProcessRow['LAST_UPDATE_USER'] = db_access_user_id
                 if process_was_scrammed:
                     # 緊急停止時
-                    toProcessRow['TIME_START'] = "DATETIMEAUTO(6)"
-                    toProcessRow['TIME_END'] = "DATETIMEAUTO(6)"
+                    toProcessRow['TIME_START'] = get_timestamp()
+                    toProcessRow['TIME_END'] = get_timestamp()
                     toProcessRow['STATUS_ID'] = AnscConst.SCRAM
 
                 elif process_has_error:
                     # 異常時
-                    toProcessRow['TIME_START'] = "DATETIMEAUTO(6)"
-                    toProcessRow['TIME_END'] = "DATETIMEAUTO(6)"
+                    toProcessRow['TIME_START'] = get_timestamp()
+                    toProcessRow['TIME_END'] = get_timestamp()
                     toProcessRow['STATUS_ID'] = AnscConst.FAILURE
                     status = AnscConst.FAILURE
 
                 else:
                     # 正常時
-                    toProcessRow['TIME_START'] = "DATETIMEAUTO(6)"
+                    toProcessRow['TIME_START'] = get_timestamp()
                     toProcessRow['STATUS_ID'] = AnscConst.PROCESSING
                     status = AnscConst.PROCESSING
 
@@ -235,7 +255,7 @@ def AnsibleTowerExecution(
                 # トレースメッセージ
                 g.applogger.debug("monitoring environment (exec_no: %s)" % (tgt_execution_no))
 
-                director = ExecuteDirector(restApiCaller, None, None, "", ansibleTowerIfInfo, TowerProjectsScpPath=TowerProjectsScpPath, TowerInstanceDirPath=TowerInstanceDirPath)
+                director = ExecuteDirector(restApiCaller, None, dbAccess, "", ansibleTowerIfInfo, TowerProjectsScpPath=TowerProjectsScpPath, TowerInstanceDirPath=TowerInstanceDirPath)
                 status = director.monitoring(toProcessRow, ansibleTowerIfInfo)
 
                 # マルチログかを取得する
@@ -245,7 +265,7 @@ def AnsibleTowerExecution(
                 MultipleLogFileJsonAry = director.getMultipleLogFileJsonAry()
 
                 ################################################################
-                # 遅延チェック 
+                # 遅延チェック
                 ################################################################
                 if status not in [AnscConst.PROCESSING, AnscConst.COMPLETE, AnscConst.FAILURE, AnscConst.SCRAM, AnscConst.EXCEPTION]:
                     error_flag = 1

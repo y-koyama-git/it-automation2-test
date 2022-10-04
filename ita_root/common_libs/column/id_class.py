@@ -78,7 +78,6 @@ class IDColumn(Column):
         else:
             id_data_list = self.search_id_data_list()
             self.set_id_data_list(id_data_list)
-            self.data_list_set_flg = True
             return id_data_list
 
     def set_id_data_list(self, id_data_list):
@@ -118,6 +117,12 @@ class IDColumn(Column):
 
         for record in return_values:
             values[record[ref_pkey_name]] = record[ref_col_name]
+        
+        # 自テーブル名と参照先テーブル名が同一の場合、data_list_set_flgをFalseに設定する
+        if self.table_name == ref_table_name:
+            self.data_list_set_flg = False
+        else:
+            self.data_list_set_flg = True
 
         return values
 
@@ -196,8 +201,8 @@ class IDColumn(Column):
         # 返却値が存在するか確認
         if len(return_values) == 0:
             retBool = False
-            status_code = '499-00218'
-            msg_args = [self.get_rest_key_name(), val]
+            status_code = 'MSG-00032'
+            msg_args = [val]
             msg = g.appmsg.get_api_message(status_code, msg_args)
             return retBool, msg
         
@@ -222,8 +227,8 @@ class IDColumn(Column):
                 val = list(return_values.keys())[0]
             else:
                 retBool = False
-                status_code = '499-00218'
-                msg_args = [self.get_rest_key_name(), val]
+                status_code = 'MSG-00032'
+                msg_args = [val]
                 msg = g.appmsg.get_api_message(status_code, msg_args)
 
         return retBool, msg, val,

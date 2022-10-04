@@ -21,7 +21,6 @@
     <script type="text/javascript" src="/_/common-auth/js/exastro-common-auth.js"></script>
     
     <!-- Exastro IT Automation 2 -->
-    <script src="/_/ita/js/words.js"></script>
     <script src="/_/ita/js/common.js"></script>
     <script src="/_/ita/js/table.js"></script>
     <script src="/_/ita/js/dialog.js"></script>
@@ -51,6 +50,13 @@
         <div class="containerLoading"></div>
     </div>
     <script src="/_/ita/js/ui.js"></script>
-    <script>CommonAuth.onAuthSuccess(() => {new CommonUi(`#container`)});</script>
+    <script>CommonAuth.onAuthSuccess(() => {
+        let lang = CommonAuth.getLanguage();
+        let head = document.getElementsByTagName('head')[0];
+        let script = document.createElement('script');
+        script.src = "/_/ita/js/messageid_" + lang + ".js";
+        head.appendChild(script);
+        new CommonUi(`#container`)});
+    </script>
 </body>
 </html>

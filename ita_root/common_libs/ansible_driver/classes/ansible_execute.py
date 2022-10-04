@@ -20,6 +20,7 @@ from common_libs.ansible_driver.classes.AnsrConstClass import AnsrConst
 from common_libs.ansible_driver.functions.util import getAnsibleExecutDirPath, get_AnsibleDriverShellPath
 from common_libs.ansible_driver.classes.controll_ansible_agent import DockerMode, KubernetesMode
 from common_libs.common.util import ky_file_decrypt
+from common_libs.common.util import ky_decrypt
 """
 Ansible coreコンテナの実行を制御するモジュール
 """
@@ -122,8 +123,8 @@ class AnsibleExecute():
 
         # ansible vault password file作成
         with open(strVaultPasswordFileName, 'w') as fd:
-            fd.write(vault_password)
-        
+            fd.write(ky_decrypt(vault_password))
+
         # 実行ユーザー確認
         if execute_user:
             execute_user = "-u {}".format(execute_user)
@@ -212,7 +213,8 @@ class AnsibleExecute():
         # ansible-playbook実行 shell作成
         with open(strExecshellName, 'w') as fd:
             fd.write(strShell)
-
+        
+        os.chmod(strExecshellName, 0o777)
         # ansible-playbook 標準エラー出力先
         strSTDERRFileName = "{}/{}/{}".format(execute_path, self.strOutFolderName, self.STDERRLogfile)
         # ansible-playbook 標準出力出力先
@@ -229,11 +231,12 @@ class AnsibleExecute():
         container_base = os.getenv('CONTAINER_BASE')
         if container_base == 'docker':
             ansibleAg = DockerMode()
-        elif container_base == 'kubernetes':
+        else:
             ansibleAg = KubernetesMode()
 
         result = ansibleAg.container_start_up(execute_no, conductor_instance_no, str_shell_command)
         if result[0] is True:
+            g.applogger.debug(result[1])
             return True
         else:
             self.setLastError(result[1])
@@ -270,7 +273,7 @@ class AnsibleExecute():
         container_base = os.getenv('CONTAINER_BASE')
         if container_base == 'docker':
             ansibleAg = DockerMode()
-        elif container_base == 'kubernetes':
+        else:
             ansibleAg = KubernetesMode()
 
         ##########################
@@ -327,6 +330,12 @@ class AnsibleExecute():
                     msgstr = g.appmsg.get_api_message("MSG-10890", [])
                     self.setLastError(msgstr)
                 retStatus = "7"
+
+            # 終了済みコンテナの削除
+            res_is_container_clean = ansibleAg.container_clean(execute_no)
+            if res_is_container_clean[0] is False:
+                # ステータス 想定外エラー
+                self.setLastError(res_is_container_clean[1])
 
         # ansible-playbook 標準出力出力先
         strorgSTDOUTFileName = "{}/{}/{}".format(execute_path, self.strOutFolderName, self.orgSTDOUTLogfile)

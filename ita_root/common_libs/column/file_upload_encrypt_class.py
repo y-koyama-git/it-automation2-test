@@ -98,7 +98,7 @@ class FileUploadEncryptColumn(FileUploadColumn):
                     encrypt_upload_file(old_dir_path, decode_option)  # noqa: F405
                 else:
                     retBool = False
-                    msg = "ファイルパスの取得エラー"
+                    msg = g.appmsg.get_api_message('MSG-00013', [])
                     return retBool, msg
                 
                 # 更新、復活の場合シンボリックリンクを削除
@@ -116,7 +116,7 @@ class FileUploadEncryptColumn(FileUploadColumn):
                         os.unlink(old_file_path)
                     except Exception:
                         retBool = False
-                        msg = "シンボリックリンク削除エラー old_file_path:{}".format(old_file_path)
+                        msg = g.appmsg.get_api_message('MSG-00014', [old_file_path])
                         return retBool, msg
 
                 # シンボリックリンク作成
@@ -124,7 +124,7 @@ class FileUploadEncryptColumn(FileUploadColumn):
                     os.symlink(old_dir_path, dir_path)
                 except Exception:
                     retBool = False
-                    msg = "シンボリックリンク作成エラー old_dir_path:{}, dir_path:{}".format(old_dir_path, dir_path)
+                    msg = g.appmsg.get_api_message('MSG-00015', [old_dir_path, dir_path])
                     return retBool, msg
                 
         return retBool,

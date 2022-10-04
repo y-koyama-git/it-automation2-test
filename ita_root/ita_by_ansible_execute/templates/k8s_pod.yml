@@ -41,17 +41,14 @@ spec:
     - name: EXEC_DIR
       value: {{ container_mount_path_driver }}
     volumeMounts:
-    - name: ita-driver-movementfile-volume
+    - name: volume-subpath
       mountPath: {{ container_mount_path_driver }}
-    - name: ita-driver-conductorfile-volume
+      subPath: {{ host_mount_path_driver }}
+    - name: volume-subpath
       mountPath: {{ container_mount_path_conductor }}
+      subPath: {{ host_mount_path_conductor }}
   volumes:
-  - name: ita-driver-movementfile-volume
-    hostPath:
-      path: {{ host_mount_path_driver }}
-      type: Directory
-  - name: ita-driver-conductorfile-volume
-    hostPath:
-      path: {{ host_mount_path_conductor }}
-      type: Directory
+  - name: volume-subpath
+    persistentVolumeClaim:
+      claimName: ita-pvc
   restartPolicy: Never

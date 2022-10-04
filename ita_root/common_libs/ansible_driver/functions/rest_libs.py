@@ -83,12 +83,16 @@ def insert_execution_list(objdbca, run_mode, driver_id, operation_row, movement_
     row = rows[0]
     ExecStsInstTableConfig[RestNameConfig["RUN_MODE"]] = row['NAME']
 
+    if scheduled_date:
+        status = objAnsc.RESERVE
+    else:
+        status = objAnsc.NOT_YET
     # ステータス:未実行
     if g.LANGUAGE == 'ja':
-        sql = "SELECT EXEC_STATUS_NAME_JA AS NAME FROM T_ANSC_EXEC_STATUS WHERE EXEC_STATUS_ID	= '1' AND DISUSE_FLAG = '0'"
+        sql = "SELECT EXEC_STATUS_NAME_JA AS NAME FROM T_ANSC_EXEC_STATUS WHERE EXEC_STATUS_ID	= %s AND DISUSE_FLAG = '0'"
     else:
-        sql = "SELECT EXEC_STATUS_NAME_EN AS NAME FROM T_ANSC_EXEC_STATUS WHERE EXEC_STATUS_ID	= '1' AND DISUSE_FLAG = '0'"
-    rows = objdbca.sql_execute(sql, [])
+        sql = "SELECT EXEC_STATUS_NAME_EN AS NAME FROM T_ANSC_EXEC_STATUS WHERE EXEC_STATUS_ID	= %s AND DISUSE_FLAG = '0'"
+    rows = objdbca.sql_execute(sql, [status])
     # マスタなので件数チェックしない
     row = rows[0]
     ExecStsInstTableConfig[RestNameConfig["STATUS_ID"]] = row["NAME"]

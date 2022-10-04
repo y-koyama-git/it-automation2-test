@@ -12,11 +12,9 @@
 # limitations under the License.
 #
 
-import os
-import sys
 import json
-from flask import g
-from common_libs.common import *  # noqa: F403
+from flask import g  # noqa: F401
+from common_libs.common import *  # noqa: F401,F403
 
 # import column_class
 from .id_class import IDColumn
@@ -36,8 +34,6 @@ class JsonIDColumn(IDColumn):
                 データリスト
         """
         values = {}
-        language = g.LANGUAGE.upper()
-        ref_malti_lang = self.get_objcol().get("REF_MULTI_LANG")
         ref_pkey_name = self.get_objcol().get("REF_PKEY_NAME")
         ref_table_name = self.get_objcol().get("REF_TABLE_NAME")
         # REF_COL_NAMEに項目を特定するためのcolumn_name_restが入っている

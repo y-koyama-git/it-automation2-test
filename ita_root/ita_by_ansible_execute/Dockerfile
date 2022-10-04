@@ -20,7 +20,7 @@ ARG USERNAME
 ARG GROUPNAME
 ARG APP_PATH
 ENV PYTHONPATH=/exastro/
-ENV USER_ID=20102
+ENV USER_ID=20101
 ENV EXECUTE_INTERVAL=1
 ENV LANGUAGE=en
 ENV STORAGEPATH=/storage/
@@ -35,8 +35,6 @@ RUN dnf install -y \
     wget \
     zip \
     unzip \
-&&  curl -kL https://github.com/docker/compose/releases/download/v2.5.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose \
-&&  chmod +x /usr/local/bin/docker-compose \
 &&  curl -kL https://storage.googleapis.com/kubernetes-release/release/v1.24.3/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl \
 &&  chmod +x /usr/local/bin/kubectl \
 &&  pip3.9 install --upgrade pip setuptools \
@@ -48,6 +46,7 @@ RUN dnf install -y \
     pymysql \
     python-dotenv \
     chardet \
+    dictknife \
     ansible \
     kubernetes \
 &&  groupadd $GROUPNAME \
@@ -69,6 +68,9 @@ RUN dnf install -y \
     diffutils \
     bind-utils \
     iputils \
+&&  curl -fsSL https://get.docker.com/builds/Linux/x86_64/docker-17.05.0-ce.tgz | tar -xzC /usr/local/bin --strip=1 docker/docker \
+&&  curl -kL https://github.com/docker/compose/releases/download/v2.5.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose \
+&&  chmod +x /usr/local/bin/docker-compose \
 &&  pip3.9 install \
     debugpy \
     flake8 \

@@ -108,15 +108,34 @@ def backyard_main(organization_id, workspace_id):
         # インターフェース情報を取得する
         ################################
         g.applogger.debug("Get interface info.")
-        cols = dbAccess.table_columns_get("T_ANSC_IF_INFO")
-        cols = (',').join(cols[0])
+        cols = ""
+        cols_a = dbAccess.table_columns_get("T_ANSC_IF_INFO")
+        cols_b = dbAccess.table_columns_get("T_ANSC_TOWER_HOST")
+        for col in cols_a[0]:
+            if cols:
+                cols += ", "
+
+            cols += "TAB_A.%s" % (col)
+
+        for col in cols_b[0]:
+            if cols:
+                cols += ", "
+
+            cols += "TAB_B.%s" % (col)
+
         sql = (
-            "SELECT               \n"
-            "  %s                 \n"
-            "FROM                 \n"
-            "  T_ANSC_IF_INFO     \n"
-            "WHERE                \n"
-            "  DISUSE_FLAG = '0'; \n"
+            "SELECT                     \n"
+            "  %s                       \n"
+            "FROM                       \n"
+            "  T_ANSC_IF_INFO TAB_A     \n"
+            "INNER JOIN                 \n"
+            "  T_ANSC_TOWER_HOST TAB_B  \n"
+            "ON                         \n"
+            "  TAB_A.ANSTWR_HOST_ID = TAB_B.ANSTWR_HOST_ID \n"
+            "WHERE                      \n"
+            "  TAB_A.DISUSE_FLAG = '0'  \n"
+            "AND                        \n"
+            "  TAB_B.DISUSE_FLAG = '0'; \n"
         ) % (cols)
         ifInfoRows = dbAccess.sql_execute(sql)
         num_of_rows = len(ifInfoRows)
@@ -150,7 +169,7 @@ def backyard_main(organization_id, workspace_id):
 
         restApiCaller = RestApiCaller(
             ansibleTowerIfInfo['ANSTWR_PROTOCOL'],
-            ansibleTowerIfInfo['ANSTWR_HOST_ID'],
+            ansibleTowerIfInfo['ANSTWR_HOSTNAME'],
             ansibleTowerIfInfo['ANSTWR_PORT'],
             ansibleTowerIfInfo['ANSTWR_AUTH_TOKEN'],
             proxySetting

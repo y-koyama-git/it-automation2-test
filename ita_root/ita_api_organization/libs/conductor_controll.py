@@ -20,7 +20,7 @@ from common_libs.loadtable import *  # noqa: F403
 
 
 from common_libs.conductor.classes.util import ConductorCommonLibs  # noqa: F401
-from common_libs.conductor.classes.exec_util import *  # noqa: F401
+from common_libs.conductor.classes.exec_util import *  # noqa: F403
 
 import uuid  # noqa: F401
 
@@ -83,7 +83,6 @@ def conductor_maintenance(objdbca, menu, conductor_data, target_uuid=''):
             parameter.setdefault('parameter', tmp_parameter)
             parameter.setdefault('type', 'Update')
 
-
     except Exception:
         # 499-00801
         status_code = "499-00801"
@@ -113,7 +112,7 @@ def conductor_maintenance(objdbca, menu, conductor_data, target_uuid=''):
         raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
 
     try:
-        objCexec = ConductorExecuteLibs(objdbca, menu, objmenus)
+        objCexec = ConductorExecuteLibs(objdbca, menu, objmenus)  # noqa: F405
         # トランザクション開始
         objdbca.db_transaction_start()
 
@@ -324,7 +323,7 @@ def get_conductor_class_info_data(objdbca, mode=""):
             "objcclass": objcclass
         }
 
-        objCexec = ConductorExecuteLibs(objdbca, '', objmenus)
+        objCexec = ConductorExecuteLibs(objdbca, '', objmenus)  # noqa: F405
         result = objCexec.get_class_info_data(mode)
     
     except Exception:
@@ -384,13 +383,8 @@ def conductor_execute(objdbca, menu, parameter):
     # 実行:パラメータチェック
     try:
         # 入力パラメータ フォーマットチェック
-        objCexec = ConductorExecuteLibs(objdbca, menu, objmenus)
+        objCexec = ConductorExecuteLibs(objdbca, menu, objmenus)  # noqa: F405
         chk_parameter = objCexec.chk_execute_parameter_format(parameter)
-        if chk_parameter[0] is not True:
-            status_code = '499-00814'
-            log_msg_args = chk_parameter[1]
-            api_msg_args = chk_parameter[1]
-            raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
     except Exception as e:
         raise AppException(e)  # noqa: F405
 
@@ -402,12 +396,9 @@ def conductor_execute(objdbca, menu, parameter):
         create_parameter = objCexec.create_execute_register_parameter(parameter)
         if create_parameter[0] != '000-00000':
             raise Exception()
-    except Exception:
-        status_code = "499-00804"
-        log_msg_args = [conductor_class_name, operation_name, schedule_date]
-        api_msg_args = [conductor_class_name, operation_name, schedule_date]
-        raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
-    
+    except Exception as e:
+        raise AppException(e)  # noqa: F405
+
     # 実行:Instance登録 maintenance
     try:
         # conducror_instance_id発番、load_table用パラメータ
@@ -442,8 +433,8 @@ def conductor_execute(objdbca, menu, parameter):
         # ロールバック トランザクション終了
         objdbca.db_transaction_end(False)
         status_code = "499-00804"
-        log_msg_args = [conductor_class_id, operation_id, schedule_date]
-        api_msg_args = [conductor_class_id, operation_id, schedule_date]
+        log_msg_args = [conductor_class_name, operation_name, schedule_date]
+        api_msg_args = [conductor_class_name, operation_name, schedule_date]
         raise AppException(status_code, log_msg_args, api_msg_args)  # noqa: F405
         
     result = {
@@ -494,7 +485,7 @@ def get_conductor_info(objdbca, menu, conductor_instance_id):
             "objcclass": objcclass
         }
 
-        objCexec = ConductorExecuteLibs(objdbca, '', objmenus)
+        objCexec = ConductorExecuteLibs(objdbca, '', objmenus)  # noqa: F405
         result = objCexec.get_instance_info_data(conductor_instance_id)
 
     except Exception:
@@ -541,7 +532,7 @@ def get_conductor_instance_data(objdbca, menu, conductor_instance_id):
             "objcclass": objcclass
         }
 
-        objCexec = ConductorExecuteLibs(objdbca, '', objmenus)
+        objCexec = ConductorExecuteLibs(objdbca, '', objmenus)  # noqa: F405
         result = objCexec.get_instance_data(conductor_instance_id)
     
     except Exception:
@@ -584,7 +575,7 @@ def conductor_execute_action(objdbca, menu, mode='', conductor_instance_id='', n
             "objconductor": objconductor,
             "objnode": objnode
         }
-        objCexec = ConductorExecuteLibs(objdbca, '', objmenus, 'Update', conductor_instance_id)
+        objCexec = ConductorExecuteLibs(objdbca, '', objmenus, 'Update', conductor_instance_id)  # noqa: F405
     except Exception:
         status_code = "499-00807"
         log_msg_args = [mode, conductor_instance_id, node_instance_id]
@@ -666,23 +657,6 @@ def create_movement_zip(objdbca, menu, data_type, conductor_instance_id):
             "objconductor": objconductor,
             "objnode": objnode,
         }
-        ### 
-        from random import randint
-        if randint(1, 3) == 2:
-            raise Exception()
-        ### dummy data
-        if data_type == 'input':
-            result = {
-                "file_data": "UEsDBBQAAAAIAEQ6LlUosGx6YwYAADwNAAAPAAAASW5wdXREYXRhXzEuemlwC/BmZuFiAAEHF81QBiQgwCDDkJyRmZMSX5CTWJmUn59drB8awsnA/LxaKhmESyu4GRhZQErBRADQJBEgzQE2aYXjdpUJQN4HINbHYpIBDBjr5iZmp8YXlySWlBbHp2XmpOpV5ubgs8i1by9fswFPS7nKvYdHDh25ossfrL1oWa8Lk9cde8b3cTGLyzafL7+/0/nTRFkubt5903cdyi/bxXBzubeg/vdHF3S4/SL23xLZmOsbezW03GGeJcfhPbNknR9NaDP41PjKuPpmb76e2pm4PDfVrsvNyuqKzBOeffFLsX11/fK8+cbT71b+OR5ed7Yg4/xazVvch//NNz/BHoAzCPmBHi9JzQX6uiQV7DXCIYjdIG5QCOYXVFJkCC/QkNKCnPzEFIqM4QIak5FfXBJfllhESoqozS5b+pCRgcGYlYFBDMWMzJJE3eJEYDClGhjiM29r0Pn8WwYi+76vT7i0brbs7UImW8NOz6kac1m+ZFUmKER1KN++oPi2//73OdteLW33uqJxrPL974/3insy/+576XeRNVlt8YPaXYbOa7Yb2v3csPTHi9M3590y+VVufOiXVazO+7oz6c8Kd81bn9f9/ujbkm0iS89Fam6ZkhzpoZg9Jyvy1MZloRmtEtdV326a9EmykyfAidtFa493LBOniYRTWLMG57QfE5dM4apm3HDocOrKhY1zrin9P9wXfeNKi0ogR6YEs9umhFWOUw47LzSaelkrfOlDPw/WhV1/MuUFDgT4p75L5ome+LlFdd+JRQqLhbJYHnKlH81d5/hU8QLDAYdYUxXuBV5Wh3vclha5p05bnthgHBKVzHf+e9EHw9JvL17EzUrZ71r9Jvo495PC2PqytfW3zH6azfydncw1Lzd3k9qOa3E+PnY39iZv6z77/trM3IxzehuuvX377NCuEz9Or5phrzptf0/s5V0cfyssv7Hfj7W7m/F499tM5tZ+i72T4pa68ure350Q/Nj6EbeexWNW4ZojP1uKg33k6mYerbJj37SdsdhXz8W5zPrG7rriXrbZfXsD67NT11kcKtdJknv9fNsU3XuGe+vK9fPc68vcr6tm3CyROrTXtz078p69zbl36d1TI9ctW/310p89s8/n/WPGneh4gAkmviCxKDE3tSSViGSH3RRJNFOQEx6ZRgqiGgnOWWQaJYfNKJKciMhszCo21hbAzLaCiYGBFZrZivFpLw047XfYQGDPZ9HuI1NPfbs1293f9RXjykdBD6JmCk30Wrjy0RRh+fNruitk3pw4V2W72Xh3ocQt7UW19RJxy9+tMAy0X/YzV+r88pKd8Ub24osOy+QH19jzzt24P3JRhU/79IW3l155P+XSJFPu2yE3uNOXNNgsz8vKlDq+k8Hi6JSoRa/7K+TSfv1p/rU/L4z/9u/dZ6u+76m6ZaP39pBe+Ou13EEpG4SftelarxO8KrNDMDbMpsitaV6MYb3yR6Ypwu0+rdbeDEIZBjLhqYqinD9C2m4+3qLxYCMvu2Psns4df9pZhRVjtYNaA2IS2AymMl2e3sqzp6LkgfHR9O9M009904hb6W+rz5Gw5fuE37kJR5+WH9W6L9oaINBXytEQ1rG38+bq88xXHi7k+nN9wkYH1t5Eh+Nvip8rer9SOKhZHpK8Lh412OMmvL9XBeTNgSZZWH1HqEoz7d4IqtJcyvcdSvKPXhldd8zo4AQO9nALHo6P72csNL+7dzf3hKuzXBUm8iU8XtVbaH5P6ctzzo5FxZHyDRzXr/7OWDbN1m/KvMer+tj8oiwPHbxWmZPS7WrOwHhqVor8Xp+dJzrsFyYHxL75+/O1tJZuz7UVb9uCBetkQ3dJoyZHyU/3e5mBbBAWBbrfMa84Mykn1bUiNdm/oCQzP0+vpKIEn0d0yxQCvBmZ5JhxtSkk4Kz/jiAas4XBCjEcI3mDTMXVvoCYCkzvDEsavbCYSrC1gc9SXHU7slecgXZj1PSkG8qNYmgP0FCUWp90A3lRDLwINBCtBUC6kVwoRkoACxjk1gBxsYfaFkCOvRgU81BbBqS7lQfFrb1A9aiVCOkmSqKYeBnNRLTSmnTjBVGMV2NlwFa5kG6sHIqxhdiMJcHpuKoZ5Hg8ycoAq3SIMwq16EQ2yoGdAa0gJS4AUAszZBOBVuIq2nAZzcoGovmA8ApQJIgDxAMAUEsBAhQDFAAAAAgARDouVSiwbHpjBgAAPA0AAA8AAAAAAAAAAAAAAKSBAAAAAElucHV0RGF0YV8xLnppcFBLBQYAAAAAAQABAD0AAACQBgAAAAA=",
-                "file_name": "InputData_Conductor_{}.zip".format(conductor_instance_id)
-            }
-            return result
-        elif data_type == 'result':
-            result = {
-                "file_data": "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",
-                "file_name": "ResultData_Conductor_{}.zip".format(conductor_instance_id)
-            }
-            return result
 
         objCexec = ConductorExecuteBkyLibs(objdbca)  # noqa: F405
 

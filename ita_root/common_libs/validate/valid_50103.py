@@ -23,8 +23,8 @@ def menu_column_group_valid(objdbca, objtable, option):
     entry_parameter = option.get('entry_parameter').get('parameter')
     current_parameter = option.get('current_parameter').get('parameter')
     cmd_type = option.get("cmd_type")
-    column_group_name_ja = entry_parameter.get('column_group_name_ja')
-    column_group_name_en = entry_parameter.get('column_group_name_en')
+    column_group_name_ja = entry_parameter.get('column_group_name_ja') if entry_parameter.get('column_group_name_ja') else ""
+    column_group_name_en = entry_parameter.get('column_group_name_en') if entry_parameter.get('column_group_name_en') else ""
     # ---------親カラムグループ---------
     parent_column_group = entry_parameter.get("parent_column_group")
     entry_uuid = entry_parameter.get("uuid")
@@ -79,14 +79,15 @@ def menu_column_group_valid(objdbca, objtable, option):
     
     # 復活時、親カラムグループが廃止されていたらエラー
     if cmd_type == "Restore":
-        where_str = "WHERE FULL_COL_GROUP_NAME_{} = %s".format(user_env)
+        where_str = "WHERE CREATE_COL_GROUP_ID = %s"
         current_parent_column_group = current_parameter.get("parent_column_group")
         bind_value_list = [current_parent_column_group]
         return_values = objdbca.table_select(table_name, where_str, bind_value_list)
         
-        if return_values[0].get("DISUSE_FLAG") == "1":
-            retBool = False
-            msg = g.appmsg.get_api_message("MSG-20014", [return_values[0].get("CREATE_COL_GROUP_ID")])
+        if return_values:
+            if return_values[0].get("DISUSE_FLAG") == "1":
+                retBool = False
+                msg = g.appmsg.get_api_message("MSG-20014", [return_values[0].get("CREATE_COL_GROUP_ID")])
     # ---------カラムグループ名---------
     
     # ---------フルカラムグループ名---------
@@ -128,7 +129,6 @@ def menu_column_group_valid(objdbca, objtable, option):
                     ret = objdbca.table_update(table_name, data_list, "CREATE_COL_GROUP_ID", False)
                     if not ret:
                         retBool = False
-                        # msg = 'DBの更新に失敗しました。'
                         msg = g.appmsg.get_api_message("MSG-20015", [])
                         break
                     full_column_group_name_ja = full_column_group_name_ja + "/" + return_values[0].get('COL_GROUP_NAME_JA')

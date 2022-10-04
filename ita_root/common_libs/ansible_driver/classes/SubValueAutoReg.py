@@ -33,61 +33,61 @@ from .AnsibleMakeMessage import AnsibleMakeMessage
 from .AnscConstClass import AnscConst
 from .WrappedStringReplaceAdmin import WrappedStringReplaceAdmin
 
+# ローカル変数(全体)宣言
+lv_val_assign_tbl = 'T_ANSR_VALUE_AUTOREG'
+lv_pattern_link_tbl = 'T_ANSR_MVMT_MATL_LINK'
+lv_ptn_vars_link_tbl = 'T_ANSR_MVMT_VAR_LINK'
+lv_member_col_comb_tbl = 'T_ANSR_NESTVAR_MEMBER_COL_COMB'
+lv_array_member_tbl = 'T_ANSR_NESTVAR_MEMBER'
+vg_FileUPloadColumnBackupFilePath = ""
+db_update_flg = False
+g_null_data_handling_def = ""
+warning_flag = 0
+error_flag = 0
+col_filepath = ""
+
+arrayValueTmplOfVarAss = {
+    "JOURNAL_SEQ_NO": "",
+    "JOURNAL_ACTION_CLASS": "",
+    "JOURNAL_REG_DATETIME": "",
+    "ASSIGN_ID": "",
+    "OPERATION_ID": "",
+    "MOVEMENT_ID": "",
+    "SYSTEM_ID": "",
+    "MVMT_VAR_LINK_ID": "",
+    "COL_SEQ_COMBINATION_ID": "",
+    "VARS_ENTRY": "",
+    "COL_SEQ_COMBINATION_ID": "",
+    "SENSITIVE_FLAG": "",
+    "VARS_ENTRY_FILE": "",
+    "VARS_ENTRY_USE_TPFVARS": "",
+    "ASSIGN_SEQ": "",
+    "DISP_SEQ": "",
+    "DISUSE_FLAG": "",
+    "NOTE": "",
+    "LAST_UPDATE_TIMESTAMP": "",
+    "LAST_UPDATE_USER": ""}
+
+arrayValueTmplOfPhoLnk = {
+    "JOURNAL_SEQ_NO": "",
+    "JOURNAL_ACTION_CLASS": "",
+    "JOURNAL_REG_DATETIME": "",
+    "PHO_LINK_ID": "",
+    "OPERATION_NO_UAPK": "",
+    "PATTERN_ID": "",
+    "SYSTEM_ID": "",
+    "DISP_SEQ": "",
+    "ACCESS_AUTH": "",
+    "DISUSE_FLAG": "",
+    "NOTE": "",
+    "LAST_UPDATE_TIMESTAMP": "",
+    "LAST_UPDATE_USER": ""
+}
+
 class SubValueAutoReg():
     """
     代入値自動登録とパラメータシートを抜くclass
     """
-    
-    # ローカル変数(全体)宣言
-    lv_val_assign_tbl = 'T_ANSR_VALUE_AUTOREG'
-    lv_pattern_link_tbl = 'T_ANSR_MVMT_MATL_LINK'
-    lv_ptn_vars_link_tbl = 'T_ANSR_MVMT_VAR_LINK'
-    lv_member_col_comb_tbl = 'T_ANSR_NESTVAR_MEMBER_COL_COMB'
-    lv_array_member_tbl = 'T_ANSR_NESTVAR_MEMBER'
-    vg_FileUPloadColumnBackupFilePath = ""
-    db_update_flg = False
-    g_null_data_handling_def = ""
-    warning_flag = 0
-    error_flag = 0
-    col_filepath = ""
-    
-    arrayValueTmplOfVarAss = {
-        "JOURNAL_SEQ_NO": "",
-        "JOURNAL_ACTION_CLASS": "",
-        "JOURNAL_REG_DATETIME": "",
-        "ASSIGN_ID": "",
-        "OPERATION_ID": "",
-        "MOVEMENT_ID": "",
-        "SYSTEM_ID": "",
-        "MVMT_VAR_LINK_ID": "",
-        "COL_SEQ_COMBINATION_ID": "",
-        "VARS_ENTRY": "",
-        "VAL_COL_SEQ_COMBINATION_ID": "",
-        "SENSITIVE_FLAG": "",
-        "VARS_ENTRY_FILE": "",
-        "VARS_ENTRY_USE_TPFVARS": "",
-        "ASSIGN_SEQ": "",
-        "DISP_SEQ": "",
-        "DISUSE_FLAG": "",
-        "NOTE": "",
-        "LAST_UPDATE_TIMESTAMP": "",
-        "LAST_UPDATE_USER": ""}
-    
-    arrayValueTmplOfPhoLnk = {
-        "JOURNAL_SEQ_NO": "",
-        "JOURNAL_ACTION_CLASS": "",
-        "JOURNAL_REG_DATETIME": "",
-        "PHO_LINK_ID": "",
-        "OPERATION_NO_UAPK": "",
-        "PATTERN_ID": "",
-        "SYSTEM_ID": "",
-        "DISP_SEQ": "",
-        "ACCESS_AUTH": "",
-        "DISUSE_FLAG": "",
-        "NOTE": "",
-        "LAST_UPDATE_TIMESTAMP": "",
-        "LAST_UPDATE_USER": ""
-    }
     
     def GetDataFromParameterSheet(self, exec_type, operation_id="", movement_id="", execution_no="", WS_DB=None):
         """
@@ -97,13 +97,6 @@ class SubValueAutoReg():
         global g_null_data_handling_def
         global warning_flag
         global error_flag
-        
-        # 処理区分が変数抜出処理
-        if exec_type == '2':
-            template_list = self.getTemplateVarList(WS_DB)
-            host_list = self.getTargetHostList(WS_DB)
-            
-            return True, template_list, host_list
         
         # インターフェース情報からNULLデータを代入値管理に登録するかのデフォルト値を取得する。
         ret = self.getIFInfoDB(WS_DB)
@@ -141,10 +134,29 @@ class SubValueAutoReg():
         frame = inspect.currentframe().f_back
         g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
         
+        warning_flag = 0
         ret = self.getCMDBdata(lv_tableNameToSqlList, lv_tableNameToMenuIdList, lv_tabColNameToValAssRowList, warning_flag, WS_DB)
         lv_varsAssList = ret[0]
         lv_arrayVarsAssList = ret[1]
         warning_flag = ret[2]
+        
+        # 処理区分が変数抜出処理
+        if exec_type == '2':
+
+            template_list = {} # { MovementID: { TPF変数名: 0 }, … }
+            host_list = {} # { MovementID: { OPERATION_ID: { SYSTEM_ID: 0 }, … }, … }
+            
+            var_extractor = WrappedStringReplaceAdmin()
+            
+            # 一般変数・複数具体値変数を紐付けている紐付メニューの具体値からTPF変数を抽出する
+            for varsAssRecord in lv_varsAssList.values():
+                template_list, host_list = self.extract_tpl_vars(var_extractor, varsAssRecord, template_list, host_list)
+
+            # 多次元変数を紐付けている紐付メニューの具体値からTPF変数を抽出する
+            for varsAssRecord in lv_arrayVarsAssList.values():
+                template_list, host_list = self.extract_tpl_vars(var_extractor, varsAssRecord, template_list, host_list)
+
+            return True, template_list, host_list
         
         # トランザクション開始 
         traceMsg = g.appmsg.get_api_message("MSG-10785")
@@ -216,23 +228,6 @@ class SubValueAutoReg():
             lv_phoLinkList[varsAssRecord['OPERATION_ID']] = {}
             lv_phoLinkList[varsAssRecord['OPERATION_ID']][varsAssRecord['MOVEMENT_ID']] = {}
             lv_phoLinkList[varsAssRecord['OPERATION_ID']][varsAssRecord['MOVEMENT_ID']][varsAssRecord['SYSTEM_ID']] = {}
-            
-            
-        # 代入値管理から不要なデータを削除する
-        # トレースメッセージ
-        traceMsg = g.appmsg.get_api_message("MSG-10809")
-        frame = inspect.currentframe().f_back
-        g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-        
-        ret = self.deleteVarsAssign(lv_VarsAssignRecodes, execution_no, WS_DB)
-        if ret == 0:
-            error_flag = 1
-            raise ValidationException("MSG-10372")
-        
-        ret = self.deleteVarsAssign(lv_ArryVarsAssignRecodes, execution_no, WS_DB)
-        if ret == 0:
-            error_flag = 1
-            raise ValidationException("MSG-10372")
         
         del lv_tableNameToMenuIdList
         del lv_VarsAssignRecodes
@@ -274,17 +269,6 @@ class SubValueAutoReg():
                     if ret[0] == 0:
                         error_flag = 1
                         raise ValidationException("MSG-10373")
-        
-        # 作業対象ホストから不要なデータを削除する
-        # トレースメッセージ
-        traceMsg = g.appmsg.get_api_message("MSG-10811")
-        frame = inspect.currentframe().f_back
-        g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-        
-        ret = self.deletePhoLink(lv_PhoLinkRecodes, execution_no, WS_DB)
-        if ret == 0:
-            error_flag = 1
-            raise ValidationException("MSG-10374")
         
         del lv_phoLinkList
         del lv_PhoLinkRecodes
@@ -331,100 +315,6 @@ class SubValueAutoReg():
     
     def addStg1PhoLink(self, in_phoLinkData, in_PhoLinkRecodes, execution_no, WS_DB):
         """
-        作業対象ホストの全データ読込
-        
-        Arguments:
-            in_phoLinkData: 作業対象ホスト更新情報配列
-            in_PhoLinkRecodes: 作業対象ホストの全データ配列
-            WS_DB: WorkspaceDBインスタンス
-
-        Returns:
-            is success:(bool)
-            in_PhoLinkRecodes: 作業対象ホストの全データ配列
-        """
-        global strCurTablePhoLnk
-        global strJnlTablePhoLnk
-        global strSeqOfCurTablePhoLnk
-        global strSeqOfJnlTablePhoLnk
-        global arrayConfigOfPhoLnk
-        global arrayValueTmplOfPhoLnk
-        
-        db_valautostup_user_id = g.USER_ID
-        
-        key = in_phoLinkData["OPERATION_ID"] + "_"
-        key += in_phoLinkData["MOVEMENT_ID"] + "_"
-        key += in_phoLinkData["SYSTEM_ID"] + "_0"
-        
-        objmenu = load_table.loadTable(WS_DB, "20408")
-        
-        if key not in in_PhoLinkRecodes:
-            # 廃止レコードを復活または新規レコード追加
-            ret = self.addStg2PhoLink(in_phoLinkData, in_PhoLinkRecodes, execution_no, WS_DB)
-            in_PhoLinkRecodes = ret[1]
-            return ret[0], in_PhoLinkRecodes
-        else:
-            tgt_row = in_PhoLinkRecodes[key]
-            # 同一なので処理終了
-            del in_PhoLinkRecodes[key]
-            
-            # 最終更新者が自分でない場合、更新処理はスキップする
-            if not tgt_row["LAST_UPDATE_USER"] == db_valautostup_user_id:
-                # トレースメッセージ
-                traceMsg = g.appmsg.get_api_message("MSG-10828", [tgt_row['PHO_LINK_ID']])
-                frame = inspect.currentframe().f_back
-                g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-                
-                # 更新処理はスキップ
-                return True, in_PhoLinkRecodes
-            
-            # トレースメッセージ
-            traceMsg = g.appmsg.get_api_message("MSG-10847", [tgt_row['PHO_LINK_ID'],
-                                                        tgt_row['OPERATION_ID'],
-                                                        tgt_row['MOVEMENT_ID'],
-                                                        tgt_row['SYSTEM_ID']])
-            frame = inspect.currentframe().f_back
-            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-            
-            tgt_row['DISUSE_FLAG'] = "0"
-            tgt_row['LAST_UPDATE_USER'] = db_valautostup_user_id
-            
-            tgt_row = self.getLoadtableRegisterValue(tgt_row, False, WS_DB)
-            
-            parameter = {
-                "operation": tgt_row['OPERATION_NAME'],
-                "execution_no": execution_no,
-                "movement": tgt_row['MOVEMENT_NAME'],
-                "host": tgt_row['HOST_NAME'],
-                "discard": tgt_row['DISUSE_FLAG'],
-                "remarks": tgt_row['NOTE'],
-                "last_update_date_time": str(tgt_row['LAST_UPDATE_TIMESTAMP']),
-                "last_updated_user": tgt_row['LAST_UPDATE_USER']
-            }
-
-            parameters = {
-                "parameter": parameter,
-                "file": {},
-                "type": "Update"
-            }
-            status_code, result, msg = objmenu.rest_maintenance(parameters, tgt_row['PHO_LINK_ID'])
-            
-            if status_code != '000-00000':
-                if status_code is None:
-                    status_code = '999-99999'
-                elif len(status_code) == 0:
-                    status_code = '999-99999'
-                if isinstance(msg, list):
-                    log_msg_args = msg
-                    api_msg_args = msg
-                else:
-                    log_msg_args = [msg]
-                    api_msg_args = [msg]
-                raise AppException(status_code, log_msg_args, api_msg_args)
-        
-        return True, in_PhoLinkRecodes
-
-    def addStg2PhoLink(self, in_phoLinkData, in_PhoLinkRecodes, execution_no, WS_DB):
-        """
         作業対象ホストの廃止レコードを復活または新規レコード追加
         
         Arguments:
@@ -451,187 +341,46 @@ class SubValueAutoReg():
         key += in_phoLinkData["MOVEMENT_ID"] + "_"
         key += in_phoLinkData["SYSTEM_ID"] + "_1"
         
-        objmenu = load_table.loadTable(WS_DB, "20408")
+        objmenu = load_table.loadTable(WS_DB, "target_host_ansible_role")
+        tgt_row = arrayValue
         
-        if key not in in_PhoLinkRecodes:
-            action = "INSERT"
-            tgt_row = arrayValue
-            
-            # トレースメッセージ
-            traceMsg = g.appmsg.get_api_message("MSG-10821", [in_phoLinkData['OPERATION_ID'], in_phoLinkData["MOVEMENT_ID"], in_phoLinkData["SYSTEM_ID"]])
-            frame = inspect.currentframe().f_back
-            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-        else:
-            # 廃止なので復活する。
-            action = "UPDATE"
-            tgt_row = in_PhoLinkRecodes[key]
-            
-            del in_PhoLinkRecodes[key]
-            
-            # トレースメッセージ
-            traceMsg = g.appmsg.get_api_message("MSG-10822", [in_phoLinkData['OPERATION_ID'], in_phoLinkData["MOVEMENT_ID"], in_phoLinkData["SYSTEM_ID"]])
-            frame = inspect.currentframe().f_back
-            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
+        # 更新対象の作業対象ホスト管理主キー値を退避
+        inout_phoLinkId = str(WS_DB._uuid_create())
         
-        if action == "INSERT":
-            # 更新対象の作業対象ホスト管理主キー値を退避
-            inout_phoLinkId = str(WS_DB._uuid_create())
-            
-            # 登録する情報設定
-            tgt_row['PHO_LINK_ID'] = inout_phoLinkId
-            tgt_row['OPERATION_ID'] = in_phoLinkData['OPERATION_ID']
-            tgt_row['MOVEMENT_ID'] = in_phoLinkData['MOVEMENT_ID']
-            tgt_row['SYSTEM_ID'] = in_phoLinkData['SYSTEM_ID']
+        # 登録する情報設定
+        tgt_row['PHO_LINK_ID'] = inout_phoLinkId
+        tgt_row['OPERATION_ID'] = in_phoLinkData['OPERATION_ID']
+        tgt_row['MOVEMENT_ID'] = in_phoLinkData['MOVEMENT_ID']
+        tgt_row['SYSTEM_ID'] = in_phoLinkData['SYSTEM_ID']
         
         tgt_row['DISUSE_FLAG'] = "0"
         tgt_row['LAST_UPDATE_USER'] = db_valautostup_user_id
         
         tgt_row = self.getLoadtableRegisterValue(tgt_row, False, WS_DB)
-        if action == "INSERT":
-            parameter = {
-                "item_no": tgt_row['PHO_LINK_ID'],
-                "operation": tgt_row['OPERATION_NAME'],
-                "execution_no": execution_no,
-                "movement": tgt_row['MOVEMENT_NAME'],
-                "host": tgt_row['HOST_NAME'],
-                "discard": tgt_row['DISUSE_FLAG'],
-                "remarks": tgt_row['NOTE'],
-                "last_update_date_time": str(tgt_row['LAST_UPDATE_TIMESTAMP']),
-                "last_updated_user": tgt_row['LAST_UPDATE_USER']
-            }
+        parameter = {
+            "item_no": tgt_row['PHO_LINK_ID'],
+            "operation": tgt_row['OPERATION_NAME'],
+            "execution_no": execution_no,
+            "movement": tgt_row['MOVEMENT_NAME'],
+            "host": tgt_row['HOST_NAME'],
+            "discard": tgt_row['DISUSE_FLAG'],
+            "remarks": tgt_row['NOTE'],
+            "last_update_date_time": str(tgt_row['LAST_UPDATE_TIMESTAMP']).replace('-', '/'),
+            "last_updated_user": tgt_row['LAST_UPDATE_USER']
+        }
 
-            parameters = {
-                "parameter": parameter,
-                "file": {},
-                "type": "Register"
-            }
-            status_code, result, msg = objmenu.rest_maintenance(parameters)
+        parameters = {
+            "parameter": parameter,
+            "file": {},
+            "type": "Register"
+        }
+        retAry = objmenu.exec_maintenance(parameters, "", "", False, False)
             
-            if status_code != '000-00000':
-                if status_code is None:
-                    status_code = '999-99999'
-                elif len(status_code) == 0:
-                    status_code = '999-99999'
-                if isinstance(msg, list):
-                    log_msg_args = msg
-                    api_msg_args = msg
-                else:
-                    log_msg_args = [msg]
-                    api_msg_args = [msg]
-                raise AppException(status_code, log_msg_args, api_msg_args)
-        elif action == "UPDATE":
-            parameter = {
-                "operation": tgt_row['OPERATION_NAME'],
-                "execution_no": execution_no,
-                "movement": tgt_row['MOVEMENT_NAME'],
-                "host": tgt_row['HOST_NAME'],
-                "discard": tgt_row['DISUSE_FLAG'],
-                "remarks": tgt_row['NOTE'],
-                "last_update_date_time": str(tgt_row['LAST_UPDATE_TIMESTAMP']),
-                "last_updated_user": tgt_row['LAST_UPDATE_USER']
-            }
-
-            parameters = {
-                "parameter": parameter,
-                "file": {},
-                "type": "Update"
-            }
-            status_code, result, msg = objmenu.rest_maintenance(parameters, tgt_row['PHO_LINK_ID'])
-            
-            if status_code != '000-00000':
-                if status_code is None:
-                    status_code = '999-99999'
-                elif len(status_code) == 0:
-                    status_code = '999-99999'
-                if isinstance(msg, list):
-                    log_msg_args = msg
-                    api_msg_args = msg
-                else:
-                    log_msg_args = [msg]
-                    api_msg_args = [msg]
-                raise AppException(status_code, log_msg_args, api_msg_args)
+        result = retAry[0]
+        if result is False:
+            raise AppException("499-00701", [retAry], [retAry])
         
         return True, in_PhoLinkRecodes
-    
-    def deletePhoLink(self, in_PhoLinkRecodes, execution_no, WS_DB):
-        """
-        作業管理対象ホスト管理から不要なレコードを廃止
-        
-        Arguments:
-            in_PhoLinkRecodes: 不要な作業管理対象ホストの配列
-            WS_DB: WorkspaceDBインスタンス
-
-        Returns:
-            is success:(bool)
-        """
-        global strCurTablePhoLnk
-        global strJnlTablePhoLnk
-        global strSeqOfCurTablePhoLnk
-        global strSeqOfJnlTablePhoLnk
-        global arrayConfigOfPhoLnk
-        global arrayValueTmplOfPhoLnk
-        
-        db_valautostup_user_id = g.USER_ID
-        
-        objmenu = load_table.loadTable(WS_DB, "20408")
-        
-        for key, tgt_row in in_PhoLinkRecodes.items():
-            if tgt_row['DISUSE_FLAG'] == '1':
-                # 廃止レコードはなにもしない。
-                continue
-            
-            # トレースメッセージ
-            traceMsg = g.appmsg.get_api_message("MSG-10823", [tgt_row['PHO_LINK_ID']])
-            frame = inspect.currentframe().f_back
-            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-            
-            # 最終更新者が自分でない場合、廃止処理はスキップする。
-            if not tgt_row['LAST_UPDATE_USER'] == db_valautostup_user_id:
-                # トレースメッセージ
-                traceMsg = g.appmsg.get_api_message("MSG-10828", [tgt_row['PHO_LINK_ID']])
-                frame = inspect.currentframe().f_back
-                g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-                
-                #更新処理はスキップ
-                continue
-            
-            tgt_row['DISUSE_FLAG'] = "1"
-            tgt_row['LAST_UPDATE_USER'] = db_valautostup_user_id
-            
-            tgt_row = self.getLoadtableRegisterValue(tgt_row, False, WS_DB)
-            
-            parameter = {
-                "operation": tgt_row['OPERATION_NAME'],
-                "execution_no": execution_no,
-                "movement": tgt_row['MOVEMENT_NAME'],
-                "host": tgt_row['HOST_NAME'],
-                "discard": tgt_row['DISUSE_FLAG'],
-                "remarks": tgt_row['NOTE'],
-                "last_update_date_time": str(tgt_row['LAST_UPDATE_TIMESTAMP']),
-                "last_updated_user": tgt_row['LAST_UPDATE_USER']
-            }
-
-            parameters = {
-                "parameter": parameter,
-                "file": {},
-                "type": "Update"
-            }
-            status_code, result, msg = objmenu.rest_maintenance(parameters, tgt_row['PHO_LINK_ID'])
-            
-            if status_code != '000-00000':
-                if status_code is None:
-                    status_code = '999-99999'
-                elif len(status_code) == 0:
-                    status_code = '999-99999'
-                if isinstance(msg, list):
-                    log_msg_args = msg
-                    api_msg_args = msg
-                else:
-                    log_msg_args = [msg]
-                    api_msg_args = [msg]
-                raise AppException(status_code, log_msg_args, api_msg_args)
-            
-            return True
     
     def createQuerySelectCMDB(self, in_tableNameToMenuIdList, in_tabColNameToValAssRowList, in_tableNameToPKeyNameList):
         """
@@ -646,6 +395,8 @@ class SubValueAutoReg():
             is success:(bool)
             defvarsList: 抽出した変数
         """
+        
+        inout_tableNameToSqlList = {}
         
         opeid_chk_sql = "( SELECT \n"
         opeid_chk_sql += " OPERATION_ID \n"
@@ -663,6 +414,7 @@ class SubValueAutoReg():
         hostid_chk_sql += " ) AS " + AnscConst.DF_ITA_LOCAL_HOST_CNT + ", \n"
         
         # テーブル名+カラム名配列からテーブル名と配列名を取得
+        inout_tableNameToSqlList = {}
         for table_name, col_list in in_tabColNameToValAssRowList.items():
             pkey_name = in_tableNameToPKeyNameList[table_name]
             
@@ -690,7 +442,6 @@ class SubValueAutoReg():
             make_sql += " WHERE DISUSE_FLAG = '0' \n "
             
             # メニューテーブルのSELECT SQL文退避
-            inout_tableNameToSqlList = {}
             inout_tableNameToSqlList[table_name] = make_sql
             
         return inout_tableNameToSqlList
@@ -716,6 +467,7 @@ class SubValueAutoReg():
         
         sqlUtnBody = "SELECT "
         sqlUtnBody += " ASSIGN_ID, "
+        sqlUtnBody += " EXECUTION_NO, "
         sqlUtnBody += " OPERATION_ID, "
         sqlUtnBody += " MOVEMENT_ID, "
         sqlUtnBody += " SYSTEM_ID, "
@@ -748,15 +500,26 @@ class SubValueAutoReg():
                 row['VARS_ENTRY_FILE_PATH'] = col_filepath
                 row['VARS_ENTRY_FILE_MD5'] = self.md5_file(col_filepath)
                 
-            key = row["OPERATION_ID"] + "_"
-            key += row["MOVEMENT_ID"] + "_"
-            key += row["SYSTEM_ID"] + "_"
-            key += row["MVMT_VAR_LINK_ID"] + "_"
-            key += row["COL_SEQ_COMBINATION_ID"] + "_"
-            key += str(row["ASSIGN_SEQ"]) + "_"
-            key += row["DISUSE_FLAG"]
+            if row["COL_SEQ_COMBINATION_ID"] is None or len(row["COL_SEQ_COMBINATION_ID"]) == 0:
+                key = row["EXECUTION_NO"] + "_"
+                key += row["OPERATION_ID"] + "_"
+                key += row["MOVEMENT_ID"] + "_"
+                key += row["SYSTEM_ID"] + "_"
+                key += row["MVMT_VAR_LINK_ID"] + "_"
+                key += "" + "_"
+                key += str(row["ASSIGN_SEQ"]) + "_"
+                key += row["DISUSE_FLAG"]
+            else:
+                key = row["EXECUTION_NO"] + "_"
+                key += row["OPERATION_ID"] + "_"
+                key += row["MOVEMENT_ID"] + "_"
+                key += row["SYSTEM_ID"] + "_"
+                key += row["MVMT_VAR_LINK_ID"] + "_"
+                key += row["COL_SEQ_COMBINATION_ID"] + "_"
+                key += str(row["ASSIGN_SEQ"]) + "_"
+                key += row["DISUSE_FLAG"]
             
-            if len(row["COL_SEQ_COMBINATION_ID"]) is None:
+            if row["COL_SEQ_COMBINATION_ID"] is None or len(row["COL_SEQ_COMBINATION_ID"]) == 0:
                 in_VarsAssignRecodes[key] = row
             else:
                 in_ArryVarsAssignRecodes[key] = row
@@ -863,134 +626,74 @@ class SubValueAutoReg():
         
         global vg_FileUPloadColumnBackupFilePath
         global db_update_flg
+        global arrayValueTmplOfVarAss
+        
+        arrayValue = arrayValueTmplOfVarAss
         db_valautostup_user_id = g.USER_ID
+
+        objmenu = load_table.loadTable(WS_DB, "subst_value_list_ansible_role")
         
-        key = in_varsAssignList["OPERATION_ID"] + "_"
-        key += in_varsAssignList["MOVEMENT_ID"] + "_"
-        key += in_varsAssignList["SYSTEM_ID"] + "_"
-        key += in_varsAssignList["MVMT_VAR_LINK_ID"] + "_" 
-        key += "" + "_"
-        key += str(in_varsAssignList["ASSIGN_SEQ"]) + "_0"
+        tgt_row = arrayValue
+        # 登録する情報設定
+        tgt_row['ASSIGN_ID'] = str(WS_DB._uuid_create())
+        tgt_row['OPERATION_ID'] = in_varsAssignList['OPERATION_ID']
+        tgt_row['MOVEMENT_ID'] = in_varsAssignList['MOVEMENT_ID']
+        tgt_row['SYSTEM_ID'] = in_varsAssignList['SYSTEM_ID']
+        tgt_row['MVMT_VAR_LINK_ID'] = in_varsAssignList['MVMT_VAR_LINK_ID']
+        tgt_row['ASSIGN_SEQ'] = in_varsAssignList['ASSIGN_SEQ']
         
-        objmenu = load_table.loadTable(WS_DB, "20409")
-        
-        hit_flg = False
-        
-        val_list = {}
-        
-        # 代入値管理に登録されているか判定
-        if key in in_VarsAssignRecodes:
-            # 具体値が一致しているか判定
-            tgt_row = in_VarsAssignRecodes[key]
-            ret = self.chkSubstitutionValueListRecodedifference(tgt_row, in_varsAssignList)
-            diff = ret[0]
-            befFileDel = ret[1]
-            AftFileCpy = ret[2]
-            
-            if diff == 0:
-                # 代入値管理に必要なレコードを削除
-                del in_VarsAssignRecodes[key]
-                
-                # トレースメッセージ
-                traceMsg = g.appmsg.get_api_message("MSG-10815", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
-                                                            in_varsAssignList['MVMT_VAR_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
-                frame = inspect.currentframe().f_back
-                g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-                
-                return True, in_VarsAssignRecodes
-            else:
-                hit_flg = True
-                
-                # 具体値を退避
-                val_list = [in_varsAssignList['VARS_ENTRY'], in_VarsAssignRecodes[key]['VARS_ENTRY']]
-                del in_VarsAssignRecodes[key]
-                
-        # 代入値管理に有効レコードが未登録か判定
-        if hit_flg == 0:
-            # 廃止レコードの復活または新規レコード追加する。
-            ret = self.addStg2StdListVarsAssign(in_varsAssignList, in_tableNameToMenuIdList, in_VarsAssignRecodes, execution_no, WS_DB)
-        else:
-            action = "UPDATE"
-            
-            # 最終更新者が自分でない場合、更新処理はスキップする
-            if not tgt_row['LAST_UPDATE_USER'] == db_valautostup_user_id:
-                # トレースメッセージ
-                traceMsg = g.appmsg.get_api_message("MSG-10835", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
-                                                            in_varsAssignList['MVMT_VAR_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
-                frame = inspect.currentframe().f_back
-                g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-                
-                # 更新処理はスキップ
-                return True
-            
-            # トレースメッセージ
-            traceMsg = g.appmsg.get_api_message("MSG-10814", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
-                                                        in_varsAssignList['MVMT_VAR_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
-            frame = inspect.currentframe().f_back
-            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-            
-        VARS_ENTRY_USE_TPFVARS = "0"
         # 具体値にテンプレート変数が記述されているか判定
-        for val in val_list.values():
-            ret = val.find('TPF_')
-            if ret == 0:
-                # テンプレート変数が記述されていることを記録
-                VARS_ENTRY_USE_TPFVARS = "1"
-                db_update_flg = True
-                break
+        VARS_ENTRY_USE_TPFVARS = "0"
+        ret = in_varsAssignList['VARS_ENTRY'].find('TPF_')
+        if ret == 0:
+            # テンプレート変数が記述されていることを記録
+            VARS_ENTRY_USE_TPFVARS = "1"
+            db_update_flg = True
         
         # ロール管理ジャーナルに登録する情報設定
         tgt_row['VARS_ENTRY'] = in_varsAssignList['VARS_ENTRY']
-        tgt_row['VAL_COL_SEQ_COMBINATION_ID'] = in_varsAssignList['VAL_COL_SEQ_COMBINATION_ID']
-        tgt_row["VARS_ENTRY_FILE"] = in_varsAssignList['VARS_ENTRY_FILE']
+        tgt_row['COL_SEQ_COMBINATION_ID'] = in_varsAssignList['COL_SEQ_COMBINATION_ID']
+        if in_varsAssignList['COL_FILEUPLOAD_PATH']:
+            tgt_row["VARS_ENTRY_FILE"] = in_varsAssignList['VARS_ENTRY_FILE']
+        else:
+            tgt_row["VARS_ENTRY_FILE"] = ""
         tgt_row["SENSITIVE_FLAG"] = in_varsAssignList['SENSITIVE_FLAG']
         tgt_row["VARS_ENTRY_USE_TPFVARS"] = VARS_ENTRY_USE_TPFVARS
-        tgt_row['COL_SEQ_COMBINATION_ID']  = ""
         tgt_row['DISUSE_FLAG'] = "0"
         tgt_row['LAST_UPDATE_USER'] = db_valautostup_user_id
-        
-        tgt_row = self.getLoadtableRegisterValue(tgt_row, True, WS_DB)
-        if action == "UPDATE":
-            parameter = {
-                "execution_no": execution_no,
-                "operation": tgt_row['OPERATION_NAME'],
-                "movement": tgt_row['MOVEMENT_NAME'],
-                "host": tgt_row['HOST_NAME'],
-                "variable_name": tgt_row['VARS_NAME'],
-                "member_variable_name": tgt_row['COL_COMBINATION_MEMBER_ALIAS'],
-                "value": tgt_row['VARS_ENTRY'],
-                "sensitive_setting": tgt_row['FLAG_NAME'],
-                "substitution_order": tgt_row['ASSIGN_SEQ'],
-                "template_variables_used": tgt_row['VARS_ENTRY_USE_TPFVARS'],
-                "remarks": tgt_row['NOTE'],
-                "discard": tgt_row['DISUSE_FLAG'],
-                "last_update_date_time": tgt_row['LAST_UPDATE_TIMESTAMP'],
-                "last_updated_user": tgt_row['LAST_UPDATE_USER']
-            }
 
-            parameters = {
-                "parameter": parameter,
-                "type": "Update"
-            }
+        tgt_row = self.getLoadtableRegisterValue(tgt_row, True, WS_DB)
+        parameter = {
+            "item_no": tgt_row['ASSIGN_ID'],
+            "execution_no": execution_no,
+            "operation": tgt_row['OPERATION_NAME'],
+            "movement": tgt_row['MOVEMENT_NAME'],
+            "host": tgt_row['HOST_NAME'],
+            "variable_name": tgt_row['VARS_NAME'],
+            "value": tgt_row['VARS_ENTRY'],
+            "sensitive_setting": tgt_row['FLAG_NAME'],
+            "substitution_order": tgt_row['ASSIGN_SEQ'],
+            "template_variables_used": tgt_row['VARS_ENTRY_USE_TPFVARS'],
+            "remarks": tgt_row['NOTE'],
+            "discard": tgt_row['DISUSE_FLAG'],
+            "last_update_date_time": str(tgt_row['LAST_UPDATE_TIMESTAMP']).replace('-', '/'),
+            "last_updated_user": tgt_row['LAST_UPDATE_USER']
+        }
+
+        parameters = {
+            "parameter": parameter,
+            "type": "Register"
+        }
             
-            if not tgt_row['VARS_ENTRY_FILE'] == "":
-                parameter["file"] = "VARS_ENTRY_FILE"
-                parameters["file"] = {"vars_entry_file": tgt_row['VARS_ENTRY_FILE']}
+        if not tgt_row['VARS_ENTRY_FILE'] == "":
+            parameter["file"] = "VARS_ENTRY_FILE"
+            parameters["file"] = {"vars_entry_file": tgt_row['VARS_ENTRY_FILE']}
+                
+        retAry = objmenu.exec_maintenance(parameters, "", "", False, False)
             
-            status_code, result, msg = objmenu.rest_maintenance(parameters, tgt_row['ASSIGN_ID'])
-            
-            if status_code != '000-00000':
-                if status_code is None:
-                    status_code = '999-99999'
-                elif len(status_code) == 0:
-                    status_code = '999-99999'
-                if isinstance(msg, list):
-                    log_msg_args = msg
-                    api_msg_args = msg
-                else:
-                    log_msg_args = [msg]
-                    api_msg_args = [msg]
-                raise AppException(status_code, log_msg_args, api_msg_args)
+        result = retAry[0]
+        if result is False:
+            raise AppException("499-00701", [retAry], [retAry])
         
         return True, in_VarsAssignRecodes
 
@@ -1026,383 +729,7 @@ class SubValueAutoReg():
         
         return diff, befFileDel, AftFileCpy
     
-    def addStg2StdListVarsAssign(self, in_varsAssignList, in_tableNameToMenuIdList, in_ArryVarsAssignRecodes, execution_no, WS_DB):
-        """
-        代入値管理（一般変数・複数具体値変数）の廃止レコードの復活またき新規レコード追加
-        
-        Arguments:
-            in_varsAssignList: 代入値管理更新情報配列
-            in_varsAssignList: テーブル名配列
-            in_ArryVarsAssignRecodes: 代入値管理の全テータ配列
-            WS_DB: WorkspaceDBインスタンス
-
-        Returns:
-            is success:(bool)
-            in_ArryVarsAssignRecodes: 代入値管理の全テータ配列
-        """
-
-        global arrayValueTmplOfVarAss
-        global vg_FileUPloadColumnBackupFilePath
-        global db_update_flg
-        
-        arrayValue = arrayValueTmplOfVarAss
-        db_valautostup_user_id = g.USER_ID
-        
-        key = in_varsAssignList["OPERATION_ID"] + "_"
-        key += in_varsAssignList["MOVEMENT_ID"] + "_"
-        key += in_varsAssignList["SYSTEM_ID"] + "_"
-        key += in_varsAssignList["VARS_LINK_ID"] + "_" 
-        key += "" + "_"
-        key += str(in_varsAssignList["ASSIGN_SEQ"]) + "_1"
-        
-        objmenu = load_table.loadTable(WS_DB, "20409")
-
-        befFileDel = False
-        AftFileCpy = False
-        
-        # 代入値管理に登録されているか判定
-        if key not in in_ArryVarsAssignRecodes:
-            action = "INSERT"
-            tgt_row = arrayValue
-            
-            if in_varsAssignList['COL_CLASS'] == 'FileUploadColumn' and in_varsAssignList['REG_TYPE']  == 'Value':
-                in_varsAssignList['VARS_ENTRY_FILE'] = in_varsAssignList['VARS_ENTRY']
-                in_varsAssignList['VARS_ENTRY'] = ""
-                if not in_varsAssignList['VARS_ENTRY_FILE'] == "":
-                    AftFileCpy = True
-            else:
-                in_varsAssignList['VARS_ENTRY_FILE'] = ""
-            
-            # トレースメッセージ
-            traceMsg = g.appmsg.get_api_message("MSG-10812", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
-                                                            in_varsAssignList['VARS_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
-            frame = inspect.currentframe().f_back
-            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-        else:
-            # 廃止レコードがあるので復活する。
-            action = "UPDATE"
-            tgt_row = in_ArryVarsAssignRecodes[key]
-            
-            ret = self.chkSubstitutionValueListRecodedifference(tgt_row, in_varsAssignList)
-            befFileDel = ret[1]
-            AftFileCpy = ret[2]
-            
-            del in_ArryVarsAssignRecodes[key]
-            
-            # トレースメッセージ
-            traceMsg = g.appmsg.get_api_message("MSG-10813", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
-                                                            in_varsAssignList['MVMT_VAR_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
-            frame = inspect.currentframe().f_back
-            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-        
-        if action == "INSERT":
-            
-            # 登録する情報設定
-            tgt_row['ASSIGN_ID'] = str(WS_DB._uuid_create())
-            tgt_row['OPERATION_ID'] = in_varsAssignList['OPERATION_ID']
-            tgt_row['MOVEMENT_ID'] = in_varsAssignList['MOVEMENT_ID']
-            tgt_row['SYSTEM_ID'] = in_varsAssignList['SYSTEM_ID']
-            tgt_row['MVMT_VAR_LINK_ID'] = in_varsAssignList['VARS_LINK_ID']
-            tgt_row['ASSIGN_SEQ'] = in_varsAssignList['ASSIGN_SEQ']
-        
-        # 具体値にテンプレート変数が記述されているか判定
-        VARS_ENTRY_USE_TPFVARS = "0"
-        ret = in_varsAssignList['VARS_ENTRY'].find('TPF_')
-        if ret == 0:
-            # テンプレート変数が記述されていることを記録
-            VARS_ENTRY_USE_TPFVARS = "1"
-            db_update_flg = True
-        
-        # ロール管理ジャーナルに登録する情報設定
-        tgt_row['VARS_ENTRY'] = in_varsAssignList['VARS_ENTRY']
-        tgt_row['VAL_COL_SEQ_COMBINATION_ID'] = in_varsAssignList['VAL_COL_SEQ_COMBINATION_ID']
-        tgt_row["VARS_ENTRY_FILE"] = in_varsAssignList['VARS_ENTRY_FILE']
-        tgt_row["SENSITIVE_FLAG"] = in_varsAssignList['SENSITIVE_FLAG']
-        tgt_row["VARS_ENTRY_USE_TPFVARS"] = VARS_ENTRY_USE_TPFVARS
-        tgt_row['DISUSE_FLAG'] = "0"
-        tgt_row['LAST_UPDATE_USER'] = db_valautostup_user_id
-
-        tgt_row = self.getLoadtableRegisterValue(tgt_row, True, WS_DB)
-        if action == "INSERT":
-            parameter = {
-                "item_no": tgt_row['ASSIGN_ID'],
-                "execution_no": execution_no,
-                "operation": tgt_row['OPERATION_NAME'],
-                "movement": tgt_row['MOVEMENT_NAME'],
-                "host": tgt_row['HOST_NAME'],
-                "variable_name": tgt_row['VARS_NAME'],
-                "member_variable_name": tgt_row['COL_COMBINATION_MEMBER_ALIAS'],
-                "value": tgt_row['VARS_ENTRY'],
-                "sensitive_setting": tgt_row['FLAG_NAME'],
-                "substitution_order": tgt_row['ASSIGN_SEQ'],
-                "template_variables_used": tgt_row['VARS_ENTRY_USE_TPFVARS'],
-                "remarks": tgt_row['NOTE'],
-                "discard": tgt_row['DISUSE_FLAG'],
-                "last_update_date_time": tgt_row['LAST_UPDATE_TIMESTAMP'],
-                "last_updated_user": tgt_row['LAST_UPDATE_USER']
-            }
-
-            parameters = {
-                "parameter": parameter,
-                "type":"Register"
-            }
-            
-            if not tgt_row['VARS_ENTRY_FILE'] == "":
-                parameter["file"] = "VARS_ENTRY_FILE"
-                parameters["file"] = {"vars_entry_file": tgt_row['VARS_ENTRY_FILE']}
-                
-            status_code, result, msg = objmenu.rest_maintenance(parameters)
-            
-            if status_code != '000-00000':
-                if status_code is None:
-                    status_code = '999-99999'
-                elif len(status_code) == 0:
-                    status_code = '999-99999'
-                if isinstance(msg, list):
-                    log_msg_args = msg
-                    api_msg_args = msg
-                else:
-                    log_msg_args = [msg]
-                    api_msg_args = [msg]
-                raise AppException(status_code, log_msg_args, api_msg_args)
-        elif action == "UPDATE":
-            parameter = {
-                "execution_no": execution_no,
-                "operation": tgt_row['OPERATION_NAME'],
-                "movement": tgt_row['MOVEMENT_NAME'],
-                "host": tgt_row['HOST_NAME'],
-                "variable_name": tgt_row['VARS_NAME'],
-                "member_variable_name": tgt_row['COL_COMBINATION_MEMBER_ALIAS'],
-                "value": tgt_row['VARS_ENTRY'],
-                "sensitive_setting": tgt_row['FLAG_NAME'],
-                "substitution_order": tgt_row['ASSIGN_SEQ'],
-                "template_variables_used": tgt_row['VARS_ENTRY_USE_TPFVARS'],
-                "remarks": tgt_row['NOTE'],
-                "discard": tgt_row['DISUSE_FLAG'],
-                "last_update_date_time": tgt_row['LAST_UPDATE_TIMESTAMP'],
-                "last_updated_user": tgt_row['LAST_UPDATE_USER']
-            }
-
-            parameters = {
-                "parameter": parameter,
-                "type": "Update"
-            }
-            
-            if not tgt_row['VARS_ENTRY_FILE'] == "":
-                parameter["file"] = "VARS_ENTRY_FILE"
-                parameters["file"] = {"vars_entry_file": tgt_row['VARS_ENTRY_FILE']}
-            
-            status_code, result, msg = objmenu.rest_maintenance(parameters, tgt_row['ASSIGN_ID'])
-            
-            if status_code != '000-00000':
-                if status_code is None:
-                    status_code = '999-99999'
-                elif len(status_code) == 0:
-                    status_code = '999-99999'
-                if isinstance(msg, list):
-                    log_msg_args = msg
-                    api_msg_args = msg
-                else:
-                    log_msg_args = [msg]
-                    api_msg_args = [msg]
-                raise AppException(status_code, log_msg_args, api_msg_args)
-        
-        return True, in_ArryVarsAssignRecodes
-    
     def addStg1ArrayVarsAssign(self, in_varsAssignList, in_tableNameToMenuIdList, in_ArryVarsAssignRecodes, execution_no, WS_DB):
-        """
-        代入値管理（多次元配列変数）を更新する。
-        
-        Arguments:
-            in_varsAssignList: 代入値管理更新情報配列
-            in_tableNameToMenuIdList: テーブル名配列
-            in_ArryVarsAssignRecodes: 代入値管理の全テータ配列
-            WS_DB: WorkspaceDBインスタンス
-
-        Returns:
-            is success:(bool)
-            in_ArryVarsAssignRecodes: 代入値管理の全テータ配列
-        """
-        
-        global vg_FileUPloadColumnBackupFilePath
-        global db_update_flg
-
-        db_valautostup_user_id = g.USER_ID
-        
-        key = in_varsAssignList["OPERATION_ID"] + "_"
-        key += in_varsAssignList["MOVEMENT_ID"] + "_"
-        key += in_varsAssignList["SYSTEM_ID"] + "_"
-        key += in_varsAssignList["MVMT_VAR_LINK_ID"] + "_"
-        key += in_varsAssignList["VAL_COL_SEQ_COMBINATION_ID"] + "_"
-        key += str(in_varsAssignList["ASSIGN_SEQ"]) + "_0"
-        
-        objmenu = load_table.loadTable(WS_DB, "20409")
-        
-        val_list = {}
-        
-        hit_flg = False
-        # 代入値管理に登録されているか判定
-        if key in in_ArryVarsAssignRecodes:
-            # 具体値が一致しているか判定
-            tgt_row = in_ArryVarsAssignRecodes[key]
-            
-            ret = self.chkSubstitutionValueListRecodedifference(tgt_row, in_varsAssignList)
-            diff = ret[0]
-            befFileDel = ret[1]
-            AftFileCpy = ret[2]
-            
-            if diff == 0:
-                FREE_LOG = g.appmsg.get_api_message("MSG-10815", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
-                                                            in_varsAssignList['MVMT_VAR_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
-                frame = inspect.currentframe().f_back
-                g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + FREE_LOG)
-                
-                # 代入値管理に必要なレコードはリストから削除
-                del in_ArryVarsAssignRecodes[key]
-                return True
-            
-            hit_flg = True
-            
-            # 具体値を退避
-            val_list = {}
-            val_list[0] = in_ArryVarsAssignRecodes[key]['VARS_ENTRY']
-            val_list[1] = in_varsAssignList['VARS_ENTRY']
-            
-            # 代入値管理に必要なレコードはリストから削除
-            del in_ArryVarsAssignRecodes[key]
-            
-        # 代入値管理に有効レコードが未登録か判定
-        if hit_flg == 0:
-            # 廃止レコードの復活または新規レコード追加する。
-            return self.addStg2ArrayVarsAssign(in_varsAssignList, in_tableNameToMenuIdList, in_ArryVarsAssignRecodes, execution_no, WS_DB)
-        else:
-            action = "UPDATE"
-            
-            # 最終更新者が自分でない場合、更新処理はスキップする
-            if not tgt_row['LAST_UPDATE_USER'] == db_valautostup_user_id:
-                # トレースメッセージ
-                traceMsg = g.appmsg.get_api_message("MSG-10835", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
-                                                            in_varsAssignList['MVMT_VAR_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
-                frame = inspect.currentframe().f_back
-                g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-                
-                # 更新処理はスキップ
-                return True
-            
-            # トレースメッセージ
-            traceMsg = g.appmsg.get_api_message("MSG-10814", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
-                                                        in_varsAssignList['MVMT_VAR_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
-            frame = inspect.currentframe().f_back
-            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-            
-        VARS_ENTRY_USE_TPFVARS = "0"
-        # 具体値にテンプレート変数が記述されているか判定
-        for val in val_list.values():
-            ret = val.find('TPF_')
-            if ret == 0:
-                # テンプレート変数が記述されていることを記録
-                VARS_ENTRY_USE_TPFVARS = "1"
-                db_update_flg = True
-                break
-        
-        # ロール管理ジャーナルに登録する情報設定
-        tgt_row['VARS_ENTRY'] = in_varsAssignList['VARS_ENTRY']
-        tgt_row['VAL_COL_SEQ_COMBINATION_ID'] = in_varsAssignList['VAL_COL_SEQ_COMBINATION_ID']
-        tgt_row["VARS_ENTRY_FILE"] = in_varsAssignList['VARS_ENTRY_FILE']
-        tgt_row["SENSITIVE_FLAG"] = in_varsAssignList['SENSITIVE_FLAG']
-        tgt_row["VARS_ENTRY_USE_TPFVARS"] = VARS_ENTRY_USE_TPFVARS
-        tgt_row['COL_SEQ_COMBINATION_ID']  = ""
-        tgt_row['DISUSE_FLAG'] = "0"
-        tgt_row['LAST_UPDATE_USER'] = db_valautostup_user_id
-        
-        tgt_row = self.getLoadtableRegisterValue(tgt_row, True, WS_DB)
-        if action == "INSERT":
-            parameter = {
-                "item_no": tgt_row['ASSIGN_ID'],
-                "execution_no": execution_no,
-                "operation": tgt_row['OPERATION_NAME'],
-                "movement": tgt_row['MOVEMENT_NAME'],
-                "host": tgt_row['HOST_NAME'],
-                "variable_name": tgt_row['VARS_NAME'],
-                "member_variable_name": tgt_row['COL_COMBINATION_MEMBER_ALIAS'],
-                "value": tgt_row['VARS_ENTRY'],
-                "sensitive_setting": tgt_row['FLAG_NAME'],
-                "substitution_order": tgt_row['ASSIGN_SEQ'],
-                "template_variables_used": tgt_row['VARS_ENTRY_USE_TPFVARS'],
-                "remarks": tgt_row['NOTE'],
-                "discard": tgt_row['DISUSE_FLAG'],
-                "last_update_date_time": tgt_row['LAST_UPDATE_TIMESTAMP'],
-                "last_updated_user": tgt_row['LAST_UPDATE_USER']
-            }
-
-            parameters = {
-                "parameter": parameter,
-                "type": "Register"
-            }
-            
-            if not tgt_row['VARS_ENTRY_FILE'] == "":
-                parameter["file"] = "VARS_ENTRY_FILE"
-                parameters["file"] = {"vars_entry_file": tgt_row['VARS_ENTRY_FILE']}
-                
-            status_code, result, msg = objmenu.rest_maintenance(parameters)
-            
-            if status_code != '000-00000':
-                if status_code is None:
-                    status_code = '999-99999'
-                elif len(status_code) == 0:
-                    status_code = '999-99999'
-                if isinstance(msg, list):
-                    log_msg_args = msg
-                    api_msg_args = msg
-                else:
-                    log_msg_args = [msg]
-                    api_msg_args = [msg]
-                raise AppException(status_code, log_msg_args, api_msg_args)
-        elif action == "UPDATE":
-            parameter = {
-                "execution_no": execution_no,
-                "operation": tgt_row['OPERATION_NAME'],
-                "movement": tgt_row['MOVEMENT_NAME'],
-                "host": tgt_row['HOST_NAME'],
-                "variable_name": tgt_row['VARS_NAME'],
-                "member_variable_name": tgt_row['COL_COMBINATION_MEMBER_ALIAS'],
-                "value": tgt_row['VARS_ENTRY'],
-                "sensitive_setting": tgt_row['FLAG_NAME'],
-                "substitution_order": tgt_row['ASSIGN_SEQ'],
-                "template_variables_used": tgt_row['VARS_ENTRY_USE_TPFVARS'],
-                "remarks": tgt_row['NOTE'],
-                "discard": tgt_row['DISUSE_FLAG'],
-                "last_update_date_time": tgt_row['LAST_UPDATE_TIMESTAMP'],
-                "last_updated_user": tgt_row['LAST_UPDATE_USER']
-            }
-
-            parameters = {
-                "parameter": parameter,
-                "type":"Update"
-            }
-            
-            if not tgt_row['VARS_ENTRY_FILE'] == "":
-                parameter["file"] = "VARS_ENTRY_FILE"
-                parameters["file"] = {"vars_entry_file": tgt_row['VARS_ENTRY_FILE']}
-            
-            status_code, result, msg = objmenu.rest_maintenance(parameters, tgt_row['ASSIGN_ID'])
-            
-            if status_code != '000-00000':
-                if status_code is None:
-                    status_code = '999-99999'
-                elif len(status_code) == 0:
-                    status_code = '999-99999'
-                if isinstance(msg, list):
-                    log_msg_args = msg
-                    api_msg_args = msg
-                else:
-                    log_msg_args = [msg]
-                    api_msg_args = [msg]
-                raise AppException(status_code, log_msg_args, api_msg_args)
-        
-        return True, in_ArryVarsAssignRecodes
-    
-    def addStg2ArrayVarsAssign(self, in_varsAssignList, in_tableNameToMenuIdList, in_ArryVarsAssignRecodes, execution_no, WS_DB):
         """
         代入値管理（多次元配列変数）の廃止レコードの復活またき新規レコード追加
         
@@ -1431,54 +758,20 @@ class SubValueAutoReg():
         key += "" + "_"
         key += str(in_varsAssignList["ASSIGN_SEQ"]) + "_1"
         
-        objmenu = load_table.loadTable(WS_DB, "20409")
-
-        befFileDel = False
-        AftFileCpy = False
+        objmenu = load_table.loadTable(WS_DB, "subst_value_list_ansible_role")
         
-        # 代入値管理に登録されているか判定
-        if key not in in_ArryVarsAssignRecodes:
-            action = "INSERT"
-            tgt_row = arrayValue
+        tgt_row = arrayValue
             
-            if in_varsAssignList['COL_CLASS'] == 'FileUploadColumn' and in_varsAssignList['REG_TYPE']  == 'Value':
-                in_varsAssignList['VARS_ENTRY_FILE'] = in_varsAssignList['VARS_ENTRY']
-                in_varsAssignList['VARS_ENTRY'] = ""
-                if not in_varsAssignList['VARS_ENTRY_FILE'] == "":
-                    AftFileCpy = True
-            else:
-                in_varsAssignList['VARS_ENTRY_FILE'] = ""
+        # DBの項目ではないがFileUploadCloumn用のディレクトリ作成で必要な項目の初期化
+        tgt_row['VARS_ENTRY_FILE_PATH'] = ""
             
-            # トレースメッセージ
-            traceMsg = g.appmsg.get_api_message("MSG-10812", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
-                                                            in_varsAssignList['MVMT_VAR_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
-            frame = inspect.currentframe().f_back
-            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-        else:
-            # 廃止レコードがあるので復活する。
-            action = "UPDATE"
-            tgt_row = in_ArryVarsAssignRecodes[key]
-            
-            del in_ArryVarsAssignRecodes[key]
-            
-            # トレースメッセージ
-            traceMsg = g.appmsg.get_api_message("MSG-10813", [in_varsAssignList['OPERATION_ID'], in_varsAssignList['MOVEMENT_ID'], in_varsAssignList['SYSTEM_ID'],
-                                                            in_varsAssignList['MVMT_VAR_LINK_ID'], in_varsAssignList['ASSIGN_SEQ']])
-            frame = inspect.currentframe().f_back
-            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-        
-        if action == "INSERT":
-            
-            # DBの項目ではないがFileUploadCloumn用のディレクトリ作成で必要な項目の初期化
-            tgt_row['VARS_ENTRY_FILE_PATH']   = ""
-            
-            # 登録する情報設定
-            tgt_row['ASSIGN_ID'] = str(WS_DB._uuid_create())
-            tgt_row['OPERATION_ID'] = in_varsAssignList['OPERATION_ID']
-            tgt_row['MOVEMENT_ID'] = in_varsAssignList['MOVEMENT_ID']
-            tgt_row['SYSTEM_ID'] = in_varsAssignList['SYSTEM_ID']
-            tgt_row['MVMT_VAR_LINK_ID'] = in_varsAssignList['MVMT_VAR_LINK_ID']
-            tgt_row['ASSIGN_SEQ'] = in_varsAssignList['ASSIGN_SEQ']
+        # 登録する情報設定
+        tgt_row['ASSIGN_ID'] = str(WS_DB._uuid_create())
+        tgt_row['OPERATION_ID'] = in_varsAssignList['OPERATION_ID']
+        tgt_row['MOVEMENT_ID'] = in_varsAssignList['MOVEMENT_ID']
+        tgt_row['SYSTEM_ID'] = in_varsAssignList['SYSTEM_ID']
+        tgt_row['MVMT_VAR_LINK_ID'] = in_varsAssignList['MVMT_VAR_LINK_ID']
+        tgt_row['ASSIGN_SEQ'] = in_varsAssignList['ASSIGN_SEQ']
         
         # 具体値にテンプレート変数が記述されているか判定
         VARS_ENTRY_USE_TPFVARS = "0"
@@ -1490,195 +783,52 @@ class SubValueAutoReg():
         
         # ロール管理ジャーナルに登録する情報設定
         tgt_row['VARS_ENTRY'] = in_varsAssignList['VARS_ENTRY']
-        tgt_row['VAL_COL_SEQ_COMBINATION_ID'] = in_varsAssignList['VAL_COL_SEQ_COMBINATION_ID']
-        tgt_row["VARS_ENTRY_FILE"] = in_varsAssignList['VARS_ENTRY_FILE']
+        tgt_row['COL_SEQ_COMBINATION_ID'] = in_varsAssignList['COL_SEQ_COMBINATION_ID']
+        if in_varsAssignList['COL_FILEUPLOAD_PATH']:
+            tgt_row["VARS_ENTRY_FILE"] = in_varsAssignList['VARS_ENTRY_FILE']
+        else:
+            tgt_row["VARS_ENTRY_FILE"] = ""
+
         tgt_row["SENSITIVE_FLAG"] = in_varsAssignList['SENSITIVE_FLAG']
         tgt_row["VARS_ENTRY_USE_TPFVARS"] = VARS_ENTRY_USE_TPFVARS
         tgt_row['DISUSE_FLAG'] = "0"
         tgt_row['LAST_UPDATE_USER'] = db_valautostup_user_id
         
         tgt_row = self.getLoadtableRegisterValue(tgt_row, True, WS_DB)
-        if action == "INSERT":
-            parameter = {
-                "item_no": tgt_row['ASSIGN_ID'],
-                "execution_no": execution_no,
-                "operation": tgt_row['OPERATION_NAME'],
-                "movement": tgt_row['MOVEMENT_NAME'],
-                "host": tgt_row['HOST_NAME'],
-                "variable_name": tgt_row['VARS_NAME'],
-                "member_variable_name": tgt_row['COL_COMBINATION_MEMBER_ALIAS'],
-                "value": tgt_row['VARS_ENTRY'],
-                "sensitive_setting": tgt_row['FLAG_NAME'],
-                "substitution_order": tgt_row['ASSIGN_SEQ'],
-                "template_variables_used": tgt_row['VARS_ENTRY_USE_TPFVARS'],
-                "remarks": tgt_row['NOTE'],
-                "discard": tgt_row['DISUSE_FLAG'],
-                "last_update_date_time": tgt_row['LAST_UPDATE_TIMESTAMP'],
-                "last_updated_user": tgt_row['LAST_UPDATE_USER']
-            }
+        parameter = {  
+            "item_no": tgt_row['ASSIGN_ID'],
+            "execution_no": execution_no,
+            "operation": tgt_row['OPERATION_NAME'],
+            "movement": tgt_row['MOVEMENT_NAME'],
+            "host": tgt_row['HOST_NAME'],
+            "variable_name": tgt_row['VARS_NAME'],
+            "member_variable_name": tgt_row['COL_COMBINATION_MEMBER_ALIAS'],
+            "value": tgt_row['VARS_ENTRY'],
+            "sensitive_setting": tgt_row['FLAG_NAME'],
+            "substitution_order": tgt_row['ASSIGN_SEQ'],
+            "template_variables_used": tgt_row['VARS_ENTRY_USE_TPFVARS'],
+            "remarks": tgt_row['NOTE'],
+            "discard": tgt_row['DISUSE_FLAG'],
+            "last_update_date_time": str(tgt_row['LAST_UPDATE_TIMESTAMP']).replace('-', '/'),
+            "last_updated_user": tgt_row['LAST_UPDATE_USER']
+        }
 
-            parameters = {
-                "parameter": parameter,
-                "type":"Register"
-            }
-            
-            if not tgt_row['VARS_ENTRY_FILE'] == "":
-                parameter["file"] = "VARS_ENTRY_FILE"
-                parameters["file"] = {"vars_entry_file": tgt_row['VARS_ENTRY_FILE']}
-            
-            status_code, result, msg = objmenu.rest_maintenance(parameters)
-            
-            if status_code != '000-00000':
-                if status_code is None:
-                    status_code = '999-99999'
-                elif len(status_code) == 0:
-                    status_code = '999-99999'
-                if isinstance(msg, list):
-                    log_msg_args = msg
-                    api_msg_args = msg
-                else:
-                    log_msg_args = [msg]
-                    api_msg_args = [msg]
-                raise AppException(status_code, log_msg_args, api_msg_args)
-        elif action == "UPDATE":
-            parameter = {
-                "execution_no": execution_no,
-                "operation": tgt_row['OPERATION_NAME'],
-                "movement": tgt_row['MOVEMENT_NAME'],
-                "host": tgt_row['HOST_NAME'],
-                "variable_name": tgt_row['VARS_NAME'],
-                "member_variable_name": tgt_row['COL_COMBINATION_MEMBER_ALIAS'],
-                "value": tgt_row['VARS_ENTRY'],
-                "sensitive_setting": tgt_row['FLAG_NAME'],
-                "substitution_order": tgt_row['ASSIGN_SEQ'],
-                "template_variables_used": tgt_row['VARS_ENTRY_USE_TPFVARS'],
-                "remarks": tgt_row['NOTE'],
-                "discard": tgt_row['DISUSE_FLAG'],
-                "last_update_date_time": tgt_row['LAST_UPDATE_TIMESTAMP'],
-                "last_updated_user": tgt_row['LAST_UPDATE_USER']
-            }
-
-            parameters = {
-                "parameter": parameter,
-                "type":"Update"
-            }
-            
-            if not tgt_row['VARS_ENTRY_FILE'] == "":
-                parameter["file"] = "VARS_ENTRY_FILE"
-                parameters["file"] = {"vars_entry_file": tgt_row['VARS_ENTRY_FILE']}
-            
-            status_code, result, msg = objmenu.rest_maintenance(parameters, tgt_row['ASSIGN_ID'])
-            
-            if status_code != '000-00000':
-                if status_code is None:
-                    status_code = '999-99999'
-                elif len(status_code) == 0:
-                    status_code = '999-99999'
-                if isinstance(msg, list):
-                    log_msg_args = msg
-                    api_msg_args = msg
-                else:
-                    log_msg_args = [msg]
-                    api_msg_args = [msg]
-                raise AppException(status_code, log_msg_args, api_msg_args)
+        parameters = {
+            "parameter": parameter,
+            "type":"Register"
+        }
+        
+        if not tgt_row['VARS_ENTRY_FILE'] == "":
+            parameter["file"] = "VARS_ENTRY_FILE"
+            parameters["file"] = {"vars_entry_file": tgt_row['VARS_ENTRY_FILE']}
+        
+        retAry = objmenu.exec_maintenance(parameters, "", "", False, False)
+        
+        result = retAry[0]
+        if result is False:
+            raise AppException("499-00701", [retAry], [retAry])
         
         return True, in_ArryVarsAssignRecodes
-    
-    def deleteVarsAssign(self, lv_VarsAssignRecodes, execution_no, WS_DB):
-        """
-        代入値管理から不要なレコードを廃止
-        
-        Arguments:
-            in_VarsAssignRecodes: 代入値管理の全テータ配列
-            WS_DB: WorkspaceDBインスタンス
-
-        Returns:
-            is success:(bool)
-        """
-        
-        global vg_FileUPloadColumnBackupFilePath
-        global db_update_flg
-        
-        db_valautostup_user_id = g.USER_ID
-        
-        objmenu = load_table.loadTable(WS_DB, "20409")
-        
-        for key, tgt_row in lv_VarsAssignRecodes.items():
-            if tgt_row['DISUSE_FLAG'] == '1':
-                # 廃止レコードはなにもしない。
-                continue
-        
-            # 最終更新者が自分でない場合、廃止処理はスキップする。
-            if not tgt_row["LAST_UPDATE_USER"] == db_valautostup_user_id:
-                # トレースメッセージ
-                traceMsg = g.appmsg.get_api_message("MSG-10827", [tgt_row['ASSIGN_ID']])
-                frame = inspect.currentframe().f_back
-                g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-            
-                # 更新処理はスキップ
-                continue
-        
-            # 廃止レコードにする。
-            
-            # トレースメッセージ
-            traceMsg = g.appmsg.get_api_message("MSG-10820", [tgt_row['ASSIGN_ID']])
-            frame = inspect.currentframe().f_back
-            g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
-            
-            # 具体値にテンプレート変数が記述されているか判定
-            if db_update_flg == 0:
-                ret = tgt_row['VARS_ENTRY'].find('TPF_')
-                if ret == 0:
-                    # テンプレート変数が記述されていることを記録
-                    db_update_flg = True
-
-            tgt_row['DISUSE_FLAG'] = '1'
-            tgt_row['LAST_UPDATE_USER'] = db_valautostup_user_id
-
-            tgt_row = self.getLoadtableRegisterValue(tgt_row, True, WS_DB)
-            # ロール管理ジャーナルに登録する情報設定
-            parameter = {
-                "execution_no": execution_no,
-                "operation": tgt_row['OPERATION_NAME'],
-                "movement": tgt_row['MOVEMENT_NAME'],
-                "host": tgt_row['HOST_NAME'],
-                "variable_name": tgt_row['VARS_NAME'],
-                "member_variable_name": tgt_row['COL_COMBINATION_MEMBER_ALIAS'],
-                "value": tgt_row['VARS_ENTRY'],
-                "sensitive_setting": tgt_row['FLAG_NAME'],
-                "substitution_order": tgt_row['ASSIGN_SEQ'],
-                "template_variables_used": tgt_row['VARS_ENTRY_USE_TPFVARS'],
-                "remarks": tgt_row['NOTE'],
-                "discard": tgt_row['DISUSE_FLAG'],
-                "last_update_date_time": tgt_row['LAST_UPDATE_TIMESTAMP'],
-                "last_updated_user": tgt_row['LAST_UPDATE_USER']
-            }
-
-            parameters = {
-                "parameter": parameter,
-                "type": "Update"
-            }
-                
-            if not tgt_row['VARS_ENTRY_FILE'] == "":
-                parameter["file"] = "VARS_ENTRY_FILE"
-                parameters["file"] = {"vars_entry_file": tgt_row['VARS_ENTRY_FILE']}
-            
-            status_code, result, msg = objmenu.rest_maintenance(parameters, tgt_row['ASSIGN_ID'])
-            
-            if status_code != '000-00000':
-                if status_code is None:
-                    status_code = '999-99999'
-                elif len(status_code) == 0:
-                    status_code = '999-99999'
-                if isinstance(msg, list):
-                    log_msg_args = msg
-                    api_msg_args = msg
-                else:
-                    log_msg_args = [msg]
-                    api_msg_args = [msg]
-                raise AppException(status_code, log_msg_args, api_msg_args)
-        
-        return True
     
     def getIFInfoDB(self, WS_DB):
         """
@@ -1733,8 +883,6 @@ class SubValueAutoReg():
         VariableColumnAry['T_ANSC_TEMPLATE_FILE']['ANS_TEMPLATE_VARS_NAME'] = 0
         VariableColumnAry['T_ANSC_CONTENTS_FILE'] = {}
         VariableColumnAry['T_ANSC_TEMPLATE_FILE']['CONTENTS_FILE_VARS_NAME'] = 0
-        VariableColumnAry['T_ANSC_GLOBAL_VAR'] = {}
-        VariableColumnAry['T_ANSC_GLOBAL_VAR']['VARS_NAME'] = 0
         
         # オペ+作業+ホスト+変数の組合せの代入順序 重複確認用
         lv_varsAssChkList = {}
@@ -1768,7 +916,7 @@ class SubValueAutoReg():
             
             for row in data_list:
                 # 代入値紐付メニューに登録されているオペレーションIDを確認
-                if len(row['OPERATION_ID']) is None:
+                if row['OPERATION_ID'] is None or len(row['OPERATION_ID']) == 0:
                     # オペレーションID未登録
                     msgstr = g.appmsg.get_api_message("MSG-10360", [in_tableNameToMenuIdList[table_name], row[AnscConst.DF_ITA_LOCAL_PKEY]])
                     frame = inspect.currentframe().f_back
@@ -1792,7 +940,7 @@ class SubValueAutoReg():
                     continue
                 
                 # 代入値紐付メニューに登録されているホストIDを確認
-                if len(row['HOST_ID']) is None:
+                if row['HOST_ID'] is None or len(row['HOST_ID']) == 0:
                     msgstr = g.appmsg.get_api_message("MSG-10361", [in_tableNameToMenuIdList[table_name], row[AnscConst.DF_ITA_LOCAL_PKEY]])
                     frame = inspect.currentframe().f_back
                     g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + msgstr)
@@ -1825,24 +973,29 @@ class SubValueAutoReg():
                 for col_data in in_tabColNameToValAssRowList[table_name][col_name].values():
                     # IDcolumnの場合は参照元から具体値を取得する
                     if not col_data['REF_TABLE_NAME'] is None and not col_data['REF_TABLE_NAME'] == "":
-                        sql = "SELECT " + col_data['REF_COL_NAME'] + " "
-                        sql = sql + "FROM " + col_data['REF_TABLE_NAME'] + " "
-                        where = "WHERE " + col_data['REF_PKEY_NAME'] + "=%" + col_data['REF_PKEY_NAME'] + " AND DISUSE_FLAG='0'"
-                        count = WS_DB.table_count(col_data['REF_TABLE_NAME'], where, [col_val_key])
+                        tmp_col_val_key = json.loads(col_val_key).values()
+                        where = "WHERE " + col_data['REF_PKEY_NAME'] + " IN ("
+                        in_str = ""
+                        for value in tmp_col_val_key:
+                            in_str += "'" + value + "',"
+                        if in_str:
+                            in_str = in_str[:-1]
+                        where += in_str + ") AND DISUSE_FLAG = '0'"
+                        count = WS_DB.table_count(col_data['REF_TABLE_NAME'], where, [])
                         
                         col_val = ""
                         # 0件ではない場合
                         if not count == 0:
-                            data_list = WS_DB.table_select(col_data['REF_TABLE_NAME'], where, [col_val_key])
+                            data_list = WS_DB.table_select(col_data['REF_TABLE_NAME'], where, [])
                             for tgt_row in data_list:
                                 col_val = tgt_row[col_data['REF_COL_NAME']]
                                 # TPF/CPF変数カラム判定
                                 if col_data['REF_TABLE_NAME'] in VariableColumnAry:
                                     if col_data['REF_COL_NAME'] in VariableColumnAry[col_data['REF_TABLE_NAME']]:
-                                        col_val = "'{{ col_val }}'"
+                                        col_val = "'{{" + col_val + "}}'"
                         else:
                             # プルダウン選択先のレコードが廃止されている
-                            msgstr = g.appmsg.get_api_message("MSG-10438", [in_tableNameToMenuIdList[table_name], row[AnscConst.DF_ITA_LOCAL_PKEY], col_data['COL_TITLE']])
+                            msgstr = g.appmsg.get_api_message("MSG-10438", [in_tableNameToMenuIdList[table_name], row[AnscConst.DF_ITA_LOCAL_PKEY], col_name])
                             frame = inspect.currentframe().f_back
                             g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + msgstr)
                             warning_flag = 1
@@ -1854,10 +1007,12 @@ class SubValueAutoReg():
                     col_class = ret[1]
                     col_filepath = ""
                     col_file_md5 = ""
-                    if col_class == "FileUploadColumn":
+                    if col_class == "FileUploadColumn" or col_class == "FileUploadEncryptColumn":
+                        # メニューID取得
+                        upload_menu_id = self.getUploadfilesMenuID(in_tableNameToMenuIdList[table_name], WS_DB)
                         col_filepath = ""
                         if not col_val == "":
-                            col_filepath = "/uploadfiles" + in_tableNameToMenuIdList[table_name] + col_name_rest
+                            col_filepath = "/uploadfiles/" + upload_menu_id + "/" + col_name_rest + "/" + row[AnscConst.DF_ITA_LOCAL_PKEY]
                             if not os.path.exists(col_filepath):
                                 msgstr = g.appmsg.get_api_message("MSG-10166", [table_name, col_name, col_row_id, col_filepath])
                                 frame = inspect.currentframe().f_back
@@ -1891,7 +1046,7 @@ class SubValueAutoReg():
                     ina_array_vars_ass_list[idx] = ret[2]
                     
                     idx += 1
-        
+
         return ina_vars_ass_list, ina_array_vars_ass_list, warning_flag
 
     def makeVarsAssignData(self,
@@ -1939,7 +1094,11 @@ class SubValueAutoReg():
         Retruns:
             str: ファイルのMD5ハッシュ値
         """
-        col_name = in_col_list['COLUMN_NAME_JA']
+
+        if g.LANGUAGE == 'ja':
+            col_name = in_col_list['COLUMN_NAME_JA']
+        else:
+            col_name = in_col_list['COLUMN_NAME_EN']
         
         # カラムタイプを判定
         if in_col_list['COL_TYPE'] == AnscConst.DF_COL_TYPE_VAL:
@@ -1956,10 +1115,10 @@ class SubValueAutoReg():
                                             in_operation_id,
                                             in_host_id,
                                             in_col_list['MOVEMENT_ID'],
-                                            in_col_list['VAL_MVMT_VAR_LINK_ID'],
-                                            in_col_list['VAL_COL_SEQ_COMBINATION_ID'],
-                                            in_col_list['VAL_ASSIGN_SEQ'],
-                                            col_name,
+                                            in_col_list['MVMT_VAR_LINK_ID'],
+                                            in_col_list['COL_SEQ_COMBINATION_ID'],
+                                            in_col_list['ASSIGN_SEQ'],
+                                            in_col_val,
                                             in_col_row_id,
                                             in_col_class,
                                             in_col_filepath,
@@ -1979,7 +1138,7 @@ class SubValueAutoReg():
         
         if in_col_list['COL_TYPE'] == AnscConst.DF_COL_TYPE_KEY:
             # 具体値が空白か判定
-            ret = self.validateKeyTypeColValue(in_col_val, in_menu_id, in_row_id, in_col_list['COL_TITLE'])
+            ret = self.validateKeyTypeColValue(in_col_val, in_menu_id, in_row_id, col_name)
             if ret == 0:
                 return ina_vars_ass_list, ina_vars_ass_chk_list, ina_array_vars_ass_list, ina_array_vars_ass_chk_list
             
@@ -1990,9 +1149,9 @@ class SubValueAutoReg():
                                             in_operation_id,
                                             in_host_id,
                                             in_col_list['MOVEMENT_ID'],
-                                            in_col_list['KEY_MVMT_VAR_LINK_ID'],
-                                            in_col_list['KEY_COL_SEQ_COMBINATION_ID'],
-                                            in_col_list['KEY_ASSIGN_SEQ'],
+                                            in_col_list['MVMT_VAR_LINK_ID'],
+                                            in_col_list['COL_SEQ_COMBINATION_ID'],
+                                            in_col_list['ASSIGN_SEQ'],
                                             col_name,
                                             in_col_row_id,
                                             in_col_class,
@@ -2026,21 +1185,21 @@ class SubValueAutoReg():
         """
         
         # オペレーション名
-        sql = "SELECT OPERATION_NAME FROM T_COMN_OPERATION WHERE OPERATION_ID = " + row['OPERATION_ID']
+        sql = "SELECT OPERATION_NAME FROM T_COMN_OPERATION WHERE OPERATION_ID = '" + row['OPERATION_ID'] + "'"
 
         data_list = WS_DB.sql_execute(sql, [])
         for data in data_list:
             row['OPERATION_NAME'] = data['OPERATION_NAME']
         
         # Movement名
-        sql = "SELECT MOVEMENT_NAME FROM V_ANSR_MOVEMENT WHERE MOVEMENT_ID = " + row['MOVEMENT_ID']
+        sql = "SELECT MOVEMENT_NAME FROM V_ANSR_MOVEMENT WHERE MOVEMENT_ID = '" + row['MOVEMENT_ID'] + "'"
 
         data_list = WS_DB.sql_execute(sql, [])
         for data in data_list:
             row['MOVEMENT_NAME'] = data['MOVEMENT_NAME']
         
         # ホスト名
-        sql = "SELECT HOST_NAME FROM T_ANSC_DEVICE WHERE SYSTEM_ID = " + row['SYSTEM_ID']
+        sql = "SELECT HOST_NAME FROM T_ANSC_DEVICE WHERE SYSTEM_ID = '" + row['SYSTEM_ID'] + "'"
 
         data_list = WS_DB.sql_execute(sql, [])
         for data in data_list:
@@ -2049,21 +1208,22 @@ class SubValueAutoReg():
         # 代入値管理用のデータ取得
         if exe_flag == 1: 
             # 変数名
-            sql = "SELECT VARS_NAME FROM V_ANSR_NESTVAR_MOVEMENT WHERE MVMT_VAR_LINK_ID = " + row['MVMT_VAR_LINK_ID']
+            sql = "SELECT VARS_NAME FROM V_ANSR_VAL_VARS_LINK WHERE MVMT_VAR_LINK_ID = '" + row['MVMT_VAR_LINK_ID'] + "'"
 
             data_list = WS_DB.sql_execute(sql, [])
             for data in data_list:
                 row['VARS_NAME'] = data['VARS_NAME']
             
-            # メンバー変数名
-            sql = "SELECT COL_COMBINATION_MEMBER_ALIAS FROM V_ANSR_COL_SEQ_COMBINATION WHERE COL_SEQ_COMBINATION_ID = " + row['VAL_COL_SEQ_COMBINATION_ID']
-
-            data_list = WS_DB.sql_execute(sql, [])
-            for data in data_list:
-                row['COL_COMBINATION_MEMBER_ALIAS'] = data['COL_COMBINATION_MEMBER_ALIAS']
+            if row['COL_SEQ_COMBINATION_ID'] is not None and not row['COL_SEQ_COMBINATION_ID'] == "":
+                sql = "SELECT COL_COMBINATION_MEMBER_ALIAS FROM V_ANSR_COL_SEQ_COMBINATION WHERE COL_SEQ_COMBINATION_ID = '" + row['COL_SEQ_COMBINATION_ID'] + "'"
+                data_list = WS_DB.sql_execute(sql, [])
+                for data in data_list:
+                    row['COL_COMBINATION_MEMBER_ALIAS'] = data['COL_COMBINATION_MEMBER_ALIAS']
+            else:
+                row['COL_COMBINATION_MEMBER_ALIAS'] = ""
             
             # Sensitive設定
-            sql = "SELECT FLAG_NAME FROM T_COMN_BOOLEAN_FLAG WHERE FLAG_ID = " + row['SENSITIVE_FLAG']
+            sql = "SELECT FLAG_NAME FROM T_COMN_BOOLEAN_FLAG WHERE FLAG_ID = '" + row['SENSITIVE_FLAG'] + "'"
 
             data_list = WS_DB.sql_execute(sql, [])
             for data in data_list:
@@ -2112,7 +1272,7 @@ class SubValueAutoReg():
         
         return True
     
-    def validateKeyTypeColValue(in_col_val, in_menu_id, in_row_id, in_menu_title):
+    def validateKeyTypeColValue(self, in_col_val, in_menu_id, in_row_id, in_menu_title):
         """
         具体値が空白か判定(Key型)
         
@@ -2168,6 +1328,35 @@ class SubValueAutoReg():
             column_class = data['COLUMN_CLASS_NAME']
         
         return column_name_rest, column_class
+
+    def getUploadfilesMenuID(self, in_menu_id, WS_DB):
+        """
+        紐付メニューの入力用メニューのメニューID取得
+        
+        Arguments:
+            in_menu_id: 紐付メニューID
+            WS_DB: WorkspaceDBインスタンス
+
+        Returns:
+            out_menu_id: 入力用メニューID
+        """
+
+        out_menu_id = ""
+
+        sql = " SELECT TBL_A.MENU_ID, "
+        sql += " FROM T_COMN_MENU TBL_A "
+        sql += " WHERE TBL_A.MENU_NAME_JA = ( "
+        sql += "  SELECT TBL_B.MENU_NAME_JA "
+        sql += "  FROM T_COMN_MENU TBL_B "
+        sql += "  WHERE TBL_B.MENU_ID = '" + in_menu_id + "')"
+        sql += " AND TBL_A.MENU_GROUP_ID = '502'"
+        
+        data_list = WS_DB.sql_execute(sql)
+
+        for data in data_list:
+            out_menu_id = data['MENU_ID']
+        
+        return out_menu_id
 
     def getNullDataHandlingID(self, in_null_data_handling_flg, WS_DB):
         """
@@ -2303,7 +1492,7 @@ class SubValueAutoReg():
                                 'MVMT_VAR_LINK_ID': in_vars_link_id,
                                 'ASSIGN_SEQ': in_vars_assign_seq,
                                 'VARS_ENTRY': in_col_val,
-                                'VAL_COL_SEQ_COMBINATION_ID': in_col_seq_combination_id,
+                                'COL_SEQ_COMBINATION_ID': in_col_seq_combination_id,
                                 'SENSITIVE_FLAG': in_sensitive_flg,
                                 'VAR_TYPE': in_vars_attr,
                                 'STATUS': chk_status}
@@ -2349,7 +1538,7 @@ class SubValueAutoReg():
                                 'MVMT_VAR_LINK_ID': in_vars_link_id,
                                 'ASSIGN_SEQ': in_vars_assign_seq,
                                 'VARS_ENTRY': in_col_val,
-                                'VAL_COL_SEQ_COMBINATION_ID': in_col_seq_combination_id,
+                                'COL_SEQ_COMBINATION_ID': in_col_seq_combination_id,
                                 'SENSITIVE_FLAG': in_sensitive_flg,
                                 'VAR_TYPE': in_vars_attr,
                                 'STATUS': chk_status}
@@ -2382,11 +1571,11 @@ class SubValueAutoReg():
         sql += "   TBL_A.COLUMN_ID                                             ,  \n"
         sql += "   TBL_A.MENU_ID                                               ,  \n"
         sql += "   TBL_C.TABLE_NAME                                            ,  \n"
-        sql += "   TBL_C.PK_COLUMN_NAME_REST                                   ,  \n"
         sql += "   TBL_C.DISUSE_FLAG  AS TBL_DISUSE_FLAG                       ,  \n"
         sql += "   TBL_A.COLUMN_LIST_ID                                        ,  \n"
         sql += "   TBL_B.COL_NAME                                              ,  \n"
         sql += "   TBL_B.COLUMN_NAME_JA                                        ,  \n"
+        sql += "   TBL_B.COLUMN_NAME_EN                                        ,  \n"
         sql += "   TBL_B.REF_TABLE_NAME                                        ,  \n"
         sql += "   TBL_B.REF_PKEY_NAME                                         ,  \n"
         sql += "   TBL_B.REF_COL_NAME                                          ,  \n"
@@ -2415,7 +1604,7 @@ class SubValueAutoReg():
         sql += "                                                                  \n"
         
         # (Val)作業パターン変数紐付の登録確認
-        sql += "   TBL_A.VAL_MVMT_VAR_LINK_ID                                  ,  \n"
+        sql += "   TBL_A.MVMT_VAR_LINK_ID                                      ,  \n"
         sql += "   (                                                              \n"
         sql += "     SELECT                                                       \n"
         sql += "       COUNT(*)                                                   \n"
@@ -2423,12 +1612,12 @@ class SubValueAutoReg():
         sql += lv_ptn_vars_link_tbl + "                                           \n"
         sql += "     WHERE                                                        \n"
         sql += "       MOVEMENT_ID    = TBL_A.MOVEMENT_ID        AND              \n"
-        sql += "       MVMT_VAR_LINK_ID  = TBL_A.VAL_MVMT_VAR_LINK_ID  AND        \n"
+        sql += "       MVMT_VAR_LINK_ID  = TBL_A.MVMT_VAR_LINK_ID  AND            \n"
         sql += "       DISUSE_FLAG   = '0'                                        \n"
         sql += "   ) AS VAL_PTN_VARS_LINK_CNT                                  ,  \n"
         
         # (Val)多次元変数配列組合せ管理
-        sql += "   TBL_A.VAL_COL_SEQ_COMBINATION_ID                            ,  \n"
+        sql += "   TBL_A.COL_SEQ_COMBINATION_ID                                ,  \n"
         sql += "   (                                                              \n"
         sql += "     SELECT                                                       \n"
         sql += "       COL_COMBINATION_MEMBER_ALIAS                               \n"
@@ -2437,21 +1626,21 @@ class SubValueAutoReg():
         sql += "     WHERE                                                        \n"
         sql += "       MVMT_VAR_LINK_ID IN (                                      \n"
         sql += "         SELECT                                                   \n"
-        sql += "           VARS_NAME                                              \n"
+        sql += "           MVMT_VAR_LINK_ID                                       \n"
         sql += "         FROM                                                     \n"
         sql += lv_ptn_vars_link_tbl + "                                           \n"
         sql += "         WHERE                                                    \n"
         sql += "           MOVEMENT_ID    = TBL_A.MOVEMENT_ID        AND          \n"
-        sql += "           MVMT_VAR_LINK_ID  = TBL_A.VAL_MVMT_VAR_LINK_ID  AND    \n"
+        sql += "           MVMT_VAR_LINK_ID  = TBL_A.MVMT_VAR_LINK_ID  AND        \n"
         sql += "           DISUSE_FLAG   = '0'                                    \n"
         sql += "         )                                                        \n"
         sql += "       AND                                                        \n"
-        sql += "       COL_SEQ_COMBINATION_ID = TBL_A.VAL_COL_SEQ_COMBINATION_ID AND     \n"
+        sql += "       COL_SEQ_COMBINATION_ID = TBL_A.COL_SEQ_COMBINATION_ID AND     \n"
         sql += "       DISUSE_FLAG = '0'                                          \n"
         sql += "   ) AS VAL_COL_COMBINATION_MEMBER_ALIAS                       ,  \n"
         
         # (Val)多次元変数メンバー管理
-        sql += "   TBL_A.VAL_ASSIGN_SEQ                                        ,  \n"
+        sql += "   TBL_A.ASSIGN_SEQ                                            ,  \n"
         sql += "   (                                                              \n"
         sql += "     SELECT                                                       \n"
         sql += "       ASSIGN_SEQ_NEED                                            \n"
@@ -2460,12 +1649,12 @@ class SubValueAutoReg():
         sql += "     WHERE                                                        \n"
         sql += "       MVMT_VAR_LINK_ID IN (                                      \n"
         sql += "         SELECT                                                   \n"
-        sql += "           VARS_NAME                                              \n"
+        sql += "           MVMT_VAR_LINK_ID                                       \n"
         sql += "         FROM                                                     \n"
         sql += lv_ptn_vars_link_tbl + "                                           \n"
         sql += "         WHERE                                                    \n"
         sql += "           MOVEMENT_ID    = TBL_A.MOVEMENT_ID        AND          \n"
-        sql += "           MVMT_VAR_LINK_ID  = TBL_A.VAL_MVMT_VAR_LINK_ID  AND    \n"
+        sql += "           MVMT_VAR_LINK_ID  = TBL_A.MVMT_VAR_LINK_ID  AND        \n"
         sql += "           DISUSE_FLAG   = '0'                                    \n"
         sql += "         )                                                        \n"
         sql += "       AND                                                        \n"
@@ -2475,7 +1664,7 @@ class SubValueAutoReg():
         sql += "         FROM                                                     \n"
         sql += lv_member_col_comb_tbl + "                                         \n"
         sql += "         WHERE                                                    \n"
-        sql += "           COL_SEQ_COMBINATION_ID = TBL_A.KEY_COL_SEQ_COMBINATION_ID AND \n"
+        sql += "           COL_SEQ_COMBINATION_ID = TBL_A.COL_SEQ_COMBINATION_ID AND \n"
         sql += "           DISUSE_FLAG   = '0'                                    \n"
         sql += "         )                                                        \n"
         sql += "       AND                                                        \n"
@@ -2483,7 +1672,7 @@ class SubValueAutoReg():
         sql += "   ) AS VAL_ASSIGN_SEQ_NEED                                    ,  \n"
         
         # (Key)作業パターン変数紐付の登録確認
-        sql += "   TBL_A.KEY_MVMT_VAR_LINK_ID                                  ,  \n"
+        sql += "   TBL_A.MVMT_VAR_LINK_ID                                      ,  \n"
         sql += "   (                                                              \n"
         sql += "     SELECT                                                       \n"
         sql += "       COUNT(*)                                                   \n"
@@ -2491,35 +1680,35 @@ class SubValueAutoReg():
         sql += lv_ptn_vars_link_tbl + "                                           \n"
         sql += "     WHERE                                                        \n"
         sql += "       MOVEMENT_ID    = TBL_A.MOVEMENT_ID        AND              \n"
-        sql += "       MVMT_VAR_LINK_ID  = TBL_A.KEY_MVMT_VAR_LINK_ID  AND        \n"
+        sql += "       MVMT_VAR_LINK_ID  = TBL_A.MVMT_VAR_LINK_ID  AND            \n"
         sql += "       DISUSE_FLAG   = '0'                                        \n"
         sql += "   ) AS KEY_PTN_VARS_LINK_CNT                                  ,  \n"
         
         # (Key)多次元変数配列組合せ管理
-        sql += "   TBL_A.KEY_COL_SEQ_COMBINATION_ID                            ,  \n"
+        sql += "   TBL_A.COL_SEQ_COMBINATION_ID                                ,  \n"
         sql += "   (                                                              \n"
         sql += "     SELECT                                                       \n"
         sql += "       COL_COMBINATION_MEMBER_ALIAS                               \n"
         sql += "     FROM                                                         \n"
         sql += lv_member_col_comb_tbl + "                                         \n"
         sql += "     WHERE                                                        \n"
-        sql += "       VAL_MVMT_VAR_LINK_ID IN (                                  \n"
+        sql += "       MVMT_VAR_LINK_ID IN (                                      \n"
         sql += "         SELECT                                                   \n"
-        sql += "           VARS_NAME                                              \n"
+        sql += "           MVMT_VAR_LINK_ID                                       \n"
         sql += "         FROM                                                     \n"
         sql += lv_ptn_vars_link_tbl + "                                           \n"
         sql += "         WHERE                                                    \n"
         sql += "           MOVEMENT_ID    = TBL_A.MOVEMENT_ID        AND          \n"
-        sql += "           MVMT_VAR_LINK_ID  = TBL_A.KEY_MVMT_VAR_LINK_ID  AND    \n"
+        sql += "           MVMT_VAR_LINK_ID  = TBL_A.MVMT_VAR_LINK_ID  AND        \n"
         sql += "           DISUSE_FLAG   = '0'                                    \n"
         sql += "         )                                                        \n"
         sql += "       AND                                                        \n"
-        sql += "       COL_SEQ_COMBINATION_ID = TBL_A.KEY_COL_SEQ_COMBINATION_ID AND     \n"
+        sql += "       COL_SEQ_COMBINATION_ID = TBL_A.COL_SEQ_COMBINATION_ID AND     \n"
         sql += "       DISUSE_FLAG = '0'                                          \n"
         sql += "   ) AS KEY_COL_COMBINATION_MEMBER_ALIAS                       ,  \n"
         
         # (Key)多次元変数メンバー管理
-        sql += "   TBL_A.KEY_ASSIGN_SEQ                                        ,  \n"
+        sql += "   TBL_A.ASSIGN_SEQ                                            ,  \n"
         sql += "   (                                                              \n"
         sql += "     SELECT                                                       \n"
         sql += "       ASSIGN_SEQ_NEED                                            \n"
@@ -2528,12 +1717,12 @@ class SubValueAutoReg():
         sql += "     WHERE                                                        \n"
         sql += "       MVMT_VAR_LINK_ID IN (                                      \n"
         sql += "         SELECT                                                   \n"
-        sql += "           VARS_NAME                                              \n"
+        sql += "           MVMT_VAR_LINK_ID                                       \n"
         sql += "         FROM                                                     \n"
         sql += lv_ptn_vars_link_tbl + "                                           \n"
         sql += "         WHERE                                                    \n"
         sql += "           MOVEMENT_ID    = TBL_A.MOVEMENT_ID        AND          \n"
-        sql += "           MVMT_VAR_LINK_ID  = TBL_A.KEY_MVMT_VAR_LINK_ID  AND    \n"
+        sql += "           MVMT_VAR_LINK_ID  = TBL_A.MVMT_VAR_LINK_ID  AND        \n"
         sql += "           DISUSE_FLAG   = '0'                                    \n"
         sql += "         )                                                        \n"
         sql += "       AND                                                        \n"
@@ -2543,7 +1732,7 @@ class SubValueAutoReg():
         sql += "         FROM                                                     \n"
         sql += lv_member_col_comb_tbl + "                                         \n"
         sql += "         WHERE                                                    \n"
-        sql += "           COL_SEQ_COMBINATION_ID = TBL_A.KEY_COL_SEQ_COMBINATION_ID AND \n"
+        sql += "           COL_SEQ_COMBINATION_ID = TBL_A.COL_SEQ_COMBINATION_ID AND \n"
         sql += "           DISUSE_FLAG   = '0'                                    \n"
         sql += "         )                                                        \n"
         sql += "       AND                                                        \n"
@@ -2570,6 +1759,7 @@ class SubValueAutoReg():
 
         inout_tableNameToMenuIdList = {}
         inout_tabColNameToValAssRowList = {}
+        idx = 0
         for data in data_list:
             # CMDB代入値紐付メニューが廃止されているか判定
             if data['TBL_DISUSE_FLAG'] != '0':
@@ -2596,19 +1786,13 @@ class SubValueAutoReg():
                 raise ValidationException("MSG-10336", [data['COLUMN_ID']])
             
             # CMDB代入値紐付メニューが登録されているか判定
-            if len(data['TABLE_NAME']) is None:
+            if data['TABLE_NAME'] is None or len(data['TABLE_NAME']) == 0:
                 msgstr = g.appmsg.get_api_message("MSG-10338", [data['COLUMN_ID']])
                 # 次のカラムへ
                 raise ValidationException("MSG-10338", [data['COLUMN_ID']])
             
-            # CMDB代入値紐付メニューの主キーが登録されているか判定
-            if len(data['PK_COLUMN_NAME_REST']) is None:
-                msgstr = g.appmsg.get_api_message("MSG-10404", [data['COLUMN_ID']])
-                # 次のカラムへ
-                raise ValidationException("MSG-10404", [data['COLUMN_ID']])
-            
             # CMDB代入値紐付メニューのカラムが未登録か判定
-            if len(data['COL_NAME']) is None:
+            if data['COL_NAME'] is None or len(data['COL_NAME']) == 0:
                 msgstr = g.appmsg.get_api_message("MSG-10340", [data['COLUMN_ID']])
                 # 次のカラムへ
                 raise ValidationException("MSG-10340", [data['COLUMN_ID']])
@@ -2631,13 +1815,13 @@ class SubValueAutoReg():
                 ret = self.valAssColumnValidate("Value",
                                                 val_vars_attr,
                                                 data,
-                                                "VAL_MVMT_VAR_LINK_ID",
+                                                "MVMT_VAR_LINK_ID",
                                                 "VARS_NAME",
                                                 "VAL_PTN_VARS_LINK_CNT",
                                                 "VARS_ATTRIBUTE_01",
-                                                "VAL_COL_SEQ_COMBINATION_ID",
+                                                "COL_SEQ_COMBINATION_ID",
                                                 "VAL_COL_COMBINATION_MEMBER_ALIAS",
-                                                "VAL_ASSIGN_SEQ",
+                                                "ASSIGN_SEQ",
                                                 "VAL_ASSIGN_SEQ_NEED")
             
                 if ret[0] == 0:
@@ -2649,13 +1833,13 @@ class SubValueAutoReg():
                 ret = self.valAssColumnValidate("Key",
                                                 key_vars_attr,
                                                 data,
-                                                "KEY_MVMT_VAR_LINK_ID",
+                                                "MVMT_VAR_LINK_ID",
                                                 "VARS_NAME",
                                                 "KEY_PTN_VARS_LINK_CNT",
                                                 "VARS_ATTRIBUTE_01",
-                                                "KEY_COL_SEQ_COMBINATION_ID",
+                                                "COL_SEQ_COMBINATION_ID",
                                                 "KEY_COL_COMBINATION_MEMBER_ALIAS",
-                                                "KEY_ASSIGN_SEQ",
+                                                "ASSIGN_SEQ",
                                                 "KEY_ASSIGN_SEQ_NEED")
             
                 if ret[0] == 0:
@@ -2671,33 +1855,36 @@ class SubValueAutoReg():
             if data['COLUMN_CLASS'] == 'PasswordColumn':
                 value_sensitive_flg = AnscConst.DF_SENSITIVE_ON
             
-            inout_tabColNameToValAssRowList[data['TABLE_NAME']] = {}
-            inout_tabColNameToValAssRowList[data['TABLE_NAME']][data['COL_NAME']] = {}
-            inout_tabColNameToValAssRowList[data['TABLE_NAME']][data['COL_NAME']]['data'] = {
+            if data['TABLE_NAME'] not in inout_tabColNameToValAssRowList:
+                inout_tabColNameToValAssRowList[data['TABLE_NAME']] = {}
+            if data['COL_NAME'] not in inout_tabColNameToValAssRowList[data['TABLE_NAME']]:
+                inout_tabColNameToValAssRowList[data['TABLE_NAME']][data['COL_NAME']] = {}
+            inout_tabColNameToValAssRowList[data['TABLE_NAME']][data['COL_NAME']][idx] = {
                                                                             'COLUMN_ID': data['COLUMN_ID'],
                                                                             'COL_TYPE': data['COL_TYPE'],
                                                                             'COLUMN_CLASS': data['COLUMN_CLASS'],
                                                                             'COLUMN_NAME_JA': data['COLUMN_NAME_JA'],
+                                                                            'COLUMN_NAME_EN': data['COLUMN_NAME_EN'],
                                                                             'REF_TABLE_NAME': data['REF_TABLE_NAME'],
                                                                             'REF_PKEY_NAME': data['REF_PKEY_NAME'],
                                                                             'REF_COL_NAME': data['REF_COL_NAME'],
                                                                             'MOVEMENT_ID': data['MOVEMENT_ID'],
-                                                                            'VAL_MVMT_VAR_LINK_ID': data['VAL_MVMT_VAR_LINK_ID'],
+                                                                            'MVMT_VAR_LINK_ID': data['MVMT_VAR_LINK_ID'],
                                                                             'VAL_VAR_TYPE': val_vars_attr,
-                                                                            'VAL_COL_SEQ_COMBINATION_ID': data['VAL_COL_SEQ_COMBINATION_ID'],
+                                                                            'COL_SEQ_COMBINATION_ID': data['COL_SEQ_COMBINATION_ID'],
                                                                             'VAL_COL_COMBINATION_MEMBER_ALIAS': data['VAL_COL_COMBINATION_MEMBER_ALIAS'],
-                                                                            'VAL_ASSIGN_SEQ': data['VAL_ASSIGN_SEQ'],
+                                                                            'ASSIGN_SEQ': data['ASSIGN_SEQ'],
                                                                             'VALUE_SENSITIVE_FLAG': value_sensitive_flg,
-                                                                            'KEY_MVMT_VAR_LINK_ID': data['KEY_MVMT_VAR_LINK_ID'],
                                                                             'KEY_VAR_TYPE': key_vars_attr,
-                                                                            'KEY_COL_SEQ_COMBINATION_ID': data['KEY_COL_SEQ_COMBINATION_ID'],
-                                                                            'KEY_ASSIGN_SEQ': data['KEY_ASSIGN_SEQ'],
                                                                             'NULL_DATA_HANDLING_FLG': data['NULL_DATA_HANDLING_FLG'],
                                                                             'KEY_SENSITIVE_FLAG': key_sensitive_flg}
         
             # テーブルの主キー名退避
-            inout_tableNameToPKeyNameList = {data['TABLE_NAME']: data['PK_COLUMN_NAME_REST']}
-        
+            pk_name = WS_DB.table_columns_get(data['TABLE_NAME'])
+            inout_tableNameToPKeyNameList[data['TABLE_NAME']] = {}
+            inout_tableNameToPKeyNameList[data['TABLE_NAME']] = pk_name[1][0]
+            idx += 1
+
         return True, inout_tableNameToMenuIdList, inout_tabColNameToValAssRowList, inout_tableNameToPKeyNameList
     
     def valAssColumnValidate(self, 
@@ -2725,119 +1912,87 @@ class SubValueAutoReg():
         """
         
         # 変数の選択判定
-        if len(row[in_vars_link_id]) is None:
+        if row[in_vars_link_id] is None or len(row[in_vars_link_id]) == 0:
             msgstr = g.appmsg.get_api_message("MSG-10354", [row['COLUMN_ID'], in_col_type])
-            g.applogger.debnug(msgstr)
-            return False
+            g.applogger.debug(msgstr)
+            return False, inout_vars_attr
         
         # 変数が作業パターン変数紐付にあるか判定
-        if len(str(row[in_ptn_vars_link_cnt])) is None:
+        if row[in_ptn_vars_link_cnt] is None or len(str(row[in_ptn_vars_link_cnt])) == 0:
             msgstr = g.appmsg.get_api_message("MSG-10348", [row['COLUMN_ID'], in_col_type])
-            g.applogger.debnug(msgstr)
-            return False
+            g.applogger.debug(msgstr)
+            return False, inout_vars_attr
         
         # 設定されている変数が変数一覧にあるか判定
-        if len(str(row[in_vars_name])) is None:
+        if row[in_vars_name] is None or len(str(row[in_vars_name])) == 0:
             msgstr = g.appmsg.get_api_message("MSG-10345", [row['COLUMN_ID'], in_col_type])
             g.applogger.debug(msgstr)
-            return False
+            return False, inout_vars_attr
 
         if row[in_vars_attribute_01] in [AnscConst.GC_VARS_ATTR_STD, AnscConst.GC_VARS_ATTR_LIST, AnscConst.GC_VARS_ATTR_M_ARRAY]:
             inout_vars_attr = row[in_vars_attribute_01]
         else:
             msgstr = g.appmsg.get_api_message("MSG-10439", [row['COLUMN_ID'], in_col_type])
-            g.applogger.debnug(msgstr)
-            return False
+            g.applogger.debug(msgstr)
+            return False, inout_vars_attr
         
         # メンバー変数がメンバー変数一覧にあるか判定
         if inout_vars_attr == AnscConst.GC_VARS_ATTR_M_ARRAY:
             # メンバー変数の選択判定
-            if len(row[in_col_seq_combination_id]) is None:
+            if row[in_col_seq_combination_id] is None or len(row[in_col_seq_combination_id]) == 0:
                 msgstr = g.appmsg.get_api_message("MSG-10419", [row['COLUMN_ID'], in_col_type])
-                g.applogger.debnug(msgstr)
-                return False
+                g.applogger.debug(msgstr)
+                return False, inout_vars_attr
         
             # カラムタイプ型に設定されているメンバー変数がメンバー変数一覧にあるか判定
-            if len(row[in_col_combination_member_alias]) is None:
+            if row[in_col_combination_member_alias] is None or len(row[in_col_combination_member_alias]) == 0:
                 msgstr = g.appmsg.get_api_message("MSG-10349", [row['COLUMN_ID'], in_col_type])
-                g.applogger.debnug(msgstr)
-                return False
+                g.applogger.debug(msgstr)
+                return False, inout_vars_attr
         else:
-            if not len(row[in_col_seq_combination_id]) is None:
+            if not row[in_col_seq_combination_id] is None and not len(row[in_col_seq_combination_id]) == 0:
                 msgstr = g.appmsg.get_api_message("MSG-10418", [row['COLUMN_ID'], in_col_type])
-                g.applogger.debnug(msgstr)
-                return False
+                g.applogger.debug(msgstr)
+                return False, inout_vars_attr
         
         if inout_vars_attr == AnscConst.GC_VARS_ATTR_LIST:
-            if len(row[in_assign_seq]) is None:
+            if row[in_assign_seq] is None or len(str(row[in_assign_seq])) == 0:
                 msgstr = g.appmsg.get_api_message("MSG-10350", [row['COLUMN_ID'], in_col_type])
-                g.applogger.debnug(msgstr)
-                return False
+                g.applogger.debug(msgstr)
+                return False, inout_vars_attr
         
         elif inout_vars_attr == AnscConst.GC_VARS_ATTR_M_ARRAY:
-            if row[in_assign_seq_need] == 1 and row[in_assign_seq] is None:
-                msgstr = g.appmsg.get_api_message("MSG-10350", [row['COLUMN_ID'], in_col_type])
-                g.applogger.debnug(msgstr)
-                return False
+            if row[in_assign_seq_need] == 1:
+                if row[in_assign_seq] is None or row[in_assign_seq] == 0:
+                    msgstr = g.appmsg.get_api_message("MSG-10350", [row['COLUMN_ID'], in_col_type])
+                    g.applogger.debug(msgstr)
+                    return False, inout_vars_attr
         
         return True, inout_vars_attr
-    
-    def getTemplateVarList(self, WS_DB):
-        """
-        代入値自動登録とパラメータシートから具体値に設定されているTPF変数名を抜出す
-        
-        Arguments:
-            WS_DB: WorkspaceDBインスタンス
 
-        Returns:
-            value_list: 抽出した変数リスト
-        """
-        
-        value_list = {}
-        sql = " SELECT "
-        sql += "  MOVEMENT_ID, "
-        sql += "  VAL_MVMT_VAR_LINK_ID "
-        sql += "  FROM T_ANSR_VALUE_AUTOREG "
-        sql += "  WHERE DISUSE_FLAG ='0' "
-        
-        data_list = WS_DB.sql_execute(sql)
-        
-        for row in data_list:
-            ret = row['VAL_MVMT_VAR_LINK_ID'].find('TPF_')
-            if ret == 0:
-                # テンプレート変数が記述されていることを記録
-                value_list['MOVEMENT_ID'] = row['MOVEMENT_ID']
-                value_list['MOVEMENT_ID'] = {}
-                value_list['MOVEMENT_ID']['VAL_MVMT_VAR_LINK_ID'] = row['VAL_MVMT_VAR_LINK_ID']
-        
-        return value_list
-    
-    def getTargetHostList(self, WS_DB):
-        """
-        代入値自動登録とパラメータシートから具体値に設定されている作業対象ホストを抜出す
-        
-        Arguments:
-            WS_DB: WorkspaceDBインスタンス
+    def extract_tpl_vars(self, var_extractor, varsAssRecord, template_list, host_list):
 
-        Returns:
-            value_list: 抽出した変数リスト
-        """
-        
-        value_list = {}
-        
-        sql = " SELECT "
-        sql += "  OPERATION_ID, "
-        sql += "  MOVEMENT_ID, "
-        sql += "  SYSTEM_ID "
-        sql += "  FROM  T_ANSR_TGT_HOST "
-        sql += "  WHERE DISUSE_FLAG ='0' "
-        
-        data_list = WS_DB.sql_execute(sql)
-        
-        for row in data_list:
-            value_list['MOVEMENT_ID'] = row['MOVEMENT_ID']
-            value_list['MOVEMENT_ID'] = {}
-            value_list['MOVEMENT_ID']['OPERATION_ID'] = row['OPERATION_ID']
-            value_list['MOVEMENT_ID']['SYSTEM_ID'] = row['SYSTEM_ID']
-        
-        return value_list
+        # 処理対象外のデータかを判定
+        if len(varsAssRecord) == 0:
+            return template_list, host_list
+        if varsAssRecord['STATUS'] == 0:
+            return template_list, host_list
+
+        movement_id = varsAssRecord['MOVEMENT_ID']
+        vars_line_array = [] # [{行番号:変数名}, ...]
+        is_success, vars_line_array = var_extractor.SimpleFillterVerSearch("TPF_", varsAssRecord['VARS_ENTRY'], vars_line_array, [], [])
+        if len(vars_line_array) == 1:
+            if movement_id not in template_list:
+                template_list[movement_id] = {}
+            row_num, tpf_var_name = vars_line_array[0]
+            template_list[movement_id][tpf_var_name] = 0
+
+        # 作業対象ホストの情報を退避
+        if movement_id not in host_list:
+            host_list[movement_id] = {}
+        operation_id = varsAssRecord['OPERATION_ID']
+        if operation_id not in host_list[movement_id]:
+            host_list[movement_id][operation_id] = {}
+        host_list[movement_id][operation_id][varsAssRecord['SYSTEM_ID']] = 0
+
+        return template_list, host_list

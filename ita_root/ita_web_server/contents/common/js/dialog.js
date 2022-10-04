@@ -51,6 +51,11 @@ open( body ) {
             d.$.dialog.addClass('dialogProcessing');
             d.$.dbody.html(`<div class="processingContainer"></div>`);
         }
+        
+        // animation
+        d.$.dialog.find('.dialogMain').on('animationend', function(){
+            $( this ).removeClass('dialogAnimation');
+        });
 
         // z-index
         const length = d.$.modalContainer.find('.showDialog').length;
@@ -140,6 +145,7 @@ show() {
         d.openInit();
         
         const zIndex = d.$.modalContainer.find('.showDialog').length + 1;
+        d.$.dialog.find('.dialogMain').addClass('dialogAnimation');
         d.$.dialog.show().addClass('showDialog active').css('z-index', zIndex );
     }
 }
@@ -157,7 +163,7 @@ openInit() {
             .prepend('<div class="modalContainerFocusFirst modalContainerFocus" tabindex="0"></div>')
             .append('<div id="modalContainer"></div><div class="modalContainerFocusLast modalContainerFocus" tabindex="0"></div>');
         d.$.modalContainer = $('#modalContainer');
-        d.onFocusEvent()
+        d.onFocusEvent();
     } else if ( $('#modalContainer').is(':hidden') ) {
         if ( !d.$.modalContainer ) d.$.modalContainer = $('#modalContainer');
         d.$.body.addClass('modalOpen')
@@ -177,7 +183,6 @@ openInit() {
 */
 onFocusEvent() {
     const d = this;
-    console.log('!')
     d.$.body.on('focusin.modal', d.focusElements, function(){
         const $f = $( this ),
               $t = d.$.modalContainer.find('.modalOverlay.active .dialog').find( d.focusElements );
@@ -212,8 +217,11 @@ dialog() {
           className = ['dialog'],
           mainStyle = [],
           mainAttrs = [],
-          mainClassName = ['dialogMain'],
+          overlayClassName = ['modalOverlay', 'showDialog'],
+          mainClassName = ['dialogMain', 'dialogAnimation'],
           html = [];
+    
+    if ( d.config.visibility === false ) overlayClassName.push('hiddenDialog');
     
     if ( d.config.width ) style.push(`width:${d.config.width};`);
     if ( d.config.minWidth ) style.push(`min-width:${d.config.minWidth};`);
@@ -232,11 +240,19 @@ dialog() {
     attrs.push(`class="${className.join(' ')}"`);
     mainAttrs.push(`class="${mainClassName.join(' ')}"`);
     
-    return `<div class="modalOverlay showDialog">`
+    return `<div class="${overlayClassName.join(' ')}">`
     + `<div class="modalFocusFirst modalFocus" tabindex="0"></div>`
     + `<div ${attrs.join(' ')}><div ${mainAttrs.join(' ')}>${html.join('')}</div></div>`
     + `<div class="modalFocusLast modalFocus" tabindex="0"></div>`
     + `</div>`;
+}
+/*
+--------------------------------------------------
+   Ready
+--------------------------------------------------
+*/
+ready() {
+    this.$.dialog.removeClass('hiddenDialog');
 }
 /*
 --------------------------------------------------
@@ -285,7 +301,10 @@ footer() {
     if ( f.button ) {
         const buttonHtml = [];
         for ( const kind in f.button ) {
-            const button = fn.html.button( f.button[kind].text, ['itaButton', 'dialogButton', 'dialogFooterMenuButton'],
+            const className = ['itaButton', 'dialogButton', 'dialogFooterMenuButton'];
+            if ( f.button[ kind ].className ) className.push( f.button[ kind ].className );
+            
+            const button = fn.html.button( f.button[kind].text, className,
                 { kind: kind, action: f.button[kind].action, style: f.button[kind].style, disabled: 'disabled'});
             buttonHtml.push(`<li class="dialogFooterMenuItem">${button}</li>`);
         }
@@ -314,9 +333,17 @@ buttonDisabled() {
 buttonEnabled() {
     const d = this;
     
-    d.$.header.add( d.$.footer ).find('.dialogButton').each(function(){
-        $( this ).prop('disabled', false );
-    });
+    d.$.header.add( d.$.footer ).find('.dialogButton').not('.dialogPositive').prop('disabled', false );
+}
+/*
+--------------------------------------------------
+   Header and Footer positive button check
+--------------------------------------------------
+*/
+buttonPositiveDisabled( flag ) {
+    const d = this;
+    
+    d.$.header.add( d.$.footer ).find('.dialogPositive').prop('disabled', flag );
 }
 /*
 --------------------------------------------------
