@@ -49,7 +49,7 @@
     "499-00901": "The Movemrnt ID value is invalid. ((Movement name:: {})",
     "499-00902": "The operation ID value is invalid.  (operation name: {})",
     "499-00903": "The execution No value is invalid. (execution No: {})",
-    "499-00904": "Status does not allow emergency stop. (execution No:{})",
+    "499-00904": "Status does not allow emergency stop. (status:{})",
     "499-00905": "System error",
     "499-00906": "The scheduled date/time value is invalid.",
     "499-00907": "Scheduled date/time cannot be specified.",
@@ -79,9 +79,9 @@
     "MSG-00031": "{} is not an integer value.( input value: {})",
     "MSG-00032": "The input value of {} is an invalid value.(input value:{})",
     "MSG-10047": "Failed to get execute instance information. (Execution No.:{})",
-    "MSG-10048": "Ansibleインタフェース情報レコード無し (作業No.:{})",
-    "MSG-10049": "Ansibleインタフェース情報レコードが単一行でない (作業No.:{})",
-    "MSG-10056": "The operation status' run process has not started. (Execution No.:{}:{})",
+    "MSG-10048": "There are no Ansible interface information records. (Execution No.:{})",
+    "MSG-10049": "The Ansible interface information records are not in single row. (Execution No.:{})",
+    "MSG-10056": "The operation status run process has not started. (Execution No.:{}:{})",
     "MSG-10059": "Start confirmation of execution process of execute instance failed.",
     "MSG-10060": "Set status to unexpected error. (Execution No.:{}:{})",
     "MSG-10065": "There are no conductor interface information records. (Execution No.:{})",
@@ -178,10 +178,5 @@
     "BKY-20210": "There is no record of the parent column group of the target column group in \"Column group list\". (column_group_name: {})",
     "BKY-20211": "The same combination of \"Menu ID\" and \"Column name (rest)\" exists in \"Menu-Column link list\". (menuID: {}, Column name rest: {})",
     "BKY-20212": "Invalid value for \"Reference item\". (Reference item: {})",
-    "BKY-20213": "Abnormal parent-child relationship of records in \"Column group creation info\".",
-    "BKY-30001": "table_name is None",
-    "BKY-30002": "pkey is None",
-    "BKY-30003": "Insert record to `{}` was Failed.",
-    "BKY-30004": "Update(restore) record to `{}` was Failed.",
-    "BKY-30005": "Update(discard) record to `{}` was Failed."
+    "BKY-20213": "Abnormal parent-child relationship of records in \"Column group creation info\"."
 }
