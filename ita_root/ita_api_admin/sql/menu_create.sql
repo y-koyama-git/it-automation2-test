@@ -118,7 +118,7 @@ CREATE TABLE T_MENU_COLUMN
     OTHER_MENU_LINK_DEFAULT_VALUE   TEXT,                                       -- プルダウン選択 初期値
     REFERENCE_ITEM                  TEXT,                                       -- プルダウン選択 参照項目
     PASSWORD_MAX_LENGTH             INT,                                        -- パスワード 最大バイト数
-    FILE_UPLOAD_MAX_SIZE            INT,                                        -- ファイルアップロード 最大バイト数
+    FILE_UPLOAD_MAX_SIZE            BIGINT,                                     -- ファイルアップロード 最大バイト数
     LINK_MAX_LENGTH                 INT,                                        -- リンク 最大バイト数
     LINK_DEFAULT_VALUE              TEXT,                                       -- リンク 初期値
     PARAM_SHEET_LINK_ID             VARCHAR(40),                                -- パラメータシート参照 連携ID
@@ -165,7 +165,7 @@ CREATE TABLE T_MENU_COLUMN_JNL
     OTHER_MENU_LINK_DEFAULT_VALUE   TEXT,                                       -- プルダウン選択 初期値
     REFERENCE_ITEM                  TEXT,                                       -- プルダウン選択 参照項目
     PASSWORD_MAX_LENGTH             INT,                                        -- パスワード 最大バイト数
-    FILE_UPLOAD_MAX_SIZE            INT,                                        -- ファイルアップロード 最大バイト数
+    FILE_UPLOAD_MAX_SIZE            BIGINT,                                     -- ファイルアップロード 最大バイト数
     LINK_MAX_LENGTH                 INT,                                        -- リンク 最大バイト数
     LINK_DEFAULT_VALUE              TEXT,                                       -- リンク 初期値
     PARAM_SHEET_LINK_ID             VARCHAR(40),                                -- パラメータシート参照 連携ID
