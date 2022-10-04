@@ -231,8 +231,6 @@ def run_unexecuted(wsDb: DBConnectWs, ansibleAg, num_of_run_instance, organizati
         bool
         err_msg
     """
-    ansibleAg.unused_allclean()
-
     condition = """WHERE `DISUSE_FLAG`=0 AND (
         ( `TIME_BOOK` IS NULL AND `STATUS_ID` = %s ) OR
         ( `TIME_BOOK` <= NOW(6) AND `STATUS_ID` = %s )
