@@ -90,9 +90,13 @@ spec:
               mountPath: /storage
             - name: contaier-volume
               mountPath: /tmp
+            - name: emptydir-vol
+              mountPath: /home/app_user
       volumes:
         - name: persistent-storage
           persistentVolumeClaim:
             claimName: ita-pvc
         - name: contaier-volume
+          emptyDir: {}
+        - name: emptydir-vol
           emptyDir: {}
