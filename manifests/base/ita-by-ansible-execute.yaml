@@ -54,6 +54,7 @@ spec:
         name: ita-by-ansible-execute
     spec:
       serviceAccountName: ita-ansible-execute-sa
+      shareProcessNamespace: true
       containers:
         - name: ita-by-ansible-execute
           image: exastro/it-automation2-test-ita-by-ansible-execute:build.c39041.20220915-113901
