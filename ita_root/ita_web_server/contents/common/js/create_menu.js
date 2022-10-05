@@ -3599,7 +3599,6 @@ const createRegistrationData = function( type ){
               // JSONデータ
               createMenuJSON['column'][key] = {
                 'create_column_id' : CREATE_ITEM_ID,
-                'menu_name_rest' : createMenuJSON['menu']['menu_name_rest'],
                 'item_name' : itemName,
                 'item_name_rest' : itemNameRest,
                 'display_order' : order,
@@ -4104,9 +4103,7 @@ const getPanelParameter = function() {
         parameterArray[key] = null;
       }
     }
-    parameterArray['number_item'] = itemCounter;
-    parameterArray['number_group'] = groupCounter;
-        
+
     return parameterArray;
 };
     
