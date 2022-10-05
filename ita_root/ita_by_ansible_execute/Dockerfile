@@ -25,6 +25,7 @@ ENV EXECUTE_INTERVAL=1
 ENV LANGUAGE=en
 ENV STORAGEPATH=/storage/
 ENV CONTAINER_BASE=docker
+ENV DEFAULT_LOCAL_TMP=/tmp
 
 RUN dnf install -y \
     gcc \
