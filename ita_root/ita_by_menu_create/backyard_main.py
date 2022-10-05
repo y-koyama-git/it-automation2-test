@@ -1232,6 +1232,11 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             str_convert_reference_item_list = None
             set_before_function = None
             
+            # カラムクラスが「5:日時」「6:日付」の場合は代入値自動登録対象外とするため、autoreg_hide_itemを1とする。
+            autoreg_hide_item = 0
+            if column_class == "5" or column_class == "6":
+                autoreg_hide_item = 1
+            
             # カラムクラスが「プルダウン選択」の場合、「他メニュー連携」のレコードからIDColumnに必要なデータを取得し変数に格納
             if column_class == "7":
                 other_menu_link_id = record.get('OTHER_MENU_LINK_ID')
@@ -1246,6 +1251,11 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                     column_class = "21"  # JsonIDColumn
                 else:
                     ref_col_name = target_other_menu_link_record.get('REF_COL_NAME')
+                
+                other_link_target_column_class = target_other_menu_link_record.get('COLUMN_CLASS')
+                # 参照元のカラムクラスが「5:日時」「6:日付」の場合は代入値自動登録対象外とするため、autoreg_hide_itemを1とする。
+                if other_link_target_column_class == "5" or other_link_target_column_class == "6":
+                    autoreg_hide_item = 1
                 
                 # 「参照項目」情報を取得
                 reference_item = record.get('REFERENCE_ITEM')
@@ -1285,11 +1295,6 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             res_valid, msg = _check_column_validation(objdbca, menu_uuid, column_name_rest)
             if not res_valid:
                 raise Exception(msg)
-            
-            # カラムクラスが「5:日時」「6:日付」の場合は代入値自動登録対象外とするため、autoreg_hide_itemを1とする。
-            autoreg_hide_item = 0
-            if column_class == "5" or column_class == "6":
-                autoreg_hide_item = 1
             
             data_list = {
                 "MENU_ID": menu_uuid,
@@ -1719,8 +1724,8 @@ def _insert_t_menu_other_link(objdbca, menu_uuid, create_table_name, record_t_me
     t_menu_other_link = 'T_MENU_OTHER_LINK'
     
     try:
-        # 他メニュー連携の対象とするカラムクラス一覧(1:SingleTextColumn, 2:MultiTextColumn, 3:NumColumn, 4:FloatColumn, 5:DateTimeColumn, 6:DateColumn, 9:FileUploadColumn, 10:HostInsideLinkTextColumn)  # noqa: E501
-        target_column_class_list = ["1", "2", "3", "4", "5", "6", "9", "10"]
+        # 他メニュー連携の対象とするカラムクラス一覧(1:SingleTextColumn, 2:MultiTextColumn, 3:NumColumn, 4:FloatColumn, 5:DateTimeColumn, 6:DateColumn, 10:HostInsideLinkTextColumn)  # noqa: E501
+        target_column_class_list = ["1", "2", "3", "4", "5", "6", "10"]
         for record in record_t_menu_column:
             column_class = str(record.get('COLUMN_CLASS'))
             required = str(record.get('REQUIRED'))
