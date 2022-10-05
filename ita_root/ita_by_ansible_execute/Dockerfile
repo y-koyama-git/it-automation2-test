@@ -79,6 +79,10 @@ RUN dnf install -y \
 &&  usermod -G wheel $USERNAME \
 &&  echo '%wheel ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
 
+COPY ./ita_root/ita_by_ansible_execute/config/centos8.repo /etc/yum.repos.d/centos8.repo
+
+RUN dnf install -y --enablerepo=baseos expect
+
 USER $USERNAME
 
 RUN mkdir ~/.config
