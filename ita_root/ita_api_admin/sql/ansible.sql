@@ -156,7 +156,7 @@ CREATE TABLE T_ANSC_TOWER_HOST
     ANSTWR_LOGIN_PASSWORD           TEXT,                                       -- パスワード
     ANSTWR_LOGIN_SSH_KEY_FILE       VARCHAR(255),                               -- ssh秘密鍵ファイル
     ANSTWR_LOGIN_SSH_KEY_FILE_PASS  TEXT,                                       -- パスフレーズ
-    ANSTWR_ISOLATED_TYPE            INT,                                        -- isolatedTower
+    ANSTWR_ISOLATED_TYPE            VARCHAR(2),                                 -- isolatedTower
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1),                                 -- 廃止フラグ
     LAST_UPDATE_TIMESTAMP           DATETIME(6),                                -- 最終更新日時
@@ -176,7 +176,7 @@ CREATE TABLE T_ANSC_TOWER_HOST_JNL
     ANSTWR_LOGIN_PASSWORD           TEXT,                                       -- パスワード
     ANSTWR_LOGIN_SSH_KEY_FILE       VARCHAR(255),                               -- ssh秘密鍵ファイル
     ANSTWR_LOGIN_SSH_KEY_FILE_PASS  TEXT,                                       -- パスフレーズ
-    ANSTWR_ISOLATED_TYPE            INT,                                        -- isolatedTower
+    ANSTWR_ISOLATED_TYPE            VARCHAR(2),                                 -- isolatedTower
     NOTE                            TEXT,                                       -- 備考
     DISUSE_FLAG                     VARCHAR(1),                                 -- 廃止フラグ
     LAST_UPDATE_TIMESTAMP           DATETIME(6),                                -- 最終更新日時
