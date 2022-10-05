@@ -62,6 +62,11 @@ spec:
               subPath: httpd-socket
             - name: contaier-volume
               mountPath: /tmp
+            - name: emptydir-vol
+              mountPath: /home/app_user
       volumes:
       - name: contaier-volume
         emptyDir: {}
+      - name: emptydir-vol
+        emptyDir: {}
+
