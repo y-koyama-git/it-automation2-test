@@ -789,6 +789,9 @@ padding: 8px;
 background-color: var(--baseColor100);
 box-shadow: 0 0 4px #666 inset;
 }
+#menu-editor-preview .tableBody {
+width: 100%; height: 100%;
+}
 .editor-tab-body.selected {
 display: block;
 }

@@ -1367,7 +1367,7 @@ setTableEvents() {
         });
         
         // 入力データを配列へ
-        tb.$.tbody.on('change', '.input', function(){
+        tb.$.tbody.on('change', '.input, .tableEditInputSelect', function(){
             const $input = $( this ),
                   value = ( $input.val() !== '')? $input.val(): null,
                   id = $input.attr('data-id'),
@@ -1377,8 +1377,14 @@ setTableEvents() {
           
             if ( changeFlag ) {
                 $input.addClass('tableEditChange');
+                if ( $input.is('.tableEditInputSelect') ) {
+                    $input.parent('.tableEditInputSelectContainer').addClass('tableEditChange');
+                }
             } else {
                 $input.removeClass('tableEditChange');
+                if ( $input.is('.tableEditInputSelect') ) {
+                    $input.parent('.tableEditInputSelectContainer').removeClass('tableEditChange');
+                }
             }
         });
         
@@ -1453,6 +1459,20 @@ setTableEvents() {
             // パスワードを削除する場合は null を入れる
             const inputValue = ( flag )? null: value;
             tb.setInputData( inputValue, id, key, tb.data.body );
+        });
+        
+        // select欄クリック時にselect2を適用する
+        tb.$.tbody.on('click', '.tableEditInputSelectValue', function(){
+            const $value = $( this ),
+                  $select = $value.next('.tableEditInputSelect'),
+                  width = $value.outerWidth();
+            
+            $value.remove();
+            
+            $select.select2({
+                dropdownAutoWidth: false,
+                width: width
+            }).select2('open');
         });
     }
     
@@ -1857,8 +1877,7 @@ filterSelectOpen( $button ) {
             placeholder: "Pulldown select",
             dropdownAutoWidth: false,
             width: width
-        });
-        $select.find('.select2-search__field').click();
+        }).select2('open');
     }).catch( function( e ) {
         fn.gotoErrPage( e.message );
     });    
@@ -2773,7 +2792,10 @@ editCellHtml( item, columnKey ) {
         case 'IDColumn': case 'LinkIDColumn': case 'RoleIDColumn':
         case 'EnvironmentIDColumn': case 'JsonIDColumn':
             if ( Object.keys( tb.data.editSelect[columnName] ).length ) {
-                return fn.html.select( fn.cv( tb.data.editSelect[columnName], {}), inputClassName, value, name, attr );
+                return `<div class="tableEditInputSelectContainer ${inputClassName.join(' ')}">`
+                + `<div class="tableEditInputSelectValue">${value}</div>`
+                + fn.html.select( fn.cv( tb.data.editSelect[columnName], {}), 'tableEditInputSelect', value, name, attr, { select2: true } )
+                + `</div>`;
             } else {
                 return fn.html.noSelect();
             }

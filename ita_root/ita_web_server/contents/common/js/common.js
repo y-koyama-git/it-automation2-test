@@ -1562,30 +1562,36 @@ html: {
             + `<label for="${id}" class="radioLabel"></label>`
         + `</div>`;
     },
-    'select': function( list, className, value, name, attrs = {}) {
-        const option = [],
+    'select': function( list, className, value, name, attrs = {}, option = {}) {
+        const selectOption = [],
               attr = inputCommon( null, name, attrs );
-        attr.push(`class="${classNameCheck( className, 'select input').join(' ')}"`);
+        
+        if ( !option.select2 === true ) {
+            className = classNameCheck( className, 'select input');
+        } else {
+            className = classNameCheck( className );
+        }
+        attr.push(`class="${className.join(' ')}"`);
         
         // 必須じゃない場合空白を追加
         if ( attrs.required === '0') {
-            option.push(`<option value=""></option>`);
+            selectOption.push(`<option value=""></option>`);
         }
         
         for ( const key in list ) {
             const val = cmn.escape( list[ key ] ),
                   optAttr = [`value="${val}"`];
             if ( value === val ) optAttr.push('selected', 'selected');
-            option.push(`<option ${optAttr.join(' ')}>${val}</option>`);
+            selectOption.push(`<option ${optAttr.join(' ')}>${val}</option>`);
         }
         
         return ``
         + `<select ${attr.join(' ')}>`
-            + option.join('')
+            + selectOption.join('')
         + `</select>`;
     },
     'noSelect': function() {
-        return '<div class="noSelect input">No data</div>';
+        return '<div class="noSelect">No data</div>';
     },
     row: function( element, className ) {
         className = classNameCheck( className, 'tr');
