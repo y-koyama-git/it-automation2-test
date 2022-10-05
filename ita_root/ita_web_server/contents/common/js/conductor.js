@@ -98,6 +98,7 @@ setup() {
     cd.$.area = cd.$.editor.find('.canvas-visible-area'),
     cd.$.canvas = cd.$.editor.find('.canvas'),
     cd.$.artBoard = cd.$.editor.find('.art-board');
+    cd.$.display = cd.$.target.find('.editor-display');
     
     // モードタイトル
     cd.modeTitleList = {
@@ -198,62 +199,6 @@ operationMenuHtml() {
         
     }
     return fn.html.operationMenu( menuList );
-    
-    /*
-    const menu = {
-        edit: [
-            { icon: 'note', type: 'selectConductor', title: getMessage.FTE02005, action: 'default', width: '100px' },
-            { icon: 'plus', type: 'registration', title: getMessage.FTE02006, action: 'positive', width: '160px', separate: true },
-            { icon: 'return', type: 'reset', title: getMessage.FTE02007, action: 'negative', width: '100px', separate: true }
-        ],
-        view: [
-            { icon: 'note', type: 'selectConductor', title: getMessage.FTE02005, action: 'default', width: '100px' },
-            { icon: 'edit', type: 'edit', title: getMessage.FTE02008, action: 'positive', width: '160px', separate: true },
-            { icon: 'square_next', type: 'execute', title: getMessage.FTE02009, action: 'positive', width: '160px' },
-            { icon: 'copy', type: 'diversion', title: getMessage.FTE02010, action: 'normal', width: '100px', separate: true },
-            { icon: 'plus', type: 'new', title: getMessage.FTE02011, action: 'normal', width: '100px'}
-        ],
-        update: [
-            { icon: 'update02', type: 'update', title: getMessage.FTE02012, action: 'positive', width: '160px'},
-            { icon: 'update01', type: 'refresh', title: getMessage.FTE02013, action: 'negative', separate: true, width: '120px'},
-            { icon: 'cross', type: 'cancel', title: getMessage.FTE02014, action: 'negative', width: '120px'},
-        ],
-        confirmation: [
-            { icon: 'check', type: 'work-confirm', title: getMessage.FTE02015, action: 'default', width: '120px', disabled: true },
-            { icon: 'cal_off', className: 'canselInstance', type: 'cansel-instance', title: getMessage.FTE02016, action: 'danger', width: '120px', disabled: true, separate: true },
-            { icon: 'stop', className: 'scramInstance', type: 'scram-instance', title: getMessage.FTE02017, action: 'danger', width: '120px', disabled: true },
-        ]
-    };
-    
-    const list = [];
-    for ( const item of menu[ cd.mode ] ) {
-        const itemClass = ['operation-menu-item'],
-              buttonClass = ['itaButton', 'operation-menu-button'],
-              attr = { action: item.action, menu: item.type };
-        if ( item.className ) buttonClass.push( item.className );
-        if ( item.disabled ) attr.disabled = 'disabled';
-        if ( item.separate ) itemClass.push('operation-menu-separate');
-        if ( item.width ) attr.style = `width:${item.width}`;
-        list.push(`<li class="${itemClass.join(' ')}">`
-            + fn.html.button( `${fn.html.icon( item.icon )}${item.title}`, buttonClass, attr )
-        + `</li>`)
-    }
-    return `
-    <ul class="operation-menu-list">
-        ${( cd.mode === 'confirmation')? `<li class="operation-menu-item">${fn.html.inputText( 'inputConductorInstanceId', cd.id, null, {}, { widthAdjustment: true, before: getMessage.FTE02018 })}</li>`: ''}
-        ${list.join('')}
-    </ul>
-    <ul class="operation-submenu-list">
-        <li class="operation-menu-item">${
-            fn.html.button( fn.html.icon('expansion') + getMessage.FTE02019, ['itaButton', `fullscreen-on operation-menu-button`],
-                { action: 'default', menu: 'fullscreen-on', style: 'min-width:160px'})
-        }</li>
-        <li class="operation-menu-item">${
-            fn.html.button( fn.html.icon('shrink') + getMessage.FTE02020, ['itaButton', `fullscreen-off operation-menu-button`],
-                { action: 'default', menu: 'fullscreen-off', style: 'min-width:160px'})
-        }</li>
-    </ul>`;
-    */
 }
 /*
 ##################################################
@@ -311,20 +256,97 @@ editViewHtml() {
         </div>
     </div>
 
-    <!--<div class="editor-display">
-        <div class="editor-explanation">
-            <dl class="explanation-list">
-                <dt class="explanation-term"><span class="mouse-icon mouse-left"></span></dt>
-                <dd class="explanation-description"></dd>
-                <dt class="explanation-term"><span class="mouse-icon mouse-left"></span></dt>
-                <dd class="explanation-description"></dd>
-                <dt class="explanation-term"><span class="mouse-icon mouse-wheel"></span></dt>
-                <dd class="explanation-description"></dd>
-                <dt class="explanation-term"><span class="mouse-icon mouse-right"></span></dt>
-                <dd class="explanation-description"></dd>
-            </dl>
+    <div class="editor-display">
+        <div class="editor-explanation-container">
         </div>
-    </div>-->`;
+    </div>`;
+}
+/*
+##################################################
+   Operation explanation
+##################################################
+*/
+operationExplanation() {
+    const cd = this;
+    
+    const $container = cd.$.display.find('.editor-explanation-container');
+    
+    const openFlag = fn.storage.get('conductorExplanation');
+    if ( openFlag === false ) $container.addClass('explanationOpen');
+    
+    const explanationListHtml = function( title, body ) {
+        return ``
+        + `<dl class="explanation-list">`
+            + `<dt class="explanation-term">${title}</dt>`
+            + `<dd class="explanation-description">${body}</dd>`
+        + `</dl>`
+    };
+    
+    const mouseList = [
+        { icon: 'mouse_wheel', title: getMessage.FTE02144, body: getMessage.FTE02145 },
+        { icon: 'mouse_right', title: getMessage.FTE02146, body: getMessage.FTE02147 }
+    ];
+    
+    if ( cd.mode === 'view') {
+        mouseList.push({ icon: 'mouse_left', title: getMessage.FTE02148, body: getMessage.FTE02152 })
+    }
+    
+    if ( cd.mode === 'confirmation') {
+        mouseList.push({ icon: 'mouse_left', title: getMessage.FTE02148, body: getMessage.FTE02153 })
+    }
+    
+    if ( cd.mode === 'edit' || cd.mode === 'update') {
+        mouseList.push({ icon: 'mouse_left', title: getMessage.FTE02148, body: getMessage.FTE02149 })
+        mouseList.push({ icon: 'mouse_left', title: getMessage.FTE02150, body: getMessage.FTE02151 })
+    }
+    
+    const mouseHtml = [];
+    for ( const item of mouseList ) {
+        const title = ``
+        + `<span class="mouse-icon">${fn.html.icon('mouse')}</span>`
+        + `<span class="mouse-onIcon">${fn.html.icon( item.icon )}</span>`
+        + item.title;
+        mouseHtml.push( explanationListHtml( title, item.body ) );
+    }
+    
+    const keyHtml = function( key ){
+        return `<span class="explanation-key">${key}</span>`;
+    };
+    
+    $container.html(`
+    <div class="editor-explanation-toggle">
+        <button class="editor-explanation-toggle-button">
+            ${fn.html.icon('cross')}
+            ${fn.html.icon('circle_question')}
+        </button>
+    </div>
+    <div class="editor-explanation mouse-operation">
+        <div class="editor-explanation-title">${getMessage.FTE02154}</div>
+        ${mouseHtml.join('')}
+    </div>`);
+    
+    // キーボード操作説明
+    if ( cd.mode === 'edit' || cd.mode === 'update') {
+        const keyboardList = [
+            { title: `${keyHtml('CTRL')}+${keyHtml('Z')}`, body: getMessage.FTE02023 },
+            { title: `${keyHtml('CTRL')}+${keyHtml('Y')}`, body: getMessage.FTE02024 },
+            { title: `${keyHtml('CTRL')}+${keyHtml('A')}`, body: getMessage.FTE02156 },
+            { title: keyHtml('DELETE'), body: getMessage.FTE02157 },
+            { title: keyHtml( getMessage.FTE02160 ), body: getMessage.FTE02158 },
+            { title: `${keyHtml('+')}or${keyHtml('-')}`, body: getMessage.FTE02159 }
+        ];
+
+        const keyboardHtml = [];
+        for ( const item of keyboardList ) {
+            keyboardHtml.push( explanationListHtml( item.title, item.body ) );
+        }
+
+        $container.append(`
+        <div class="editor-explanation keyboard-operartion">
+            <div class="editor-explanation-title">${getMessage.FTE02155}</div>
+            ${keyboardHtml.join('')}
+        </div>`);
+    }
 }
 /*
 ##################################################
@@ -483,6 +505,9 @@ conductorMode( mode ) {
     
     // モードテキスト切替
     cd.$.mode.text( cd.modeTitleList[ cd.mode ] );
+    
+    // 操作説明
+    cd.operationExplanation();
 
     // パネル切替
     cd.select = [];
@@ -856,6 +881,20 @@ initEvents() {
         });
         cd.$.menu.find('.inputConductorInstanceId').trigger('input');
     }
+    
+    // --------------------------------------------------
+    // 操作説明
+    // --------------------------------------------------
+    cd.$.display.on('click', '.editor-explanation-toggle-button', function(){
+        const $container = cd.$.display.find('.editor-explanation-container');
+        $container.toggleClass('explanationOpen');
+        if ( $container.is('.explanationOpen') ) {
+            fn.storage.remove('conductorExplanation');
+        } else {
+            fn.storage.set('conductorExplanation', true );
+        }
+    });
+    
 }
 /*
 ##################################################
@@ -1096,7 +1135,6 @@ initCanvas() {
     
     // キャンバスのスケーリング
     cd.editor.scalingNums = [
-        0.025, 0.05, 0.075,
         0.1, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9,
         1, 1.25, 1.5 , 1.75, 2, 2.5, 3, 4, 5, 6, 7, 8, 9
     ];
@@ -2450,6 +2488,85 @@ initNode() {
             }
           }
         }
+    });
+    
+    // --------------------------------------------------
+    // キーボード操作
+    // --------------------------------------------------
+    cd.$.window.on('keydown.conductorKeyboard', function( e ) {
+
+        // Edit時のみ
+        if ( cd.mode === 'edit' || cd.mode === 'update') {
+
+          // キャンバスの上にいるかどうか
+          if ( cd.$.area.is('.hover') && cd.checkAction() ) {
+
+            // 十字キー
+            if ( e.keyCode >= 37 && e.keyCode <= 40 ) {
+              if ( cd.select.length ) {
+                let x=0,y=0;
+                switch( e.keyCode ) {
+                  case 37: x = -1; break;
+                  case 38: y = -1; break;
+                  case 39: x = 1; break;
+                  case 40: y = 1; break;
+                }
+                if ( e.shiftKey ) {
+                  x = x * 10;
+                  y = y * 10;
+                }
+                cd.conductorHistory().move( cd.select, x, y );
+                cd.nodeMoveSet( cd.select, x, y, 'relative');
+              }      
+            }
+            switch( e.keyCode ) {
+              // Ctrl + A
+              case 65:
+                if ( e.ctrlKey ) {
+                  e.preventDefault();
+                  cd.nodeSelect();
+                }
+                break;
+              // Ctrl + Z
+              case 90:
+                if ( e.ctrlKey ) {
+                  e.preventDefault();
+                  cd.conductorHistory().undo();
+                }
+                break;
+              // Ctrl + Y
+              case 89:
+                if ( e.ctrlKey ) {
+                  e.preventDefault();
+                  cd.conductorHistory().redo();
+                }
+                break;
+              // Delete
+              case 46:
+                if ( cd.select.length ) {
+                  cd.conductorHistory().nodeRemove( cd.select );
+                  cd.nodeRemove( cd.select );
+                }
+                break;
+              // +  
+              case 107:
+                if ( cd.select.length === 1 ) {
+                  cd.addBranch( cd.select[ 0 ] );
+                }
+                break;
+              // -  
+              case 109:
+                if ( cd.select.length === 1 ) {
+                  cd.removeBranch( cd.select[ 0 ] );
+                }
+                break;
+              default:    
+            }
+
+          }
+
+        }
+
     });
 }
 /*
@@ -6268,8 +6385,6 @@ refreshConductorStatus() {
     cd.confirmation.refreshTimerId = setTimeout(function(){
         cd.updateConductorStatus();
     }, refreshInterval );
-    
-    console.log(  cd.confirmation.refreshTimerId);
 }
 /*
 ##################################################

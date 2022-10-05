@@ -28,12 +28,13 @@
 // 作業実行            04001～05000
 // 作業状態確認        05001～06000
 // 
-//
+// Ui common           10001～11000
 
 
 const getMessage = ( function() {
 
     const message = {
+        // Default menu
         'FTE00001' : "Filter",
         'FTE00002' : "Close",
         'FTE00003' : "Open",
@@ -109,6 +110,8 @@ const getMessage = ( function() {
         'FTE00073' : "Update",
         'FTE00074' : "Discard",
         'FTE00075' : "Restore",
+        
+        // Create menu
         'FTE01001' : "Item",
         'FTE01002' : "Group",
         'FTE01003' : "Cancel",
@@ -258,6 +261,8 @@ const getMessage = ( function() {
         'FTE01147' : "Item name(rest)",
         'FTE01148' : "Full screen",
         'FTE01149' : "Exit full screen",
+        
+        // Conductor
         'FTE02001' : "Conductor instance id is not yet set.",
         'FTE02002' : "Enter the Conductor instance ID and click the Work Confirm button, or",
         'FTE02003' : "Conductor list",
@@ -401,6 +406,23 @@ const getMessage = ( function() {
         'FTE02141' : "Conductor execution log.",
         'FTE02142' : "Menu",
         'FTE02143' : "Auto-input",
+        'FTE02144' : "Mouse wheel",
+        'FTE02145' : "Enlargement / Reduction the screen",
+        'FTE02146' : "Mouse right drag",
+        'FTE02147' : "Screen movement",
+        'FTE02148' : "Mouse left click",
+        'FTE02149' : "Node select / Delete connection line",
+        'FTE02150' : "Mouse left drag",
+        'FTE02151' : "Node move / Node multiple select",
+        'FTE02152' : "Node select",
+        'FTE02153' : "Node select / Check execution status",
+        'FTE02154' : "Mouse operation",
+        'FTE02155' : "Keyboard operation",
+        'FTE02156' : "Select all nodes",
+        'FTE02157' : "Delete selected node",
+        'FTE02158' : "Move selected node",
+        'FTE02159' : "Branch addition/deletion of the selected branch node",
+        'FTE02160' : "Arrow key",
         
         // Execution
         'FTE05001' : "Execution No.",
