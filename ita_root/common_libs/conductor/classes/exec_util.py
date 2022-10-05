@@ -3510,7 +3510,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             movement_name = node_filter_data.get('parameter').get('instance_source_movement_name')
             
             # conductor
-            conductor_id = node_options.get('instance_data').get('conductor').get('conductor_id')
+            conductor_id = node_options.get('instance_data').get('conductor').get('conductor_instance_id')
             conductor_name = node_options.get('instance_data').get('conductor').get('conductor_name')
             
             # operation
