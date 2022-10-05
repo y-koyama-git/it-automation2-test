@@ -938,6 +938,7 @@ class loadTable():
             ARGS:
                 parameter:検索条件
                 mode
+                    input:内部処理用
                     nomal:本体 / jnl:履歴 / jnl_all:履歴 /
                     excel:本体Excel用 / excel_jnl:履歴Excel用 / excel_jnl_all:全履歴Excel用 /
                     count:件数 / count_jnl:履歴件数 / count_jnl_all:全履歴件数
@@ -960,7 +961,7 @@ class loadTable():
             column_list = self.get_column_list()
             primary_key = self.get_primary_key()
             # テーブル本体
-            if mode in ['nomal', 'excel', 'count']:
+            if mode in ['input', 'nomal', 'excel', 'count']:
                 # VIEWが設定されている場合はVIEWを対象とする
                 view_name = self.get_view_name()
                 if view_name:
@@ -1098,7 +1099,7 @@ class loadTable():
                     str_orderby = ''
                     where_str = where_str + str_orderby
 
-            if mode in ['nomal', 'excel', 'jnl', 'excel_jnl', 'jnl_all', 'excel_jnl_all']:
+            if mode in ['input', 'nomal', 'excel', 'jnl', 'excel_jnl', 'jnl_all', 'excel_jnl_all']:
                 # データ取得
                 tmp_result = self.objdbca.table_select(table_name, where_str, bind_value_list)
 
