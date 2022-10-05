@@ -223,6 +223,8 @@ class DockerMode(AnsibleAgent):
 
 class KubernetesMode(AnsibleAgent):
 
+    NAMESPACE = 'exastro-it-automation'
+
     def __init__(self):
         """
         コンストラクタ
@@ -238,8 +240,7 @@ class KubernetesMode(AnsibleAgent):
 
         # create namespace
         # error(namespace already exists でも処理続行)
-        namespace = 'ita-ansible-agent'
-        complete_process = subprocess.run(["/usr/local/bin/kubectl", "create", "namespace", namespace], capture_output=True)
+        complete_process = subprocess.run(["/usr/local/bin/kubectl", "create", "namespace", KubernetesMode.NAMESPACE], capture_output=True)
         g.applogger.debug("return_code: %s" % complete_process.returncode)
         g.applogger.debug("stdout:\n%s" % complete_process.stdout.decode('utf-8'))
         g.applogger.debug("stderr:\n%s" % complete_process.stderr.decode('utf-8'))
@@ -277,9 +278,9 @@ class KubernetesMode(AnsibleAgent):
             ))
 
         # create command string
-        command = ["/usr/local/bin/kubectl", "apply", "-f", exec_manifest, "-n", namespace]
+        command = ["/usr/local/bin/kubectl", "apply", "-f", exec_manifest, "-n", KubernetesMode.NAMESPACE]
 
-        # kubectl apply -f file -n ita-ansible-agent
+        # kubectl apply -f file -n namespace
         cp = subprocess.run(' '.join(command), capture_output=True, shell=True, text=True)
 
         if cp.returncode == 0:
@@ -307,14 +308,12 @@ class KubernetesMode(AnsibleAgent):
         """
         # print("method: container_kill")
 
-        namespace = 'ita-ansible-agent'
-
         # create command string
         ansible_role_driver_middle_path = "driver/ansible/legacy_role"
         container_mount_path_driver = "/storage/%s/%s/%s/%s" % (self._organization_id, self._workspace_id, ansible_role_driver_middle_path, execution_no)  # noqa E501
         exec_manifest = "%s/.tmp/.k8s_pod.yml" % (container_mount_path_driver)
 
-        command = ["/usr/local/bin/kubectl", "delete", "-f", exec_manifest, "-n", namespace, "--force=true", "--grace-period=0"]
+        command = ["/usr/local/bin/kubectl", "delete", "-f", exec_manifest, "-n", KubernetesMode.NAMESPACE, "--force=true", "--grace-period=0"]
 
         cp = subprocess.run(' '.join(command), capture_output=True, shell=True, text=True)
         if cp.returncode != 0:
@@ -342,12 +341,10 @@ class KubernetesMode(AnsibleAgent):
         """
         # print("method: _check_status")
 
-        namespace = 'ita-ansible-agent'
-
         # create command string
         unique_name = self.get_unique_name(execution_no)
         unique_name = re.sub(r'_', '-', unique_name).lower()
-        command = ["/usr/local/bin/kubectl", "get", "pod", "-n", namespace, 'it-ansible-agent-' + unique_name, "-o", "json"]
+        command = ["/usr/local/bin/kubectl", "get", "pod", "-n", KubernetesMode.NAMESPACE, 'it-ansible-agent-' + unique_name, "-o", "json"]
 
         cp = subprocess.run(' '.join(command), capture_output=True, shell=True, text=True)
         if cp.returncode != 0:
