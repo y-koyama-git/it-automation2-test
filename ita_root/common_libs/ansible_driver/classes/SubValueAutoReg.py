@@ -1001,6 +1001,10 @@ class SubValueAutoReg():
                             warning_flag = 1
                             # 次のデータへ
                             continue
+                    else:
+                        tmp_col_val = json.loads(col_val_key).values()
+                        for value in tmp_col_val:
+                            col_val = value
                     
                     ret = self.getMenuColumnInfo(in_tableNameToMenuIdList[table_name], col_name, WS_DB)
                     col_name_rest = ret[0]

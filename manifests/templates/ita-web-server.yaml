@@ -11,6 +11,7 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
+# {{ param01 }} {{ param02 }} {{ param03 }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -62,6 +63,11 @@ spec:
               subPath: httpd-socket
             - name: contaier-volume
               mountPath: /tmp
+            - name: emptydir-vol
+              mountPath: /home/app_user
       volumes:
       - name: contaier-volume
         emptyDir: {}
+      - name: emptydir-vol
+        emptyDir: {}
+

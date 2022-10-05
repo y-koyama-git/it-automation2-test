@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
         - name: ita-by-menu-create
-          image: exastro/it-automation2-test-ita-by-menu-create:Integration-test.9b3983.20220921-113215
+          image: exastro/it-automation2-test-ita-by-menu-create:Integration-test.13dc22.20221004-213151
           imagePullPolicy: Always
           # resources:
           #   requests:
@@ -54,9 +54,14 @@ spec:
               mountPath: /storage
             - name: contaier-volume
               mountPath: /tmp
+            - name: emptydir-vol
+              mountPath: /home/app_user
       volumes:
         - name: persistent-storage
           persistentVolumeClaim:
             claimName: ita-pvc
         - name: contaier-volume
           emptyDir: {}
+        - name: emptydir-vol
+          emptyDir: {}
+

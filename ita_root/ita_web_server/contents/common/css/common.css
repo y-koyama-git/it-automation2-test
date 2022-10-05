@@ -553,14 +553,6 @@ margin-bottom: 2px;
 line-height: 22px;
 }
 
-.noSelect {
-display: flex;
-justify-content: center;
-align-items: center;
-color: var(--black50);
-user-select: none;
-}
-
 /* 必須 */
 .required {
 display: inline-block;
@@ -1121,6 +1113,22 @@ left: 0; bottom: 0;
 width: 100%; height: 16px;
 background-image: linear-gradient(rgba(0,0,0,.0),rgba(0,0,0,.1));
 }
+.menuNavi::-webkit-scrollbar {
+  width: 12px;
+}
+.menuNavi::-webkit-scrollbar-track {
+  background: #222;
+}
+.menuNavi::-webkit-scrollbar-thumb {
+  background: #999;
+}
+/* Firefox */
+.menuNavi {
+  scrollbar-width: thin;
+  scrollbar-color: #999 #222;
+}
+
+
 .menuSearch {
 flex: 0 0 48px;
 display: flex;
@@ -1791,7 +1799,6 @@ color: var(--black25);
 .tableBody {
 overflow: auto;
 flex: 1 1 auto;
-width: 100%; height: 100%;
 background-color: rgba(0,0,0,.05);
 border: 1px solid rgba( 0,0,0,.1);
 }
@@ -2197,6 +2204,64 @@ border-color: #FFDD00;
 }
 .editType.restore  {
 border-color: #0078DC;
+}
+.noSelect,
+.tableEditInputSelectValue {
+display: block;
+width: 120px;
+min-width: 100%; min-height: 32px;
+margin: 0; padding: 0 8px;
+background-color: var(--white100);
+border: 1px solid var(--black40);
+border-radius: 4px;
+font-family: "Osaka-mono", "MS Gothic", "monospace";
+letter-spacing: .75px;
+font-size: 14px;
+outline: none;
+}
+.noSelect {
+position: relative;
+display: flex;
+justify-content: center;
+align-items: center;
+padding-right: 20px;
+background-color: rgba( 0,0,0,.075 );
+color: var(--black50);
+user-select: none;
+cursor: no-drop;
+}
+.tableEditInputSelectContainer {
+overflow: hidden;
+height: 32px;
+}
+.tableEditInputSelectValue {
+position: relative;
+display: flex;
+align-items: center;
+padding-right: 20px;
+cursor: pointer;
+}
+.noSelect::after,
+.tableEditInputSelectValue::after {
+content: '';
+position: absolute;
+right: 6px; top: 50%;
+transform: translateY(-50%);
+width: 0; height: 0;
+border-color: #888 transparent transparent transparent;
+border-style: solid;
+border-width: 5px 4px 0 4px;
+}
+.noSelect::after {
+border-top-color: var(--black25);
+}
+.tableEditInputSelectContainer .select2-selection {
+height: 32px;
+}
+.tableEditInputSelectContainer.tableEditChange .tableEditInputSelectValue,
+.tableEditInputSelectContainer.tableEditChange .select2-selection {
+background-color: #DFF4CF;
+border-color: #60C60D;
 }
 
 /* Filter */
@@ -3013,10 +3078,20 @@ float: none;
 color: #AAA;
 }
 .select2-results__option {
+min-height: 30px;
 line-height: 1.4;
 white-space: normal;
 word-break: break-all;
 font-size: 12px;
+}
+body > .select2-container .select2-search__field {
+border-radius: 4px;
+outline: none;
+}
+.select2-container--open .select2-selection--single,
+body > .select2-container .select2-search__field:focus {
+background-color: var(--focusBackgroundColor);
+border-color: var(--focusColor);
 }
 /*
 

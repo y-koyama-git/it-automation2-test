@@ -57,7 +57,7 @@ spec:
       shareProcessNamespace: true
       containers:
         - name: ita-by-ansible-execute
-          image: exastro/it-automation2-test-ita-by-ansible-execute:Integration-test.9b3983.20220921-113111
+          image: exastro/it-automation2-test-ita-by-ansible-execute:Integration-test.13dc22.20221004-213149
           imagePullPolicy: Always
           resources:
             requests:
@@ -72,6 +72,11 @@ spec:
             runAsUser: 1000
             runAsGroup: 1000
             runAsNonRoot: true
+          env:
+            - name: ANSIBLE_AGENT_IMAGE
+              value: "exastro/ita_ansible_agent"
+            - name: ANSIBLE_AGENT_IMAGE_TAG
+              value: "0.3"
           envFrom:
             - secretRef:
                 name: secret-ita-mariadb

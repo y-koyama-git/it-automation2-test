@@ -170,7 +170,7 @@ class IDColumn(Column):
         if len(where_equal) > 0:
             for where_value in where_equal:
                 for key, value in id_data_list.items():
-                    if where_value == value:
+                    if str(where_value) == str(value):
                         tmp_values[key] = value
         else:
             tmp_values = id_data_list

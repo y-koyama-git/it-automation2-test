@@ -206,7 +206,10 @@ def insert_execution_list(objdbca, run_mode, driver_id, operation_row, movement_
     # 収集状況/収集ログ
     # ExecStsInstTableConfig[RestNameConfig["COLLECT_LOG"]]
     # Conductorインスタンス番号
-    # ExecStsInstTableConfig[RestNameConfig["CONDUCTOR_INSTANCE_NO"]] = conductor_id
+
+    if conductor_id:                           
+        ExecStsInstTableConfig[RestNameConfig["CONDUCTOR_INSTANCE_NO"]] = conductor_id
+
     # オプションパラメータ
     # ExecStsInstTableConfig[RestNameConfig["I_ANS_EXEC_OPTIONS"]] = str(inforow['ANSIBLE_EXEC_OPTIONS']) + ' ' + str(movement_row['ANS_EXEC_OPTIONS'])
     # 分割された実行ログ情報

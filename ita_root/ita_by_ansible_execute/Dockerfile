@@ -25,6 +25,7 @@ ENV EXECUTE_INTERVAL=1
 ENV LANGUAGE=en
 ENV STORAGEPATH=/storage/
 ENV CONTAINER_BASE=docker
+ENV DEFAULT_LOCAL_TMP=/tmp
 
 RUN dnf install -y \
     gcc \
@@ -77,6 +78,10 @@ RUN dnf install -y \
     autopep8 \
 &&  usermod -G wheel $USERNAME \
 &&  echo '%wheel ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+
+COPY ./ita_root/ita_by_ansible_execute/config/centos8.repo /etc/yum.repos.d/centos8.repo
+
+RUN dnf install -y --enablerepo=baseos expect
 
 USER $USERNAME
 

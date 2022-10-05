@@ -28,12 +28,13 @@
 // 作業実行            04001～05000
 // 作業状態確認        05001～06000
 // 
-//
+// Ui common           10001～11000
 
 
 const getMessage = ( function() {
 
     const message = {
+        // Default menu
         'FTE00001' : "Filter",
         'FTE00002' : "Close",
         'FTE00003' : "Open",
@@ -109,6 +110,8 @@ const getMessage = ( function() {
         'FTE00073' : "Update",
         'FTE00074' : "Discard",
         'FTE00075' : "Restore",
+        
+        // Create menu
         'FTE01001' : "Item",
         'FTE01002' : "Group",
         'FTE01003' : "Cancel",
@@ -219,7 +222,7 @@ const getMessage = ( function() {
         'FTE01108' : "Enter the number of repeats.\nInteger value from 2 to 99 can be entered.",
         'FTE01109' : "Selecte \"String\", \"Multi string\", \"Integer\", \"Decimal number\", \"Date\", \"Date/time\",\n\"Pull down selection\", \"Password\", \"File upload\", \"Link\" from the pulldown menu.",
         'FTE01110' : "Enter the maximum number of bytes.\nThe maximum size is 8192 bytes.\nFor editing, it is possible to increase it from the original value.\nThe byte count of half-width alphanumeric characters are equivalent to the number of characters.\nFor full-width characters, the number of characters x 3 + 2 bytes is required.",
-        'FTE01111' : "If you want to check input values with regular expression, enter the regular expression.\nThe maximum size is 8192 bytes.\nExample: For half-width numeric items of 0 bytes or more: /^[0-9]*$/\n For half-width alphanumeric characters of 1 byte or more:/^[a-zA-Z0-9]+$/",
+        'FTE01111' : "If you want to check input values with regular expression, enter the regular expression.\nThe maximum size is 8192 bytes.\nExample: For half-width numeric items of 0 bytes or more: ^[0-9]*$\n For half-width alphanumeric characters of 1 byte or more: ^[a-zA-Z0-9]+$",
         'FTE01112' : "Enter the minimum value of the column.\nFor editing, it is possible to reduce it from the original value.\nInteger value from -2147483648 to 2147483647 can be entered.\nThe value will be -2147483648 if not entered.\nPlease enter value smaller than the maximum value.",
         'FTE01113' : "Enter the maximum value of the column.\nFor editing, it is possible to increase it from the original value.\nInteger value from -2147483648 to 2147483647 can be entered.\nThe value will be 2147483647 if not entered.\nPlease enter value larger than the minimum value.",
         'FTE01114' : "Enter the minimum value of the column.\nFor editing, it is possible to reduce it from the original value.\nInteger value from -99999999999999 to 99999999999999 with total digit for whole\nnumber + fraction part less than 14 digits can be entered.\nThe value will be -99999999999999 if not entered.\nPlease enter value smaller than the maximum value.",
@@ -258,6 +261,8 @@ const getMessage = ( function() {
         'FTE01147' : "Item name(rest)",
         'FTE01148' : "Full screen",
         'FTE01149' : "Exit full screen",
+        
+        // Conductor
         'FTE02001' : "Conductor instance id is not yet set.",
         'FTE02002' : "Enter the Conductor instance ID and click the Work Confirm button, or",
         'FTE02003' : "Conductor list",
@@ -401,6 +406,23 @@ const getMessage = ( function() {
         'FTE02141' : "Conductor execution log.",
         'FTE02142' : "Menu",
         'FTE02143' : "Auto-input",
+        'FTE02144' : "Mouse wheel",
+        'FTE02145' : "Enlargement / Reduction the screen",
+        'FTE02146' : "Mouse right drag",
+        'FTE02147' : "Screen movement",
+        'FTE02148' : "Mouse left click",
+        'FTE02149' : "Node select / Delete connection line",
+        'FTE02150' : "Mouse left drag",
+        'FTE02151' : "Node move / Node multiple select",
+        'FTE02152' : "Node select",
+        'FTE02153' : "Node select / Check execution status",
+        'FTE02154' : "Mouse operation",
+        'FTE02155' : "Keyboard operation",
+        'FTE02156' : "Select all nodes",
+        'FTE02157' : "Delete selected node",
+        'FTE02158' : "Move selected node",
+        'FTE02159' : "Branch addition/deletion of the selected branch node",
+        'FTE02160' : "Arrow key",
         
         // Execution
         'FTE05001' : "Execution No.",

@@ -182,7 +182,7 @@ def external_valid_menu_after(objdbca, objtable, option):
         if option["cmd_type"] == "Register" or option["cmd_type"] == "Update" or option["cmd_type"] == "Restore":
             if Array_vars_use is True or LCA_vars_use is True:
                 data_list = {primary_key_name: PkeyID, "ROLE_ONLY_FLAG": "1"}
-                objdbca.table_update(table_name, data_list, primary_key_name, True)
+                objdbca.table_update(table_name, data_list, primary_key_name, False)
                 # legacy/pionnerのplaybookでテンプレート変数を使用しているか確認
                 table_name = "T_ANSC_COMVRAS_USLIST"
                 where_str = "WHERE VAR_NAME= %s AND FILE_ID in ('1','2') AND DISUSE_FLAG='0'"
@@ -205,7 +205,7 @@ def external_valid_menu_after(objdbca, objtable, option):
                         boolExecuteContinue = False
             else:
                 data_list = {primary_key_name: PkeyID, "ROLE_ONLY_FLAG": "0"}
-                objdbca.table_update(table_name, data_list, primary_key_name, True)
+                objdbca.table_update(table_name, data_list, primary_key_name, False)
 
     # グローバル変数が定義されている場合に共通変数利用リストを更新
     FileID = 4

@@ -3599,7 +3599,6 @@ const createRegistrationData = function( type ){
               // JSONデータ
               createMenuJSON['column'][key] = {
                 'create_column_id' : CREATE_ITEM_ID,
-                'menu_name_rest' : createMenuJSON['menu']['menu_name_rest'],
                 'item_name' : itemName,
                 'item_name_rest' : itemNameRest,
                 'display_order' : order,
@@ -3653,7 +3652,11 @@ const createRegistrationData = function( type ){
                   }
                   createMenuJSON['column'][key]['pulldown_selection_default_value'] = $column.find('.pulldown-default-select').val();
                   let reference_item = $column.find('.reference-item').attr('data-reference-item-id');
-                  reference_item = reference_item.split(',');
+                  if (reference_item){
+                    reference_item = reference_item.split(',');
+                  }else{
+                    reference_item = null
+                  }
                   createMenuJSON['column'][key]['reference_item'] = reference_item;
                   break;
                 case '8':
@@ -4104,9 +4107,7 @@ const getPanelParameter = function() {
         parameterArray[key] = null;
       }
     }
-    parameterArray['number_item'] = itemCounter;
-    parameterArray['number_group'] = groupCounter;
-        
+
     return parameterArray;
 };
     

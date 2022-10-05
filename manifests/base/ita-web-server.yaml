@@ -36,7 +36,7 @@ spec:
     spec:
       containers:
         - name: ita-web-server
-          image: exastro/it-automation2-test-ita-web-server:Integration-test.9b3983.20220921-113105
+          image: exastro/it-automation2-test-ita-web-server:Integration-test.13dc22.20221004-213147
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -62,6 +62,11 @@ spec:
               subPath: httpd-socket
             - name: contaier-volume
               mountPath: /tmp
+            - name: emptydir-vol
+              mountPath: /home/app_user
       volumes:
       - name: contaier-volume
         emptyDir: {}
+      - name: emptydir-vol
+        emptyDir: {}
+
