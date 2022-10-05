@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
         - name: ita-by-conductor-synchronize
-          image: exastro/it-automation2-test-ita-by-conductor-synchronize:Integration-test.9b3983.20220921-113107
+          image: exastro/it-automation2-test-ita-by-conductor-synchronize:Integration-test.13dc22.20221004-213255
           imagePullPolicy: IfNotPresent
           # resources:
           #   requests:

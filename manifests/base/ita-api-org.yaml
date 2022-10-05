@@ -40,7 +40,7 @@ spec:
     spec:
       containers:
         - name: ita-api-organization
-          image: exastro/it-automation2-test-ita-api-organization:Integration-test.9b3983.20220921-113105
+          image: exastro/it-automation2-test-ita-api-organization:Integration-test.13dc22.20221004-213152
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
