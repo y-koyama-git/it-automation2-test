@@ -1001,6 +1001,10 @@ class SubValueAutoReg():
                             warning_flag = 1
                             # 次のデータへ
                             continue
+                    else:
+                        tmp_col_val = json.loads(col_val_key).values()
+                        for value in tmp_col_val:
+                            col_val = value
                     
                     ret = self.getMenuColumnInfo(in_tableNameToMenuIdList[table_name], col_name, WS_DB)
                     col_name_rest = ret[0]
@@ -1024,6 +1028,7 @@ class SubValueAutoReg():
                             col_file_md5 = self.md5_file(col_filepath)
 
                     # 代入値管理の登録に必要な情報を生成
+                    print("col_val:" + str(col_val))
                     ret = self.makeVarsAssignData(table_name,
                                         col_name,
                                         col_val,
