@@ -123,6 +123,7 @@ class SubValueAutoReg():
         lv_tableNameToMenuIdList = ret[1]
         lv_tabColNameToValAssRowList = ret[2]
         lv_tableNameToPKeyNameList = ret[3]
+        lv_tableNameToMenuNameRestList = ret[4]
         
         # 紐付メニューへのSELECT文を生成する。
         ret = self.createQuerySelectCMDB(lv_tableNameToMenuIdList, lv_tabColNameToValAssRowList, lv_tableNameToPKeyNameList)
@@ -135,7 +136,7 @@ class SubValueAutoReg():
         g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
         
         warning_flag = 0
-        ret = self.getCMDBdata(lv_tableNameToSqlList, lv_tableNameToMenuIdList, lv_tabColNameToValAssRowList, warning_flag, WS_DB)
+        ret = self.getCMDBdata(lv_tableNameToSqlList, lv_tableNameToMenuIdList, lv_tabColNameToValAssRowList, lv_tableNameToMenuNameRestList, warning_flag, WS_DB)
         lv_varsAssList = ret[0]
         lv_arrayVarsAssList = ret[1]
         warning_flag = ret[2]
@@ -858,7 +859,7 @@ class SubValueAutoReg():
         
         return True, ina_if_info, err_code
     
-    def getCMDBdata(self, in_tableNameToSqlList, in_tableNameToMenuIdList, in_tabColNameToValAssRowList, warning_flag, WS_DB):
+    def getCMDBdata(self, in_tableNameToSqlList, in_tableNameToMenuIdList, in_tabColNameToValAssRowList, in_tableNameToMenuNameRestList, warning_flag, WS_DB):
         """
         CMDB代入値紐付対象メニューから具体値を取得する。
         
@@ -866,6 +867,7 @@ class SubValueAutoReg():
             in_tableNameToSqlList: CMDB代入値紐付メニュー毎のSELECT文配列
             in_tableNameToMenuIdList: テーブル名配列
             in_tabColNameToValAssRowList: カラム情報配列
+            in_tableNameToMenuNameRestList: メニュー名(REST)配列
             ina_vars_ass_list: 一般変数・複数具体値変数用 代入値登録情報配列
             ina_array_vars_ass_list: 多次元変数配列変数用 代入値登録情報配列
             WS_DB: WorkspaceDBインスタンス
@@ -967,6 +969,11 @@ class SubValueAutoReg():
                 
                 # 再度カラムをチェック
                 if table_name in in_tabColNameToValAssRowList:
+                    objmenu = load_table.loadTable(WS_DB, "")
+                    mode = "input"
+                    filter_parameter = {"discard": {"LIST": ["0"]}}
+                    status_code, tmp_result, msg = objmenu.rest_filter(filter_parameter, mode)
+                    print("tmp_result:" + str(tmp_result))
                     if col_name not in in_tabColNameToValAssRowList[table_name]:
                         continue
                 
@@ -1348,6 +1355,7 @@ class SubValueAutoReg():
         out_menu_id = ""
 
         sql = " SELECT TBL_A.MENU_ID, "
+        sql = " SELECT TBL_A.MENU_NAME_REST "
         sql += " FROM T_COMN_MENU TBL_A "
         sql += " WHERE TBL_A.MENU_NAME_JA = ( "
         sql += "  SELECT TBL_B.MENU_NAME_JA "
@@ -1574,6 +1582,7 @@ class SubValueAutoReg():
         sql = " SELECT                                                            \n"
         sql += "   TBL_A.COLUMN_ID                                             ,  \n"
         sql += "   TBL_A.MENU_ID                                               ,  \n"
+        sql += "   TBL_D.MENU_NAME_REST                                        ,  \n"
         sql += "   TBL_C.TABLE_NAME                                            ,  \n"
         sql += "   TBL_C.DISUSE_FLAG  AS TBL_DISUSE_FLAG                       ,  \n"
         sql += "   TBL_A.COLUMN_LIST_ID                                        ,  \n"
@@ -1763,6 +1772,7 @@ class SubValueAutoReg():
 
         inout_tableNameToMenuIdList = {}
         inout_tabColNameToValAssRowList = {}
+        inout_tableNameToMenuNameRestList = {}
         idx = 0
         for data in data_list:
             # CMDB代入値紐付メニューが廃止されているか判定
@@ -1852,6 +1862,7 @@ class SubValueAutoReg():
                 key_vars_attr = ret[1]
 
             inout_tableNameToMenuIdList[data['TABLE_NAME']] = data['MENU_ID']
+            inout_tableNameToMenuNameRestList[data['TABLE_NAME']] = data['MENU_NAME_REST']
             
             # PasswordColumnかを判定
             key_sensitive_flg = AnscConst.DF_SENSITIVE_OFF
@@ -1889,7 +1900,7 @@ class SubValueAutoReg():
             inout_tableNameToPKeyNameList[data['TABLE_NAME']] = pk_name[1][0]
             idx += 1
 
-        return True, inout_tableNameToMenuIdList, inout_tabColNameToValAssRowList, inout_tableNameToPKeyNameList
+        return True, inout_tableNameToMenuIdList, inout_tabColNameToValAssRowList, inout_tableNameToPKeyNameList, inout_tableNameToMenuNameRestList
     
     def valAssColumnValidate(self, 
                             in_col_type, 
