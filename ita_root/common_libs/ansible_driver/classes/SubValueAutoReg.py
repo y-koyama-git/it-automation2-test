@@ -1028,7 +1028,6 @@ class SubValueAutoReg():
                             col_file_md5 = self.md5_file(col_filepath)
 
                     # 代入値管理の登録に必要な情報を生成
-                    print("col_val:" + str(col_val))
                     ret = self.makeVarsAssignData(table_name,
                                         col_name,
                                         col_val,
