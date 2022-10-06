@@ -1,0 +1,87 @@
+global:
+  dbAccountInfo: secret-ita-mariadb
+  dbConnectionInfo: params-ita-mariadb
+  itaBaseInfo: params-ita-common
+  itaByMenuCreateInfo: params-ita-by-menu-create
+  itaApiOrg:  params-ita-org
+
+  claimName: ita-pvc
+
+# Default values for ita-by-menu-create.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+name: ita-by-menu-create
+replicaCount: 1
+
+extraenv:
+  EXECUTE_INTERVAL: "1"
+  STORAGEPATH: /storage/
+  CONTAINER_BASE: "kubernetes"
+
+image:
+  repository: exastro/it-automation2-test-ita-by-menu-create
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: Integration-test.13dc22.20221004-213151
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+volume:
+  mountPath:
+    name1: /storage
+    subPath1: org1
+    name2: /tmp
+    name3: /home/app_user
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  runAsNonRoot: true
+
+service:
+  type: NodePort
+  portsName: tomcat
+  portsNumber: 8080
+  portsTargetNumber: 8080
+
+test: "sss"
+
+resources:
+  requests:
+    memory: "64Mi"  #仮決め
+    cpu: "250m"     #仮決め
+  limits:
+    memory: "64Mi"  #仮決め
+    cpu: "250m"     #仮決め
+
+# autoscaling:
+#   enabled: false
+#   minReplicas: 1
+#   maxReplicas: 100
+#   targetCPUUtilizationPercentage: 80
+#   # targetMemoryUtilizationPercentage: 80
+
+# nodeSelector: {}
+
+# tolerations: []
+
+# affinity: {}

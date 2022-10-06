@@ -1,0 +1,5 @@
+dependencies:
+- name: mariadb
+  condition: global.mariadb.enabled
+- name: ingress
+  condition: global.ingress.enabled
