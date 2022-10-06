@@ -4,7 +4,7 @@ import os
 from common_libs.ansible_driver.classes.menu_required_check import AuthTypeParameterRequiredCheck
 from common_libs.ansible_driver.classes.YamlParseClass import YamlParse
 from common_libs.ansible_driver.functions.util import get_AnsibleDriverTmpPath
-
+from common_libs.ansible_driver.classes.AnscConstClass import AnscConst
 
 def external_valid_menu_before(objdbca, objtable, option):
     """
@@ -99,7 +99,7 @@ def external_valid_menu_before(objdbca, objtable, option):
         
         # インベントリファイル追加オプション取得
         in_string = option["current_parameter"]["parameter"]["inventory_file_additional_option"]
-        if in_string is None:
+        if not in_string:
             in_string = ""
         # Pioneerプロトコルの設定値取得
         # str_protocol_id = option["current_parameter"]["parameter"]["protocol"]
@@ -138,13 +138,13 @@ def external_valid_menu_before(objdbca, objtable, option):
             str_passwd = None
         
         # 更新されていない場合は設定済みのパスワードoption["current_parameter"]["parameter"]["login_password"]取得
-        if str_passwd is None:
+        if not str_passwd:
             str_passwd = option["current_parameter"]["parameter"]["login_password"]
         
         # パスワードの初期化は認証方式は関係ない
         # ログインパスワードが管理でない場合にパスワードがクリア。管理の場合は残る
         # 変更前と変更後のパスワードを判定して、違う場合にansible-vaultで暗号化した文字列を初期化
-        if str_passwd != option["current_parameter"]["parameter"]["login_password"]:
+        if str_passwd != option["current_parameter"]["parameter"]["login_password"] and str_auth_mode == AnscConst.DF_LOGIN_AUTH_TYPE_PW:  # 認証方式:パスワード認証
             table_name = "T_ANSC_DEVICE"
             primary_key_name = "SYSTEM_ID"
             data_list = {"LOGIN_PW_ANSIBLE_VAULT": "", primary_key_name: option["current_parameter"]["parameter"]["managed_system_item_number"]}
@@ -158,7 +158,7 @@ def external_valid_menu_before(objdbca, objtable, option):
         else:
             str_passphrase = None
             
-        if str_passphrase is None:
+        if not str_passphrase:
             str_passphrase = option["current_parameter"]["parameter"]["passphrase"]
 
         # 公開鍵ファイルの設定値取得
@@ -170,7 +170,7 @@ def external_valid_menu_before(objdbca, objtable, option):
         else:
             str_ssh_key_file = None
         
-        if str_ssh_key_file is None:
+        if not str_ssh_key_file:
             str_ssh_key_file = option["current_parameter"]["parameter"]["ssh_private_key_file"]
 
         # Pioneerプロトコルの設定値取得
