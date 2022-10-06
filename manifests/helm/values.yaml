@@ -10,19 +10,25 @@ global:
 itaByMenuCreate:
   name: ita-by-menu-create
 
-  EXECUTE_INTERVAL: "1"
-  STORAGEPATH: /storage/
-  CONTAINER_BASE: "kubernetes"
+  extraenv:
+    EXECUTE_INTERVAL: "1"
+    STORAGEPATH: /storage/
+    CONTAINER_BASE: "kubernetes"
 
   replicas: 1
 
+  image:
+      repository: exastro/ita_by_ansible_legacy_role_vars_listup
+      tag: 0.2
+      imagePullPolicy: Always 
+
   resources:
-    image: exastro/ita_by_menu_create:0.2
-    imagePullPolicy: Always 
-    resourceRequestsMemory: "64Mi"  #仮決め
-    resourceRequestsCpu: "250m"     #仮決め
-    resourceLimitMemory:  "64Mi"  #仮決め
-    resourceLimitCpu: "250m"     #仮決め
+    request:
+      memory: "64Mi"  #仮決め
+      cpu: "250m"     #仮決め
+    limits:
+      memory: "64Mi"  #仮決め
+      cpu: "250m"     #仮決め
   
   security:
     allowPrivilegeEscalation: false
@@ -35,10 +41,12 @@ itaByMenuCreate:
     mountPath: /storage
     subPath: org1
 
-  serviceType: NodePort 
-  servicePortsName: tomcat
-  servicePortsNumber: 8080
-  servicePortsTargetNumber: 8080
+  service:
+    type: NodePort 
+    portsName: tomcat
+    portsNumber: 8080
+    portsTargetNumber: 8080
+
 
 itaApiOrg:
   paramName: params-ita-org
