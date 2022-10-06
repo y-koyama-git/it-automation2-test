@@ -1868,6 +1868,7 @@ def execute_excel_maintenance(objdbca, organization_id, workspace_id, menu, menu
         column_class_id = str(recode.get('COLUMN_CLASS'))
         auto_input = str(recode.get('AUTO_INPUT'))
         input_item = str(recode.get('INPUT_ITEM'))
+        view_item = str(recode.get('VIEW_ITEM'))
         
         # 登録時に不要な項目
         if auto_input == '1' or input_item == '0':
@@ -1876,6 +1877,14 @@ def execute_excel_maintenance(objdbca, organization_id, workspace_id, menu, menu
         # カラムクラスIDがファイルアップロードのものは除外する
         if column_class_id == '9':
             register_list.append(column_name_rest)
+        
+        # Excelには表示しない項目
+        if input_item == '2' and view_item == '0':
+            continue
+        
+        # Excelには表示しない項目
+        if column_class_id == '23':
+            continue
         
         if column_name_rest == 'discard':
             # 廃止フラグは先頭に追加する
