@@ -142,6 +142,15 @@ def main_logic(wsDb: DBConnectWs, execution_no, driver_id):  # noqa: C901
     if not os.path.isdir(work_dir):
         os.makedirs(work_dir)
 
+    # ANSIBLEインタフェース情報を取得
+    retBool, result = cm.get_ansible_interface_info(wsDb)
+    if retBool is False:
+        return False, g.appmsg.get_log_message(result, [execution_no])
+    ans_if_info = result
+
+    # ansible実行に必要なファイル群を生成するクラス
+    ansdrv = CreateAnsibleExecFiles(driver_id, ans_if_info, execution_no, execute_data['I_ENGINE_VIRTUALENV_NAME'], execute_data['I_ANSIBLE_CONFIG_FILE'], wsDb)  # noqa: E501
+
     # 	処理区分("1")、パラメータ確認、作業実行、ドライラン
     # 		代入値自動登録とパラメータシートからデータを抜く
     # 		該当のオペレーション、Movementのデータを代入値管理に登録
@@ -151,6 +160,9 @@ def main_logic(wsDb: DBConnectWs, execution_no, driver_id):  # noqa: C901
         sub_value_auto_reg.GetDataFromParameterSheet("1", execute_data["OPERATION_ID"], execute_data["MOVEMENT_ID"], execution_no, wsDb)
     except ValidationException as e:
         err_msg = g.appmsg.get_log_message(e)
+        ansdrv.LocalLogPrint(
+            os.path.basename(inspect.currentframe().f_code.co_filename),
+            str(inspect.currentframe().f_lineno), err_msg)
         return False, err_msg
 
     # 実行モードが「パラメータ確認」の場合は終了
@@ -167,12 +179,6 @@ def main_logic(wsDb: DBConnectWs, execution_no, driver_id):  # noqa: C901
             g.applogger.info(g.appmsg.get_log_message("MSG-10735", [execution_no]))
         return True,
 
-    # ANSIBLEインタフェース情報を取得
-    retBool, result = cm.get_ansible_interface_info(wsDb)
-    if retBool is False:
-        return False, g.appmsg.get_log_message(result, [execution_no])
-    ans_if_info = result
-
     # # Conductorインタフェース情報を取得
     # retBool, result = cm.get_conductor_interface_info(wsDb)
     # if retBool is False:
@@ -185,9 +191,6 @@ def main_logic(wsDb: DBConnectWs, execution_no, driver_id):  # noqa: C901
     if result[0] is True:
         wsDb.db_commit()
         g.applogger.info(g.appmsg.get_log_message("BKY-10003", [execution_no]))
-
-    # ansible実行に必要なファイル群を生成するクラス
-    ansdrv = CreateAnsibleExecFiles(driver_id, ans_if_info, execution_no, execute_data['I_ENGINE_VIRTUALENV_NAME'], execute_data['I_ANSIBLE_CONFIG_FILE'], wsDb)  # noqa: E501
 
     # 処理対象の作業インスタンス実行
     g.applogger.debug("execute instance_execution")
