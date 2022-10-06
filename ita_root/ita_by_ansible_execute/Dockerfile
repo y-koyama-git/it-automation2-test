@@ -53,6 +53,10 @@ RUN dnf install -y \
 &&  groupadd $GROUPNAME \
 &&  useradd -m -s /bin/bash -g $GROUPNAME $USERNAME
 
+COPY ./ita_root/ita_by_ansible_execute/config/centos8.repo /etc/yum.repos.d/centos8.repo
+
+RUN dnf install -y --enablerepo=baseos expect
+
 #
 # Build for development
 #   Specify options when creating this image: --target develop_build
@@ -78,10 +82,6 @@ RUN dnf install -y \
     autopep8 \
 &&  usermod -G wheel $USERNAME \
 &&  echo '%wheel ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
-
-COPY ./ita_root/ita_by_ansible_execute/config/centos8.repo /etc/yum.repos.d/centos8.repo
-
-RUN dnf install -y --enablerepo=baseos expect
 
 USER $USERNAME
 
