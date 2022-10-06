@@ -969,15 +969,19 @@ class SubValueAutoReg():
                 
                 # 再度カラムをチェック
                 if table_name in in_tabColNameToValAssRowList:
-                    objmenu = load_table.loadTable(WS_DB, "")
+                    if col_name not in in_tabColNameToValAssRowList[table_name]:
+                        continue
+                
+                for value in in_tableNameToMenuNameRestList.values():
+                    print("value:" + str(value))
+                    objmenu = load_table.loadTable(WS_DB, "ref_parameter2")
                     mode = "input"
                     filter_parameter = {"discard": {"LIST": ["0"]}}
                     status_code, tmp_result, msg = objmenu.rest_filter(filter_parameter, mode)
                     print("tmp_result:" + str(tmp_result))
-                    if col_name not in in_tabColNameToValAssRowList[table_name]:
-                        continue
                 
                 for col_data in in_tabColNameToValAssRowList[table_name][col_name].values():
+                    print("col_data:" + str(col_data))
                     # IDcolumnの場合は参照元から具体値を取得する
                     if not col_data['REF_TABLE_NAME'] is None and not col_data['REF_TABLE_NAME'] == "":
                         tmp_col_val_key = json.loads(col_val_key).values()
@@ -1219,14 +1223,14 @@ class SubValueAutoReg():
         # 代入値管理用のデータ取得
         if exe_flag == 1: 
             # 変数名
-            sql = "SELECT VARS_NAME FROM V_ANSR_VAL_VARS_LINK WHERE MVMT_VAR_LINK_ID = '" + row['MVMT_VAR_LINK_ID'] + "'"
+            sql = "SELECT VARS_NAME FROM T_ANSR_MVMT_VAR_LINK WHERE MVMT_VAR_LINK_ID = '" + row['MVMT_VAR_LINK_ID'] + "'"
 
             data_list = WS_DB.sql_execute(sql, [])
             for data in data_list:
                 row['VARS_NAME'] = data['VARS_NAME']
             
             if row['COL_SEQ_COMBINATION_ID'] is not None and not row['COL_SEQ_COMBINATION_ID'] == "":
-                sql = "SELECT COL_COMBINATION_MEMBER_ALIAS FROM V_ANSR_COL_SEQ_COMBINATION WHERE COL_SEQ_COMBINATION_ID = '" + row['COL_SEQ_COMBINATION_ID'] + "'"
+                sql = "SELECT COL_COMBINATION_MEMBER_ALIAS FROM T_ANSR_NESTVAR_MEMBER_COL_COMB WHERE COL_SEQ_COMBINATION_ID = '" + row['COL_SEQ_COMBINATION_ID'] + "'"
                 data_list = WS_DB.sql_execute(sql, [])
                 for data in data_list:
                     row['COL_COMBINATION_MEMBER_ALIAS'] = data['COL_COMBINATION_MEMBER_ALIAS']
@@ -1584,7 +1588,6 @@ class SubValueAutoReg():
         sql += "   TBL_A.MENU_ID                                               ,  \n"
         sql += "   TBL_D.MENU_NAME_REST                                        ,  \n"
         sql += "   TBL_C.TABLE_NAME                                            ,  \n"
-        sql += "   TBL_C.DISUSE_FLAG  AS TBL_DISUSE_FLAG                       ,  \n"
         sql += "   TBL_A.COLUMN_LIST_ID                                        ,  \n"
         sql += "   TBL_B.COL_NAME                                              ,  \n"
         sql += "   TBL_B.COLUMN_NAME_JA                                        ,  \n"
@@ -1765,6 +1768,7 @@ class SubValueAutoReg():
         sql += "          (TBL_A.MOVEMENT_ID    = TBL_E.MOVEMENT_ID)              \n"
         sql += " WHERE                                                            \n"
         sql += "   TBL_A.DISUSE_FLAG='0'                                          \n"
+        sql += "   AND TBL_C.DISUSE_FLAG='0'                                      \n"
         sql += "   AND TBL_B.AUTOREG_HIDE_ITEM = '0'                              \n"
         sql += " ORDER BY TBL_A.COLUMN_ID                                         \n"
 
@@ -1775,12 +1779,6 @@ class SubValueAutoReg():
         inout_tableNameToMenuNameRestList = {}
         idx = 0
         for data in data_list:
-            # CMDB代入値紐付メニューが廃止されているか判定
-            if data['TBL_DISUSE_FLAG'] != '0':
-                msgstr = g.appmsg.get_api_message("MSG-10337", [data['COLUMN_ID']])
-                # 次のカラムへ
-                raise ValidationException("MSG-10337", [data['COLUMN_ID']])
-            
             # SHEET_TYPEが1(ホスト・オペレーション)で廃止レコードでないかを判定
             if data['ANSIBLE_TARGET_TABLE'] != '0':
                 msgstr = g.appmsg.get_api_message("MSG-10437", [data['COLUMN_ID']])
