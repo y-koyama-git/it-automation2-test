@@ -1496,10 +1496,13 @@ class ConductorExecuteLibs():
                 # orchestra_id->driver_idの紐付
                 if orchestra_id in ["1", "Ansible Legacy"]:
                     driver_id = AnscConst.DF_LEGACY_DRIVER_ID
+                    manu_id = ""
                 if orchestra_id in ["2", "Ansible Pioneer"]:
                     driver_id = AnscConst.DF_PIONEER_DRIVER_ID
+                    manu_id = ""
                 if orchestra_id in ["3", "Ansible Legacy Role"]:
                     driver_id = AnscConst.DF_LEGACY_ROLE_DRIVER_ID
+                    manu_id = "20412"
 
                 result['id'].setdefault(
                     orchestra_id,
@@ -1508,6 +1511,7 @@ class ConductorExecuteLibs():
                         "name": orchestra_name,
                         "path": orchestra_path,
                         "driver_id": driver_id,
+                        "manu_id": manu_id,
                     }
                 )
 
@@ -1518,6 +1522,7 @@ class ConductorExecuteLibs():
                         "name": orchestra_name,
                         "path": orchestra_path,
                         "driver_id": driver_id,
+                        "manu_id": manu_id,
                     }
                 )
                 action_info = orchestra_action_info.get(orchestra_id)
@@ -2687,11 +2692,13 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             if orchestra_path is None:
                 try:
                     orchestra_path = self.get_orchestra_info().get('name').get(orchestra_id).get('path')
+                    manu_id = self.get_orchestra_info().get('name').get(orchestra_id).get('manu_id')
                 except Exception:
                     pass
             if orchestra_path is None:
                 try:
                     orchestra_path = self.get_orchestra_info().get('id').get(orchestra_id).get('path')
+                    manu_id = self.get_orchestra_info().get('id').get(orchestra_id).get('manu_id')
                 except Exception:
                     pass
 
@@ -2707,9 +2714,15 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                 orchestra_path,
                 execution_id
             ).replace('//', '/')
+            
+            dl_data_stprage_path = '{}/uploadfiles/{}/'.format(
+                self.get_base_storage_path(),
+                manu_id,
+            ).replace('//', '/')
+
             result['base'] = '{}'.format(movement_stprage_path).replace('//', '/')
-            result['in'] = '{}/in/'.format(movement_stprage_path).replace('//', '/')
-            result['out'] = '{}/out/'.format(movement_stprage_path).replace('//', '/')
+            result['in'] = '{}/populated_data/{}/'.format(dl_data_stprage_path, execution_id).replace('//', '/')
+            result['out'] = '{}/result_data/{}/'.format(dl_data_stprage_path, execution_id).replace('//', '/')
             result['status_file_path'] = '{}/out/MOVEMENT_STATUS_FILE'.format(movement_stprage_path).replace('//', '/')
 
         except Exception as e:
