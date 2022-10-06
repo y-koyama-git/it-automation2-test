@@ -2977,7 +2977,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             orchestra_info = self.get_orchestra_info()
             action_config = orchestra_info.get('name').get(orchestra_id).get(action_type)
             driver_id = orchestra_info.get('name').get(orchestra_id).get('driver_id')
-
+            debug_storage("orchestra_action:"+ action_type)
             if action_type == 'execute':
                 operation_id = action_options.get('operation_id')
                 # operation_name = action_options.get('operation_name')
@@ -3005,7 +3005,10 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                     operation_row = row
 
                 # 作業実行
+                debug_storage("insert_execution_list:")
+                debug_storage([self.objdbca, "1", driver_id, operation_row, movement_row, None, conductor_id, conductor_name])
                 tmp_execute = insert_execution_list(self.objdbca, 1, driver_id, operation_row, movement_row, None, conductor_id, conductor_name)  # noqa: F405 E501
+                debug_storage(["insert_execution_list", tmp_execute])
                 tmp_result = tmp_execute.get('execution_no')
 
             elif action_type == 'abort':
@@ -3029,6 +3032,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                 tmp_result = status_id
             result.setdefault(action_type, tmp_result)
         except Exception as e:
+            debug_storage(e)
             g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
             type_, value, traceback_ = sys.exc_info()
             msg = traceback.format_exception(type_, value, traceback_)
@@ -3564,18 +3568,26 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                         c_status_id = node_options.get('instance_info_data').get('dict').get('conductor_status').get('3')
                         # MV作業実行
                         action_type = 'execute'
+                        debug_storage("orchestra_action: execute")
                         tmp_result = self.orchestra_action(action_type, orchestrator_id, action_options)
+                        debug_storage(tmp_result)
                         if tmp_result[0] is not True:
                             raise Exception()
-
                         execution_id = tmp_result[1].get(action_type)
+                        debug_storage(execution_id)
                         if execution_id is not None:
                             execute_flg = True
                             node_filter_data['parameter']['execution_id'] = execution_id
                         else:
+                            debug_storage(execution_id)
                             raise Exception()
 
-                    except Exception:
+                    except Exception as e:
+                        debug_storage(e)
+                        g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
+                        type_, value, traceback_ = sys.exc_info()
+                        msg = traceback.format_exception(type_, value, traceback_)
+                        g.applogger.error(msg)
                         msg_code = 'MSG-40026'
                         msg_args = [movement_id, operation_id]
                         err_msg = g.appmsg.get_api_message(msg_code, msg_args)
@@ -4409,3 +4421,11 @@ def load_objcolumn(objdbca, objtable, rest_key, col_class_name='TextColumn', ):
     except Exception:
         return False
     return objcolumn
+
+
+def debug_storage(msg):
+    import inspect, os
+    info = inspect.getouterframes(inspect.currentframe())[1]
+    msg_line = "{} ({}:{})".format(msg, os.path.basename(info.filename), info.lineno)
+    with open('/storage/debug.log', 'a') as f:
+        print("[{}]: {}".format(get_now_datetime('%Y/%m/%d %H:%M:%S.%f'), msg_line), file=f)
