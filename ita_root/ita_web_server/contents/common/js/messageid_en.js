@@ -141,7 +141,7 @@ const getMessage = ( function() {
         'FTE01027' : "Explanation",
         'FTE01028' : "Remarks",
         'FTE01029' : "Enter the menu name of the menu to be created.\nThe maximum size is 255 bytes.\nThe menu name &quot;Main menu&quot; cannot be used.\n &quot;&#92;&#47;&#58;&#42;&#63;&#34;&#60;&#62;&#124;&#91;&#93;：￥／＊［］&quot; characters cannot be used.",
-        'FTE01030' : "Enter the name for the REST API of the menu to be created.\nThe maximum size is 255 bytes.\nOnly single-byte alphanumeric characters and the symbol &quot;-_&quot; can be used.",
+        'FTE01030' : "Enter the name for the REST API of the menu to be created.\nThe maximum size is 240 bytes.\nOnly single-byte alphanumeric characters and the symbol &quot;-_&quot; can be used.",
         'FTE01031' : "Select &quot;Parameter Sheet (Host / Operation)&quot; or\n&quot;Data Sheet (master available)&quot; from the pull-down menu.",
         'FTE01032' : "Enter the display order in the menu group. They are displayed in ascending order.\nInteger value from 0 to 2147483647 can be entered.",
         'FTE01033' : "If the &quot;use&quot; checkbox is checked, a parameter sheet corresponding to the vertical menu will be created.",
