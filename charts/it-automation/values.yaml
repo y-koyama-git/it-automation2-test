@@ -1,0 +1,44 @@
+# Default values for exastro-it-automation-chart.
+global:
+  it-automation:
+    enabled: true
+    internal:
+      names: ["default"]
+    external: []
+    authToken: {}
+    hooks: {}
+    database:
+      host: mariadb.kubernetes.svc
+      password: akfjdalskj
+
+mariadb:
+  enabled: false
+
+ingress:
+  enabled: false
+
+it-automation:
+  persistence:
+    enabled: true
+    # storageClass: "-"
+    accessMode: ReadWriteMany
+    size: 10Gi
+    subPath: ""
+    matchLabels: {}
+    matchExpressions: []
+    annotations: {}
+
+ita-api-admin:
+  image:
+    repository: nginx
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+
+ita-api-organization:
+ita-by-ansible-execute:
+ita-by-ansible-legacy-role-vars-listup:
+ita-by-ansible-towermaster-sync:
+ita-by-conductor-synchronize:
+ita-by-menu-create:
+ita-web-server:

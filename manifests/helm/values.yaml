@@ -1,77 +1,47 @@
-global:
-  dbAccountInfo: secret-ita-mariadb
-  dbConnectionInfo: params-ita-mariadb
-  itaBaseInfo: params-ita-common
-  itaByMenuCreateInfo: params-ita-by-menu-create
-  itaApiOrg:  params-ita-org
+service:
+  type: ClusterIP
+  annotations: ""
 
-  claimName: ita-pvc
+persistence:
+  ita-app:
+    enabled: true
+    accessMode: ReadWriteOnce
+    size: 10Gi
+    reclaimPolicy: Delete
+  mariadb:
+    enabled: true
+    accessMode: ReadWriteOnce
+    size: 10Gi
+    reclaimPolicy: Delete
+  organization-aaaa:
+    enabled: true
+    accessMode: ReadWriteOnce
+    size: 10Gi
+    reclaimPolicy: Delete
 
-itaByMenuCreate:
-  name: ita-by-menu-create
-
-  EXECUTE_INTERVAL: "1"
-  STORAGEPATH: /storage/
-  CONTAINER_BASE: "kubernetes"
-
-  replicas: 1
-
-  resources:
-    image: exastro/ita_by_menu_create:0.2
-    imagePullPolicy: Always 
-    resourceRequestsMemory: "64Mi"  #仮決め
-    resourceRequestsCpu: "250m"     #仮決め
-    resourceLimitMemory:  "64Mi"  #仮決め
-    resourceLimitCpu: "250m"     #仮決め
+config:
+  cluster_domain: cluster.local
+  cluster_name: cassandra
+  cluster_size: 3
+  seed_size: 2
+  num_tokens: 256
+  # If you want Cassandra to use this datacenter and rack name,
+  # you need to set endpoint_snitch to GossipingPropertyFileSnitch.
+  # Otherwise, these values are ignored and datacenter1 and rack1
+  # are used.
+  dc_name: DC1
+  rack_name: RAC1
+  endpoint_snitch: SimpleSnitch
+  max_heap_size: 2048M
+  heap_new_size: 512M
+  start_rpc: false
+  ports:
+    cql: 9042
+    thrift: 9160
+    # If a JVM Agent is in place
+    # agent: 61621
   
-  security:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsUser: 1000
-    runAsGroup: 1000
-    runAsNonRoot: true
-
-  volume:
-    mountPath: /storage
-    subPath: org1
-
-  serviceType: NodePort 
-  servicePortsName: tomcat
-  servicePortsNumber: 8080
-  servicePortsTargetNumber: 8080
-
-itaApiOrg:
-  paramName: params-ita-org
-  LISTEN_PORT: "8080"
-  STORAGEPATH: "/storage/"
-  DEFAULT_LANGUAGE: "ja"
-  PLATFORM_API_HOST: "platform-api.exastro-platform.svc"
-
-  name: ita-api-organization
-
-  replicas: 1
-
-  resources:
-    image: exastro/it-automation2-test-ita-api-organization:Integration-test.9b3983.20220921-113105
-    imagePullPolicy: IfNotPresent
-
-  security:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsUser: 1000
-    runAsGroup: 1000
-    runAsNonRoot: true
-
-  volume:
-    pvcMountPath: /storage
-    containerVol1MountPath: /var/run_app_user/httpd/pid
-    containerVol1SubPath: httpd-pid
-    containerVol2MountPath: /var/run_app_user/httpd/socket
-    containerVol2SubPath: httpd-socket
-    containerVol3MountPath: /tmp
-
-    claimName: ita-pvc
-    emptyDir: {}
-
-#path_pv_mariadb: /ky/share/karino/ita-mariadb
-#path_pv_ita: /ky/share/karino/ita-general
+securityContext:
+  enabled: false
+  fsGroup: 999
+  runAsUser: 999
