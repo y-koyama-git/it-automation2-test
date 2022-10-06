@@ -2042,17 +2042,13 @@ class CreateAnsibleExecFiles():
             なし
         """
         logmsg = "File[{}:{}]{}".format(file, line, errorMsg)
-        if self.getAnsible_out_Dir() != "":
-            # エラーログファイルのパスが生成されている場合エラーログファイルにログ出力
-            logfile = self.getAnsible_out_Dir() + "/" + "error.log"
-            f = open(logfile, "a")
-            f.write(errorMsg + "\n")
-            f.close()
-            # enomoto debug
-            g.applogger.error(logmsg)
-        else:
-            # エラーログファイルのパスが生成されていない場合
-            g.applogger.error(logmsg)
+        # エラーログファイルのパスが生成されている場合エラーログファイルにログ出力
+        logfile = self.getAnsible_out_Dir() + "/" + "error.log"
+        f = open(logfile, "a")
+        f.write(errorMsg + "\n")
+        f.close()
+        # enomoto debug
+        g.applogger.error(logmsg)
 
     def getDBHostList(self, in_execute_no, in_pattern_id, in_operation_id, mt_hostlist, mt_hostostypelist, mt_hostinfolist, in_winrm_id):
         """
