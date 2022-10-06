@@ -360,4 +360,4 @@ class KubernetesMode(AnsibleAgent):
 
             return 1, None, str(e)
 
-        return cp.returncode, status,
+        return cp.returncode, status, ""
