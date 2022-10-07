@@ -4053,19 +4053,19 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             else:
                 pass
 
-            # in nodeのステータスを取得
-            if len(in_node) == 1:
-                for tname, tinfo in in_node.items():
-                    in_node_name = tinfo.get('targetNode')
-                    in_node_info = instance_data.get('node').get(in_node_name)
-                    in_node_status_id = in_node_info.get('status_id')
+                # in nodeのステータスを取得
+                if len(in_node) == 1:
+                    for tname, tinfo in in_node.items():
+                        in_node_name = tinfo.get('targetNode')
+                        in_node_info = instance_data.get('node').get(in_node_name)
+                        in_node_status_id = in_node_info.get('status_id')
 
-            tmp_result = self.get_conditional_node_info(node_options, in_node_status_id)
-            if tmp_result[0] is False:
-                raise Exception()
-            self.set_conductor_update_status(conductor_instance_id, c_status_id)
-            targetNode = tmp_result[1].get('target_node')
-            skip_node = tmp_result[1].get('skip_node')
+                tmp_result = self.get_conditional_node_info(node_options, in_node_status_id)
+                if tmp_result[0] is False:
+                    raise Exception()
+                self.set_conductor_update_status(conductor_instance_id, c_status_id)
+                targetNode = tmp_result[1].get('target_node')
+                skip_node = tmp_result[1].get('skip_node')
             
             if n_status_id in nomal_status_list:
                 # Node更新
@@ -4091,7 +4091,15 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                         tmp_result = self.target_node_skip(node_options, skip_node)
                         if tmp_result[0] is False:
                             raise Exception()
-
+            elif abort_status == bool_master_true:
+                # Node更新
+                node_filter_data['parameter']['status_id'] = n_status_id
+                node_filter_data['parameter']['time_end'] = get_now_datetime()
+                tmp_result = self.node_instance_exec_maintenance([node_filter_data], 'Update')
+                if tmp_result[0] is not True:
+                    raise Exception()
+            else:
+                pass
         except Exception as e:
             g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
             type_, value, traceback_ = sys.exc_info()
@@ -4375,6 +4383,15 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                         tmp_result = self.target_node_skip(node_options, skip_node)
                         if tmp_result[0] is False:
                             raise Exception()
+            elif abort_status == bool_master_true:
+                # Node更新
+                node_filter_data['parameter']['status_id'] = n_status_id
+                node_filter_data['parameter']['time_end'] = get_now_datetime()
+                tmp_result = self.node_instance_exec_maintenance([node_filter_data], 'Update')
+                if tmp_result[0] is not True:
+                    raise Exception()
+            else:
+                pass
             # raise Exception()
         except Exception as e:
             g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
