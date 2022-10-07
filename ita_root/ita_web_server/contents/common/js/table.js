@@ -1286,11 +1286,34 @@ setTableEvents() {
         tb.$.tbody.on('click', '.actionButton', function(){
             if ( !tb.checkWork ) {
                 const $button = $( this ),
-                      redirect = $button.attr('data-redirect')
+                      type = $button.attr('data-type');
                 
-                // リダイレクト
-                if ( redirect ) {
-                    window.location.href = redirect;
+                switch ( type ) {
+                    case 'redirect': {
+                        const redirect = $button.attr('data-redirect');
+                        if ( redirect ) {
+                            window.location.href = redirect;
+                        }
+                    } break;
+                    case 'download': {
+                        $button.prop('disabled', true );
+                        const url = $button.attr('data-url'),
+                              method = $button.attr('data-method'),
+                              nameKey = $button.attr('data-filename'),
+                              dataKey = $button.attr('data-filedata');
+                        fn.fetch( url, null, method ).then(function( result ){
+                            if ( result[ dataKey ] && result[ nameKey] ) {
+                                fn.download('base64', result[ dataKey ], result[ nameKey]);
+                            } else {
+                                alert('Download error.');
+                            }
+                        }).catch(function( error ){
+                            alert( error.message );
+                            window.console.error( error );
+                        }).then(function(){
+                            $button.prop('disabled', false );
+                        });
+                    } break;
                 }
             }
         });
@@ -2573,7 +2596,7 @@ viewCellHtml( item, columnKey, journal ) {
         }
         // ボタン
         case 'ButtonColumn':
-            return tb.buttonAction( columnInfo, parameter );
+            return tb.buttonAction( columnInfo, item );
         
         // JSON
         case 'JsonColumn':
@@ -2599,22 +2622,26 @@ viewCellHtml( item, columnKey, journal ) {
    View mode Button action
 ##################################################
 */
-buttonAction( columnInfo, parameter ) {
-    const text = fn.cv( columnInfo.column_name, '', true ),
-          rest = columnInfo.column_name_rest;
+buttonAction( columnInfo, item ) {    
+    const tb = this;
     
-    let action;
+    // ボタンアクション
+    let buttonAction;
     try {
-        action = JSON.parse( columnInfo.button_action );
+        buttonAction = JSON.parse( columnInfo.button_action );
     } catch( e ) {
-        action = [];
+        buttonAction = [];
     }
     
     const buttonAttrs = {
-        rest: rest
-    };
-    for ( const item of action ) {
-        switch ( item[0] ) {
+        rest: columnInfo.column_name_rest,
+    };    
+    for ( const action of buttonAction ) {
+        
+        // タイプ
+        buttonAttrs.type = fn.cv( action[0], '');
+        switch ( buttonAttrs.type ) {
+            // 別ページにリダイレクト
             case 'redirect':
                 if ( !buttonAttrs.redirect ) {
                     buttonAttrs.redirect = '?';
@@ -2622,14 +2649,36 @@ buttonAction( columnInfo, parameter ) {
                     buttonAttrs.redirect += '&';
                 }
                 buttonAttrs.action = 'positive';
-                buttonAttrs.redirect += item[1] + parameter[ item[2] ];
+                buttonAttrs.redirect += action[1] + item.parameter[ action[2] ];
             break;
-            case 'download':
-                buttonAttrs.action = 'default';
-                buttonAttrs.id = fn.cv( parameter[ item[3][0] ], '');
-            break;
+            // ファイルダウンロード
+            case 'download': {                
+                const endPoint = action[2].replace('{menu}', tb.params.menuNameRest ),
+                      valueKeys = action[3];
+                
+                buttonAttrs.method = action[1];
+                buttonAttrs.fileName = action[4][0];
+                buttonAttrs.fileData = action[4][1];
+                
+                if ( endPoint ) {
+                    let api = endPoint.replace(/^\/ita/, '');
+                    for ( const key of valueKeys ) {
+                        const value = item.parameter[ key ];
+                        if ( value ) {
+                            // keyを値に置換
+                            api = api.replace(`{${key}}`, value );
+                        }
+                    }
+                    buttonAttrs.url = api;
+                    buttonAttrs.action = 'default';
+                } else {
+                    buttonAttrs.disabled = 'disabled';
+                }                
+            } break;
         }
     }
+    
+    const text = fn.cv( columnInfo.column_name, '', true );
     return fn.html.button( text, ['actionButton', 'itaButton'], buttonAttrs );
 }
 /*

@@ -456,7 +456,7 @@ init( info, conductorData ) {
     if ( conductorData ) {
         cd.loadConductor();
     } else if ( temp ) {
-        cd.message('info', '編集途中のデータがLocal storageから読み込まれました。');
+        cd.message('info', getMessage.FTE02162 );
         cd.loadConductor( temp );
     } else {
         cd.InitialSetNode();
