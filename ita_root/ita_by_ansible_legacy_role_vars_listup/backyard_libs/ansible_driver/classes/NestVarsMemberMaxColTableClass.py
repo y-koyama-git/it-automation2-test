@@ -41,8 +41,9 @@ class NestVarsMemberMaxColTable(TableBase):
 
         extracted_records_by_tuple_key = {}
         for nest_vars_mem_id, record in nest_vars_mem_records.items():
-            tuple_key = (nest_vars_mem_id, record['MVMT_VAR_LINK_ID'])
-            extracted_records_by_tuple_key[tuple_key] = record
+            if record['VARS_NAME'] == '0':
+                tuple_key = (nest_vars_mem_id, record['MVMT_VAR_LINK_ID'])
+                extracted_records_by_tuple_key[tuple_key] = record
 
         extracted_keys = extracted_records_by_tuple_key.keys()
 
@@ -68,7 +69,7 @@ class NestVarsMemberMaxColTable(TableBase):
                 'LAST_UPDATE_USER': user_id
             })
 
-        ret = self._ws_db.table_insert(self.table_name, register_list, self.pkey, False)
+        ret = self._ws_db.table_insert(self.table_name, register_list, self.pkey, True)
         if ret is False:
             result_code = "BKY-30003"
             log_msg_args = [self.table_name]
@@ -84,7 +85,7 @@ class NestVarsMemberMaxColTable(TableBase):
                 restore_item['LAST_UPDATE_USER'] = user_id
                 restore_list.append(restore_item)
 
-        ret = self._ws_db.table_update(self.table_name, restore_list, self.pkey, False)
+        ret = self._ws_db.table_update(self.table_name, restore_list, self.pkey, True)
         if ret is False:
             result_code = "BKY-30004"
             log_msg_args = [self.table_name]
@@ -99,7 +100,7 @@ class NestVarsMemberMaxColTable(TableBase):
             discard_item['LAST_UPDATE_USER'] = user_id
             discard_list.append(discard_item)
 
-        ret = self._ws_db.table_update(self.table_name, discard_list, self.pkey, False)
+        ret = self._ws_db.table_update(self.table_name, discard_list, self.pkey, True)
         if ret is False:
             result_code = "BKY-30005"
             log_msg_args = [self.table_name]
