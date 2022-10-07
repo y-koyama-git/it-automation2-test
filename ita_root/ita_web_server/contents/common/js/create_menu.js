@@ -559,40 +559,40 @@ panelContainerHtml( editorMode ) {
 editorOperationMenuHtml( editorMode, createManagementMenuID ) {
     const menuList = {
         Sub: [
-            { className: 'fullscreen-on', button: { className: 'menu-editor-menu-button', icon: 'expansion', text: getMessage.FTE01148, type: 'fullscreen', action: 'default', width: '120px'}},
-            { className: 'fullscreen-off', button: { className: 'menu-editor-menu-button', icon: 'shrink', text: getMessage.FTE01149, type: 'fullscreen', action: 'default', width: '120px'}}
+            { className: 'fullscreen-on', button: { className: 'menu-editor-menu-button', icon: 'expansion', text: getMessage.FTE01148, type: 'fullscreen', action: 'default', minWidth: '120px'}},
+            { className: 'fullscreen-off', button: { className: 'menu-editor-menu-button', icon: 'shrink', text: getMessage.FTE01149, type: 'fullscreen', action: 'default', minWidth: '120px'}}
         ]
     };
     if ( editorMode === 'new' || editorMode === 'diversion'){
         menuList.Main = [
-            { button: { className: 'menu-editor-menu-button', icon: 'plus', text: getMessage.FTE01041, type: 'registration', action: 'positive', width: '160px'}},
+            { button: { className: 'menu-editor-menu-button', icon: 'plus', text: getMessage.FTE01041, type: 'registration', action: 'positive', minWidth: '160px'}},
         ];
     } else if ( editorMode === 'view' ){
         if ( createManagementMenuID !== '' ) {
             menuList.Main = [
-                { button: { className: 'menu-editor-menu-button', icon: 'edit', text: getMessage.FTE01042, type: 'edit', action: 'positive', width: '160px'}},
-                { button: { className: 'menu-editor-menu-button', icon: 'clear', text: getMessage.FTE01043, type: 'initialize', action: 'negative', width: '120px'}, separate: true },
-                { button: { className: 'menu-editor-menu-button', icon: 'copy', text: getMessage.FTE01044, type: 'diversion', action: 'negative', width: '120px'}},
-                { button: { className: 'menu-editor-menu-button', icon: 'check', text: getMessage.FTE01045, type: 'management', action: 'default', width: '160px'}, separate: true },
+                { button: { className: 'menu-editor-menu-button', icon: 'edit', text: getMessage.FTE01042, type: 'edit', action: 'positive', minWidth: '160px'}},
+                { button: { className: 'menu-editor-menu-button', icon: 'clear', text: getMessage.FTE01043, type: 'initialize', action: 'negative', minWidth: '120px'}, separate: true },
+                { button: { className: 'menu-editor-menu-button', icon: 'copy', text: getMessage.FTE01044, type: 'diversion', action: 'negative', minWidth: '120px'}},
+                { button: { className: 'menu-editor-menu-button', icon: 'check', text: getMessage.FTE01045, type: 'management', action: 'default', minWidth: '160px'}, separate: true },
             ];
         } else {
             menuList.Main = [
-                { button: { className: 'menu-editor-menu-button', icon: 'edit', text: getMessage.FTE01042, type: 'edit', action: 'positive', width: '160px'}},
-                { button: { className: 'menu-editor-menu-button', icon: 'clear', text: getMessage.FTE01043, type: 'initialize', action: 'negative', width: '120px'}, separate: true },
-                { button: { className: 'menu-editor-menu-button', icon: 'copy', text: getMessage.FTE01044, type: 'diversion', action: 'negative', width: '120px'}},
+                { button: { className: 'menu-editor-menu-button', icon: 'edit', text: getMessage.FTE01042, type: 'edit', action: 'positive', minWidth: '160px'}},
+                { button: { className: 'menu-editor-menu-button', icon: 'clear', text: getMessage.FTE01043, type: 'initialize', action: 'negative', minWidth: '120px'}, separate: true },
+                { button: { className: 'menu-editor-menu-button', icon: 'copy', text: getMessage.FTE01044, type: 'diversion', action: 'negative', minWidth: '120px'}},
             ];
         }
     } else if ( editorMode === 'initialize' ){
         menuList.Main = [
-            { button: { className: 'menu-editor-menu-button', icon: 'update02', text: getMessage.FTE01046, type: 'update-initialize', action: 'positive', width: '160px'}},
-            { button: { className: 'menu-editor-menu-button', icon: 'update01', text: getMessage.FTE01047, type: 'reload-initialize', action: 'negative', width: '120px'}, separate: true },
-            { button: { className: 'menu-editor-menu-button', icon: 'cross', text: getMessage.FTE01048, type: 'cancel', action: 'negative', width: '120px'}},
+            { button: { className: 'menu-editor-menu-button', icon: 'plus', text: getMessage.FTE01046, type: 'update-initialize', action: 'positive', minWidth: '160px'}},
+            { button: { className: 'menu-editor-menu-button', icon: 'update01', text: getMessage.FTE01047, type: 'reload-initialize', action: 'negative', minWidth: '120px'}, separate: true },
+            { button: { className: 'menu-editor-menu-button', icon: 'cross', text: getMessage.FTE01048, type: 'cancel', action: 'negative', minWidth: '120px'}},
         ];
     } else if ( editorMode === 'edit' ){
         menuList.Main = [
-            { button: { className: 'menu-editor-menu-button', icon: 'update02', text: getMessage.FTE01049, type: 'update', action: 'positive', width: '160px'}},
-            { button: { className: 'menu-editor-menu-button', icon: 'update01', text: getMessage.FTE01047, type: 'reload', action: 'negative', width: '120px'}, separate: true },
-            { button: { className: 'menu-editor-menu-button', icon: 'cross', text: getMessage.FTE01048, type: 'cancel', action: 'negative', width: '120px'}},
+            { button: { className: 'menu-editor-menu-button', icon: 'plus', text: getMessage.FTE01049, type: 'update', action: 'positive', minWidth: '160px'}},
+            { button: { className: 'menu-editor-menu-button', icon: 'update01', text: getMessage.FTE01047, type: 'reload', action: 'negative', minWidth: '120px'}, separate: true },
+            { button: { className: 'menu-editor-menu-button', icon: 'cross', text: getMessage.FTE01048, type: 'cancel', action: 'negative', minWidth: '120px'}},
         ];
     }
     return fn.html.operationMenu( menuList );
@@ -1115,20 +1115,20 @@ const columnHTML = `
                         <td class="half-cell"><input class="input config-number float-min-number" data-min="-99999999999999" data-max="99999999999999"  type="number" value=""${modeDisabled}></td>
                     </tr>
                     <tr class="number-float" title="'${textEntities(getMessage.FTE01115,1)}">
-                        <th class="half-cell"<span class="config-title">>${textCode('0014')}</span></th>
+                        <th class="half-cell"><span class="config-title">${textCode('0014')}</span></th>
                         <td class="half-cell"><input class="input config-number float-max-number" data-min="-99999999999999" data-max="99999999999999"  type="number" value=""${modeDisabled}></td>
                     </tr>
                     <tr class="number-float" title="${textEntities(getMessage.FTE01116,1)}">
                         <th class="half-cell"><span class="config-title">${textCode('0015')}</span></th>
                         <td class="half-cell"><input class="input config-number digit-number" data-min="1" data-max="14" type="number" value=""${modeDisabled}></td>
                     </tr>
-                    <tr class="select" title="${textEntities(getMessage.FTE01117,1)}">
+                    <tr class="select-option" title="${textEntities(getMessage.FTE01117,1)}">
                         <th class="full-head"><span class="config-title">${textCode('0016') + fn.html.required()}</span></th>
                         <td class="full-body">
                             <select class="input config-select pulldown-select"${modeDisabled}${modeKeepData}>${selectPulldownListHTML}</select>
                         </td>
                     </tr>
-                    <tr class="select reference" title="${textEntities(getMessage.FTE01118,1)}">
+                    <tr class="select-option reference" title="${textEntities(getMessage.FTE01118,1)}">
                         <th class="full-head"><span class="config-title">${textCode('0043')}</span></th>
                         <td class="full-body">
                             <div class="reference-block">
@@ -1181,13 +1181,13 @@ const columnHTML = `
                         <th class="full-head"><span class="config-title">${textCode('0050')}</span></th>
                         <td class="full-body"><input class="input config-text link-default-value" type="text" value=""${modeDisabled}></td>
                     </tr>
-                    <tr class="select" title="${textEntities(getMessage.FTE01126,1)}">
+                    <tr class="select-option" title="${textEntities(getMessage.FTE01126,1)}">
                         <th class="full-head">${textCode('0050')}</th>
                         <td class="full-body pulldown-default-area">
                             <select class="input config-select pulldown-default-select"${modeDisabled}></select>
                         </td>
                     </tr>
-                    <tr class="single multiple number-int number-float date-time date password select file link">
+                    <tr class="single multiple number-int number-float date-time date password select-option file link">
                         <td colspan="2">
                             <label class="required-label${onHover}" title="${textEntities(getMessage.FTE01127,1)}"${modeDisabled}${modeKeepData}>
                                 <input class="config-checkbox required${disbledCheckbox}" type="checkbox"${modeDisabled}${modeKeepData}>
@@ -1699,22 +1699,26 @@ $menuEditor.find('.menu-editor-menu-button').on('click', function() {
             history.redo();
             break;
         case 'registration':
-            if ( !window.confirm(getMessage.FTE01136 ) ) return false;
-            createRegistrationData('create_new');
+            fn.iconConfirm('plus', getMessage.FTE10059, getMessage.FTE01136 ).then(function( flag ){
+                if ( flag ) createRegistrationData('create_new');
+            });
             break;
         case 'update-initialize':
             //メニュー作成状態が「未作成」の場合、windowメッセージを変更
             if(menuEditorArray['menu_info']['menu']['menu_create_done_status_id'] == 1){
-                if ( !window.confirm(getMessage.FTE01136) ) return false;
-                createRegistrationData('create_new');
+                fn.iconConfirm('plus', getMessage.FTE10059, getMessage.FTE01136 ).then(function( flag ){
+                    if ( flag ) createRegistrationData('create_new');
+                });                
             }else{
-                if ( !window.confirm(getMessage.FTE01137) ) return false;
-                createRegistrationData('initialize');
+                fn.iconConfirm('plus', getMessage.FTE10059, getMessage.FTE01137 ).then(function( flag ){
+                    if ( flag ) createRegistrationData('initialize');
+                });
             }
             break;
         case 'update':
-            if ( !window.confirm(getMessage.FTE01138) ) return false;
-            createRegistrationData('edit');
+            fn.iconConfirm('plus', getMessage.FTE10059, getMessage.FTE01138 ).then(function( flag ){
+                if ( flag ) createRegistrationData('edit');
+            });
             break;
         case 'management':
             //uuidでフィルターされたメニュー作成履歴画面へ移動
@@ -3093,7 +3097,7 @@ function setRerefenceItemSelectModalBody( itemList, initData, okCallback, cancel
                             + '<form id="modal-reference-item-select">'
                             + '<table class="modal-table modal-select-table">'
                               + '<thead>'
-                                + '<th class="select">Select</th><th class="name">' + getMessage.FTE01146 + '</th><th class="name">' + getMessage.FTE01147 + '</th>'
+                                + '<th class="selectTh">Select</th><th class="name">' + getMessage.FTE01146 + '</th><th class="name">' + getMessage.FTE01147 + '</th>'
                               + '</thead>'
                               + '<tbody>';
 
@@ -3776,14 +3780,17 @@ const createRegistrationData = function( type ){
       let string = getMessage.FTE01140;
       let log = string + id;
       menuEditorLog.set( 'done', log );
-      window.alert(log);
-      let url_path = location.pathname,
+      
+      fn.alert('', fn.escape( log, true ) ).then(function(){
+          let url_path = location.pathname,
           splitstr = url_path.split('/'),
           organization_id = splitstr[1],
           workspace_id = splitstr[3],
           menu_name_rest = result['menu_name_rest'],
           menu = getParam('menu');
-      window.location.href = '/' + organization_id + '/workspaces/' + workspace_id + '/ita/?menu=' + menu + '&menu_name_rest=' + menu_name_rest + '&history_id=' + id;
+          window.location.href = '/' + organization_id + '/workspaces/' + workspace_id + '/ita/?menu=' + menu + '&menu_name_rest=' + menu_name_rest + '&history_id=' + id;
+      });      
+      
     }).catch(function( error ){
       let message = errorFormat(error.message);
       menuEditorLog.clear();
@@ -4239,9 +4246,14 @@ const setPanelParameter = function( setData ) {
     
   //「メニュー作成状態」が1（未作成）の場合に各種ボタンを操作
   if(setData['menu']['menu_create_done_status_id'] == 1){
-    $('[data-type="edit"]').parent().remove(); //「編集」ボタンを削除
-    $('[data-type="initialize"]').text(textCode('0046')); //「初期化」ボタンを「作成」に名称変更
-    $('[data-type="update-initialize"]').text(textCode('0046')); //「作成(初期化)」ボタンを「作成」に名称変更
+      //「編集」ボタンを削除
+      $menuEditor.find('[data-type="edit"]').closest('.operationMenuItem').remove();
+      
+      //「初期化」「作成(初期化)」ボタンを「作成」に名称変更
+      const $initialize = $menuEditor.find('[data-type="initialize"], [data-type="update-initialize"]');
+      $initialize.attr('data-action', 'positive').find('.iconButtonBody').text(textCode('0046'))
+          .closest('.operationMenuItem').removeClass('operationMenuSeparate'); 
+      $initialize.find('.icon-clear').removeClass('icon-clear').addClass('icon-plus');   
   }
 
   itemCounter = setData['menu']['number_item'] + 1;
@@ -4332,7 +4344,7 @@ function setRoleSelectModalBody( roleList, initData, okCallback, cancelCallBack,
     + '<form id="modal-role-select">'
     + '<table class="modal-table modal-select-table">'
       + '<thead>'
-        + '<th class="select">Select</th><th class="name">Name</th>'
+        + '<th class="selectTh">Select</th><th class="name">Name</th>'
       + '</thead>'
       + '<tbody>';
 

@@ -22,7 +22,7 @@
 
 /*
 ##################################################
-   Common funcitions
+   Common function
 ##################################################
 */
 const fn = ( function() {
@@ -460,17 +460,26 @@ deselection: function() {
 ##################################################
 */
 date: function( date, format ) {
+    
+    if ( cmn.typeof( date ) === 'string' && date.match(/^[0-9]{4}\/(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\s/) ) {
+        date = date.replace(/\//g,'-');
+        date = date.replace(/\s/,'T');
+    }
+    
     if ( date ) {
         const d = new Date(date);
-        
-        format = format.replace(/yyyy/g, d.getFullYear());
-        format = format.replace(/MM/g, ('0' + (d.getMonth() + 1)).slice(-2));
-        format = format.replace(/dd/g, ('0' + d.getDate()).slice(-2));
-        format = format.replace(/HH/g, ('0' + d.getHours()).slice(-2));
-        format = format.replace(/mm/g, ('0' + d.getMinutes()).slice(-2));
-        format = format.replace(/ss/g, ('0' + d.getSeconds()).slice(-2));
-        format = format.replace(/SSS/g, ('00' + d.getMilliseconds()).slice(-3));
-        return format;
+        if ( !Number.isNaN( d.getTime()) ) {
+            format = format.replace(/yyyy/g, d.getFullYear());
+            format = format.replace(/MM/g, ('0' + (d.getMonth() + 1)).slice(-2));
+            format = format.replace(/dd/g, ('0' + d.getDate()).slice(-2));
+            format = format.replace(/HH/g, ('0' + d.getHours()).slice(-2));
+            format = format.replace(/mm/g, ('0' + d.getMinutes()).slice(-2));
+            format = format.replace(/ss/g, ('0' + d.getSeconds()).slice(-2));
+            format = format.replace(/SSS/g, ('00' + d.getMilliseconds()).slice(-3));
+            return format;
+        } else {
+            return date;            
+        }
     } else {
         return '';
     }
@@ -777,6 +786,23 @@ alert: function( title, elements, type = 'alert', buttons = { ok: { text: getMes
         };
         let dialog = new Dialog( config, funcs );
         dialog.open(`<div class="alertMessage">${elements}</div>`);
+        
+        setTimeout(function(){
+            if ( dialog ) {
+                dialog.buttonPositiveDisabled( false );
+            }
+        }, 300 )
+    });
+},
+iconConfirm: function( icon, title, elements ) {
+    elements = `
+    <div class="alertMessageIconBlock">
+        <div class="alertMessageIcon">${cmn.html.icon( icon )}</div>
+        <div class="alertMessageBody">${cmn.escape( elements, true )}</div>
+    </div>`;
+    return cmn.alert( title, elements , 'confirm', {
+        ok: { text: getMessage.FTE10058, action: 'default', style: 'width:120px', className: 'dialogPositive'},
+        cancel: { text: getMessage.FTE10026, action: 'negative', style: 'width:120px'}
     });
 },
 /*
@@ -1363,28 +1389,30 @@ html: {
         className = classNameCheck( className, `icon icon-${type}`);
         return `<span class="${className.join(' ')}"></span>`;
     },
-    button: function( element, className, attrs = {}, toggle ) {
-        const attr = inputCommon( null, null, attrs );
+    button: function( element, className, attrs = {}, option = {}) {
+        const attr = bindAttrs( attrs );
         className = classNameCheck( className, 'button');
-        if ( toggle !== undefined ) className.push('toggleButton');
+                
+        const html = [ element ];
+        if ( option.toggle ) {
+            className.push('toggleButton');
+            attr.push(`data-toggle="${option.toggle.init}"`);
+            html.push(`<span class="toggleButtonSwitch">`
+                + `<span class="toggleButtonSwitchOn">${option.toggle.on}</span>`
+                + `<span class="toggleButtonSwitchOff">${option.toggle.off}</span>`
+            + `</span>`)
+        }
+        if ( option.minWidth ) {
+            html.push(`<span class="buttonMinWidth" style="width:${option.minWidth}"></span>`);
+        }
         
         attr.push(`class="${className.join(' ')}"`);
-        
-        if ( toggle !== undefined ) {
-            attr.push(`data-toggle="${toggle.init}"`);
-            const toggleSwitch = `<span class="toggleButtonSwitch">`
-                + `<span class="toggleButtonSwitchOn">${toggle.on}</span>`
-                + `<span class="toggleButtonSwitchOff">${toggle.off}</span>`
-            + `</span>`;
-            return `<button ${attr.join(' ')}><span class="inner">${element}${toggleSwitch}</span></button>`;
-        } else { 
-            return `<button ${attr.join(' ')}><span class="inner">${element}</span></button>`;
-        }
+        return `<button ${attr.join(' ')}><span class="inner">${html.join('')}</span></button>`;
     },
-    iconButton: function( icon, element, className, attrs = {}, toggle ) {
+    iconButton: function( icon, element, className, attrs = {}, option = {}) {
         const html = `${cmn.html.icon( icon, 'iconButtonIcon')}<span class="iconButtonBody">${element}</span>`;
         className = classNameCheck( className, 'iconButton');
-        return cmn.html.button( html, className, attrs, toggle );
+        return cmn.html.button( html, className, attrs, option );
     },
     inputHidden: function( className, value, name, attrs = {}) {
         const attr = inputCommon( value, name, attrs );
@@ -1398,7 +1426,7 @@ html: {
         
         return `<span ${attr.join(' ')}>${value}</span>`;
     },
-    inputText: function( className, value, name, attrs = {}, option = {} ) {
+    inputText: function( className, value, name, attrs = {}, option = {}) {
         const attr = inputCommon( value, name, attrs );
         
         className = classNameCheck( className, 'inputText input');
@@ -1691,11 +1719,19 @@ html: {
             const button = item.button,
                   buttonClass = ['itaButton', 'operationMenuButton'],
                   buttonStyle = [],
-                  buttonAttr = { action: button.action, type: button.type };
-            if ( button.width ) buttonStyle.push(`min-width:${button.width}`);
+                  buttonAttr = { title: button.text, action: button.action, type: button.type },
+                  buttonOption = {};
+            if ( button.width ) buttonStyle.push(`width:${button.width}`);
+            if ( button.minWidth ) buttonOption.minWidth = button.minWidth;
             if ( button.className ) buttonClass.push( button.className );
+            if ( button.disabled ) buttonAttr.disabled = 'disabled';
             if ( buttonStyle.length ) buttonAttr.style = buttonStyle.join(';');
-            itemHtml.push( cmn.html.iconButton( button.icon, button.text, buttonClass, buttonAttr ) );
+            if ( button.toggle ) buttonOption.toggle = button.toggle;
+            if ( button.icon ) {
+                itemHtml.push( cmn.html.iconButton( button.icon, button.text, buttonClass, buttonAttr, buttonOption ) );
+            } else {
+                itemHtml.push( cmn.html.button( button.text, buttonClass, buttonAttr, buttonOption ) );
+            }
         }
 
         // input
@@ -1714,6 +1750,14 @@ html: {
             if ( check.className ) checkClass.push( check.className );
             itemHtml.push( cmn.html.checkboxText( checkClass, check.value, check.name, check.name ) );            
         }
+        
+        // message
+        if ( item.message ) {
+            const messageIcon = ( item.message.icon )? item.message.icon: 'circle_info';
+            itemHtml.push(`<div class="operationMenuMessage">`
+            + `<span class="operationMenuMessageIcon">${cmn.html.icon( messageIcon )}</span>`
+            + `<span class="operationMenuMessageText">${item.message.text}</span></div>`)
+        }
 
         return `<li ${itemAttrs.join(' ')}>${itemHtml.join('')}</li>`;
     },
@@ -1731,9 +1775,8 @@ html: {
                 for ( const item of menu[ menuType ] ) {
                     list[ menuType ].push( cmn.html.operationItem( item ) );
                 }
-                className.push(`operationMenu${menuType}`);
                 if ( menu[ menuType ].length ) {
-                    html.push(`<ul class="${className.join(' ')}">${list[ menuType ].join('')}</ul>`);
+                    html.push(`<ul class="${className.join(' ')} operationMenu${menuType}">${list[ menuType ].join('')}</ul>`);
                 }
             }
         }        
@@ -1938,7 +1981,9 @@ setCommonEvents: function() {
             }).append('<div class="popupArrow"><span></span></div>');
             
             const $arrow = $p.find('.popupArrow');
-
+            
+            if( $t.is('.darkPopup') ) $p.addClass('darkPopup');
+            
             $body.append( $p );
 
             const r = $t[0].getBoundingClientRect(),
@@ -2862,15 +2907,19 @@ add( type, title, message, icon, closeTime = 5000 ) {
     if ( icon ) html.push(`<div class="messageIcon">${fn.html.icon( icon )}</div>`);
     if ( title ) html.push(`<div class="messageTitle">${title}</div>`);
     if ( message ) html.push(`<div class="messageBody">${message}</div>`);
-    html.push(`<div class="messageClose"><button class="messageCloseButton">${fn.html.icon('cross')}</button></div>`);
+    html.push(`<div class="messageClose"><button class="messageCloseButton">${fn.html.icon('cross')}</button></div>`
+    + `<div class="messageTimer"><div class="messageTimerBar"></div></div>`);
     
     ms.message[ num ].$ = $(`<div class="messageItem" data-message="${type}">${html.join('')}</div>`);
     $('#messageContainer').append( ms.message[ num ].$ );
     
     if ( closeTime !== 0 ) {
+        ms.message[ num ].$.find('.messageTimerBar').animate({width: '100%'}, closeTime );
         ms.message[ num ].timer = setTimeout(function(){
             ms.close( num );
         }, closeTime );
+    } else {
+        ms.message[ num ].$.find('.messageTimer').addClass('messageTimerZero');
     }
     
     ms.message[ num ].$.find('.messageCloseButton').on('click', function(){

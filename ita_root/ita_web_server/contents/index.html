@@ -50,13 +50,16 @@
         <div class="containerLoading"></div>
     </div>
     <script src="/_/ita/js/ui.js"></script>
-    <script>CommonAuth.onAuthSuccess(() => {
-        let lang = CommonAuth.getLanguage();
-        let head = document.getElementsByTagName('head')[0];
-        let script = document.createElement('script');
-        script.src = "/_/ita/js/messageid_" + lang + ".js";
-        head.appendChild(script);
-        new CommonUi(`#container`)});
+    <script>
+        CommonUi.init();
+        CommonAuth.onAuthSuccess(() => {
+            let lang = CommonAuth.getLanguage();
+            let head = document.getElementsByTagName('head')[0];
+            let script = document.createElement('script');
+            script.src = "/_/ita/js/messageid_" + lang + ".js";
+            head.appendChild(script);
+            new CommonUi(`#container`);
+        });
     </script>
 </body>
 </html>

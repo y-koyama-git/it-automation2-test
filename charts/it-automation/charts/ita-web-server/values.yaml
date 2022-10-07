@@ -10,19 +10,17 @@ global:
 # Default values for ita-by-menu-create.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
-name: ita-by-menu-create
+name: ita-web-server
 replicaCount: 1
 
 extraenv:
-  EXECUTE_INTERVAL: "1"
-  STORAGEPATH: /storage/
-  CONTAINER_BASE: "kubernetes"
+  LISTEN_PORT: "8000"
 
 image:
-  repository: exastro/it-automation2-test-ita-by-menu-create
+  repository: exastro/it-automation2-test-ita-web-server
   pullPolicy: IfNotPresent #テスト環境用
   # Overrides the image tag whose default is the chart appVersion.
-  tag: Integration-test.13dc22.20221004-213151
+  tag: Integration-test.13dc22.20221004-213147
 
 imagePullSecrets: []
 nameOverride: ""
@@ -39,10 +37,12 @@ serviceAccount:
 
 volume:
   mountPath:
-    name1: /storage
-    subPath1: org1
-    name2: /tmp
-    name3: /home/app_user
+    name1: /var/run_app_user/httpd/pid
+    subPath1: httpd-pid
+    subPath2: httpd-socket
+    name2: /var/run_app_user/httpd/socket
+    name3: /tmp
+    name4: /home/app_user
 
 podAnnotations: {}
 
@@ -57,13 +57,11 @@ securityContext:
   runAsGroup: 1000
   runAsNonRoot: true
 
-service:
-  type: NodePort
-  portsName: tomcat
-  portsNumber: 8080
-  portsTargetNumber: 8080
-
-test: "sss"
+# service:
+#   type: NodePort
+#   portsName: tomcat
+#   portsNumber: 8080
+#   portsTargetNumber: 8080
 
 resources:
   requests:
@@ -73,15 +71,3 @@ resources:
     memory: "64Mi"  #仮決め
     cpu: "250m"     #仮決め
 
-# autoscaling:
-#   enabled: false
-#   minReplicas: 1
-#   maxReplicas: 100
-#   targetCPUUtilizationPercentage: 80
-#   # targetMemoryUtilizationPercentage: 80
-
-# nodeSelector: {}
-
-# tolerations: []
-
-# affinity: {}
