@@ -86,6 +86,8 @@ class DockerMode(AnsibleAgent):
         _conductor_instance_no = conductor_instance_no if conductor_instance_no else "dummy"
         conductor_path = "{}/{}/driver/conductor/{}".format(self._organization_id, self._workspace_id, _conductor_instance_no)
 
+        ansible_agent_image = "{}:{}".format(os.environ.get('ANSIBLE_AGENT_IMAGE'), os.environ.get('ANSIBLE_AGENT_IMAGE_TAG'))
+
         host_mount_path_driver = os.environ.get('HOST_STORAGEPATH') + driver_path
         container_mount_path_driver = os.environ.get('STORAGEPATH') + driver_path
         if not os.path.isdir(container_mount_path_driver):
@@ -108,6 +110,7 @@ class DockerMode(AnsibleAgent):
                 execution_no=execution_no,
                 HTTP_PROXY=os.getenv('HTTP_PROXY', ""),
                 HTTPS_PROXY=os.getenv('HTTPS_PROXY', ""),
+                ansible_agent_image=ansible_agent_image,
                 host_mount_path_driver=host_mount_path_driver,
                 container_mount_path_driver=container_mount_path_driver,
                 host_mount_path_conductor=host_mount_path_conductor,
@@ -238,17 +241,12 @@ class KubernetesMode(AnsibleAgent):
         '''
         # print("method: container_start_up")
 
-        # create namespace
-        # error(namespace already exists でも処理続行)
-        complete_process = subprocess.run(["/usr/local/bin/kubectl", "create", "namespace", KubernetesMode.NAMESPACE], capture_output=True)
-        g.applogger.debug("return_code: %s" % complete_process.returncode)
-        g.applogger.debug("stdout:\n%s" % complete_process.stdout.decode('utf-8'))
-        g.applogger.debug("stderr:\n%s" % complete_process.stderr.decode('utf-8'))
-
         # create path string
         driver_path = "{}/{}/driver/ansible/legacy_role/{}".format(self._organization_id, self._workspace_id, execution_no)
         _conductor_instance_no = conductor_instance_no if conductor_instance_no else "dummy"
         conductor_path = "{}/{}/driver/conducotr/{}".format(self._organization_id, self._workspace_id, _conductor_instance_no)
+
+        ansible_agent_image = "{}:{}".format(os.environ.get('ANSIBLE_AGENT_IMAGE'), os.environ.get('ANSIBLE_AGENT_IMAGE_TAG'))
 
         host_mount_path_driver = driver_path
         container_mount_path_driver = os.environ.get('STORAGEPATH') + driver_path
@@ -271,6 +269,7 @@ class KubernetesMode(AnsibleAgent):
                 unique_name=unique_name,
                 HTTP_PROXY=os.getenv('HTTP_PROXY', ""),
                 HTTPS_PROXY=os.getenv('HTTPS_PROXY', ""),
+                ansible_agent_image=ansible_agent_image,
                 host_mount_path_driver=host_mount_path_driver,
                 container_mount_path_driver=container_mount_path_driver,
                 host_mount_path_conductor=host_mount_path_conductor,
