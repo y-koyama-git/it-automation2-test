@@ -1,0 +1,73 @@
+global:
+  dbAccountInfo: secret-ita-mariadb
+  dbConnectionInfo: params-ita-mariadb
+  itaBaseInfo: params-ita-common
+  itaByMenuCreateInfo: params-ita-by-menu-create
+  itaApiOrg:  params-ita-org
+
+  claimName: ita-pvc
+
+# Default values for ita-by-menu-create.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+name: ita-web-server
+replicaCount: 1
+
+extraenv:
+  LISTEN_PORT: "8000"
+
+image:
+  repository: exastro/it-automation2-test-ita-web-server
+  pullPolicy: IfNotPresent #テスト環境用
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: Integration-test.13dc22.20221004-213147
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+volume:
+  mountPath:
+    name1: /var/run_app_user/httpd/pid
+    subPath1: httpd-pid
+    subPath2: httpd-socket
+    name2: /var/run_app_user/httpd/socket
+    name3: /tmp
+    name4: /home/app_user
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  runAsNonRoot: true
+
+# service:
+#   type: NodePort
+#   portsName: tomcat
+#   portsNumber: 8080
+#   portsTargetNumber: 8080
+
+resources:
+  requests:
+    memory: "64Mi"  #仮決め
+    cpu: "250m"     #仮決め
+  limits:
+    memory: "64Mi"  #仮決め
+    cpu: "250m"     #仮決め
+
