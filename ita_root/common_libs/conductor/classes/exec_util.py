@@ -1759,7 +1759,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             if tmp_result[0] is not True:
                 raise Exception()
             strage_path = os.environ.get('STORAGEPATH')  # noqa: F405
-            tmp_conductor_storage_path = '%%%%%ITA_DRIVER_DIRECTORY%%%%%/conductor'
+            tmp_conductor_storage_path = '%%%%%ITA_DRIVER_DIRECTORY%%%%%/driver/conductor'
             # tmp_result[1].get('CONDUCTOR_STORAGE_PATH_ITA')
             base_storage_path = "{}/{}/{}/".format(strage_path, self.organization_id, self.workspace_id).replace('//', '/')
             conductor_storage_path = tmp_conductor_storage_path.replace('%%%%%ITA_DRIVER_DIRECTORY%%%%%', base_storage_path).replace('//', '/')
