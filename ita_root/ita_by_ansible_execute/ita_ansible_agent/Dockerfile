@@ -34,10 +34,10 @@ RUN dnf install -y \
 &&  groupadd $GROUPNAME \
 &&  useradd -m -s /bin/bash -g $GROUPNAME $USERNAME
 
-COPY ./ita_root/ita_by_ansible_execute/config/centos8.repo /etc/yum.repos.d/centos8.repo
+COPY ./ita_root/ita_by_ansible_execute/ita_ansible_agent/config/centos8.repo /etc/yum.repos.d/centos8.repo
 RUN dnf install -y --enablerepo=baseos expect
 
-COPY ./ita_root/ita_by_ansible_execute/config/ansible.cfg /etc/ansible/ansible.cfg
+COPY ./ita_root/ita_by_ansible_execute/ita_ansible_agent/config/ansible.cfg /etc/ansible/ansible.cfg
 
 USER $USERNAME
 
