@@ -11,7 +11,12 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
+ARG USERNAME=app_user
+ARG GROUPNAME=app_user
+
 FROM    registry.access.redhat.com/ubi8/ubi-init
+ARG USERNAME
+ARG GROUPNAME
 
 RUN dnf install -y \
     openssh-clients \
@@ -25,12 +30,15 @@ RUN dnf install -y \
     pywinrm \
     boto3 \
     paramiko \
-    boto
+    boto \
+&&  groupadd $GROUPNAME \
+&&  useradd -m -s /bin/bash -g $GROUPNAME $USERNAME
 
-COPY ./config/centos8.repo /etc/yum.repos.d/centos8.repo
-
+COPY ./ita_root/ita_by_ansible_execute/config/centos8.repo /etc/yum.repos.d/centos8.repo
 RUN dnf install -y --enablerepo=baseos expect
 
-COPY ./config/ansible.cfg /etc/ansible/ansible.cfg
+COPY ./ita_root/ita_by_ansible_execute/config/ansible.cfg /etc/ansible/ansible.cfg
+
+USER $USERNAME
 
 CMD ["ansible-playbook"]
