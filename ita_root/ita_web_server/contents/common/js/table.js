@@ -357,35 +357,44 @@ setTable( mode ) {
     
     tb.$.thead = tb.$.container.find('.thead');
     tb.$.tbody = tb.$.container.find('.tbody');
+    tb.$.thead.find('.filterInputDiscard').select2({
+        width: '120px',
+        minimumResultsForSearch: 5
+    });
     tb.setInitSort();    
     
     // Table headerメニュー
     switch ( tb.mode ) {
         case 'view': case 'select': case 'execute': {    
             if ( tb.option.sheetType !== 'reference') {
-                const tableHeaderMenuList = {
+                const menuList = {
                     Main: [],
-                    Sub: [{ name: 'filterToggle', icon: 'filter', title: getMessage.FTE00001, action: 'default', toggle: { init: 'off', on:getMessage.FTE00002, off:getMessage.FTE00003}}]
-                };            
+                    Sub: [{ button: { icon: 'filter', text: getMessage.FTE00001, type: 'filterToggle', action: 'default',
+                        toggle: { init: 'off', on:getMessage.FTE00002, off:getMessage.FTE00003}}}]
+                };
                 if ( tb.mode === 'select') {
-                    tableHeaderMenuList.Main.push({ message: getMessage.FTE00004, action: 'message'});
+                    menuList.Main.push({ message: { text: getMessage.FTE00004 }});
                 }
                 if ( tb.mode === 'execute') {
-                    tableHeaderMenuList.Main.push({ className: 'tablePositive', name: 'tableRun', icon: 'square_next', title: getMessage.FTE00005, action: 'positive', width: '160px', disabled: true });
-                    tableHeaderMenuList.Main.push({ className: 'tablePositive', name: 'tableDryrun', icon: 'square_next', title: getMessage.FTE00006, action: 'positive', width: '160px', disabled: true });
-                    tableHeaderMenuList.Main.push({ className: 'tablePositive', name: 'tableParameter', icon: 'detail', title: getMessage.FTE00007, action: 'positive', width: '160px', disabled: true });
+                    menuList.Main.push({ button: { className: 'tableAdvance', icon: 'square_next', text: getMessage.FTE00005, type: 'tableRun', action: 'positive', minWidth: '160px', disabled: true }});
+                    menuList.Main.push({ button: { className: 'tableAdvance',icon: 'square_next', text: getMessage.FTE00006, type: 'tableDryrun', action: 'positive', minWidth: '160px', disabled: true }});
+                    menuList.Main.push({ button: { className: 'tableAdvance',icon: 'detail', text: getMessage.FTE00007, type: 'tableParameter', action: 'positive', minWidth: '160px', disabled: true }});
                 }
                 if ( tb.mode === 'view') {
                     // 権限チェック
-                    if ( tb.flag.insert ) tableHeaderMenuList.Main.push({ name: 'tableNew', icon: 'plus', title: getMessage.FTE00008, action: 'positive', width: '200px'});
-                    if ( tb.flag.update ) tableHeaderMenuList.Main.push({ name: 'tableEdit', icon: 'edit', title: getMessage.FTE00009, action: 'positive', width: '200px', 'disabled': true });
-
-                    if ( tableHeaderMenuList.Main.length === 0 ) {
-                         tableHeaderMenuList.Main.push({ message: getMessage.FTE00010, action: 'message'});
+                    if ( tb.flag.insert ) {
+                        menuList.Main.push({ button: { icon: 'plus', text: getMessage.FTE00008, type: 'tableNew', action: 'positive', minWidth: '200px'}});
                     }
-                }            
-                tb.$.header.html( tb.tableHeaderMenuHtml( tableHeaderMenuList ) );
+                    if ( tb.flag.update ) {
+                        menuList.Main.push({ button: { icon: 'edit', text: getMessage.FTE00009, type: 'tableEdit', action: 'positive', minWidth: '200px', 'disabled': true }});
+                    }
+                    if ( menuList.Main.length === 0 ) {
+                         menuList.Main.push({ message: { text: getMessage.FTE00010 }});
+                    }
+                }  
+                tb.$.header.html( fn.html.operationMenu( menuList ) );
             } else {
+                // 参照用メニューは専用のフィルターをセット
                 tb.$.header.html( tb.referenceFilter() );
             }
             
@@ -443,26 +452,24 @@ setTable( mode ) {
             }
         } break;
         case 'edit': {            
-            const tableHeaderMenuList = {
+            const menuList = {
                 Main: [
-                    { name: 'tableOk', icon: 'detail', title: getMessage.FTE00011, action: 'positive', width: '240px' }
-                ],
-                Sub: [
+                    { button: { type: 'tableOk', icon: 'detail', text: getMessage.FTE00011, action: 'positive', minWidth: '200px'}}
                 ]
             };
             if ( tb.flag.insert ) {
-                tableHeaderMenuList.Main.push({ name: 'tableAdd',icon: 'plus', title: getMessage.FTE00012, action: 'default', separate: true });
-                tableHeaderMenuList.Main.push({ name: 'tableDup', icon: 'copy', title: getMessage.FTE00013, action: 'duplicat', disabled: true });
-                tableHeaderMenuList.Main.push({ name: 'tableDel', icon: 'minus', title: getMessage.FTE00014, action: 'danger', disabled: true });
+                menuList.Main.push({ button: { type: 'tableAdd',icon: 'plus', text: getMessage.FTE00012, action: 'default'}, separate: true });
+                menuList.Main.push({ button: { type: 'tableDup', icon: 'copy', text: getMessage.FTE00013, action: 'duplicat', disabled: true }});
+                menuList.Main.push({ button: { type: 'tableDel', icon: 'minus', text: getMessage.FTE00014, action: 'danger', disabled: true }});
             }
             if ( tb.flag.disuse ) {
-                tableHeaderMenuList.Main.push({ name: 'tableDiscard', icon: 'cross', title: getMessage.FTE00015, action: 'warning', disabled: true });
+                menuList.Main.push({ button: { type: 'tableDiscard', icon: 'cross', text: getMessage.FTE00015, action: 'warning', disabled: true }});
             }
             if ( tb.flag.reuse ) {
-                tableHeaderMenuList.Main.push({ name: 'tableRestore', icon: 'circle', title: getMessage.FTE00016, action: 'restore', disabled: true });
+                menuList.Main.push({ button: { type: 'tableRestore', icon: 'circle', text: getMessage.FTE00016, action: 'restore', disabled: true }});
             }
-            tableHeaderMenuList.Main.push({ name: 'tableCancel', icon: 'cross', title: getMessage.FTE00017, action: 'normal', separate: true });
-            tb.$.header.html( tb.tableHeaderMenuHtml( tableHeaderMenuList ) );
+            menuList.Main.push({ button: { type: 'tableCancel', icon: 'cross', text: getMessage.FTE00017, action: 'normal'}, separate: true });
+            tb.$.header.html( fn.html.operationMenu( menuList ) );
             
             // メニューボタン
             tb.$.header.find('.itaButton').on('click', function(){
@@ -539,28 +546,28 @@ setTable( mode ) {
             }
         } break;
         case 'diff': {
-            const tableHeaderMenuList = {
+            const menuList = {
                 Main: [
-                    { name: 'tableOk', icon: 'check', title: getMessage.FTE00022, action: 'positive', width: '240px'},
-                    { name: 'tableCancel', icon: 'arrow01_left',title: getMessage.FTE00023, action: 'normal', separate: true }
+                    { button: { className: 'tableAdvance', type: 'tableOk', icon: 'check', text: getMessage.FTE00022, action: 'positive', minWidth: '200px', disabled: true }},
+                    { button: { type: 'tableCancel', icon: 'arrow01_left', text: getMessage.FTE00023, action: 'normal'}, separate: true}
                 ],
                 Sub: [
-                    { name: 'tableChangeValue', icon: 'circle_info',title: getMessage.FTE00024, action: 'default', toggle: { init: 'off', on:getMessage.FTE00025, off:getMessage.FTE00026}}
+                    { button: { type: 'tableChangeValue', icon: 'circle_info', text: getMessage.FTE00024, action: 'default',
+                        toggle: { init: 'off', on:getMessage.FTE00025, off:getMessage.FTE00026}}}
                 ]
             };
-            tb.$.header.html( tb.tableHeaderMenuHtml( tableHeaderMenuList ) );
+            tb.$.header.html( fn.html.operationMenu( menuList ) );
             tb.workerPost('normal', tb.option.after );
         } break;
         case 'history': {
-            const tableHeaderMenuList = {
+            const menuList = {
                 Main: [
-                    { name: 'tableInputHistoryId', icon: null, title: tb.idName, action: 'input'},
-                    { name: 'tableShowHistory', icon: 'clock', title: getMessage.FTE00027, action: 'default', disabled: true, width: '200px' },
-                    { name: 'tableResetHistory', icon: 'clear',title: getMessage.FTE00028, action: 'normal', disabled: true, width: '200px' }
-                ],
-                Sub: []
+                    { input: { className: 'tableHistoryId', type: 'tableInputHistoryId', before: tb.idName }},
+                    { button: { type: 'tableShowHistory', icon: 'clock', text: getMessage.FTE00027, action: 'default', disabled: true, minWidth: '200px'}},
+                    { button: { type: 'tableResetHistory', icon: 'clear', text: getMessage.FTE00028, action: 'normal', disabled: true, minWidth: '200px'}}
+                ]
             };
-            tb.$.header.html( tb.tableHeaderMenuHtml( tableHeaderMenuList ) );
+            tb.$.header.html( fn.html.operationMenu( menuList ) );
             
             const historyMessage = `<div class="historyStandByMessage">`
             + fn.html.icon('clock')
@@ -572,7 +579,7 @@ setTable( mode ) {
             // メニューボタン
             const $show = tb.$.header.find('.itaButton[data-type="tableShowHistory"]'),
                   $reset = tb.$.header.find('.itaButton[data-type="tableResetHistory"]'),
-                  $input = tb.$.header.find('.tableHeaderMainMenuInput');
+                  $input = tb.$.header.find('.tableHistoryId');
             
             $show.on('click', function(){
                 const uuid = $input.val();
@@ -606,48 +613,6 @@ setTable( mode ) {
     
     // Table内各種イベントセット
     tb.setTableEvents();    
-}
-/*
-##################################################
-   Table header menu HTML
-##################################################
-*/
-tableHeaderMenuHtml( headerList ) {    
-    const html = [];
-    
-    for ( const type in headerList ) {
-        html.push(`<ul class="tableHeader${type}MenuList">`);
-        for ( const item of headerList[ type ] ) {
-            const attr = {},
-                  itemClassName = [`tableHeader${type}MenuItem`],
-                  buttonClassName = ['itaButton', `tableHeader${type}MenuButton`];
-            let title = item.title;
-            let toggle;
-            if ( item.className ) buttonClassName.push( item.className );
-            if ( item.separate ) itemClassName.push(`tableHeader${type}MenuItemSeparate`)
-            if ( item.name ) attr['type'] = item.name;
-            if ( item.action && item.action !== 'input') attr['action'] = item.action;
-            if ( item.disabled ) attr['disabled'] = 'disabled';
-            if ( item.width ) attr['style'] = `width:${item.width};`;
-            if ( item.toggle ) toggle = item.toggle;
-            if ( item.icon ) title = fn.html.icon( item.icon ) + title;
-            
-            switch ( item.action ) {
-                case 'input': {
-                    const input = fn.html.inputText( [`tableHeader${type}MenuInput`],'', null, {}, { widthAdjustment: true, before: item.title });
-                    html.push(`<li class="${itemClassName.join(' ')}">${input}</li>`);
-                } break;
-                case 'message':
-                    html.push(`<li class="${itemClassName.join(' ')}"><div class="tableHeaderMessage"><div class="tableHeaderMessageIcon">${fn.html.icon('circle_info')}</div><div class="tableHeaderMessageText">${item.message}</div></div></li>`);
-                break;
-                default:
-                    html.push(`<li class="${itemClassName.join(' ')}">${fn.html.button( title, buttonClassName, attr, toggle )}</li>`);
-            }
-        }
-        html.push(`</ul>`);
-    }
-
-    return html.join('');
 }
 /*
 ##################################################
@@ -758,6 +723,7 @@ tableHtml() {
                     const notSort = ['ButtonColumn', 'PasswordColumn', 'PasswordIDColumn', 'JsonPasswordIDColumn', 'MaskColumn', 'SensitiveSingleTextColumn', 'SensitiveMultiTextColumn'];
                     if ( notSort.indexOf( column.column_type ) === -1 ) {
                         className.push('tHeadSort');
+                        name += `<span class="tHeadSortMark"></span>`
                     }
                 }
                 // 必須
@@ -1796,10 +1762,18 @@ addRowInputDataDelete() {
    選択、実行時のメニューボタン活性・非活性
 ##################################################
 */
+advanceButtonCheck( flag ) {
+    this.$.header.find('.tableAdvance').prop('disabled', flag );
+}
+/*
+##################################################
+   選択、実行時のメニューボタン活性・非活性
+##################################################
+*/
 selectModeMenuCheck() {
     const tb = this;
     
-    const $button = tb.$.header.find('.tablePositive');
+    const $button = tb.$.header.find('.tableAdvance');
     
     if ( tb.select[ tb.mode ].length ) {
         $button.prop('disabled', false );
@@ -1847,7 +1821,7 @@ editModeMenuCheck() {
         if ( selectCount === discardCount ) restoreFlag = false;
         if ( selectCount === addCount ) deleteFlag = false;
     }
-    const $button = tb.$.header.find('.tableHeaderMainMenuButton');
+    const $button = tb.$.header.find('.operationMenuButton');
     // $button.filter('[data-type="tableOk"]').prop('disabled', confirmFlag );
     $button.filter('[data-type="tableDup"]').prop('disabled', duplicatFlag );
     $button.filter('[data-type="tableDel"]').prop('disabled', deleteFlag );
@@ -2196,6 +2170,9 @@ setTbody() {
         tb.$.container.removeClass('noData');
         if ( tb.mode === 'view' && tb.flag.update ) {
             tb.$.header.find('.itaButton[data-type="tableEdit"]').prop('disabled', false );
+        }
+        if ( tb.mode === 'diff' ) {
+            tb.advanceButtonCheck( false );
         }
     }
     

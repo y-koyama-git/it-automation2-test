@@ -21,6 +21,20 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class CommonUi {
+
+/*
+##################################################
+   画面初期設定
+##################################################
+*/
+static init() {
+    // サイドメニュー開閉チェック
+    const sideMenu = fn.storage.get('sideMenuClose');
+    if ( sideMenu === true ) {
+        $('#container').addClass('menuClose');
+    }
+}
+
 /*
 ##################################################
    UI mode
@@ -452,20 +466,23 @@ sideMenu() {
           body = [];
     
     for ( const menu of menus ) {
-        tab.push(`<li class="menuTabItem"><a class="menuTabLink popup" title="${menu.title}" href="#${menu.name}"><span class="icon icon-${menu.icon}"></span></a></li>`);
+        tab.push(`<li class="menuTabItem"><a class="menuTabLink popup darkPopup" title="${menu.title}" href="#${menu.name}"><span class="icon icon-${menu.icon}"></span></a></li>`);
         body.push(`<div class="menuBlock" id="${menu.name}">${ui[ menu.name ]()}</div>`);
     }
     
     ui.$.menu.html(`
     <div class="menuHeader">
-        <div class="menuTab">
-            <ul class="menuTabList">
-                ${tab.join('')}
-            </ul>
+        <div class="menuHeaderInner">
+            <div class="menuTab">
+                <ul class="menuTabList">
+                    ${tab.join('')}
+                </ul>
+            </div>
+            <div class="menuToggle">
+                <button class="menuToggleButton"><span class="icon icon-arrow01_left"></span></button>
+            </div>
         </div>
-        <div class="menuToggle">
-            <button class="menuToggleButton"><span class="icon icon-arrow01_left"></span></button>
-        </div>
+        <div class="menuCloseMark">${fn.html.icon('ellipsis')}</div>
     </div>
     <div class="menuBody">
         ${body.join('')}
@@ -475,24 +492,27 @@ sideMenu() {
     ui.$.menu.find(`.menuTabLink[href="${ui.menuTab}"]`).addClass('tabOpen').attr('tabindex', -1 );
     ui.$.menu.find( ui.menuTab ).addClass('tabOpen');
     
-    ui.$.menu.find('.menuTabLink').on('click', function( e ){
+    ui.$.menu.on('click', '.menuTabLink', function( e ){
         e.preventDefault();
         
         const $link = $( this );
         ui.menuTab = $link.attr('href');
         ui.$.menu.find('.tabOpen').removeClass('tabOpen').removeAttr('tabindex');
-        $link.addClass('tabOpen').attr('tabindex', -1 );
+        ui.$.menu.find(`.menuTabLink[href="${ui.menuTab}"]`).addClass('tabOpen').attr('tabindex', -1 );
         $( ui.menuTab ).addClass('tabOpen');
         fn.storage.set('menuTab', ui.menuTab );
         
     });
     
     // Menu toggle
-    ui.$.menu.find('.menuToggleButton').on('click', function( e ){
+    ui.$.menu.on('click', '.menuToggleButton', function( e ){
         if ( !ui.$.container.is('.menuClose') ) {
+            fn.storage.set('sideMenuClose', true );
             ui.$.container.addClass('menuClose');
         } else {
+            fn.storage.remove('sideMenuClose');
             ui.$.container.removeClass('menuClose');
+            ui.$.menu.find('.cloneMenu').remove();
         }
     });
     
@@ -521,7 +541,7 @@ sideMenu() {
     });
     
     // メニューグループクリック時、メニュー一覧表示
-    ui.$.menu.find('.menuGroupLink').on('click', function( e ){
+    ui.$.menu.on('click', '.menuGroupLink', function( e ){
         e.preventDefault();
         
         const $link = $( this ),
@@ -531,7 +551,11 @@ sideMenu() {
               width = ui.$.menu.outerWidth();
         
         if ( list.id === id && !$link.is('.subGroupMenuOpen') ) {
-            $link.addClass('subGroupMenuOpen');
+            if ( $link.is('.cloneLink') ) {
+                $link.closest('.menuItem').trigger('pointerleave');
+            }
+            
+            ui.$.menu.find(`.menuGroupLink[data-id="${id}"]`).addClass('subGroupMenuOpen');
         
             const $html = $(`<div class="menuGroupSub" style="left:${width}px">`
             + `<div class="menuHeader"></div>`
@@ -553,7 +577,43 @@ sideMenu() {
             });
         }
     });
-
+    
+    // メニューが閉じている場合、サイドメニュータブを表示
+    ui.$.menu.find('.menuHeader').on('pointerenter', function( e ){
+        if ( ui.$.container.is('.menuClose') ) {
+            const $menu = $( this ),
+                  $cloneHeader = $menu.find('.menuHeaderInner').clone();
+            
+            $cloneHeader.addClass('cloneMenu');
+            
+            $menu.prepend( $cloneHeader );
+            
+            ui.$.menu.find('.menuHeader').on('pointerleave', function( e ){
+                ui.$.menu.find('.menuHeader').off('pointerleave');
+                $cloneHeader.remove();
+            });
+        }
+    });
+    
+    ui.$.menu.find('.menuItem').on('pointerenter', function( e ){
+        if ( ui.$.container.is('.menuClose') ) {
+            const $item = $( this ),
+                  $link = $item.find('.menuLink');
+            
+            if ( $link.is('.subGroupMenuOpen') || $link.is('.current') ) return;
+            
+            const $cloneLink = $link.clone();
+            
+            $cloneLink.addClass('cloneLink');
+            
+            $item.prepend( $cloneLink );
+            
+            $item.on('pointerleave', function( e ){
+                $item.off('pointerleave click');
+                $cloneLink.remove();
+            });
+        }
+    });
 }
 /*
 ##################################################
@@ -1079,7 +1139,7 @@ defaultMenu( sheetType ) {
                   uuid = $button.attr('data-id');
 
             ui.contentTabOpen('#changeHistory');
-            $history.find('.tableHeaderMainMenuInput').val( uuid ).trigger('input');
+            $history.find('.tableHistoryId').val( uuid ).trigger('input');
 
             ui.historyTable.$.header.find('.itaButton').prop('disabled', false );
             ui.historyTable.workStart('filter');
