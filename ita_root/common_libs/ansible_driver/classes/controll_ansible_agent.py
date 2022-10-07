@@ -296,7 +296,9 @@ class KubernetesMode(AnsibleAgent):
 
         # runningのものが一つだけ存在しているか確認
         return_code, status, errmsg = self._check_status(execution_no)
-        if return_code == 0 and status == "running":
+        g.applogger.debug("Container Status=" + status)
+#        if return_code == 0 and status == "running":
+        if return_code == 0 and status.lower() in ["running", "pending"]:
             return True,
 
         return False, {"return_code": return_code, "stderr": "not running"}
