@@ -86,6 +86,8 @@ class DockerMode(AnsibleAgent):
         _conductor_instance_no = conductor_instance_no if conductor_instance_no else "dummy"
         conductor_path = "{}/{}/driver/conductor/{}".format(self._organization_id, self._workspace_id, _conductor_instance_no)
 
+        ansible_agent_image = "{}:{}".format(os.environ.get('ANSIBLE_AGENT_IMAGE'), os.environ.get('ANSIBLE_AGENT_IMAGE_TAG'))
+
         host_mount_path_driver = os.environ.get('HOST_STORAGEPATH') + driver_path
         container_mount_path_driver = os.environ.get('STORAGEPATH') + driver_path
         if not os.path.isdir(container_mount_path_driver):
@@ -108,6 +110,7 @@ class DockerMode(AnsibleAgent):
                 execution_no=execution_no,
                 HTTP_PROXY=os.getenv('HTTP_PROXY', ""),
                 HTTPS_PROXY=os.getenv('HTTPS_PROXY', ""),
+                ansible_agent_image=ansible_agent_image,
                 host_mount_path_driver=host_mount_path_driver,
                 container_mount_path_driver=container_mount_path_driver,
                 host_mount_path_conductor=host_mount_path_conductor,
@@ -243,6 +246,8 @@ class KubernetesMode(AnsibleAgent):
         _conductor_instance_no = conductor_instance_no if conductor_instance_no else "dummy"
         conductor_path = "{}/{}/driver/conducotr/{}".format(self._organization_id, self._workspace_id, _conductor_instance_no)
 
+        ansible_agent_image = "{}:{}".format(os.environ.get('ANSIBLE_AGENT_IMAGE'), os.environ.get('ANSIBLE_AGENT_IMAGE_TAG'))
+
         host_mount_path_driver = driver_path
         container_mount_path_driver = os.environ.get('STORAGEPATH') + driver_path
         if not os.path.isdir(container_mount_path_driver):
@@ -264,6 +269,7 @@ class KubernetesMode(AnsibleAgent):
                 unique_name=unique_name,
                 HTTP_PROXY=os.getenv('HTTP_PROXY', ""),
                 HTTPS_PROXY=os.getenv('HTTPS_PROXY', ""),
+                ansible_agent_image=ansible_agent_image,
                 host_mount_path_driver=host_mount_path_driver,
                 container_mount_path_driver=container_mount_path_driver,
                 host_mount_path_conductor=host_mount_path_conductor,
