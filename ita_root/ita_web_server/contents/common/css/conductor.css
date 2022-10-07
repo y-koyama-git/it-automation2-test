@@ -1798,39 +1798,41 @@ width: 8px;
 .node-table th .movement-list-sort {
 position: relative;
 z-index: 0;
-padding: 10px 14px 10px 6px;
+padding: 8px 4px;
 cursor: pointer;
 transition-duration: .2s;
 }
 .node-table th .movement-list-sort:hover {
 background-color: rgba(0,0,0,.3);
 }
-.movement-list-sort::before,
-.movement-list-sort::after {
-content: '';
-display: block;
+.movementSortMark {
+position: relative;
+display: inline-block;
+width: 1em; height: 1em;
+vertical-align: middle;
+font-family: 'exastro-ui-icons' !important;
+font-size: 14px;
+}
+.movementSortMark::before,
+.movementSortMark::after {
 position: absolute;
-right: 2px;
-width: 8px; height: 8px;
-background-image: url(../imgs/ita_icon_sprite.png);
-background-size: 80px 72px;
-opacity: .5;
+top: 50%; left: 50%;
+transform: translate(-50%,-50%);
+display: block;
+color: #FFF;
 }
-.movement-list-sort::before {
-top: 6px;
-background-position: -64px -32px;
+.movementSortMark::before {
+content: '';
 }
-.movement-list-sort::after {
-bottom: 6px;
-background-position: -72px -32px;
+.movementSortMark::after {
+content: '\e950';
+opacity: .2;
 }
-.movement-list-sort.asc::before {
-background-position: -64px -40px;
-opacity: 1;
+.asc .movementSortMark::before {
+content: '\e952';
 }
-.movement-list-sort.desc::after {
-background-position: -72px -40px;
-opacity: 1;
+.desc .movementSortMark::before {
+content: '\e953';
 }
 
 .movement-filter {

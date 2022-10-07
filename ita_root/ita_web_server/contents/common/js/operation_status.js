@@ -493,12 +493,12 @@ operationStatus() {
             case 'host':
                 target.title = getMessage.FTE05024;
                 target.menu = Status.string[ op.menu ].targetHostMenu;
-                target.filter = { item_no: { NORMAL: op.id } };
+                target.filter = { execution_no: { NORMAL: op.id } };
             break;
             case 'value':
                 target.title = getMessage.FTE05025;
                 target.menu = Status.string[ op.menu ].substValueMenu;
-                target.filter = { item_no: { NORMAL: op.id } };
+                target.filter = { execution_no: { NORMAL: op.id } };
             break;
         }
         fn.modalIframe( target.menu, target.title, { filter: target.filter, iframeMode: target.iframeMode });
