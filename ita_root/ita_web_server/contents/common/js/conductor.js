@@ -124,7 +124,7 @@ setup() {
         ` + getMessage.FTE02001 + `<br>
         ` + getMessage.FTE02002 + `<br>
         <a href="?menu=conductor_list">` + getMessage.FTE02003 + `</a>` + getMessage.FTE02004 + `</div></div>`);
-        cd.instanceIdEvent();
+        cd.confirmationEvents();
         return false;
     } else {
         // 編集・作業実行モード
@@ -138,14 +138,12 @@ setup() {
         cd.init( result[0], result[1] );
     }).catch(function( error ){
         if ( error.message ) {
-            if ( e.message !== 'Failed to fetch') {
+            if ( error.message !== 'Failed to fetch') {
                 alert( error.message );
             }
         }
-        if ( cd.mode !== 'confirmation') {
-            console.error( error );
-            // window.location.href = '?menu=' + cd.menu;        
-        }
+        console.error( error );
+        window.location.href = '?menu=' + cd.menu;
     });
     
 }
@@ -159,41 +157,41 @@ operationMenuHtml() {
     
     const menuList = {
         Sub: [
-            { className: 'fullscreen-on', button: { className: 'menu-editor-menu-button', icon: 'expansion', text: getMessage.FTE01148, type: 'fullscreen', action: 'default', width: '120px'}},
-            { className: 'fullscreen-off', button: { className: 'menu-editor-menu-button', icon: 'shrink', text: getMessage.FTE01149, type: 'fullscreen', action: 'default', width: '120px'}}
+            { className: 'fullscreen-on', button: { className: 'menu-editor-menu-button', icon: 'expansion', text: getMessage.FTE01148, type: 'fullscreen', action: 'default', minWidth: '120px'}},
+            { className: 'fullscreen-off', button: { className: 'menu-editor-menu-button', icon: 'shrink', text: getMessage.FTE01149, type: 'fullscreen', action: 'default', minWidth: '120px'}}
         ]
     };
     
     switch ( cd.mode ) {
         case 'edit':
             menuList.Main = [
-                { button: { icon: 'note', text: getMessage.FTE02005, type: 'selectConductor', action: 'default', width: '100px'}},
-                { button: { icon: 'plus', text: getMessage.FTE02006, type: 'registration', action: 'positive', width: '160px'}, separate: true },
-                { button: { icon: 'return', text: getMessage.FTE02007, type: 'reset', action: 'negative', width: '100px'}, separate: true }
+                { button: { icon: 'note', text: getMessage.FTE02005, type: 'selectConductor', action: 'default', minWidth: '100px'}},
+                { button: { icon: 'plus', text: getMessage.FTE02006, type: 'registration', action: 'positive', minWidth: '160px'}, separate: true },
+                { button: { icon: 'return', text: getMessage.FTE02007, type: 'reset', action: 'negative', minWidth: '100px'}, separate: true }
             ];
         break;
         case 'view':
             menuList.Main = [
-                { button: { icon: 'note', text: getMessage.FTE02005, type: 'selectConductor', action: 'default', width: '100px'}},
-                { button: { icon: 'edit', text: getMessage.FTE02008, type: 'edit', action: 'positive', width: '160px'}, separate: true },
-                { button: { icon: 'square_next', text: getMessage.FTE02009, type: 'execute', action: 'positive', width: '160px'}},
-                { button: { icon: 'copy', text: getMessage.FTE02010, type: 'diversion', action: 'normal', width: '100px'}, separate: true },
-                { button: { icon: 'plus', text: getMessage.FTE02011, type: 'new', action: 'normal', width: '100px'}}
+                { button: { icon: 'note', text: getMessage.FTE02005, type: 'selectConductor', action: 'default', minWidth: '100px'}},
+                { button: { icon: 'edit', text: getMessage.FTE02008, type: 'edit', action: 'positive', minWidth: '160px'}, separate: true },
+                { button: { icon: 'square_next', text: getMessage.FTE02009, type: 'execute', action: 'positive', minWidth: '160px'}},
+                { button: { icon: 'copy', text: getMessage.FTE02010, type: 'diversion', action: 'normal', minWidth: '100px'}, separate: true },
+                { button: { icon: 'plus', text: getMessage.FTE02011, type: 'new', action: 'normal', minWidth: '100px'}}
             ];
         break;
         case 'update':
             menuList.Main = [
-                { button: { icon: 'update02', text: getMessage.FTE02012, type: 'update', action: 'positive', width: '160px'}},
-                { button: { icon: 'update01', text: getMessage.FTE02013, type: 'refresh', action: 'negative', width: '120px'}, separate: true },
-                { button: { icon: 'cross', text: getMessage.FTE02014, type: 'cancel', action: 'negative', width: '120px'}}
+                { button: { icon: 'update02', text: getMessage.FTE02012, type: 'update', action: 'positive', minWidth: '160px'}},
+                { button: { icon: 'update01', text: getMessage.FTE02013, type: 'refresh', action: 'negative', minWidth: '120px'}, separate: true },
+                { button: { icon: 'cross', text: getMessage.FTE02014, type: 'cancel', action: 'negative', minWidth: '120px'}}
             ];
         break;
         case 'confirmation':
             menuList.Main = [
                 { input: { className: 'inputConductorInstanceId', value: cd.id, before: getMessage.FTE02018 } },
-                { button: { icon: 'check', text: getMessage.FTE02015, type: 'work-confirm', action: 'default', width: '120px'}},
-                { className: 'canselInstanceItem', button: { className: 'canselInstance', icon: 'cal_off', text: getMessage.FTE02016, type: 'canselInstance', action: 'danger', width: '120px'}, separate: true },
-                { className: 'scramInstanceItem', button: { className: 'scramInstance', icon: 'stop', text: getMessage.FTE02017, type: 'scramInstance', action: 'danger', width: '120px'}, separate: true }
+                { button: { icon: 'check', text: getMessage.FTE02015, type: 'work-confirm', action: 'default', minWidth: '120px', disabled: true }},
+                { className: 'canselInstanceItem', button: { className: 'canselInstance', icon: 'cal_off', text: getMessage.FTE02016, type: 'canselInstance', action: 'danger', minWidth: '120px'}, separate: true },
+                { className: 'scramInstanceItem', button: { className: 'scramInstance', icon: 'stop', text: getMessage.FTE02017, type: 'scramInstance', action: 'danger', minWidth: '120px'}, separate: true }
             ];
         break;
         
@@ -458,6 +456,7 @@ init( info, conductorData ) {
     if ( conductorData ) {
         cd.loadConductor();
     } else if ( temp ) {
+        cd.message('info', '編集途中のデータがLocal storageから読み込まれました。');
         cd.loadConductor( temp );
     } else {
         cd.InitialSetNode();
@@ -672,20 +671,24 @@ initEvents() {
           break;
           // コンダクター新規登録
           case 'registration':
-              if ( window.confirm(getMessage.FTE02030) ) {
-                  cd.menuButtonDisabled( true );
-                  fn.fetch(`/menu/${cd.menu}/conductor/class/maintenance/`, null, 'POST', cd.data ).then(function( result ){
-                      cd.fetchConductor( result.conductor_class_id ).then(function(){
+              fn.iconConfirm('plus', getMessage.FTE10059, getMessage.FTE02030 ).then(function( flag ){
+                  if ( flag ) {
+                      cd.menuButtonDisabled( true );
+                      fn.fetch(`/menu/${cd.menu}/conductor/class/maintenance/`, null, 'POST', cd.data ).then(function( result ){
+                          cd.fetchConductor( result.conductor_class_id ).then(function(){
+                              cd.menuButtonDisabled( false );
+                              cd.conductorMode('view');
+                              fn.messageClear();
+                              cd.message('success', getMessage.FTE02031);
+                              //fn.storage.remove('conductor-edit-temp');
+                          });
+                      }).catch(function( error ){
                           cd.menuButtonDisabled( false );
-                          cd.conductorMode('view');
-                          cd.message('success', getMessage.FTE02031);
+                          fn.messageClear();
+                          cd.message('danger', getMessage.FTE02032, error.message );
                       });
-                  }).catch(function( error ){
-                      cd.menuButtonDisabled( false );
-                      fn.messageClear();
-                      cd.message('danger', getMessage.FTE02032, error.message );
-                  });
-              }
+                  }
+              });
           break;
           // 登録済みコンダクターを選択し表示する
           case 'selectConductor': {
@@ -708,28 +711,33 @@ initEvents() {
               cd.conductorMode('update');
           break;
           case 'reset':
-              if ( window.confirm(getMessage.FTE02034) ) {
-                    cd.clearConductor();
-                    cd.InitialSetNode();
-                    cd.message('info', getMessage.FTE02035);
-              }
+              fn.iconConfirm('return', getMessage.FTE10059, getMessage.FTE02034 ).then(function( flag ){
+                  if ( flag ) {
+                      cd.clearConductor();
+                      cd.InitialSetNode();
+                      fn.messageClear();
+                      cd.message('info', getMessage.FTE02035);
+                  }
+              });
           break;
           case 'diversion':
             // 流用しますか？
-            if ( window.confirm(getMessage.FTE02036) ) {
-                // 流用する場合は下記の項目はnullに
-                cd.data.conductor.id = null;
-                cd.data.conductor.last_update_date_time = null;
-                cd.data.conductor.conductor_name = null;
-                cd.data.conductor.note = null;
+            fn.iconConfirm('copy', getMessage.FTE10059, getMessage.FTE02036 ).then(function( flag ){
+                if ( flag ) {
+                    // 流用する場合は下記の項目はnullに
+                    cd.data.conductor.id = null;
+                    cd.data.conductor.last_update_date_time = null;
+                    cd.data.conductor.conductor_name = null;
+                    cd.data.conductor.note = null;
 
-                cd.conductorMode('edit');
-                cd.panelChange();
+                    cd.conductorMode('edit');
+                    cd.panelChange();
 
-                history.replaceState( null, null, '?menu=conductor_class_edit');
-                fn.messageClear();
-                cd.message('info', getMessage.FTE02037);
-            }
+                    history.replaceState( null, null, '?menu=conductor_class_edit');
+                    fn.messageClear();
+                    cd.message('info', getMessage.FTE02037);
+                }
+            });
             break;
           case 'new':
               cd.clearConductor();
@@ -742,56 +750,59 @@ initEvents() {
           break;
           case 'update':
               // 更新しますか？
-              if ( window.confirm(getMessage.FTE02038) ) {
-                  cd.menuButtonDisabled( true );
-                  fn.fetch(`/menu/${cd.menu}/conductor/class/maintenance/${cd.id}/`, null, 'PATCH', cd.data ).then(function(result){
-                      cd.fetchConductor( result.conductor_class_id ).then(function(){
+              fn.iconConfirm('update02', getMessage.FTE10059, getMessage.FTE02038 ).then(function( flag ){
+                  if ( flag ) {
+                      cd.menuButtonDisabled( true );
+                      fn.fetch(`/menu/${cd.menu}/conductor/class/maintenance/${cd.id}/`, null, 'PATCH', cd.data ).then(function(result){
+                          cd.fetchConductor( result.conductor_class_id ).then(function(){
+                              cd.menuButtonDisabled( false );
+                              cd.conductorMode('view');
+                              fn.messageClear();
+                              cd.message('success', getMessage.FTE02039);
+                          });
+                      }).catch(function( error ){
                           cd.menuButtonDisabled( false );
-                          cd.conductorMode('view');
                           fn.messageClear();
-                          cd.message('success', getMessage.FTE02039);
+                          cd.message('danger', getMessage.FTE02040, error.message );
                       });
-                  }).catch(function( error ){
-                      cd.menuButtonDisabled( false );
-                      fn.messageClear();
-                      cd.message('danger', getMessage.FTE02040, error.message );
-                  });
-              }
+                  }
+              });
           break;
           // 編集中データ再読み込み
           case 'refresh':
-              if ( window.confirm(getMessage.FTE02041) ) {
-                  cd.menuButtonDisabled( true );
-                  cd.fetchConductor( cd.id ).then(function( result ){
-                      cd.menuButtonDisabled( false );
-                      fn.messageClear();
-                      cd.message('success', getMessage.FTE02042);
-                  });
-              }
+              fn.iconConfirm('update01', getMessage.FTE10059, getMessage.FTE02041 ).then(function( flag ){
+                  if ( flag ) {
+                      cd.menuButtonDisabled( true );
+                      cd.fetchConductor( cd.id ).then(function( result ){
+                          cd.menuButtonDisabled( false );
+                          fn.messageClear();
+                          cd.message('success', getMessage.FTE02042);
+                      });
+                  }
+              });
             break;
           // 編集をキャンセルする
           case 'cancel':
               cd.selectConductor( cd.original );
               cd.conductorMode('view');
           break;
-          // 作業確認
-          case 'work-confirm': {
-              const instanceId = cd.$.menu.find('.inputConductorInstanceId').val();
-              window.location.href = `?menu=conductor_confirmation&conductor_instance_id=${instanceId}`;
-          } break;
           // 予約取消
           case 'canselInstance':
-              if ( window.confirm(getMessage.FTE02043) ) {
-                  cd.menuButtonDisabled( true );
-                  cd.cancelInstance();
-              }
+              fn.iconConfirm('stop', getMessage.FTE10059, getMessage.FTE02043 ).then(function( flag ){
+                  if ( flag ) {
+                      cd.menuButtonDisabled( true );
+                      cd.cancelInstance();
+                  }
+              });
               break;
           // 緊急停止
           case 'scramInstance':
-              if ( window.confirm(getMessage.FTE02044) ) {
-                  cd.menuButtonDisabled( true );
-                  cd.scramInstance();
-              }
+              fn.iconConfirm('cal_off', getMessage.FTE10059, getMessage.FTE02044 ).then(function( flag ){
+                  if ( flag ) {
+                      cd.menuButtonDisabled( true );
+                      cd.scramInstance();
+                  }
+              });
               break;
           // 画面フルスクリーン
           case 'fullscreen':
@@ -809,6 +820,7 @@ initEvents() {
         } else {
             cd.$.body.removeClass('editor-full-screen');
         }
+        cd.nodeViewAll( 0 );
     }
     
     // --------------------------------------------------
@@ -865,21 +877,12 @@ initEvents() {
             }
         }
     });
-        
+    
     // --------------------------------------------------
-    // 作業確認　インスタンスＩＤ入力時ボタン有効無効化
+    // 作業確認
     // --------------------------------------------------
     if ( cd.mode === 'confirmation') {
-        cd.$.menu.on('input', '.inputConductorInstanceId', function(){
-            const val = $( this ).val(),
-                  $button = cd.$.menu.find('.operation-menu-button[data-menu="work-confirm"]');
-            if ( val === '') {
-                $button.prop('disabled', true );
-            } else {
-                $button.prop('disabled', false );
-            }
-        });
-        cd.$.menu.find('.inputConductorInstanceId').trigger('input');
+        cd.confirmationEvents();
     }
     
     // --------------------------------------------------
@@ -898,28 +901,32 @@ initEvents() {
 }
 /*
 ##################################################
-   インスタンスIDが未入力時のイベント
+   作業確認用イベント
 ##################################################
 */
-instanceIdEvent() {
+confirmationEvents() {
     const cd = this;
     
-    cd.$.menu.find('.inputConductorInstanceId').trigger('input');
-    
+    // --------------------------------------------------
+    // 作業確認
+    // --------------------------------------------------
+    cd.$.menu.on('click', '.operationMenuButton[data-type="work-confirm"]', function(){
+        const instanceId = cd.$.menu.find('.inputConductorInstanceId').val();
+        window.location.href = `?menu=conductor_confirmation&conductor_instance_id=${instanceId}`;
+    });
+    // --------------------------------------------------
+    // 作業確認　インスタンスＩＤ入力時ボタン有効無効化
+    // --------------------------------------------------
     cd.$.menu.on('input', '.inputConductorInstanceId', function(){
         const val = $( this ).val(),
-              $button = cd.$.menu.find('.operation-menu-button[data-menu="work-confirm"]');
+              $button = cd.$.menu.find('.operationMenuButton[data-type="work-confirm"]');
         if ( val === '') {
             $button.prop('disabled', true );
         } else {
             $button.prop('disabled', false );
         }
     });
-    
-    cd.$.menu.on('click', '.operation-menu-button ', function(){
-        const instanceId = cd.$.menu.find('.inputConductorInstanceId').val();
-        window.location.href = `?menu=conductor_confirmation&conductor_instance_id=${instanceId}`;
-    });
+    cd.$.menu.find('.inputConductorInstanceId').trigger('input');
 }
 /*
 ##################################################
@@ -4178,8 +4185,8 @@ movementListHtml() {
       <table class="node-table">
         <thead>
           <tr>
-            <th class="movement-list-orchestrator" title="Orchestrator"><div class="movement-list-sort" data-sort="orchestra_id" data-sort-type="number">+</div></th>
-            <th class="movement-list-name" title="Movement Name"><div class="movement-list-sort" data-sort="name" data-sort-type="string">Movement名</div></th>
+            <th class="movement-list-orchestrator" title="Orchestrator"><div class="movement-list-sort" data-sort="orchestra_id" data-sort-type="number">+<span class="movementSortMark"></span></div></th>
+            <th class="movement-list-name" title="Movement Name"><div class="movement-list-sort" data-sort="name" data-sort-type="string">Movement名<span class="movementSortMark"></span></div></th>
           </tr>
         </thead>
         <tbody class="movement-list-rows">
@@ -6174,7 +6181,7 @@ nodeReSet( reSetConductorData ) {
 fetchConductor( conductorId ) {
     const cd = this;
     
-    let process = fn.processingModal();
+    let process = fn.processingModal( getMessage.FTE02161 );
     
     return new Promise(function( resolve ){
         const urls = [
@@ -6726,7 +6733,7 @@ conductorStatusUpdate() {
       if ( logLength ) {
           for ( let i = cd.executeLogCount; i < logLength; i++ ) {
               const log = conductorInfo.execution_log[i];
-              if ( log.match(/^[error]/) ) {
+              if ( log.match(/[error]/) ) {
                   cd.message('danger', getMessage.FTE02140, log );
               } else {
                   cd.message('info', getMessage.FTE02141, log );

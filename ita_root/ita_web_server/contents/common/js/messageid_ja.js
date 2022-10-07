@@ -423,6 +423,7 @@ const getMessage = ( function() {
         'FTE02158' : "選択したNodeの移動",
         'FTE02159' : "選択した分岐Nodeの分岐追加・削除",
         'FTE02160' : "方向キー",
+        'FTE02161' : "読み込み中",
         
         // 作業状態確認
         'FTE05001' : "作業No.",
@@ -519,6 +520,8 @@ const getMessage = ( function() {
         'FTE10055': '名称',
         'FTE10056': '設定',
         'FTE10057': '必須',
+        'FTE10058': 'OK',
+        'FTE10059': '確認',
     };
 
     return message;
