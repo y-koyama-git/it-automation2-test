@@ -40,7 +40,7 @@ spec:
           - configMapRef:
                name: {{ .Values.global.itaByMenuCreateInfo }}
         volumeMounts:
-          - name: persistent-storage
+          - name: persistent-storage-org1 #orgごとにできる
             mountPath: {{ .Values.volume.mountPath.name1 }}
             subPath:  {{ .Values.volume.mountPath.subPath1 }}
           - name: contaier-volume
@@ -48,7 +48,7 @@ spec:
           - name: emptydir-vol
             mountPath:  {{ .Values.volume.mountPath.name3 }}
       volumes:
-      - name: persistent-storage
+      - name: persistent-storage-org1 #orgごとにできる
         persistentVolumeClaim:
           claimName: {{ .Values.global.claimName }}
       - name: contaier-volume

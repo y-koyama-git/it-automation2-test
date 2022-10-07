@@ -20,7 +20,7 @@ extraenv:
 
 image:
   repository: exastro/it-automation2-test-ita-by-menu-create
-  pullPolicy: IfNotPresent
+  pullPolicy: IfNotPresent #テスト環境用
   # Overrides the image tag whose default is the chart appVersion.
   tag: Integration-test.13dc22.20221004-213151
 
