@@ -4,55 +4,40 @@ global:
   itaBaseInfo: params-ita-common
   itaByMenuCreateInfo: params-ita-by-menu-create
   itaApiOrg:  params-ita-org
-  gitLabAccountInfo: secret-ita-gitlab
-  gitLabConnectionInfo: params-ita-gitlab
+
   claimName: ita-pvc
 
 # Default values for ita-by-menu-create.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
-name: ita-api-admin
+name: ita-api-organization
 replicaCount: 1
 
 extraenv:
-  EXECUTE_INTERVAL: "1"
-  STORAGEPATH: /storage/
-  DEFAULT_LANGUAGE: ja
-  LISTEN_PORT: 8080
-  
-initContainerCommand: 
-  shell: sh
-  option: -c
-  arg: "chown -R 1000:1000 /storage "
-
-initContainerVolume:
-  mountPath:
-    name: /storage
-    
-initContainerImage:
-  repository: busybox
-  pullPolicy: IfNotPresent #テスト環境用
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: latest
+  LISTEN_PORT: "8080"
+  STORAGEPATH: "/storage/"
+  DEFAULT_LANGUAGE: "ja"
+  PLATFORM_API_HOST: "platform-api.exastro-platform.svc"
+  PLATFORM_API_PORT: "8000"
 
 image:
-  repository: exastro/it-automation2-test-ita-api-admin
+  repository: exastro/it-automation2-test-ita-api-organization
   pullPolicy: IfNotPresent #テスト環境用
   # Overrides the image tag whose default is the chart appVersion.
-  tag: Integration-test.13dc22.20221004-213256
+  tag: Integration-test.13dc22.20221004-213152
+
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
-# serviceAccount:
-#   # Specifies whether a service account should be created
-#   create: true
-#   # Annotations to add to the service account
-#   annotations: {}
-#   # The name of the service account to use.
-#   # If not set and create is true, a name is generated using the fullname template
-#   name: ""
-
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
 
 volume:
   mountPath:
