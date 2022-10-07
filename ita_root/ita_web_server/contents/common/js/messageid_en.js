@@ -424,6 +424,7 @@ const getMessage = ( function() {
         'FTE02159' : "Branch addition/deletion of the selected branch node",
         'FTE02160' : "Arrow key",
         'FTE02161' : "Now loading",
+        'FTE02162' : "Data in the process of being edited has been read from local storage.",
         
         // Execution
         'FTE05001' : "Execution No.",
