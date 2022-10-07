@@ -6,7 +6,7 @@ metadata:
 rules:
   - apiGroups: ["*"]
     resources: ["services","pods"]
-    verbs: ["get", "create", "update", "patch"]
+    verbs: ["get", "create", "update", "patch", "delete"]
 ---
 apiVersion: v1
 kind: ServiceAccount
