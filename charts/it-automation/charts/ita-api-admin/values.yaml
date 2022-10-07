@@ -15,15 +15,13 @@ name: ita-api-admin
 replicaCount: 1
 
 extraenv:
-  EXECUTE_INTERVAL: "1"
-  STORAGEPATH: /storage/
-  DEFAULT_LANGUAGE: ja
   LISTEN_PORT: 8080
+  DEFAULT_LANGUAGE: ja
   
 initContainerCommand: 
   shell: sh
   option: -c
-  arg: "chown -R 1000:1000 /storage "
+  arg: "chown -R 1000:1000 /storage"
 
 initContainerVolume:
   mountPath:
@@ -56,13 +54,15 @@ fullnameOverride: ""
 
 volume:
   mountPath:
-    name1: /storage
-    subPath1: httpd-pid
-    subPath2: httpd-socket
-    name2: /var/run_app_user/httpd/pid
-    name3: /tmp
-    name4: /home/app_user
-    name5: /var/run_app_user/httpd/socket
+    storage: /storage
+    homeDir: /home/app_user
+    pid:
+      path: /var/run_app_user/httpd/pid
+      subPath: httpd-pid
+    socket: 
+      path: /var/run_app_user/httpd/socket
+      subPath: httpd-socket
+    tmp: /tmp
 
 podAnnotations: {}
 
