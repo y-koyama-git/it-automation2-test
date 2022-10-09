@@ -59,23 +59,27 @@ spec:
             - configMapRef:
                 name: params-ita-admin
           volumeMounts:
-            - name: persistent-storage
-              mountPath: {{ .Values.volume.mountPath.name1 }}
-            - name: contaier-volume
-              mountPath: {{ .Values.volume.mountPath.name2 }}
-              subPath: {{ .Values.volume.mountPath.subPath1 }}
-            - name: contaier-volume
-              mountPath: {{ .Values.volume.mountPath.name5 }}
-              subPath: {{ .Values.volume.mountPath.subPath2 }}
-            - name: contaier-volume
-              mountPath: {{ .Values.volume.mountPath.name3 }}
-            - name: emptydir-vol
-              mountPath: {{ .Values.volume.mountPath.name4 }}
+            - name: ita-api-admin-storage
+              mountPath: {{ .Values.volume.mountPath.storage }}
+            - name: ita-api-admin-homedir
+              mountPath: {{ .Values.volume.mountPath.homeDir }}
+            - name: ita-api-admin-pid
+              mountPath: {{ .Values.volume.mountPath.pid.path }}
+              subPath: {{ .Values.volume.mountPath.pid.subPath }}
+            - name: ita-api-admin-socket
+              mountPath: {{ .Values.volume.mountPath.socket.path }}
+              subPath: {{ .Values.volume.mountPath.socket.subPath }}
+            - name: ita-api-admin-tmp
+              mountPath: {{ .Values.volume.mountPath.tmp }}
       volumes:
-        - name: persistent-storage
+        - name: ita-api-admin-storage
           persistentVolumeClaim:
             claimName: {{ .Values.global.claimName }}
-        - name: contaier-volume
+        - name: ita-api-admin-homedir
           emptyDir: {}
-        - name: emptydir-vol
+        - name: ita-api-admin-pid
+          emptyDir: {}
+        - name: ita-api-admin-socket
+          emptyDir: {}
+        - name: ita-api-admin-tmp
           emptyDir: {}
