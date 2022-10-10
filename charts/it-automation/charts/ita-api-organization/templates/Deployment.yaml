@@ -11,19 +11,7 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: params-ita-org
-  namespace: {{ .Release.Namespace }}
-data:
-  LISTEN_PORT: "{{ .Values.extraenv.LISTEN_PORT }}"
-  STORAGEPATH: "{{ .Values.extraenv.STORAGEPATH }}"
-  DEFAULT_LANGUAGE: "{{ .Values.extraenv.DEFAULT_LANGUAGE }}"
-  PLATFORM_API_HOST: "{{ .Values.extraenv.PLATFORM_API_HOST }}"
-  PLATFORM_API_PORT: "{{ .Values.extraenv.PLATFORM_API_PORT }}"
----
-apiVersion: apps/v1
+piVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Values.name }}
