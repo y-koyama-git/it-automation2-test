@@ -111,44 +111,44 @@ def external_valid_menu_after(objdbca, objtable, option):
                     chk_Vars_list        = {}
                     chk_Array_vars_list  = {}
                     chk_VarVal_list      = {}
-                    
-                    obj = VarStructAnalJsonConv()
-                    retAry = obj.TemplateVarStructAnalJsonLoads(row["VAR_STRUCT_ANAL_JSON_STRING"])
-                    chk_Vars_list        = retAry[0]
-                    chk_Array_vars_list  = retAry[1]
-                    chk_LCA_vars_use     = retAry[2]
-                    chk_Array_vars_use   = retAry[3]
-                    chk_GBL_vars_info    = retAry[4]
-                    chk_VarVal_list      = retAry[5]
-                    if retBool is True:
-                        cmp_Vars_list          = {}
-                        cmp_Array_vars_list    = {}
-                        cmp_Vars_list[chk_strVarName] = {}
-                        cmp_Array_vars_list[chk_strVarName] = {}
-                        cmp_Vars_list[strVarName] = {}
-                        cmp_Array_vars_list[strVarName] = {}
-                        # 変数構造解析結果
-                        cmp_Vars_list[chk_strVarName]['dummy'] = chk_Vars_list
-                        cmp_Array_vars_list[chk_strVarName]['dummy'] = chk_Array_vars_list
-
-                        # 自レコードの変数構造解析結果
-                        cmp_Vars_list[strVarName]['dummy'] = Vars_list
-                        cmp_Array_vars_list[strVarName]['dummy'] = Array_vars_list
+                    if row["VAR_STRUCT_ANAL_JSON_STRING"]:
+                        obj = VarStructAnalJsonConv()
+                        retAry = obj.TemplateVarStructAnalJsonLoads(row["VAR_STRUCT_ANAL_JSON_STRING"])
+                        chk_Vars_list        = retAry[0]
+                        chk_Array_vars_list  = retAry[1]
+                        chk_LCA_vars_use     = retAry[2]
+                        chk_Array_vars_use   = retAry[3]
+                        chk_GBL_vars_info    = retAry[4]
+                        chk_VarVal_list      = retAry[5]
+                        if retBool is True:
+                            cmp_Vars_list          = {}
+                            cmp_Array_vars_list    = {}
+                            cmp_Vars_list[chk_strVarName] = {}
+                            cmp_Array_vars_list[chk_strVarName] = {}
+                            cmp_Vars_list[strVarName] = {}
+                            cmp_Array_vars_list[strVarName] = {}
+                            # 変数構造解析結果
+                            cmp_Vars_list[chk_strVarName]['dummy'] = chk_Vars_list
+                            cmp_Array_vars_list[chk_strVarName]['dummy'] = chk_Array_vars_list
     
-                        chkObj = DefaultVarsFileAnalysis(None)
-
-                        err_vars_list = {}
-                        # 変数構造が一致していない変数があるか確認
-                        ret = chkObj.chkallVarsStruct(cmp_Vars_list, cmp_Array_vars_list, err_vars_list)
-                        if ret[0] is False:
-                            err_vars_list = ret[1]
-                            for err_var_name, dummy in err_vars_list.items():
-                                if len(msg) != 0:
-                                    msg += "\n"
-                                msg += g.appmsg.get_api_message("MSG-10595", [err_var_name, list(dummy.keys())])
-                                retBool = False
-                                boolExecuteContinue = False
-                        del chkObj
+                            # 自レコードの変数構造解析結果
+                            cmp_Vars_list[strVarName]['dummy'] = Vars_list
+                            cmp_Array_vars_list[strVarName]['dummy'] = Array_vars_list
+        
+                            chkObj = DefaultVarsFileAnalysis(None)
+    
+                            err_vars_list = {}
+                            # 変数構造が一致していない変数があるか確認
+                            ret = chkObj.chkallVarsStruct(cmp_Vars_list, cmp_Array_vars_list, err_vars_list)
+                            if ret[0] is False:
+                                err_vars_list = ret[1]
+                                for err_var_name, dummy in err_vars_list.items():
+                                    if len(msg) != 0:
+                                        msg += "\n"
+                                    msg += g.appmsg.get_api_message("MSG-10595", [err_var_name, list(dummy.keys())])
+                                    retBool = False
+                                    boolExecuteContinue = False
+                            del chkObj
     # 各テンプレート変数の定義変数で変数の構造に差異がないか確認
 
     if retBool is True:
