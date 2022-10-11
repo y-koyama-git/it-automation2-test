@@ -4331,7 +4331,10 @@ class VarStructAnalysisFileAccess():
                     arryErrMsg = roleObj.getlasterror()
                     strErrMsg = arryErrMsg[0]
 
-            shutil.rmtree(outdir)
+            # zipファイルがからの場合、ディレクトリが作成されない
+            is_dir = os.path.isdir(outdir)
+            if is_dir is True:
+                shutil.rmtree(outdir)
 
             # ロール名一覧取得
             role_name_list = roleObj.getrolename()
