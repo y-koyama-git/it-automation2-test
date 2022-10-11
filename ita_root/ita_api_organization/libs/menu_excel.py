@@ -1813,6 +1813,13 @@ def execute_excel_maintenance(objdbca, organization_id, workspace_id, menu, menu
     """
     # 言語設定取得
     lang = g.LANGUAGE
+
+    # make storage directory for excel
+    strage_path = os.environ.get('STORAGEPATH')
+    excel_dir = strage_path + "/".join([organization_id, workspace_id]) + "/tmp/excel"
+    if not os.path.isdir(excel_dir):
+        os.makedirs(excel_dir)
+        g.applogger.debug("made excel_dir")
     
     # 変数定義
     t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
@@ -1829,8 +1836,6 @@ def execute_excel_maintenance(objdbca, organization_id, workspace_id, menu, menu
     wbDecode = base64.b64decode(excel_data.encode('utf-8'))
     
     # 受け取ったデータを編集用として一時的にエクセルファイルに保存
-    strage_path = os.environ.get('STORAGEPATH')
-    excel_dir = strage_path + "/".join([organization_id, workspace_id]) + "/tmp/excel"
     file_name = 'post_excel_maintenance_tmp.xlsx'
     file_path = excel_dir + '/' + file_name
     with open(file_path, "wb") as f:
