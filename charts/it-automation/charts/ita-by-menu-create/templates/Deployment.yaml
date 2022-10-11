@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: {{ .Values.name }}
-        image: {{ .Values.image.repository }}
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }} 
         resources:
           requests:
@@ -40,18 +40,28 @@ spec:
           - configMapRef:
                name: {{ .Values.global.itaByMenuCreateInfo }}
         volumeMounts:
-          - name: persistent-storage
-            mountPath: {{ .Values.volume.mountPath.name1 }}
-            subPath:  {{ .Values.volume.mountPath.subPath1 }}
-          - name: contaier-volume
-            mountPath:  {{ .Values.volume.mountPath.name2 }}
-          - name: emptydir-vol
-            mountPath:  {{ .Values.volume.mountPath.name3 }}
+          - name: ita-by-menu-storage
+            mountPath: {{ .Values.volume.mountPath.storage }}
+          - name: ita-by-menu-homedir
+            mountPath: {{ .Values.volume.mountPath.homeDir }}
+          - name: ita-by-menu-pid
+            mountPath: {{ .Values.volume.mountPath.pid.path }}
+            subPath: {{ .Values.volume.mountPath.pid.subPath }}
+          - name: ita-by-menu-socket
+            mountPath: {{ .Values.volume.mountPath.socket.path }}
+            subPath: {{ .Values.volume.mountPath.socket.subPath }}
+          - name: ita-by-menu-tmp
+            mountPath: {{ .Values.volume.mountPath.tmp }}
       volumes:
-      - name: persistent-storage
-        persistentVolumeClaim:
-          claimName: {{ .Values.global.claimName }}
-      - name: contaier-volume
-        emptyDir: {}
-      - name: emptydir-vol
-        emptyDir: {}
+        - name: ita-by-menu-storage
+          persistentVolumeClaim:
+            claimName: {{ .Values.global.claimName }}
+        - name: ita-by-menu-homedir
+          emptyDir: {}
+        - name: ita-by-menu-pid
+          emptyDir: {}
+        - name: ita-by-menu-socket
+          emptyDir: {}
+        - name: ita-by-menu-tmp
+          emptyDir: {}
+

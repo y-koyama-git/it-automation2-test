@@ -1759,7 +1759,7 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             if tmp_result[0] is not True:
                 raise Exception()
             strage_path = os.environ.get('STORAGEPATH')  # noqa: F405
-            tmp_conductor_storage_path = '%%%%%ITA_DRIVER_DIRECTORY%%%%%/conductor'
+            tmp_conductor_storage_path = '%%%%%ITA_DRIVER_DIRECTORY%%%%%/driver/conductor'
             # tmp_result[1].get('CONDUCTOR_STORAGE_PATH_ITA')
             base_storage_path = "{}/{}/{}/".format(strage_path, self.organization_id, self.workspace_id).replace('//', '/')
             conductor_storage_path = tmp_conductor_storage_path.replace('%%%%%ITA_DRIVER_DIRECTORY%%%%%', base_storage_path).replace('//', '/')
@@ -2977,7 +2977,6 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             orchestra_info = self.get_orchestra_info()
             action_config = orchestra_info.get('name').get(orchestra_id).get(action_type)
             driver_id = orchestra_info.get('name').get(orchestra_id).get('driver_id')
-
             if action_type == 'execute':
                 operation_id = action_options.get('operation_id')
                 # operation_name = action_options.get('operation_name')
@@ -3567,7 +3566,6 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                         tmp_result = self.orchestra_action(action_type, orchestrator_id, action_options)
                         if tmp_result[0] is not True:
                             raise Exception()
-
                         execution_id = tmp_result[1].get(action_type)
                         if execution_id is not None:
                             execute_flg = True
@@ -3575,7 +3573,11 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                         else:
                             raise Exception()
 
-                    except Exception:
+                    except Exception as e:
+                        g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
+                        type_, value, traceback_ = sys.exc_info()
+                        msg = traceback.format_exception(type_, value, traceback_)
+                        g.applogger.error(msg)
                         msg_code = 'MSG-40026'
                         msg_args = [movement_id, operation_id]
                         err_msg = g.appmsg.get_api_message(msg_code, msg_args)
@@ -4051,19 +4053,19 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
             else:
                 pass
 
-            # in nodeのステータスを取得
-            if len(in_node) == 1:
-                for tname, tinfo in in_node.items():
-                    in_node_name = tinfo.get('targetNode')
-                    in_node_info = instance_data.get('node').get(in_node_name)
-                    in_node_status_id = in_node_info.get('status_id')
+                # in nodeのステータスを取得
+                if len(in_node) == 1:
+                    for tname, tinfo in in_node.items():
+                        in_node_name = tinfo.get('targetNode')
+                        in_node_info = instance_data.get('node').get(in_node_name)
+                        in_node_status_id = in_node_info.get('status_id')
 
-            tmp_result = self.get_conditional_node_info(node_options, in_node_status_id)
-            if tmp_result[0] is False:
-                raise Exception()
-            self.set_conductor_update_status(conductor_instance_id, c_status_id)
-            targetNode = tmp_result[1].get('target_node')
-            skip_node = tmp_result[1].get('skip_node')
+                tmp_result = self.get_conditional_node_info(node_options, in_node_status_id)
+                if tmp_result[0] is False:
+                    raise Exception()
+                self.set_conductor_update_status(conductor_instance_id, c_status_id)
+                targetNode = tmp_result[1].get('target_node')
+                skip_node = tmp_result[1].get('skip_node')
             
             if n_status_id in nomal_status_list:
                 # Node更新
@@ -4089,7 +4091,15 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                         tmp_result = self.target_node_skip(node_options, skip_node)
                         if tmp_result[0] is False:
                             raise Exception()
-
+            elif abort_status == bool_master_true:
+                # Node更新
+                node_filter_data['parameter']['status_id'] = n_status_id
+                node_filter_data['parameter']['time_end'] = get_now_datetime()
+                tmp_result = self.node_instance_exec_maintenance([node_filter_data], 'Update')
+                if tmp_result[0] is not True:
+                    raise Exception()
+            else:
+                pass
         except Exception as e:
             g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
             type_, value, traceback_ = sys.exc_info()
@@ -4373,6 +4383,15 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                         tmp_result = self.target_node_skip(node_options, skip_node)
                         if tmp_result[0] is False:
                             raise Exception()
+            elif abort_status == bool_master_true:
+                # Node更新
+                node_filter_data['parameter']['status_id'] = n_status_id
+                node_filter_data['parameter']['time_end'] = get_now_datetime()
+                tmp_result = self.node_instance_exec_maintenance([node_filter_data], 'Update')
+                if tmp_result[0] is not True:
+                    raise Exception()
+            else:
+                pass
             # raise Exception()
         except Exception as e:
             g.applogger.debug(addline_msg('{}{}'.format(e, sys._getframe().f_code.co_name)))
@@ -4409,3 +4428,4 @@ def load_objcolumn(objdbca, objtable, rest_key, col_class_name='TextColumn', ):
     except Exception:
         return False
     return objcolumn
+

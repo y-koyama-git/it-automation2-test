@@ -1,44 +1,99 @@
 # Default values for ita-api-admin.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
+global:
+  itaGlobalDefinition:
+    name: ita-common
+    enabled: true
+    config:
+      DEFAULT_LANGUAGE: "ja"
+      LANGUAGE: "en"
+      CONTAINER_BASE: "kubernetes"
+      TZ: "Asia/Tokyo"
+  gitlabDefinition:
+    name: ita-gitlab
+    enabled: true
+    config:
+      GITLAB_PROTOCOL: "http"
+      GITLAB_HOST: "gitlab.exastro-it-automation.svc"
+      GITLAB_PORT: "80"
+    secret:
+      GITLAB_ROOT_TOKEN: "token"
+  databaseDefinition:
+    name: ita-mariadb
+    enabled: true
+    config:
+      DB_ENGINE: mariadb
+      DB_HOST: "ita-mariadb.exastro-it-automation.svc"
+      DB_PORT: "3306"
+      DB_DATADBASE: "ITA_DB"
+    secret:
+      DB_ROOT_PASSWORD: "pasword"
+      DB_USER: "user"
+      DB_PASSWORD: "password"
+  persistence:
+    enabled: false
+    claimName: ita-pvc
+
+extraEnv:
+  DEFAULT_LANGUAGE: ja
+  LISTEN_PORT: 8080
 
 replicaCount: 1
 
-image:
-  repository: nginx
+initContainerImage:
+  repository: busybox
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
 
+image:
+  repository: exastro/it-automation2-test-ita-api-admin
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "Integration-test.3a05f7.20221007-172805"
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
 serviceAccount:
   # Specifies whether a service account should be created
-  create: true
+  create: false
   # Annotations to add to the service account
   annotations: {}
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
+persistence:
+  mountPath:
+    storage: /storage
+    homeDir: /home/app_user
+    pid:
+      path: /var/run_app_user/httpd/pid
+      subPath: httpd-pid
+    socket:
+      path: /var/run_app_user/httpd/socket
+      subPath: httpd-socket
+    tmp: /tmp
+
 podAnnotations: {}
 
 podSecurityContext: {}
   # fsGroup: 2000
 
-securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  runAsNonRoot: true
 
 service:
-  type: ClusterIP
-  port: 80
+  name: http
+  type: NodePort
+  port: 8080
+  targetPort: 8080
 
 ingress:
   enabled: false
@@ -56,17 +111,13 @@ ingress:
   #    hosts:
   #      - chart-example.local
 
-resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
+resources:
+  requests:
+    memory: "64Mi"  #仮決め
+    cpu: "250m"     #仮決め
+  limits:
+    memory: "64Mi"  #仮決め
+    cpu: "250m"     #仮決め
 
 autoscaling:
   enabled: false

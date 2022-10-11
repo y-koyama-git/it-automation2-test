@@ -423,6 +423,8 @@ const getMessage = ( function() {
         'FTE02158' : "Move selected node",
         'FTE02159' : "Branch addition/deletion of the selected branch node",
         'FTE02160' : "Arrow key",
+        'FTE02161' : "Now loading",
+        'FTE02162' : "Data in the process of being edited has been read from local storage.",
         
         // Execution
         'FTE05001' : "Execution No.",
@@ -519,6 +521,8 @@ const getMessage = ( function() {
         'FTE10055': 'Name',
         'FTE10056': ' setting',
         'FTE10057': 'Required',
+        'FTE10058': 'OK',
+        'FTE10059': 'Confirmation',
     };
 
     return message;

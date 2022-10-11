@@ -2,14 +2,15 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "ita-api-admin.fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "ita-api-admin.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}
   ports:
-    - port: {{ .Values.service.port }}
-      targetPort: http
+    - name: {{ .Values.service.name }}
       protocol: TCP
-      name: http
+      port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
   selector:
     {{- include "ita-api-admin.selectorLabels" . | nindent 4 }}
