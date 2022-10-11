@@ -48,8 +48,3 @@ class AnsrConst(AnscConst):
     vg_parent_playbook_name = "site.yml"
     
     vg_OrchestratorSubId_dir = vg_tower_driver_name
-    # vg_tower_driver_typeとvg_tower_driver_idを削除する。
-    # vg_tower_driver_type = "legacy"
-    # vg_tower_driver_id = "rl"
-    # vg_log_driver_name = "Legacy-Role"
-    # vg_OrchestratorSubId = "LEGACY_RL"

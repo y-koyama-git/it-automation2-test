@@ -203,7 +203,7 @@ class ExecuteDirector():
         if self.AnsibleExecMode == AnscConst.DF_EXEC_MODE_AAC:
 
             srcFiles = '%s/*' % (tmp_path_ary["DIR_NAME"])
-            ret = self.createGitRepo(GitObj, srcFiles)
+            ret = self.createGitRepo(GitObj, srcFiles, execution_no)
             if ret is False:
                 return -1, TowerHostList
 
@@ -343,8 +343,8 @@ class ExecuteDirector():
 
         # Gitリポジトリ削除
         try:
-            project_name = "{}_{}".format(vg_tower_driver_name, execution_no)
-            GitObj.delete_project(project_name)
+            project_id = self.getGitProjectId(self.driver_id, execution_no)
+            GitObj.delete_project(project_id)
         except Exception as e:
             # Gitリポジトリ削除に失敗した場合、ログを出力してエラーとして扱わない
             log = str(e)
@@ -2139,7 +2139,7 @@ class ExecuteDirector():
         self.MultipleLogFileJsonAry = json.dumps(MultipleLogFileNameList)
         return True
 
-    def createGitRepo(self, GitObj, SrcFilePath):
+    def createGitRepo(self, GitObj, SrcFilePath, execution_no):
 
         repositories_base_path = "%s/driver/ansible/git_repositories/" % (getDataRelayStorageDir())
         proj_name = os.path.basename(pathlib.Path(SrcFilePath).parent)
@@ -2157,13 +2157,14 @@ class ExecuteDirector():
 
         # GitLab にプロジェクトを作成
         try:
-            ret = GitObj.create_project(proj_name)
+            response = GitObj.create_project(proj_name)
 
-            print("--------------------------------------------------------------------")
-            print("--------------------------------------------------------------------")
-            print("--------------------------------------------------------------------")
-            print(ret)
-            
+            # gitlab プロジェクトID退避
+            if 'id' in response:
+                # 文字列に変換して保存
+                project_id  = str(response['id'])
+                self.saveGitProjectId(self.driver_id, execution_no, project_id)
+
         except Exception as e:
             log = g.appmsg.get_api_message("MSG-10018", [str(e)])
             self.errorLogOut(log)
@@ -2201,6 +2202,19 @@ class ExecuteDirector():
 
         return True
 
+    def saveGitProjectId(self, driver_id, execution_no, project_id):
+        execute_path = getAnsibleExecutDirPath(driver_id, execution_no)
+        filePath = "{}/tmp/GitlabProjectId.txt".format(execute_path)
+        with open(filePath, 'w') as fd:
+            fd.write(project_id)
+
+    def getGitProjectId(self, driver_id, execution_no):
+        execute_path = getAnsibleExecutDirPath(driver_id, execution_no)
+        filePath = "{}/tmp/GitlabProjectId.txt".format(execute_path)
+        with open(filePath) as fd:
+            project_id = fd.read()
+        return project_id
+    
     def deleteMaterialsTransferTempDir(self, execution_no):
 
         vg_tower_driver_name = AnsrConst.vg_tower_driver_name
