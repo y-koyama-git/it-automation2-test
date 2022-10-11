@@ -1171,11 +1171,17 @@ const columnHTML = `
                     </tr>
                     <tr class="date-time" title="${textEntities(getMessage.FTE01124,1)}">
                         <th class="full-head"><span class="config-title">${textCode('0050')}</span></th>
-                        <td class="full-body">${fn.html.dateInput( true, 'callDateTimePicker datetime-default-value config-text', '', 'dateTime')}</td>
+                        <td class="full-body">${( modeDisabled === '')?
+                            fn.html.dateInput( true, 'callDateTimePicker datetime-default-value config-text', '', 'dateTime'):
+                            `<input class="input datetime-default-value config-text"${modeDisabled}>`
+                        }</td>
                     </tr>
                     <tr class="date" title="${textEntities(getMessage.FTE01124,1)}">
                         <th class="full-head"><span class="config-title">${textCode('0050')}</span></th>
-                        <td class="full-body">${fn.html.dateInput( false, 'callDateTimePicker date-default-value config-text', '', 'date')}</td>
+                        <td class="full-body">${( modeDisabled === '')?
+                            fn.html.dateInput( false, 'callDateTimePicker date-default-value config-text', '', 'date'):
+                            `<input class="input date-default-value config-text"${modeDisabled}>`
+                        }</td>
                     </tr>
                     <tr class="link" title="${textEntities(getMessage.FTE01125,1)}">
                         <th class="full-head"><span class="config-title">${textCode('0050')}</span></th>
