@@ -244,7 +244,7 @@ class GitLabAgent:
 
         return self.send_api(method="post", resource="/projects", data=payload)
 
-    def delete_project(self, project_name):
+    def delete_project(self, project_id):
         # https://docs.gitlab.com/ee/api/projects.html#delete-project
 
-        return self.send_api(method="delete", resource="/projects/{}".format(project_name))
+        return self.send_api(method="delete", resource="/projects/{}".format(project_id))
