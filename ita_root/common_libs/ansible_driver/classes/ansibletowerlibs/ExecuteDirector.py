@@ -344,7 +344,6 @@ class ExecuteDirector():
         # Gitリポジトリ削除
         try:
             project_name = "{}_{}".format(vg_tower_driver_name, execution_no)
-            print(project_name)
             GitObj.delete_project(project_name)
         except Exception as e:
             # Gitリポジトリ削除に失敗した場合、ログを出力してエラーとして扱わない
@@ -2160,6 +2159,11 @@ class ExecuteDirector():
         try:
             ret = GitObj.create_project(proj_name)
 
+            print("--------------------------------------------------------------------")
+            print("--------------------------------------------------------------------")
+            print("--------------------------------------------------------------------")
+            print(ret)
+            
         except Exception as e:
             log = g.appmsg.get_api_message("MSG-10018", [str(e)])
             self.errorLogOut(log)
