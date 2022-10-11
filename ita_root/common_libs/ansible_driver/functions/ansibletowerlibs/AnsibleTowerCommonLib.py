@@ -42,8 +42,7 @@ def isScrammedExecution(dbAccess, tgt_execution_no):
     if len(row) < 1:
         return False
 
-    if row[0]['STATUS_ID'] in [AnscConst.SCRAM, str(AnscConst.SCRAM)]:
+    if row[0]['STATUS_ID'] == AnscConst.SCRAM:
         return True
 
     return False
-

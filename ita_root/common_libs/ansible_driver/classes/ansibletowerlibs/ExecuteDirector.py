@@ -24,6 +24,7 @@ import json
 import re
 import asyncio
 import datetime
+import sys
 
 from flask import g
 
@@ -31,7 +32,6 @@ from common_libs.common.util import ky_decrypt, ky_file_decrypt
 from common_libs.ansible_driver.classes.AnscConstClass import AnscConst
 from common_libs.ansible_driver.classes.AnsrConstClass import AnsrConst
 from common_libs.ansible_driver.classes.menu_required_check import AuthTypeParameterRequiredCheck
-#from common_libs.ansible_driver.classes.AnsibleVaultClass import AnsibleVault
 from common_libs.ansible_driver.classes.ansibletowerlibs.restapi_command.AnsibleTowerRestApiConfig import AnsibleTowerRestApiConfig
 from common_libs.ansible_driver.classes.ansibletowerlibs.restapi_command.AnsibleTowerRestApiExecutionEnvironment import AnsibleTowerRestApiExecutionEnvironment
 from common_libs.ansible_driver.classes.ansibletowerlibs.restapi_command.AnsibleTowerRestApiOrganizations import AnsibleTowerRestApiOrganizations
@@ -47,7 +47,7 @@ from common_libs.ansible_driver.classes.ansibletowerlibs.restapi_command.Ansible
 from common_libs.ansible_driver.classes.ansibletowerlibs.restapi_command.AnsibleTowerRestApiWorkflowJobs import AnsibleTowerRestApiWorkflowJobs
 from common_libs.ansible_driver.classes.ansibletowerlibs.restapi_command.AnsibleTowerRestApiJobs import AnsibleTowerRestApiJobs
 from common_libs.ansible_driver.functions.ansibletowerlibs import AnsibleTowerCommonLib as FuncCommonLib
-from common_libs.ansible_driver.functions.util import getFileupLoadColumnPath, getInputDataTempDir, getDataRelayStorageDir, get_AnsibleDriverTmpPath, get_AnsibleDriverShellPath
+from common_libs.ansible_driver.functions.util import getFileupLoadColumnPath, getInputDataTempDir, getDataRelayStorageDir, get_AnsibleDriverTmpPath, get_AnsibleDriverShellPath, getAnsibleExecutDirPath, getAACListSSHPrivateKeyUploadDirPath
 
 
 class ExecuteDirector():
@@ -57,7 +57,7 @@ class ExecuteDirector():
         AnsibleTower 作業実行管理(Tower側) クラス
     """
 
-    def __init__(self, restApiCaller, logger, dbAccess, exec_out_dir, ifInfoRow, JobTemplatePropertyParameterAry={}, JobTemplatePropertyNameAry={}, TowerProjectsScpPath={}, TowerInstanceDirPath={}):
+    def __init__(self, driver_id, restApiCaller, logger, dbAccess, exec_out_dir, ifInfoRow, JobTemplatePropertyParameterAry={}, JobTemplatePropertyNameAry={}, TowerProjectsScpPath={}, TowerInstanceDirPath={}):
 
         self.version = None
 
@@ -85,6 +85,10 @@ class ExecuteDirector():
 
         self.php_array = lambda x: x.items() if isinstance(x, dict) else enumerate(x)
 
+        self.driver_id = driver_id
+        if driver_id == AnscConst.DF_LEGACY_ROLE_DRIVER_ID:
+            self.AnsConstObj = AnsrConst()
+
     def setTowerVersion(self, version):
 
         self.version = version
@@ -94,35 +98,10 @@ class ExecuteDirector():
         return self.version
 
     def build(self, GitObj, exeInsRow, ifInfoRow, TowerHostList):
-
         vg_tower_driver_name = AnsrConst.vg_tower_driver_name
         execution_no = exeInsRow['EXECUTION_NO']
         proj_name = '%s_%s' % (vg_tower_driver_name, execution_no)
         virtualenv_name = ''  # exeInsRow['I_VIRTUALENV_NAME']
-
-        # Towerのvirtualenv確認
-        # 実行エンジンがTower以外はI_VIRTUALENV_NAMEは空なので、実行エンジンのチェックはしない
-        virtualenv_name_ok = False
-        if virtualenv_name:
-            response_array = AnsibleTowerRestApiConfig().get(self.restApiCaller)
-            if not response_array['success']:
-                errorMessage = g.appmsg.get_api_message("MSG-10673")
-                self.errorLogOut(errorMessage)
-                return -1, TowerHostList
-
-            if  'responseContents' in response_array \
-            and 'custom_virtualenvs' in response_array['responseContents'] \
-            and response_array['responseContents']['custom_virtualenvs'] is not None:
-                for no, name in self.php_array(response_array['responseContents']['custom_virtualenvs']):
-                    if name == virtualenv_name:
-                        virtualenv_name_ok = True
-                        break
-
-            if not virtualenv_name_ok:
-                errorMessage = g.appmsg.get_api_message("MSG-10674", [virtualenv_name])
-                self.errorLogOut(errorMessage)
-                return -1, TowerHostList
-
         # AACの実行環境確認
         # 実行エンジンがAAC以外はI_EXECUTION_ENVIRONMENT_NAMEは空なので、実行エンジンのチェックはしない
         execution_environment_id = False
@@ -214,6 +193,7 @@ class ExecuteDirector():
             return -1, TowerHostList
 
         # Gitリポジトリに展開する資材を作業ディレクトリに作成
+        # tmp_path_ary["DIR_NAME"]: /storage/org1/workspace-1/tmp/driver/ansible/legacy_role_作業番号
         tmp_path_ary = getInputDataTempDir(execution_no, vg_tower_driver_name)
         ret = self.createMaterialsTransferTempDir(execution_no, ifInfoRow, TowerHostList, tmp_path_ary["DIR_NAME"])
         if not ret:
@@ -224,7 +204,7 @@ class ExecuteDirector():
 
             srcFiles = '%s/*' % (tmp_path_ary["DIR_NAME"])
             ret = self.createGitRepo(GitObj, srcFiles)
-            if not ret:
+            if ret is False:
                 return -1, TowerHostList
 
         tmp_path_ary = getInputDataTempDir(execution_no, vg_tower_driver_name)
@@ -237,23 +217,28 @@ class ExecuteDirector():
         # project生成
         # Git連携用 認証情報生成
         if self.AnsibleExecMode == AnscConst.DF_EXEC_MODE_AAC:
-            # Git連携用 認証情報生成
-            credential = {}
-            credential['username'] = ifInfoRow["ANS_GIT_USER"]
-            credential['ssh_key_data'] = self.getGitSshKeyFileContent(ifInfoRow["ANSIBLE_IF_INFO_ID"], ifInfoRow["ANS_GIT_SSH_KEY_FILE"])
-            credential['ssh_key_unlock'] = ky_decrypt(ifInfoRow["ANS_GIT_SSH_KEY_FILE_PASSPHRASE"])
+            # 不要だから消した
+            # # Git連携用 認証情報生成
+            # # 間違っている
+            # credential = {}
+            # credential['username'] = ifInfoRow["ANS_GIT_USER"]
+            # credential['ssh_key_data'] = self.getGitSshKeyFileContent(ifInfoRow["ANSIBLE_IF_INFO_ID"], ifInfoRow["ANS_GIT_SSH_KEY_FILE"])
+            # credential['ssh_key_unlock'] = ky_decrypt(ifInfoRow["ANS_GIT_SSH_KEY_FILE_PASSPHRASE"])
 
-            git_credentialId = self.createGitCredential(execution_no, credential, OrganizationId)
-            if git_credentialId == -1:
-                errorMessage = g.appmsg.get_api_message("MSG-10687")
-                self.errorLogOut(errorMessage)
-                return -1, TowerHostList
+            # 不要だから消した
+            # print("Git連携用 認証情報生成")
+            # git_credentialId = self.createGitCredential(execution_no, credential, OrganizationId)
+            # if git_credentialId == -1:
+            #     errorMessage = g.appmsg.get_api_message("MSG-10687")
+            #     self.errorLogOut(errorMessage)
+            #     return -1, TowerHostList
 
             # project生成  scmタイプ:git
             addParam = {}
             addParam["scm_type"] = AnsibleTowerRestApiProjects.SCMTYPE_GIT
             addParam["scm_url"] = GitObj.get_http_repo_url(proj_name)
-            addParam["credential"] = git_credentialId
+            # 不要だから消した
+            # addParam["credential"] = git_credentialId
 
             response_array = self.createProject(execution_no, OrganizationId, virtualenv_name, addParam)
             if response_array == -1:
@@ -267,17 +252,6 @@ class ExecuteDirector():
             if ret is not True:
                 # エラーログはcreateProjectStatusCheckで出力
                 return -1, TowerHostList
-        else:
-            # project生成  scmタイプ:手動
-            addParam = {}
-            addParam["scm_type"] = ""
-            projectId = self.createProject(execution_no, OrganizationId, virtualenv_name, addParam)
-            if projectId == -1:
-                errorMessage = g.appmsg.get_api_message("MSG-10650")
-                self.errorLogOut(errorMessage)
-                return -1, TowerHostList
-
-            projectId = projectId['responseContents']['id']
 
         # ansible vault認証情報生成
         vault_credentialId = -1
@@ -367,6 +341,16 @@ class ExecuteDirector():
         vg_tower_driver_name = AnsrConst.vg_tower_driver_name
         allResult = True
 
+        # Gitリポジトリ削除
+        try:
+            project_name = "{}_{}".format(vg_tower_driver_name, execution_no)
+            print(project_name)
+            GitObj.delete_project(project_name)
+        except Exception as e:
+            # Gitリポジトリ削除に失敗した場合、ログを出力してエラーとして扱わない
+            log = str(e)
+            g.applogger.error(log)
+            
         # Ansible Automation Controller側の/var/lib/exastro配下の該当ディレクトリ削除
         ret = self.MaterialsDelete("ExastroPath", execution_no, TowerHostList)
         if not ret:
@@ -377,16 +361,8 @@ class ExecuteDirector():
 
         # Ansible Automation Controllerと連携するGitリポジトリを削除
         if self.AnsibleExecMode == AnscConst.DF_EXEC_MODE_AAC:
-            repositories_base_path = "%s/driver/ansible/git_repositories/" % (getDataRelayStorageDir())
+            repositories_base_path = "%s/driver/ansible/git_repositories/%s_%s" % (getDataRelayStorageDir(), self.AnsConstObj.vg_tower_driver_name, execution_no)
             self.GitRepoDirDelete(repositories_base_path)
-
-        # 実行エンジンを判定  Towerの場合に/var/lib/awx/projects配下の該当ディレクトリ削除
-        """
-        if self.AnsibleExecMode == AnscConst.DF_EXEC_MODE_TOWER:
-            ret = self.MaterialsDelete("TowerPath", execution_no, TowerHostList)
-            if not ret:
-                allResult = False
-        """
 
         # ジョブテンプレート名でジョブテンプレートを抽出
         # 抽出したジョブテンプレートIDでジョブテンプレートの情報取得
@@ -487,21 +463,13 @@ class ExecuteDirector():
 
         ###########################################################
         # 一時ディレクトリを削除
-        # src path: ~/ita-root/temp/ansible_driver_temp/Movement毎のディレクトリ
+        # src path: /storage/org1/workspace-1/tmp/driver/ansible/legacy_role_作業番号
         ###########################################################
         src_path = tmp_path
         if os.path.exists(src_path):
             cmd = ["/bin/rm", "-rf", src_path]
             try:
                 ret = subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-            except subprocess.CalledProcessError as e:
-                log = e.stdout.decode()
-                log = '%s\n%s' % (log, g.appmsg.get_api_message("MSG-10017", [cmd]))
-                self.errorLogOut(log)
-                g.applogger.error(log)
-                return False
-
             except Exception as e:
                 log = str(e)
                 log = '%s\n%s' % (log, g.appmsg.get_api_message("MSG-10017", [cmd]))
@@ -511,22 +479,14 @@ class ExecuteDirector():
 
         ###########################################################
         # in配下を一時ディレクトリにコピー
-        # src  path: ansible data_relay_storage path(ita)/legacy/ns/0000000007/in
-        # dest path: ~/ita-root/temp/ansible_driver_temp/Movement毎のディレクトリ
+        # src  path: /storage/org1/workspace-1/driver/ansible/legacy_role/作業番号/in
+        # dest path: /storage/org1/workspace-1/tmp/driver/ansible/legacy_role_作業番号
         ###########################################################
-        src_path = self.getMaterialsTransferSourcePath(ifInfoRow['ANSIBLE_STORAGE_PATH_LNX'], execution_no)
+        src_path = getAnsibleExecutDirPath(self.driver_id, execution_no) + "/in"
         dest_path = tmp_path
         cmd = ["/bin/cp", "-rfp", src_path, dest_path]
         try:
             ret = subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-        except subprocess.CalledProcessError as e:
-            log = e.stdout.decode()
-            log = '%s\n%s' % (log, g.appmsg.get_api_message("MSG-10017", [cmd]))
-            self.errorLogOut(log)
-            g.applogger.error(log)
-            return False
-
         except Exception as e:
             log = str(e)
             log = '%s\n%s' % (log, g.appmsg.get_api_message("MSG-10017", [cmd]))
@@ -536,23 +496,14 @@ class ExecuteDirector():
 
         ###########################################################
         # out配下を一時ディレクトリ配下にコピー
-        # src  path: ansible data_relay_storage path(ita)/legacy/ns/0000000007/out
-        # dest path: ~/ita-root/temp/ansible_driver_temp/Movement毎のディレクトリ/__ita_out_dir__
+        # src  path: /storage/org1/workspace-1/driver/ansible/legacy_role/作業番号/out
+        # dest path: /storage/org1/workspace-1/tmp/driver/ansible/legacy_role_作業番号/__ita_out_dir__
         ###########################################################
         src_path = self.vg_TowerProjectsScpPathArray[AnscConst.DF_SCP_OUT_ITA_PATH]
         dest_path = self.vg_TowerProjectsScpPathArray[AnscConst.DF_GITREPO_OUT_PATH]
         cmd = ["/bin/cp", "-rfp", src_path, dest_path]
-
         try:
             ret = subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-        except subprocess.CalledProcessError as e:
-            log = e.stdout.decode()
-            log = '%s\n%s' % (log, g.appmsg.get_api_message("MSG-10017", [cmd]))
-            self.errorLogOut(log)
-            g.applogger.error(log)
-            return False
-
         except Exception as e:
             log = str(e)
             log = '%s\n%s' % (log, g.appmsg.get_api_message("MSG-10017", [cmd]))
@@ -562,23 +513,14 @@ class ExecuteDirector():
 
         ###########################################################
         # tmp配下を一時ディレクトリ配下にコピー
-        # src  path: ansible data_relay_storage path(ita)/xx mode name xx/xx mode id xx/0000050044/tmp
-        # dest path: ~/ita-root/temp/ansible_driver_temp/Movement毎のディレクトリ/__ita_tmp_dir__
+        # src  path: /storage/org1/workspace-1/driver/ansible/legacy_role/作業番号/tmp'
+        # dest path: /storage/org1/workspace-1/tmp/driver/ansible/legacy_role_作業番号/__ita_tmp_dir__
         ###########################################################
         src_path = self.vg_TowerProjectsScpPathArray[AnscConst.DF_SCP_TMP_ITA_PATH]
         dest_path = self.vg_TowerProjectsScpPathArray[AnscConst.DF_GITREPO_TMP_PATH]
         cmd = ["/bin/cp", "-rfp", src_path, dest_path]
-
         try:
             ret = subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-        except subprocess.CalledProcessError as e:
-            log = e.stdout.decode()
-            log = '%s\n%s' % (log, g.appmsg.get_api_message("MSG-10017", [cmd]))
-            self.errorLogOut(log)
-            g.applogger.error(log)
-            return False
-
         except Exception as e:
             log = str(e)
             log = '%s\n%s' % (log, g.appmsg.get_api_message("MSG-10017", [cmd]))
@@ -587,61 +529,22 @@ class ExecuteDirector():
             return False
 
         ###########################################################
-        # symphony/インスタンス番号配下をx一時ディレクトリ配下にコピー
-        # src  path:  symphony data_relay_storage path(ita)/symphonyインスタンス番号
-        # dest path:  ~/ita-root/temp/ansible_driver_temp/Movement毎のディレクトリ/__ita_tmp_dir__/__ita_symphony_dir__/symphonyインスタンス番号
-        ###########################################################
-        if AnscConst.DF_SCP_SYMPHONY_ITA_PATH in self.vg_TowerProjectsScpPathArray:
-            src_path = self.vg_TowerProjectsScpPathArray[AnscConst.DF_SCP_SYMPHONY_ITA_PATH]
-            dest_path = str(pathlib.Path(self.vg_TowerProjectsScpPathArray[AnscConst.DF_GITREPO_SYMPHONY_PATH]).parent)
-
-            cmd = ["/bin/cp", "-rfp", src_path, dest_path]
-
-            try:
-                ret = subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-            except subprocess.CalledProcessError as e:
-                log = e.stdout.decode()
-                log = '%s\n%s' % (log, g.appmsg.get_api_message("MSG-10017", [cmd]))
-                self.errorLogOut(log)
-                g.applogger.error(log)
-                return False
-
-            except Exception as e:
-                log = str(e)
-                log = '%s\n%s' % (log, g.appmsg.get_api_message("MSG-10017", [cmd]))
-                self.errorLogOut(log)
-                g.applogger.error(log)
-                return False
-
-        ###########################################################
-        # conductor/インスタンス番号配下をx一時ディレクトリ配下にコピー
-        # src  path:  conductor ata_relay_storage path(ita)/conductorインスタンス番号
-        # dest path:  ~/ita-root/temp/ansible_driver_temp/Movement毎のディレクトリ/__ita_tmp_dir__/__ita_conductor_dir__/conductorインスタンス番号
+        # conductor/インスタンス番号配下を一時ディレクトリ配下にコピー
+        # src  path:  /storage/org1/workspace-1/driver/conductor/conductorインスタンス番号
+        # dest path:  /storage/org1/workspace-1/tmp/driver/ansible/legacy_role_作業番号/__ita_tmp_dir__/__ita_conductor_dir__/conductorインスタンス番号
         ###########################################################
         if AnscConst.DF_SCP_CONDUCTOR_ITA_PATH in self.vg_TowerProjectsScpPathArray:
             src_path = self.vg_TowerProjectsScpPathArray[AnscConst.DF_SCP_CONDUCTOR_ITA_PATH]
-            dest_path = str(pathlib.Path(self.vg_TowerProjectsScpPathArray[AnscConst.DF_GITREPO_CONDUCTOR_PATH]).parent)
-
+            dest_path = self.vg_TowerProjectsScpPathArray[AnscConst.DF_GITREPO_CONDUCTOR_PATH]
             cmd = ["/bin/cp", "-rfp", src_path, dest_path]
-
             try:
                 ret = subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-            except subprocess.CalledProcessError as e:
-                log = e.stdout.decode()
-                log = '%s\n%s' % (log, g.appmsg.get_api_message("MSG-10017", [cmd]))
-                self.errorLogOut(log)
-                g.applogger.error(log)
-                return False
-
             except Exception as e:
                 log = str(e)
                 log = '%s\n%s' % (log, g.appmsg.get_api_message("MSG-10017", [cmd]))
                 self.errorLogOut(log)
                 g.applogger.error(log)
                 return False
-
         return result_code
 
     def MaterialsTransferToTower(self, execution_no, ifInfoRow, TowerHostList, srcBasePath):
@@ -689,6 +592,7 @@ class ExecuteDirector():
             cmd = ["sh", "%s/%s" % (get_AnsibleDriverShellPath(), "ky_ansible_materials_transfer.sh"), tmp_TowerInfo_File]
             try:
                 with open(tmp_log_file, 'a') as fp:
+                    
                     ret = subprocess.run(cmd, check=True, stdout=fp, stderr=subprocess.STDOUT)
 
             except Exception:
@@ -835,57 +739,6 @@ class ExecuteDirector():
         result_code = True
         for credential in TowerHostList:
             ########################################################################################################
-            # ITA作業ディレクトリ配下のsymphonyディレクトリをITAに転送
-            # src  path:  /var/lib/exastro/ita_legacy_executions_0000050063/__ita_tmp_dir__/__ita_symphony_dir__/symphonyインスタンス番号
-            # dest path:  symphony data_relay_storage path(ita)/symphonyインスタンス番号
-            ########################################################################################################
-            if AnscConst.DF_SCP_SYMPHONY_ITA_PATH in self.vg_TowerProjectsScpPathArray:
-                src_path = self.vg_TowerProjectsScpPathArray[AnscConst.DF_SCP_SYMPHONY_TOWER_PATH]
-                dest_path = os.path.dirname(self.vg_TowerProjectsScpPathArray[AnscConst.DF_SCP_SYMPHONY_ITA_PATH])
-                info = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t\n" % (
-                    credential['host_name'],
-                    credential['auth_type'],
-                    credential['username'],
-                    credential['password'],
-                    credential['ssh_key_file'],
-                    src_path,
-                    dest_path,
-                    credential['ssh_key_file_pass'],
-                    root_dir_path,
-                    "TOWER"
-                )
-
-                try:
-                    pathlib.Path(tmp_TowerInfo_File).write_text(info)
-
-                except Exception as e:
-                    errorMessage = g.appmsg.get_api_message("MSG-10570")
-                    self.errorLogOut(errorMessage)
-                    g.applogger.error(errorMessage)
-                    return False
-
-                else:
-                    cmd = ["sh", "%s/%s" % (get_AnsibleDriverShellPath(), "ky_ansible_materials_transfer.sh"), tmp_TowerInfo_File]
-                    try:
-                        with open(tmp_log_file, 'a') as fp:
-                            ret = subprocess.run(cmd, check=True, stdout=fp, stderr=subprocess.STDOUT)
-
-                    except Exception as e:
-                        log = pathlib.Path(tmp_log_file).read_text()
-                        self.errorLogOut(log)
-                        g.applogger.error(log)
-                        errorMessage = g.appmsg.get_api_message("MSG-10067", [credential['host_name']])
-                        self.errorLogOut(errorMessage)
-                        g.applogger.error(errorMessage)
-                        return False
-
-            if os.path.isfile(tmp_log_file):
-                os.unlink(tmp_log_file)
-
-            if os.path.isfile(tmp_TowerInfo_File):
-                os.unlink(tmp_TowerInfo_File)
-
-            ########################################################################################################
             # ITA作業ディレクトリ配下のconductorディレクトリをITAに転送
             # src  path:  /var/lib/exastro/ita_legacy_executions_0000050063/__ita_tmp_dir__/__ita_conductor_dir__/conductorインスタンス番号
             # dest path:  conductor data_relay_storage path(ita)/conductorインスタンス番号
@@ -938,8 +791,8 @@ class ExecuteDirector():
 
             ########################################################################################################
             # ITA作業ディレクトリ配下のoutディレクトリ(__ita_out_dir__)をITAに転送
-            # src   path: /var/lib/exastro/ita_xxmode namexx_executions_作業番号/__ita_out_dir__/*
-            # dest  path: ansible data_relay_storage path(ita)/xx mode name xx/xx mode id xx/0000050044/out
+            # src   path: /var/lib/exastro/ita_legacy_role_executions_作業番号/__ita_out_dir__
+            # dest  path: /storage/org1/workspace-1/driver/ansible/legacy_role/作業番号/out
             ########################################################################################################
             src_path = self.vg_TowerProjectsScpPathArray[AnscConst.DF_SCP_OUT_TOWER_PATH]
             dest_path = self.vg_TowerProjectsScpPathArray[AnscConst.DF_SCP_OUT_ITA_PATH]
@@ -988,8 +841,8 @@ class ExecuteDirector():
 
             ########################################################################################################
             # ITA作業ディレクトリ配下の_parameters配下をITAに転送
-            # src   path: /var/lib/exastro/ita_xxmode namexx_executions_作業番号/_parameters
-            # dest  path: ansible data_relay_storage path(ita)/xx mode name xx/xx mode id xx/0000050044/in/_parameters
+            # src   path: /var/lib/exastro/ita_legacy_role_executions_作業番号/_parameters
+            # dest  path: /storage/org1/workspace-1/driver/ansible/legacy_role/作業番号/in
             ########################################################################################################
             src_path = self.vg_TowerProjectsScpPathArray[AnscConst.DF_SCP_IN_PARAMATERS_TOWER_PATH]
             dest_path = os.path.dirname(self.vg_TowerProjectsScpPathArray[AnscConst.DF_SCP_IN_PARAMATERS_ITA_PATH])
@@ -1038,8 +891,8 @@ class ExecuteDirector():
 
             ########################################################################################################
             # Towerプロジェクトディレクトリ配下の_parameters_file配下をITAに転送
-            # src   path: /var/lib/awx/projects/ita_xxmode namexx_executions_作業番号/_parameters_file
-            # dest  path: ansible data_relay_storage path(ita)/xx mode name xx/xx mode id xx/0000050044/in/_parameters_file
+            # src   path: /var/lib/exastro/ita_legacy_role_executions_作業番号/_parameters_file
+            # dest  path: /storage/org1/workspace-1/driver/ansible/legacy_role/作業番号/in
             ########################################################################################################
             src_path = self.vg_TowerProjectsScpPathArray[AnscConst.DF_SCP_IN_PARAMATERS_FILE_TOWER_PATH]
             dest_path = os.path.dirname(self.vg_TowerProjectsScpPathArray[AnscConst.DF_SCP_IN_PARAMATERS_FILE_ITA_PATH])
@@ -1090,9 +943,6 @@ class ExecuteDirector():
 
     def getTowerHostInfo(self, execution_no, anstwr_host_id, dataRelayStoragePath, TowerHostList):
 
-        vg_tower_driver_type = AnsrConst.vg_tower_driver_type
-        vg_tower_driver_id = AnsrConst.vg_tower_driver_id
-
         TowerHostList = []
 
         cols = self.dbAccess.table_columns_get("T_ANSC_TOWER_HOST")
@@ -1118,22 +968,6 @@ class ExecuteDirector():
             else:
                 node_type = AnscConst.DF_CONTROL_NODE
 
-            # 認証方式に応じた必須項目の設定確認
-            errMsgParameterAry = []
-            errMsgParameterAry.append(row['ANSTWR_HOSTNAME'])
-            ret, strError = chkobj.TowerHostListAuthTypeRequiredParameterCheck(
-                chkobj.chkType_WorkflowExec_TowerHostList,
-                errMsgParameterAry,
-                row['ANSTWR_LOGIN_AUTH_TYPE'],
-                row['ANSTWR_LOGIN_PASSWORD'],
-                row['ANSTWR_LOGIN_SSH_KEY_FILE'],
-                row['ANSTWR_LOGIN_SSH_KEY_FILE_PASS']
-            )
-
-            if not ret:
-                self.errorLogOut(strError)
-                return False, TowerHostList
-
             username = row['ANSTWR_LOGIN_USER']
             password = "undefine"
             if row['ANSTWR_LOGIN_AUTH_TYPE'] == AnscConst.DF_LOGIN_AUTH_TYPE_PW:
@@ -1145,14 +979,14 @@ class ExecuteDirector():
             sshKeyFile = "undefine"
             if row['ANSTWR_LOGIN_AUTH_TYPE'] in [AnscConst.DF_LOGIN_AUTH_TYPE_KEY, AnscConst.DF_LOGIN_AUTH_TYPE_KEY_PP_USE]:
                 sshKeyFile = row['ANSTWR_LOGIN_SSH_KEY_FILE']
-                if sshKeyFile is None or len(sshKeyFile.strip()) <= 0:
+                if not sshKeyFile:
                     sshKeyFile = "undefine"
 
                 else:
                     src_file = self.getAnsibleTowerSshKeyFileContent(row['ANSTWR_HOST_ID'], row['ANSTWR_LOGIN_SSH_KEY_FILE'])
                     sshKeyFile = (
-                        '%s/%s/%s/%s/in/ssh_key_files/AnsibleTower_%s_%s'
-                    ) % (dataRelayStoragePath, vg_tower_driver_type, vg_tower_driver_id, FuncCommonLib.addPadding(execution_no), FuncCommonLib.addPadding(row['ANSTWR_HOST_ID']), row['ANSTWR_LOGIN_SSH_KEY_FILE'])
+                        '%s/in/ssh_key_files/AnsibleTower_%s_%s'
+                    ) % getAnsibleExecutDirPath(self.driver_id, execution_no), row['ANSTWR_HOST_ID'], row['ANSTWR_LOGIN_SSH_KEY_FILE']
 
                     try:
                         shutil.copy(src_file, sshKeyFile)
@@ -1256,7 +1090,7 @@ class ExecuteDirector():
             sshPrivateKey = ""
             if hostInfo['LOGIN_AUTH_TYPE'] in [AnscConst.DF_LOGIN_AUTH_TYPE_KEY, AnscConst.DF_LOGIN_AUTH_TYPE_KEY_PP_USE]:
                 if 'SSH_KEY_FILE' in hostInfo and hostInfo['SSH_KEY_FILE']:
-                    sshPrivateKey = self.getSshKeyFileContent(hostInfo['SYSTEM_ID'], hostInfo['CONN_SSH_KEY_FILE'])
+                    sshPrivateKey = self.getDeviceListSshKeyFileContent(hostInfo['SYSTEM_ID'], hostInfo['CONN_SSH_KEY_FILE'])
                     # ky_encrptのスクランブルを復号
                     sshPrivateKey = ky_decrypt(sshPrivateKey)
 
@@ -1317,9 +1151,11 @@ class ExecuteDirector():
             # null or 1 がIP方式 2 がホスト名方式
             if 'I_ANS_HOST_DESIGNATE_TYPE_ID' not in exeInsRow \
             or not exeInsRow['I_ANS_HOST_DESIGNATE_TYPE_ID'] \
-            or exeInsRow['I_ANS_HOST_DESIGNATE_TYPE_ID'] in [1, '1']:
-                hostData['ipAddress'] = hostInfo['IP_ADDRESS']
-
+            or exeInsRow['I_ANS_HOST_DESIGNATE_TYPE_ID'] == '1':
+                hostData['ansible_ssh_host'] = hostInfo['IP_ADDRESS']
+            else:
+                hostData['ansible_ssh_host'] = hostInfo['HOST_DNS_NAME']
+                
             # WinRM接続
             # 認証方式:パスワード認証(winrm)
             hostData['winrm'] = 0
@@ -1493,11 +1329,9 @@ class ExecuteDirector():
             if hostname == 'localhost' and vg_tower_driver_name == "pioneer":
                 variables_array.append("ansible_connection: local")
 
-            variables_array.append("ansible_ssh_host: %s" % (hostname))
-            #if "ipAddress" in hostData and hostData['ipAddress']:
-            #    variables_array.append("ansible_ssh_host: %s" % (hostData['ipAddress']))
+            variables_array.append("ansible_ssh_host: %s" % hostData['ansible_ssh_host'])
 
-            if hostData['winrm'] in [1, '1']:
+            if hostData['winrm'] == '1':
                 variables_array.append("ansible_connection: winrm")
                 variables_array.append("ansible_ssh_port: %s" % (hostData['winrmPort']))
                 if 'ansible_winrm_ca_trust_path' in hostData and hostData['ansible_winrm_ca_trust_path'] is not None:
@@ -1727,7 +1561,7 @@ class ExecuteDirector():
             result_code[wfJobId] = status
 
             # Ansibleログ書き出し
-            ret = self.createAnsibleLogs(execution_no, ansibleTowerIfInfo['ANSIBLE_STORAGE_PATH_LNX'], wfJobId)
+            ret = self.createAnsibleLogs(execution_no, wfJobId)
             if not ret:
                 result_code[wfJobId] = AnscConst.EXCEPTION
 
@@ -1965,22 +1799,14 @@ class ExecuteDirector():
         # 全て成功
         return AnscConst.COMPLETE
 
-    def createAnsibleLogs(self, execution_no, dataRelayStoragePath, wfJobId):
-
-        vg_tower_driver_type = AnsrConst.vg_tower_driver_type
-        vg_tower_driver_id = AnsrConst.vg_tower_driver_id
+    def createAnsibleLogs(self, execution_no, wfJobId):
 
         execlogFilename = "exec.log"
         joblistFilename = "joblist.txt"
-        outDirectoryPath = '%s/%s/%s/%s/out' % (dataRelayStoragePath, vg_tower_driver_type, vg_tower_driver_id, FuncCommonLib.addPadding(execution_no))
+        outDirectoryPath = '%s/out' % getAnsibleExecutDirPath(self.driver_id, execution_no)
 
         execlogFullPath = '%s/%s' % (outDirectoryPath, execlogFilename)
         joblistFullPath = '%s/%s' % (outDirectoryPath, joblistFilename)
-
-        # 全体構造ファイル作成
-        if os.path.isdir(joblistFullPath):
-            g.applogger.error("Error: '%s' is directory. Remove this." % (joblistFullPath))
-            return False
 
         # ログファイル生成
         ret = self.CreateLogs(execution_no, wfJobId, joblistFullPath, outDirectoryPath, execlogFullPath)
@@ -2249,14 +2075,6 @@ class ExecuteDirector():
             except Exception as e:
                 g.applogger.error("Error. Faild to write message. %s" % (message))
 
-    def getMaterialsTransferSourcePath(self, dataRelayStoragePath, execution_no):
-
-        vg_tower_driver_type = AnsrConst.vg_tower_driver_type
-        vg_tower_driver_id = AnsrConst.vg_tower_driver_id
-
-        path = '%s/%s/%s/%s/in' % (dataRelayStoragePath, vg_tower_driver_type, vg_tower_driver_id, FuncCommonLib.addPadding(execution_no))
-        return path
-
     def getMaterialsTransferDestinationPath(self, PathId, execution_no):
 
         return self.vg_TowerInstanceDirPath[PathId]
@@ -2328,9 +2146,10 @@ class ExecuteDirector():
         proj_name = os.path.basename(pathlib.Path(SrcFilePath).parent)
         repositories_path = "%s%s" % (repositories_base_path, proj_name)
 
-        # 資材(tmp)を削除
+        # git clone用のディレトクリ削除
+        # repositories_path: /storage/org1/workspace-1/driver/ansible/git_repositories/legacy_role_作業番号
         ret, msg = self.GitRepoDirDelete(repositories_path)
-        if not ret:
+        if ret is False:
             log = g.appmsg.get_api_message("MSG-10018", [msg])
             self.errorLogOut(log)
             g.applogger.error(log)
@@ -2369,13 +2188,6 @@ class ExecuteDirector():
             cmd = ["git", "push", "origin", "main"]
             subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
-        except subprocess.CalledProcessError as e:
-            log = e.stdout.decode()
-            log = '%s\n%s' % (log, g.appmsg.get_api_message("MSG-10018", [cmd]))
-            self.errorLogOut(log)
-            g.applogger.error(log)
-            return False
-
         except Exception as e:
             log = str(e)
             log = '%s\n%s' % (log, g.appmsg.get_api_message("MSG-10018", [cmd]))
@@ -2396,14 +2208,6 @@ class ExecuteDirector():
             cmd = ["/bin/rm", "-rf", src_path]
             try:
                 subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-            except subprocess.CalledProcessError as e:
-                log = e.stdout.decode()
-                log = '%s\n%s' % (log, g.appmsg.get_api_message("MSG-10017", [cmd]))
-                self.errorLogOut(log)
-                g.applogger.error(log)
-                return False
-
             except Exception as e:
                 log = str(e)
                 log = '%s\n%s' % (log, g.appmsg.get_api_message("MSG-10017", [cmd]))
@@ -2517,15 +2321,9 @@ class ExecuteDirector():
             cmd = ["/bin/rm", "-rf", SrcFilePath]
             try:
                 subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-            except subprocess.CalledProcessError as e:
-                log = e.stdout.decode()
-                log = '%s\nFailed to delete Git repository.(%s)' % (log, cmd)
-                return False, log
-
             except Exception as e:
                 log = str(e)
-                log = '%s\nFailed to delete Git repository.(%s)' % (log, cmd)
+                log = '%s\nFailed to delete Git repository.(%s)' % (log, str(cmd))
                 return False, log
 
         return True, ''
@@ -2542,21 +2340,15 @@ class ExecuteDirector():
         return content
 
     @staticmethod
-    def getSshKeyFileContent(systemId, sshKeyFileName):
-
-        ssh_key_file_dir = '%s/' % (getFileupLoadColumnPath('2100000303', 'CONN_SSH_KEY_FILE'))
-
-        filePath = '%s/%s/%s' % (ssh_key_file_dir, FuncCommonLib.addPadding(systemId), sshKeyFileName)
+    def getDeviceListSshKeyFileContent(systemId, sshKeyFileName):
+        filePath = '%s/%s/%s' % (getDeviceListSSHPrivateKeyUploadDirPath(), systemId, sshKeyFileName)
         content = pathlib.Path(filePath).read_text()
 
         return content
 
     @staticmethod
     def getAnsibleTowerSshKeyFileContent(TowerHostID, sshKeyFileName):
-
-        ssh_key_file_dir = getFileupLoadColumnPath('2100040708', 'ANSTWR_LOGIN_SSH_KEY_FILE')
-
-        filePath = '%s/%s/%s' % (ssh_key_file_dir, FuncCommonLib.addPadding(TowerHostID), sshKeyFileName)
+        filePath = '%s/%s/%s' % ( getAACListSSHPrivateKeyUploadDirPath(), TowerHostID, sshKeyFileName)
 
         return filePath
 

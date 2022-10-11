@@ -226,35 +226,33 @@ def main_logic(wsDb: DBConnectWs, execution_no, driver_id):  # noqa: C901
     # [処理]処理対象インスタンス 作業確認の開始(作業No.:{})
     g.applogger.info(g.appmsg.get_log_message("MSG-10737", [execution_no]))
 
-    status_update = True
     check_interval = 3
     while True:
         time.sleep(check_interval)
-        
-        if status_update is True:
-            # 処理対象の作業インスタンス情報取得
-            retBool, execute_data = cm.get_execution_process_info(wsDb, execution_no)
-            if retBool is False:
-                return False, execute_data
-            # クローン作製
-            clone_execute_data = execute_data
 
+        # 処理対象の作業インスタンス情報取得
+        retBool, execute_data = cm.get_execution_process_info(wsDb, execution_no)
+        if retBool is False:
+            return False, execute_data
+        clone_execute_data = execute_data
         # 実行結果の確認
         g.applogger.debug("execute instance_checkcondition")
         retBool, clone_execute_data, db_update_need = instance_checkcondition(wsDb, ansdrv, ans_if_info, clone_execute_data, driver_id, tower_host_list)  # noqa: E501
 
-        status_update = False
         # ステータスが更新されたか判定
-        if clone_execute_data['STATUS_ID'] != execute_data['STATUS_ID'] or db_update_need is True:
-            # 処理対象の作業インスタンスのステータス更新
-            status_update = True
-
+        if db_update_need is True:
+            # 処理対象の作業インスタンスのステータス更新           
             wsDb.db_transaction_start()
             if clone_execute_data['FILE_RESULT']:
                 zip_tmp_save_path = get_AnsibleDriverTmpPath() + "/" + clone_execute_data['FILE_RESULT']
             else:
                 zip_tmp_save_path = ''
-            result = InstanceRecodeUpdate(wsDb, driver_id, execution_no, clone_execute_data, 'FILE_RESULT', zip_tmp_save_path)
+
+            # ステータスが作業終了状態か判定
+            if execute_data['STATUS_ID'] in [ansc_const.COMPLETE, ansc_const.FAILURE, ansc_const.EXCEPTION, ansc_const.SCRAM]:
+                result = InstanceRecodeUpdate(wsDb, driver_id, execution_no, clone_execute_data, 'FILE_RESULT', zip_tmp_save_path)
+            else:
+                result = InstanceRecodeUpdate(wsDb, driver_id, execution_no, clone_execute_data, 'UPDATE', zip_tmp_save_path)
 
             if result[0] is True:
                 wsDb.db_commit()
@@ -393,6 +391,7 @@ def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if
             # execute_dataのSTATUS_ID/TIME_STARTはAnsibleTowerExecution内で設定
             # statusは使わない
             retBool, tower_host_list, execute_data, multiple_log_mark, multiple_log_file_json_ary, status, error_flag, warning_flag = AnsibleTowerExecution(  # noqa: E501
+                driver_id,
                 ansc_const.DF_EXECUTION_FUNCTION,
                 ans_if_info,
                 [],
@@ -409,13 +408,20 @@ def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if
 
         except Exception as e:
             AnsibleTowerExecution(
-                ansc_const.DF_DELETERESOURCE_FUNCTION, ans_if_info,
+                driver_id,
+                ansc_const.DF_DELETERESOURCE_FUNCTION, 
+                ans_if_info,
                 [],
                 execute_data,
                 Ansible_out_Dir,
                 uiexec_log_path, uierror_log_path,
-                multiple_log_mark, multiple_log_file_json_ary)
-
+                multiple_log_mark, multiple_log_file_json_ary,
+                "",
+                JobTemplatePropertyParameterAry,
+                JobTemplatePropertyNameAry,
+                TowerProjectsScpPath,
+                TowerInstanceDirPath,
+                wsDb)
             err_msg = g.appmsg.get_log_message("BKY-00004", ["AnsibleTowerExecution(DF_EXECUTION_FUNCTION)", e])
             ansdrv.LocalLogPrint(
                 os.path.basename(inspect.currentframe().f_code.co_filename),
@@ -431,6 +437,9 @@ def instance_execution(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if
 
 def instance_checkcondition(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, ans_if_info, execute_data, driver_id, tower_host_list):
     db_update_need = False
+
+    TowerProjectsScpPath = ansdrv.getTowerProjectsScpPath()
+    TowerInstanceDirPath = ansdrv.getTowerInstanceDirPath()
 
     execution_no = execute_data["EXECUTION_NO"]
 
@@ -468,6 +477,7 @@ def instance_checkcondition(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, a
         status = 0
 
         retBool, tower_host_list, execute_data, multiple_log_mark, multiple_log_file_json_ary, status, error_flag, warning_flag = AnsibleTowerExecution(  # noqa: E501
+            driver_id,
             ansc_const.DF_CHECKCONDITION_FUNCTION,
             ans_if_info,
             tower_host_list,
@@ -478,8 +488,8 @@ def instance_checkcondition(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, a
             status,
             None,
             None,
-            {},
-            {},
+            TowerProjectsScpPath,
+            TowerInstanceDirPath,
             wsDb)
 
         # マルチログか判定
@@ -518,6 +528,7 @@ def instance_checkcondition(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, a
             multiple_log_mark = ""
             multiple_log_file_json_ary = ""
             AnsibleTowerExecution(
+                driver_id,
                 ansc_const.DF_RESULTFILETRANSFER_FUNCTION,
                 ans_if_info,
                 tower_host_list,
@@ -525,7 +536,12 @@ def instance_checkcondition(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, a
                 Ansible_out_Dir, uiexec_log_path,
                 uierror_log_path,
                 multiple_log_mark, multiple_log_file_json_ary,
-                status)
+                status,
+                None,
+                None,
+                TowerProjectsScpPath,
+                TowerInstanceDirPath,
+                wsDb)
 
         tmp_array_dirs = ansdrv.getAnsibleWorkingDirectories(ansr_const.vg_OrchestratorSubId_dir, execution_no)
         zip_data_source_dir = tmp_array_dirs[4]
@@ -586,12 +602,8 @@ def instance_checkcondition(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, a
             g.applogger.debug(g.appmsg.get_log_message("MSG-10743", [execution_no]))
 
             # 戻り値は確認しない
-            retBool,
-            tower_host_list,
-            execute_data,
-            multiple_log_mark,
-            multiple_log_file_json_ary,
-            status, error_flag, warning_flag = AnsibleTowerExecution(
+            ret = AnsibleTowerExecution(
+                driver_id,
                 ansc_const.DF_DELETERESOURCE_FUNCTION,
                 ans_if_info,
                 tower_host_list,
@@ -601,7 +613,12 @@ def instance_checkcondition(wsDb: DBConnectWs, ansdrv: CreateAnsibleExecFiles, a
                 uierror_log_path,
                 multiple_log_mark,
                 multiple_log_file_json_ary,
-                status)
+                status,
+                None,
+                None,
+                TowerProjectsScpPath,
+                TowerInstanceDirPath,
+                wsDb)
 
             # [処理]Ansible Automation Controller クリーニング 終了(作業No.:{})
             g.applogger.debug(g.appmsg.get_log_message("MSG-10744", [execution_no]))
@@ -1147,6 +1164,7 @@ def InstanceRecodeUpdate(wsDb, driver_id, execution_no, execute_data, update_col
     RETRUN:
         True/False, errormsg
     """
+
     TableDict = {}
     TableDict["MENU_REST"] = {}
     TableDict["MENU_REST"][AnscConst.DF_LEGACY_DRIVER_ID] = "Not supported"
@@ -1188,21 +1206,25 @@ def InstanceRecodeUpdate(wsDb, driver_id, execution_no, execute_data, update_col
 
     # 入力データ/投入データ／出力データ/結果データ用zipデータ
     uploadfiles = {}
-    if zip_tmp_save_path:
-        ZipDataData = file_encode(zip_tmp_save_path)
-        if ZipDataData is False:
-            # エンコード失敗
-            msgstr = g.appmsg.get_api_message("499-00909", [])
-            return False, msgstr
-        uploadfiles = {RestNameConfig[update_column_name]: ZipDataData}
+    if update_column_name == "FILE_INPUT" or update_column_name == "FILE_RESULT":
+        if zip_tmp_save_path:
+            ZipDataData = file_encode(zip_tmp_save_path)
+            if ZipDataData is False:
+                # エンコード失敗
+                msgstr = g.appmsg.get_api_message("499-00909", [])
+                return False, msgstr
+            uploadfiles = {RestNameConfig[update_column_name]: ZipDataData}
 
-    # 作業状況/開始日時
+    # 実行中の場合
     if update_column_name == "FILE_INPUT":
         ExecStsInstTableConfig[RestNameConfig["FILE_INPUT"]] = execute_data["FILE_INPUT"]  # 入力データ/投入データ
         ExecStsInstTableConfig[RestNameConfig["TIME_START"]] = execute_data['TIME_START'].strftime('%Y/%m/%d %H:%M:%S')
         if "MULTIPLELOG_MODE" in execute_data:
             ExecStsInstTableConfig[RestNameConfig["MULTIPLELOG_MODE"]] = execute_data["MULTIPLELOG_MODE"]
-    # 作業状況/終了日時
+        if "LOGFILELIST_JSON" in execute_data:
+            ExecStsInstTableConfig[RestNameConfig["LOGFILELIST_JSON"]] = execute_data["LOGFILELIST_JSON"]
+
+    # 実行終了の場合
     if update_column_name == "FILE_RESULT":
         ExecStsInstTableConfig[RestNameConfig["FILE_RESULT"]] = execute_data["FILE_RESULT"]  # 出力データ/結果データ
         ExecStsInstTableConfig[RestNameConfig["TIME_END"]] = execute_data['TIME_END'].strftime('%Y/%m/%d %H:%M:%S')
@@ -1212,7 +1234,14 @@ def InstanceRecodeUpdate(wsDb, driver_id, execution_no, execute_data, update_col
         if "LOGFILELIST_JSON" in execute_data:
             ExecStsInstTableConfig[RestNameConfig["LOGFILELIST_JSON"]] = execute_data["LOGFILELIST_JSON"]
 
-    # 最終更新日時a
+    # その他の場合
+    if update_column_name == "UPDATE":
+        if "MULTIPLELOG_MODE" in execute_data:
+            ExecStsInstTableConfig[RestNameConfig["MULTIPLELOG_MODE"]] = execute_data["MULTIPLELOG_MODE"]
+        if "LOGFILELIST_JSON" in execute_data:
+            ExecStsInstTableConfig[RestNameConfig["LOGFILELIST_JSON"]] = execute_data["LOGFILELIST_JSON"]
+
+    # 最終更新日時
     ExecStsInstTableConfig[RestNameConfig["LAST_UPDATE_TIMESTAMP"]] = execute_data['LAST_UPDATE_TIMESTAMP'].strftime('%Y/%m/%d %H:%M:%S.%f')
 
     parameters = {
