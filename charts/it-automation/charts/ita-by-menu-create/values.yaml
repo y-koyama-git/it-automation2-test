@@ -39,10 +39,15 @@ serviceAccount:
 
 volume:
   mountPath:
-    name1: /storage
-    subPath1: org1
-    name2: /tmp
-    name3: /home/app_user
+    storage: /storage
+    homeDir: /home/app_user
+    pid:
+      path: /var/run_app_user/httpd/pid
+      subPath: httpd-pid
+    socket: 
+      path: /var/run_app_user/httpd/socket
+      subPath: httpd-socket
+    tmp: /tmp
 
 podAnnotations: {}
 
