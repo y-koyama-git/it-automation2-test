@@ -11,7 +11,7 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
-apiVersion: apps/v1
+piVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Values.name }}
@@ -19,24 +19,15 @@ metadata:
 spec:
   selector:
     matchLabels:
-       name: {{ .Values.name }}
+      name: {{ .Values.name }}
   replicas: {{ .Values.replicaCount }}
   template:
     metadata:
       labels:
-         name: {{ .Values.name }}
+        name: {{ .Values.name }}
     spec:
-      initContainers:
-        # temporary response to organization_create_controller.py  organization_create, os.makedirs(organization_dir)
-        - name: setup-storage
-          command: ["{{ .Values.initContainerCommand.shell  }}", "{{ .Values.initContainerCommand.option }}", "{{ .Values.initContainerCommand.arg }}"]          
-          image: {{ .Values.initContainerImage.repository }}:{{ .Values.initContainerImage.tag }}
-          imagePullPolicy: {{ .Values.initContainerImage.pullPolicy }}
-          volumeMounts:
-          - mountPath: {{ .Values.initContainerVolume.mountPath.name }}
-            name: persistent-storage
       containers:
-        - name: {{ .Values.name }}
+        - name: ita-api-organization
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           securityContext:
@@ -48,38 +39,35 @@ spec:
           envFrom:
             - secretRef:
                 name: {{ .Values.global.dbAccountInfo }}
-            - secretRef:
-                name: {{ .Values.global.gitLabAccountInfo }}
             - configMapRef:
                 name: {{ .Values.global.dbConnectionInfo }}
             - configMapRef:
                 name: {{ .Values.global.itaBaseInfo }}
             - configMapRef:
-                name: {{ .Values.global.gitLabConnectionInfo }}
-            - configMapRef:
-                name: params-ita-admin
+                name: params-ita-org
+
           volumeMounts:
-            - name: ita-api-admin-storage
+            - name: ita-api-org-storage
               mountPath: {{ .Values.volume.mountPath.storage }}
-            - name: ita-api-admin-homedir
+            - name: ita-api-org-homedir
               mountPath: {{ .Values.volume.mountPath.homeDir }}
-            - name: ita-api-admin-pid
+            - name: ita-api-org-pid
               mountPath: {{ .Values.volume.mountPath.pid.path }}
               subPath: {{ .Values.volume.mountPath.pid.subPath }}
-            - name: ita-api-admin-socket
+            - name: ita-api-org-socket
               mountPath: {{ .Values.volume.mountPath.socket.path }}
               subPath: {{ .Values.volume.mountPath.socket.subPath }}
-            - name: ita-api-admin-tmp
+            - name: ita-api-org-tmp
               mountPath: {{ .Values.volume.mountPath.tmp }}
       volumes:
-        - name: ita-api-admin-storage
+        - name: ita-api-org-storage
           persistentVolumeClaim:
             claimName: {{ .Values.global.claimName }}
-        - name: ita-api-admin-homedir
+        - name: ita-api-org-homedir
           emptyDir: {}
-        - name: ita-api-admin-pid
+        - name: ita-api-org-pid
           emptyDir: {}
-        - name: ita-api-admin-socket
+        - name: ita-api-org-socket
           emptyDir: {}
-        - name: ita-api-admin-tmp
+        - name: ita-api-org-tmp
           emptyDir: {}
