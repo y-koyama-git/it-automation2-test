@@ -493,7 +493,7 @@ def collect_menu_column_list(objdbca, menu, menu_record):
     menu_id = menu_record[0].get('MENU_ID')
     
     # 『メニュー-カラム紐付管理』テーブルから対象のデータを取得
-    ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s ORDER BY COLUMN_DISP_SEQ ASC', [menu_id])
+    ret = objdbca.table_select(t_common_menu_column_link, 'WHERE  DISUSE_FLAG=%s AND MENU_ID = %s ORDER BY COLUMN_DISP_SEQ ASC', ['0', menu_id])
     if not ret:
         log_msg_args = [menu]
         api_msg_args = [menu]
