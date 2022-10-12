@@ -2807,6 +2807,10 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                             target_node = tinfo.get('targetNode')
                         if '9999' in conditions:
                             target_node = tinfo.get('targetNode')
+
+                if target_node in skip_node:
+                    skip_node.remove(target_node)
+
             result['target_node'] = target_node
             result['skip_node'] = skip_node
         except Exception as e:
