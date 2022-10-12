@@ -215,11 +215,11 @@ class RestApiCaller():
                                     except json.JSONDecodeError as e:
                                         response_array['responseContents'] = None
 
-                        g.applogger.debug(print_backtrace)
-                        g.applogger.debug(print_url)
-                        g.applogger.debug(print_HttpContext)
-                        g.applogger.debug(print_HttpResponsHeader)
-                        g.applogger.debug('http response content\n%s' % (response_array['responseContents']))
+                        # g.applogger.debug(print_backtrace)
+                        # g.applogger.debug(print_url)
+                        # g.applogger.debug(print_HttpContext)
+                        # g.applogger.debug(print_HttpResponsHeader)
+                        # g.applogger.debug('http response content\n%s' % (response_array['responseContents']))
 
                 else:
                     # 返却用のArrayを編集
