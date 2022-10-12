@@ -178,10 +178,6 @@ fetch: function( url, token, method = 'GET', json ) {
     
     if ( !token ) {
         token = CommonAuth.getToken();
-        console.group('Token( CommonAuth.getToken() )');
-        console.log( cmn.date( new Date(), 'yyyy/MM/dd HH:mm:ss.SSS') );
-        console.log( token );
-        console.groupEnd('Token( CommonAuth.getToken() )');
     }
     
     let errorCount = 0;
@@ -199,11 +195,7 @@ fetch: function( url, token, method = 'GET', json ) {
                 }
             };
             
-            if ( ( method === 'POST' || method === 'PATCH' ) && json !== undefined ) {
-                console.group( method );
-                console.log( json )
-                console.groupEnd( method );
-            
+            if ( ( method === 'POST' || method === 'PATCH' ) && json !== undefined ) {            
                 try {
                     init.body = JSON.stringify( json );
                 } catch ( e ) {
@@ -211,23 +203,12 @@ fetch: function( url, token, method = 'GET', json ) {
                 }
             }
             
-            console.group('Fetch');
-            console.log( u );
-            console.log( init );
-            console.groupEnd('Fetch');
-            
             fetch( u, init ).then(function( response ){
                 if ( errorCount === 0 ) {
-                
-                    console.group('Fetch response');
-                    console.log( response );
                     
                     if( response.ok ) {
                         //200の場合
-                        response.json().then(function( result ){
-                            console.log( result );
-                            console.groupEnd('Fetch response');
-                            
+                        response.json().then(function( result ){                            
                             resolve( result.data );
                         });
                     } else {
@@ -237,9 +218,6 @@ fetch: function( url, token, method = 'GET', json ) {
                             //バリデーションエラーは呼び出し元に返す
                             case 499:
                                 response.json().then(function( result ){
-                                    console.log( result );
-                                    console.groupEnd('Fetch response');
-
                                     reject( result );
                                 }).catch(function( e ) {
                                     cmn.systemErrorAlert();
@@ -248,9 +226,6 @@ fetch: function( url, token, method = 'GET', json ) {
                             // 権限無しの場合、トップページに戻す
                             case 401:
                                 response.json().then(function( result ){
-                                    console.log( result );
-                                    console.groupEnd('Fetch response');
-
                                     if ( !iframeFlag ) {
                                         alert(result.message);
                                         location.replace('/' + organization_id + '/workspaces/' + workspace_id + '/ita/');
@@ -264,9 +239,6 @@ fetch: function( url, token, method = 'GET', json ) {
                             // ワークスペース一覧に飛ばす
                             case 403:
                                 response.json().then(function( result ){
-                                    console.log( result );
-                                    console.groupEnd('Fetch response');
-
                                     if ( !iframeFlag ) {
                                         alert(result.message);
                                         window.location.href = `/${organization_id}/platform/workspaces`;
@@ -791,7 +763,7 @@ alert: function( title, elements, type = 'alert', buttons = { ok: { text: getMes
             if ( dialog ) {
                 dialog.buttonPositiveDisabled( false );
             }
-        }, 300 )
+        }, 500 )
     });
 },
 iconConfirm: function( icon, title, elements ) {
@@ -2353,8 +2325,6 @@ commonErrorAlert: function( error ) {
     if ( error.message ) {
         if ( e.message !== 'Failed to fetch' && windowFlag ) {
             alert( error.message );
-        } else {
-            console.error( error.message );
         }
     }
 },
@@ -2371,7 +2341,7 @@ gotoErrPage: function( message ) {
         } else {
             window.alert('Unknown error.');
         }
-        // window.location.href = './system_error/';
+        window.location.href = './system_error/';
     } else {
         if ( message ) {
             console.error( message );

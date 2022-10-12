@@ -226,12 +226,11 @@ operationStatusInit() {
                         }).catch(function( error ){
                             alert( error.message );
                         }).then(function(){
-                            console.log('!')
-                            fn.contentLoadiEnd();
+                            fn.contentLoadingEnd();
                             op.monitoring();
                         });
                     } else {
-                        fn.contentLoadiEnd();
+                        fn.contentLoadingEnd();
                         op.monitoring();
                     }
                 break;
@@ -242,11 +241,11 @@ operationStatusInit() {
                         }).catch(function( error ){
                             alert( error.message );
                         }).then(function(){
-                              fn.contentLoadiEnd();
+                              fn.contentLoadingEnd();
                               op.monitoring();
                         });
                     } else {
-                        fn.contentLoadiEnd();
+                        fn.contentLoadingEnd();
                         op.monitoring();
                     }
                 break;
