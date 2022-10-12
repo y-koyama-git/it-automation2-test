@@ -2184,6 +2184,14 @@ class ExecuteDirector():
             subprocess.run(cmd, check=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
             os.chdir(repositories_path)
+            git_username = g.gitlab_connect_info.get('GITLAB_USER')
+            cmd = ["git", "config", "--local", "user.name", git_username]
+            subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+            git_email = '%s@example.com' % (git_username.lower())
+            cmd = ["git", "config", "--local", "user.email", git_email]
+            subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
             cmd = ["git", "add", "."]
             subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
@@ -2192,6 +2200,13 @@ class ExecuteDirector():
 
             cmd = ["git", "push", "origin", "main"]
             subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+        except subprocess.CalledProcessError as e:
+            log = e.stdout.decode()
+            log = '%s\n%s' % (log, g.appmsg.get_api_message("MSG-10018", [cmd]))
+            self.errorLogOut(log)
+            g.applogger.error(log)
+            return False
 
         except Exception as e:
             log = str(e)
