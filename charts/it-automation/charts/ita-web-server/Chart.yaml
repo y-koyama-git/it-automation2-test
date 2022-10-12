@@ -14,7 +14,7 @@
 
 
 apiVersion: v2
-name: ita-web-serbver
+name: ita-web-server
 description: A Helm chart for Kubernetes
 
 # A chart can be either an 'application' or a 'library' chart.
