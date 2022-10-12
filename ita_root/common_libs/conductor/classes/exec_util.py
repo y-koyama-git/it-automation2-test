@@ -2015,8 +2015,12 @@ class ConductorExecuteBkyLibs(ConductorExecuteLibs):
                 # START->END 完走
                 retBool = True
             elif nomal_end_cnt <= node_cnt:
+                abort_execute_flag = instance_data.get('conductor').get('abort_execute_flag')
+                # 緊急停止発令時
+                if abort_execute_flag == bool_master_true:
+                    conductor_end_status = '9'
                 # START->終了系
-                if len(status_count.get('12')) != 0 or len(status_count.get('6')) != 0:
+                elif len(status_count.get('12')) != 0 or len(status_count.get('6')) != 0:
                     # 異常終了へ(異常終了、準備エラー)
                     conductor_end_status = '7'
                 elif len(status_count.get('8')) != 0:
