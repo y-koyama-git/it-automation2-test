@@ -1138,17 +1138,21 @@ left: 0; bottom: 0;
 width: 100%; height: 16px;
 background-image: linear-gradient(rgba(0,0,0,.0),rgba(0,0,0,.1));
 }
-.menuNavi::-webkit-scrollbar {
+.menuNavi::-webkit-scrollbar,
+.pagingOnePageNumSelectList::-webkit-scrollbar {
 width: 12px;
 }
-.menuNavi::-webkit-scrollbar-track {
+.menuNavi::-webkit-scrollbar-track,
+.pagingOnePageNumSelectList::-webkit-scrollbar-track {
 background: #222;
 }
-.menuNavi::-webkit-scrollbar-thumb {
+.menuNavi::-webkit-scrollbar-thumb,
+.pagingOnePageNumSelectList::-webkit-scrollbar-thumb {
 background: #999;
 }
 /* Firefox */
-.menuNavi {
+.menuNavi,
+.pagingOnePageNumSelectList {
 scrollbar-width: thin;
 scrollbar-color: #999 #222;
 }
@@ -1893,6 +1897,8 @@ font-size: 28px;
 color: var(--black25);
 }
 .tableBody {
+position: relative;
+z-index: 5;
 overflow: auto;
 flex: 1 1 auto;
 background-color: rgba(0,0,0,.05);
@@ -2706,6 +2712,7 @@ transform: translateY(-2px);
 color: var(--accentColor100);
 }
 .pagingOnePageNumSelectList {
+overflow: auto;
 display: none;
 position: absolute;
 left: 0; bottom: 100%;

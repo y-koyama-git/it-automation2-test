@@ -3101,7 +3101,8 @@ setPagingEvent() {
     tb.$.footer.find('.pagingOnePageNumSelectNumber').on('click', function(){
         if ( !tb.checkWork ) {
             if ( !$list.is('.pagingOnePageOpen') ) {
-                $list.addClass('pagingOnePageOpen');
+                const height = tb.$.header.outerHeight() + tb.$.body.outerHeight();
+                $list.addClass('pagingOnePageOpen').css('max-height', height );
                 $( window ).on('pointerdown.pagingOnePageNum', function(e){
                     if ( !$( e.target ).closest('.pagingOnePageNumSelect').length ) {
                         $( this ).off('pointerdown.pagingOnePageNum');
