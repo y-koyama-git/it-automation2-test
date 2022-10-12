@@ -1,9 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: params-ita-by-menu-create
-  namespace: {{ .Release.Namespace }}
-data:
-  EXECUTE_INTERVAL: "{{ .Values.extraenv.EXECUTE_INTERVAL }}"
-  STORAGEPATH: {{ .Values.extraenv.STORAGEPATH }}
-  CONTAINER_BASE: "{{ .Values.extraenv.CONTAINER_BASE }}"

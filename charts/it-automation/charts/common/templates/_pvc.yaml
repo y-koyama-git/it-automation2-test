@@ -8,7 +8,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: pvc-{{ .Values.global.itaGlobalDefinition.name }}
   namespace: {{ $.Release.Namespace }}
-  labels: {{ include "ita-api-admin.labels" . | nindent 4 }}
+  labels: {{ include "common.labels" . | nindent 4 }}
 spec:
   accessModes:
     - {{ $persistence.accessMode | quote }}
