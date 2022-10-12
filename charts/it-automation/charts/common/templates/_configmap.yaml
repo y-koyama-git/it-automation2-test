@@ -4,7 +4,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: params-{{ .Chart.Name }}
+  name: params-{{ template "common.fullname" . }}
   namespace: {{ .Release.Namespace }}
 data: {}
 {{- end -}}

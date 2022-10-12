@@ -1,3 +1,4 @@
+{{/*
 #   Copyright 2022 NEC Corporation
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,6 +12,8 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
+*/}}
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -48,7 +51,7 @@ spec:
           image: {{ .Values.initContainerImage.repository }}:{{ .Values.initContainerImage.tag | default "latest" }} 
           imagePullPolicy: {{ .Values.initContainerImage.pullPolicy }}
           volumeMounts:
-            - name: {{ template "ita-api-admin.fullname" . }}-storage
+            - name: volume-{{ template "ita-api-admin.fullname" . }}-storage
               mountPath: {{ .Values.persistence.mountPath.storage }}
       containers:
         - name: {{ template "ita-api-admin.fullname" . }}
@@ -70,47 +73,55 @@ spec:
             - configMapRef:
                 name: params-{{ template "ita-api-admin.fullname" . }}
           volumeMounts:
-            - name: {{ template "ita-api-admin.fullname" . }}-storage
+            - name: volume-{{ template "ita-api-admin.fullname" . }}-storage
               mountPath: {{ .Values.persistence.mountPath.storage }}
-            - name: {{ template "ita-api-admin.fullname" . }}-homedir
+            - name: volume-{{ template "ita-api-admin.fullname" . }}-homedir
               mountPath: {{ .Values.persistence.mountPath.homeDir }}
-            - name: {{ template "ita-api-admin.fullname" . }}-pid
+            - name: volume-{{ template "ita-api-admin.fullname" . }}-pid
               mountPath: {{ .Values.persistence.mountPath.pid.path }}
               subPath: {{ .Values.persistence.mountPath.pid.subPath }}
-            - name: {{ template "ita-api-admin.fullname" . }}-socket
+            - name: volume-{{ template "ita-api-admin.fullname" . }}-socket
               mountPath: {{ .Values.persistence.mountPath.socket.path }}
               subPath: {{ .Values.persistence.mountPath.socket.subPath }}
-            - name: {{ template "ita-api-admin.fullname" . }}-tmp
+            - name: volume-{{ template "ita-api-admin.fullname" . }}-tmp
               mountPath: {{ .Values.persistence.mountPath.tmp }}
           ports:
             - name: http
               containerPort: 8080
               protocol: TCP
           livenessProbe:
-            httpGet:
-              path: /
+            tcpSocket:
               port: 8080
+            # httpGet:
+            #   path: /
+            #   port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10            
           readinessProbe:
-            httpGet:
-              path: /
+            tcpSocket:
               port: 8080
+            # httpGet:
+            #   path: /
+            #   port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10            
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
-        - name: {{ template "ita-api-admin.fullname" . }}-storage
-          {{- if and .Values.global.persistence.enabled }}
+        - name: volume-{{ template "ita-api-admin.fullname" . }}-storage
+          {{- if and .Values.global.itaGlobalDefinition.persistence.enabled }}
           persistentVolumeClaim:
-            claimName: {{ .Values.global.persistence.claimName }}
+            claimName: pvc-{{ .Values.global.itaGlobalDefinition.name }}
           {{- else }}
           emptyDir: {}
           {{- end }}
-        - name: {{ template "ita-api-admin.fullname" . }}-homedir
+        - name: volume-{{ template "ita-api-admin.fullname" . }}-homedir
           emptyDir: {}
-        - name: {{ template "ita-api-admin.fullname" . }}-pid
+        - name: volume-{{ template "ita-api-admin.fullname" . }}-pid
           emptyDir: {}
-        - name: {{ template "ita-api-admin.fullname" . }}-socket
+        - name: volume-{{ template "ita-api-admin.fullname" . }}-socket
           emptyDir: {}
-        - name: {{ template "ita-api-admin.fullname" . }}-tmp
+        - name: volume-{{ template "ita-api-admin.fullname" . }}-tmp
           emptyDir: {}
       {{- with .Values.nodeSelector }}
       nodeSelector:

@@ -1,0 +1,47 @@
+{{/* Custom Exastro IT Automation global PVC */}}
+{{- define "common.pvc.ita-global" -}}
+{{-   $persistence := .Values.global.itaGlobalDefinition.persistence -}}
+---
+{{-   if $persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-{{ .Values.global.itaGlobalDefinition.name }}
+  namespace: {{ $.Release.Namespace }}
+  labels: {{ include "ita-api-admin.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - {{ $persistence.accessMode | quote }}
+  resources:
+    requests:
+      storage: {{ $persistence.size | quote }}
+{{-     if $persistence.volumeName }}
+  volumeName: {{ $persistence.volumeName }}
+{{-     end }}
+{{-     if $persistence.storageClass }}
+{{-       if (eq "-" $persistence.storageClass) }}
+  storageClassName: ""
+{{-       else }}
+  storageClassName: "{{ $persistence.storageClass }}"
+{{-       end -}}
+{{-     end }}
+{{-     if and $persistence.matchLabels $persistence.matchExpressions }}
+  selector:
+{{-       if $persistence.matchLabels }}
+    matchLabels: {{ toYaml $persistence.matchLabels | nindent 6 }}
+{{-       end -}}
+{{-       if $persistence.matchExpressions }}
+    matchExpressions: {{ toYaml $persistence.matchExpressions | nindent 6 }}
+{{-       end -}}
+{{-     end }}
+{{-   end }}
+{{- end -}}
+
+{{/* Print Exastro IT Automation common PVCs */}}
+{{- define "common.pvcs" -}}
+{{-   $gitlab := default dict .Values.global.gitlabDefinition -}}
+{{-   $ita_global := default dict .Values.global.itaGlobalDefinition.persistence -}}
+{{-   if (default false $ita_global.enabled) -}}
+{{-     include "common.pvc.ita-global" . | nindent 0 -}}
+{{-   end -}}
+{{- end -}}
