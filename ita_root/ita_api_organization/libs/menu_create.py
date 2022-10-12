@@ -1153,7 +1153,7 @@ def _insert_t_menu_column(objdbca, menu_data, column_data_list):
                 
                 # カラムクラス「日付」用のパラメータを追加
                 if column_class == "DateColumn":
-                    parameter["dete_default_value"] = None if not column_data.get('dete_default_value') else column_data.get('detetime_default_value')  # 日付 初期値 # noqa: E501
+                    parameter["dete_default_value"] = None if not column_data.get('dete_default_value') else column_data.get('dete_default_value')  # 日付 初期値 # noqa: E501
                 
                 # カラムクラス「プルダウン選択」用のパラメータを追加
                 if column_class == "IDColumn":
