@@ -64,8 +64,8 @@ spec:
             - configMapRef:
                 name: params-{{ template "ita-web-server.fullname" . }}
           volumeMounts:
-            - name: volume-{{ template "ita-web-server.fullname" . }}-storage
-              mountPath: {{ .Values.persistence.mountPath.storage }}
+            # - name: volume-{{ template "ita-web-server.fullname" . }}-storage
+            #   mountPath: {{ .Values.persistence.mountPath.storage }}
             - name: volume-{{ template "ita-web-server.fullname" . }}-homedir
               mountPath: {{ .Values.persistence.mountPath.homeDir }}
             - name: volume-{{ template "ita-web-server.fullname" . }}-pid
@@ -99,13 +99,6 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
-        - name: volume-{{ template "ita-web-server.fullname" . }}-storage
-          {{- if and .Values.global.itaGlobalDefinition.persistence.enabled }}
-          persistentVolumeClaim:
-            claimName: pvc-{{ .Values.global.itaGlobalDefinition.name }}
-          {{- else }}
-          emptyDir: {}
-          {{- end }}
         - name: volume-{{ template "ita-web-server.fullname" . }}-homedir
           emptyDir: {}
         - name: volume-{{ template "ita-web-server.fullname" . }}-pid

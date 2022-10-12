@@ -20,6 +20,5 @@ metadata:
   labels:
     {{- include "ita-web-server.labels" . | nindent 4 }}
 data: {{ toYaml .Values.extraEnv | nindent 2 }}
-  # STORAGEPATH: "{{ .Values.persistence.mountPath.storage }}/"
 {{- end -}}
 {{- include "common.configmaps" . -}}

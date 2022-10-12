@@ -16,10 +16,6 @@ global:
       size: 10Gi
       volumeType: hostPath # e.g.) hostPath or AKS
       storageClass: "-" # e.g.) azurefile or - (None)
-      # matchLabels: 
-      #   release: "stable"
-      # matchExpressions:
-      #   - {key: environment, operator: In, values: [dev]}
   gitlabDefinition:
     name: ita-gitlab
     enabled: true
@@ -28,7 +24,7 @@ global:
       GITLAB_HOST: "gitlab.exastro-it-automation.svc"
       GITLAB_PORT: "80"
     secret:
-      GITLAB_ROOT_TOKEN: "hoge"
+      GITLAB_ROOT_TOKEN: ""
   databaseDefinition:
     name: ita-mariadb
     enabled: true
@@ -43,16 +39,9 @@ global:
       DB_PASSWORD: ""
 
 extraEnv:
-  DEFAULT_LANGUAGE: ja
   LISTEN_PORT: "8080"
 
 replicaCount: 1
-
-# initContainerImage:
-#   repository: busybox
-#   pullPolicy: IfNotPresent
-#   # Overrides the image tag whose default is the chart appVersion.
-#   tag: ""
 
 image:
   repository: exastro/it-automation2-test-ita-web-server
@@ -87,7 +76,6 @@ persistence:
 podAnnotations: {}
 
 podSecurityContext: {}
-  # fsGroup: 2000
 
 securityContext:
   allowPrivilegeEscalation: false
@@ -106,17 +94,12 @@ ingress:
   enabled: false
   className: ""
   annotations: {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
   hosts:
     - host: chart-example.local
       paths:
         - path: /
           pathType: ImplementationSpecific
   tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
 
 resources:
   requests:
@@ -131,7 +114,6 @@ autoscaling:
   minReplicas: 1
   maxReplicas: 100
   targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
 
 nodeSelector: {}
 
