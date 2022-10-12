@@ -110,14 +110,16 @@ class FileUploadEncryptColumn(FileUploadColumn):
                     for f in os.listdir(filepath):
                         if os.path.isfile(os.path.join(filepath, f)):
                             filelist.append(f)
-                    old_file_path = filepath + "/" + filelist[0]
+
+                    if len(filelist) != 0:
+                        old_file_path = filepath + "/" + filelist[0]
                     
-                    try:
-                        os.unlink(old_file_path)
-                    except Exception:
-                        retBool = False
-                        msg = g.appmsg.get_api_message('MSG-00014', [old_file_path])
-                        return retBool, msg
+                        try:
+                            os.unlink(old_file_path)
+                        except Exception:
+                            retBool = False
+                            msg = g.appmsg.get_api_message('MSG-00014', [old_file_path])
+                            return retBool, msg
 
                 # シンボリックリンク作成
                 try:
