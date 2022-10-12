@@ -36,6 +36,8 @@ RUN dnf install -y \
     wget \
     zip \
     unzip \
+    openssh-clients \
+    git \
 &&  curl -kL https://storage.googleapis.com/kubernetes-release/release/v1.24.3/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl \
 &&  chmod +x /usr/local/bin/kubectl \
 &&  pip3.9 install --upgrade pip setuptools \
@@ -68,7 +70,6 @@ ARG APP_PATH
 
 RUN dnf install -y \
     sudo \
-    git \
     vim \
     diffutils \
     bind-utils \
