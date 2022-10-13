@@ -2591,7 +2591,16 @@ class DefaultVarsFileAnalysis():
         """
 
         if type(php_array) is dict:
-            return php_array[str(idx)]
+            result = None
+            try:
+                result = php_array[str(idx)]
+            except KeyError:
+                try:
+                    result = php_array[idx]
+                except KeyError:
+                    raise AppException("MSG-40004", [], [])
+
+            return result
 
         if type(php_array) is list:
             return php_array[idx]
