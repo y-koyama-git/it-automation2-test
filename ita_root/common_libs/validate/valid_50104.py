@@ -813,11 +813,12 @@ def menu_column_valid(objdbca, objtable, option):
                 # 必要なデータを取得
                 table_name = return_values[0]["REF_TABLE_NAME"]
                 pri_name = return_values[0]["REF_PKEY_NAME"]
+                other_menu_name_rest = return_values[0]["MENU_NAME_REST"]
             # 対象のテーブルからレコードを取得
             where_str = "WHERE DISUSE_FLAG = '0'"
             return_values = objdbca.table_select(table_name, where_str, [])
             # アクセス許可チェック
-            privilege = check_auth_menu(menu_name_rest, objdbca)
+            privilege = check_auth_menu(other_menu_name_rest, objdbca)
             if not privilege:
                 retBool = False
                 msg = g.appmsg.get_api_message("MSG-20174", [])
