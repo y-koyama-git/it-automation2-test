@@ -92,6 +92,7 @@ height: 100%;
 .executeLogSelect {
 flex: 0 0 auto;
 min-height: 0;
+padding-bottom: 4px;
 }
 .executeLogSelectList {
 position: relative;

@@ -570,6 +570,7 @@ fileSelect: function( type = 'base64', limitFileSize, accept ){
 
             if ( limitFileSize && file.size >= limitFileSize ) {
                 reject('File size limit over.');
+                return false;
             }
             
             if ( type === 'base64') {
@@ -1461,8 +1462,8 @@ html: {
                 wrapClass.push('inputPasswordDelete');
             }
             input += `<div class="inputPasswordDeleteToggle">`
-                + `<div class="inputPasswordDeleteToggleText"><span class="inner">削除</span></div>`
-                + cmn.html.button( cmn.html.icon( iconName ), deleteClass, deleteAttrs)
+                + `<div class="inputPasswordDeleteToggleText"><span class="inner">${getMessage.FTE00014}</span></div>`
+                + cmn.html.button( cmn.html.icon( iconName ), deleteClass, deleteAttrs )
             + `</div>`;
         }
         
@@ -1666,6 +1667,21 @@ html: {
             + `<div class="inputDateCalendar">`
                 + fn.html.button('<span class="icon icon-cal"></span>', ['itaButton', 'inputDateCalendarButton'], buttonAttrs )
             + `</div>`
+        + `</div>`;
+    },
+    fileSelect: function( value, className, attrs = {}, option = {}) {
+        className = classNameCheck( className, 'inputFile');
+
+        let file = ''
+        + `<div class="inputFileBody">`
+                + cmn.html.button( value, className, attrs )
+        + `</div>`
+        + `<div class="inputFileClear">`
+            + cmn.html.button( cmn.html.icon('clear'), 'itaButton inputFileClearButton popup', { action: 'restore', title: getMessage.FTE00076 })
+        + `</div>`;
+            
+        return `<div class="inputFileWrap">`
+            + file
         + `</div>`;
     },
     required: function() {

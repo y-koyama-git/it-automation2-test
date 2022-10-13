@@ -110,6 +110,7 @@ const getMessage = ( function() {
         'FTE00073' : "Update",
         'FTE00074' : "Discard",
         'FTE00075' : "Restore",
+        'FTE00076' : "File clear",
         
         // Create menu
         'FTE01001' : "Item",
@@ -262,6 +263,7 @@ const getMessage = ( function() {
         'FTE01148' : "Full screen",
         'FTE01149' : "Exit full screen",
         'FTE01150' : "Enter the maximum number of bytes.\nThe maximum size is 255 bytes.\nFor editing, it is possible to increase it from the original value.\nThe byte count of half-width alphanumeric characters are equivalent to the number of characters.\nFor full-width characters, the number of characters x 3 + 2 bytes is required.",
+        'FTE01151' : "Create(New)",
         
         // Conductor
         'FTE02001' : "Conductor instance id is not yet set.",
