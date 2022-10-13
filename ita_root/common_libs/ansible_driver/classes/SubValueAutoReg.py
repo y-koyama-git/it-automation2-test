@@ -933,6 +933,11 @@ class SubValueAutoReg():
                             
                             col_val = parameter[col_data['COLUMN_NAME_REST']]
                             
+                            # TPF/CPF変数カラム判定
+                            if col_data['REF_TABLE_NAME'] in VariableColumnAry:
+                                if col_data['REF_COL_NAME'] in VariableColumnArycol_data['REF_TABLE_NAME']:
+                                    col_val = "'{{" + col_val + "}}'"
+                            
                             # オブジェクト解放
                             del objmenu
                     
