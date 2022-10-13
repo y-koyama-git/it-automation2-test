@@ -273,6 +273,7 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
                 raise Exception(msg)
         
         # 対象メニューグループ分だけ処理をループ
+        input_menu_uuid = None
         for menu_group_col_name in target_menu_group_list:
             # デバッグログ用文言
             target_menu_group_type = "Input"
@@ -299,6 +300,8 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
             
             # 「メニュー管理」に登録したレコードのuuidを取得
             menu_uuid = ret_data[0].get('MENU_ID')
+            if menu_group_col_name == "MENU_GROUP_ID_INPUT":
+                input_menu_uuid = menu_uuid
             
             # 「ロール-メニュー紐付管理」にレコードを登録
             debug_msg = g.appmsg.get_log_message("BKY-20012", [target_menu_group_type])
@@ -339,7 +342,7 @@ def menu_create_exec(objdbca, menu_create_id, create_type):  # noqa: C901
             # 「メニュー-カラム紐付管理」にレコードを登録
             debug_msg = g.appmsg.get_log_message("BKY-20015", [target_menu_group_type])
             g.applogger.debug(debug_msg)
-            result, msg = _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uuid, dict_t_comn_column_group, dict_t_menu_column_group, record_t_menu_column, dict_t_menu_other_link, record_v_menu_reference_item)  # noqa: E501
+            result, msg = _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uuid, input_menu_uuid, dict_t_comn_column_group, dict_t_menu_column_group, record_t_menu_column, dict_t_menu_other_link, record_v_menu_reference_item, menu_group_col_name)  # noqa: E501
             if not result:
                 raise Exception(msg)
             
@@ -785,7 +788,7 @@ def _insert_t_comn_column_group(objdbca, target_column_group_list, dict_t_menu_c
     return True, None
 
 
-def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uuid, dict_t_comn_column_group, dict_t_menu_column_group, record_t_menu_column, dict_t_menu_other_link, record_v_menu_reference_item):  # noqa: E501, C901
+def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uuid, input_menu_uuid, dict_t_comn_column_group, dict_t_menu_column_group, record_t_menu_column, dict_t_menu_other_link, record_v_menu_reference_item, menu_group_col_name):  # noqa: E501, C901
     """
         「メニュー-カラム紐付管理」メニューのテーブルにレコードを追加する
         ARGS:
@@ -793,11 +796,13 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
             sheet_type: シートタイプ
             vertical_flag: 縦メニュー利用の有無
             menu_uuid: メニュー作成の対象となる「メニュー管理」のレコードのID
+            input_menu_uuid: メニュー作成の対象となる「メニュー管理」のレコードのID（「入力用」メニューグループに作成したもの）
             dict_t_comn_column_group: 「カラムグループ管理」のレコードのidをkeyにしたdict
             dict_t_menu_column_group: 「カラムグループ作成情報」のレコードのidをkeyにしたdict
             record_t_menu_column:「メニュー項目作成情報」の対象のレコード一覧
             dict_t_menu_other_link: 「他メニュー連携」のレコードのidをkeyにしたdict
             record_v_menu_reference_item: 「参照項目情報」のレコード一覧
+            menu_group_col_name: 対象メニューグループ名
         RETRUN:
             boolean, msg
     """
@@ -1272,6 +1277,12 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                         ref_column_name_rest = str(column_name_rest) + "_ref_" + str(ref_count)
                         convert_reference_item_list.append(ref_column_name_rest)
                     str_convert_reference_item_list = json.dumps(convert_reference_item_list)
+            
+            # カラムクラスが「ファイルアップロード」の場合かつ、「代入値自動登録用」「参照用」メニューの場合、ファイルの格納先を指定する。
+            file_upload_place = None
+            if column_class == "9":
+                if menu_group_col_name == "MENU_GROUP_ID_SUBST" or menu_group_col_name == "MENU_GROUP_ID_REF":
+                    file_upload_place = "/uploadfiles/{}/{}".format(input_menu_uuid, column_name_rest)
                 
             # 「カラムグループ作成情報」のIDから同じフルカラムグループ名の対象を「カラムグループ管理」から探しIDを指定
             col_group_id = None
@@ -1311,7 +1322,7 @@ def _insert_t_comn_menu_column_link(objdbca, sheet_type, vertical_flag, menu_uui
                 "REF_MULTI_LANG": ref_multi_lang,
                 "REFERENCE_ITEM": str_convert_reference_item_list,
                 "SENSITIVE_COL_NAME": None,
-                "FILE_UPLOAD_PLACE": None,
+                "FILE_UPLOAD_PLACE": file_upload_place,
                 "BUTTON_ACTION": None,
                 "COL_NAME": "DATA_JSON",
                 "SAVE_TYPE": "JSON",
