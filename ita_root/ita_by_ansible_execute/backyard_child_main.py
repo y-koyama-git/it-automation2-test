@@ -20,6 +20,7 @@ import json
 import yaml
 import glob
 import inspect
+import copy
 
 from common_libs.common.dbconnect import DBConnectWs
 from common_libs.common.exception import AppException, ValidationException
@@ -784,7 +785,7 @@ def getMovementAnsibleExecOption(wsDb, movement_id):
     return records[0]['ANS_EXEC_OPTIONS']
 
 
-def getAnsiblePlaybookOptionParameter(wsDb, option_parameter):  # noqa: C901
+def getAnsiblePlaybookOptionParameter(wsDb, option_parameter):
     res_retBool = True
     JobTemplatePropertyParameterAry = {}
     JobTemplatePropertyNameAry = {}
@@ -805,35 +806,38 @@ def getAnsiblePlaybookOptionParameter(wsDb, option_parameter):  # noqa: C901
         hit = False
         chk_param_string = '-' + param_string + ' '
         for job_template_property_record in job_template_property_info:
-            key_string = job_template_property_record['KEY_NAME'].strip() if job_template_property_record['KEY_NAME'] else ''
-            if key_string != "":
-                if re.match(key_string, chk_param_string):
-                    hit = True
-                    break
-            key_string = job_template_property_record['SHORT_KEY_NAME'].strip() if job_template_property_record['SHORT_KEY_NAME'] else ''
-            if key_string != "":
-                if re.match(key_string, chk_param_string):
-                    hit = True
-                    break
+            if job_template_property_record['KEY_NAME']:
+                key_string = job_template_property_record['KEY_NAME'].strip() if job_template_property_record['KEY_NAME'] else ''
+                if key_string != "":
+                    if re.match(key_string, chk_param_string):
+                        hit = True
+                        break
+            if job_template_property_record['SHORT_KEY_NAME']:
+                key_string = job_template_property_record['SHORT_KEY_NAME'].strip() if job_template_property_record['SHORT_KEY_NAME'] else ''
+                if key_string != "":
+                    if re.match(key_string, chk_param_string):
+                        hit = True
+                        break
         
         if hit is False:
-            err_msg_arr.append(chk_param_string)  # "ITAANSIBLEH-ERR-6000104"
+            err_msg_arr.append(g.appmsg.get_log_message("MSG-10634", [chk_param_string.strip()]));
 
     if len(err_msg_arr) != 0:
         # err_msg
         return False, err_msg_arr
 
     # 除外された場合のリスト
-    param_arry_exc = param_arr
+    param_arry_exc = copy.copy(param_arr)
 
     for job_template_property_record in job_template_property_info:
+
         #  除外リストの初期化
         excist_list = []
         # KEY SHRT_KEYチェック用配列の初期化
         key_short_chk = []
         # tags skipのvalue用の配列の初期化
         tag_skip_value_key = []
-        tag_skip_Value_key_s = {}
+        tag_skip_Value_key_s = []
 
         JobTemplatePropertyNameAry[job_template_property_record['PROPERTY_NAME']] = 0
 
@@ -841,6 +845,7 @@ def getAnsiblePlaybookOptionParameter(wsDb, option_parameter):  # noqa: C901
             retBool, err_msg_arr, excist_list, tag_skip_value_key, verbose_cnt = makeJobTemplateProperty(
                 job_template_property_record['KEY_NAME'],
                 job_template_property_record['PROPERTY_TYPE'],
+                job_template_property_record['PROPERTY_NAME'],
                 param_arr,
                 err_msg_arr,
                 excist_list,
@@ -877,6 +882,7 @@ def getAnsiblePlaybookOptionParameter(wsDb, option_parameter):  # noqa: C901
             retBool, err_msg_arr, excist_list, tag_skip_Value_key_s, verbose_cnt = makeJobTemplateProperty(
                 job_template_property_record['SHORT_KEY_NAME'],
                 job_template_property_record['PROPERTY_TYPE'],
+                job_template_property_record['PROPERTY_NAME'],
                 param_arr,
                 err_msg_arr,
                 excist_list,
@@ -919,7 +925,7 @@ def getAnsiblePlaybookOptionParameter(wsDb, option_parameter):  # noqa: C901
                 k = k + 1
 
         # tags,skipの場合','区切りに修正する
-        if r'--tags=' == job_template_property_record['KEY_NAME'] or r'--skip-tags=' == job_template_property_record['KEY_NAME']:
+        if 'job_tags' == job_template_property_record['PROPERTY_NAME'] or 'skip_tags' == job_template_property_record['PROPERTY_NAME']:
             # tags,skipの場合、','区切りにしてデータを渡す（文字列整形）
             values_param = ''
             ll = 0
@@ -935,7 +941,7 @@ def getAnsiblePlaybookOptionParameter(wsDb, option_parameter):  # noqa: C901
                     values_param = values_param + tag_skip_value_key[ll] + ','
                     ll = ll + 1
                 # KEY SHORTのtagsのvalueを取得
-                if re.match(r'-t(\s)+', chk_param_string) and r'-t(\s)+' == job_template_property_record['SHORT_KEY_NAME']:
+                if re.match(r'-t[\s]+', chk_param_string) and r'-t[\s]+' == job_template_property_record['SHORT_KEY_NAME']:
                     values_param = values_param + tag_skip_Value_key_s[m] + ','
                     m = m + 1
 
@@ -954,7 +960,7 @@ def getAnsiblePlaybookOptionParameter(wsDb, option_parameter):  # noqa: C901
                     # 要素を書き換え
                     param_arry_exc[n] = '-skip-tags=' + values_param
                     break
-                if re.match(r'-t(\s)+', chk_param_string_chg) and r'-t(\s)+' == job_template_property_record['SHORT_KEY_NAME']:
+                if re.match(r'-t[\s]+', chk_param_string_chg) and r'-t[\s]+' == job_template_property_record['SHORT_KEY_NAME']:
                     # 要素を書き換え
                     param_arry_exc[n] = 't ' + values_param
                     break
@@ -1003,8 +1009,7 @@ def getJobTemplateProperty(wsDb):
 
     return res
 
-
-def makeJobTemplateProperty(key_string, property_type, param_arr, err_msg_arr, excist_list, tag_skip_value_key, verbose_cnt):
+def makeJobTemplateProperty(key_string, property_type, property_name, param_arr, err_msg_arr, excist_list, tag_skip_value_key, verbose_cnt):
     res_retBool = True
 
     for param_string in param_arr:
@@ -1022,29 +1027,36 @@ def makeJobTemplateProperty(key_string, property_type, param_arr, err_msg_arr, e
                 if not property_arr[1] or len(property_arr[1].strip()) == 0:
                     err_msg_arr.append(g.appmsg.get_log_message("MSG-10553", [chk_param_string]))
                     res_retBool = False
-                elif re.search(r'-f', key_string):
-                    if str.isdecimal(property_arr[1].strip()):
+                if property_name in ['forks', 'job_slice_count']:
+                    if not str.isdecimal(property_arr[1].strip()):
                         err_msg_arr.append(g.appmsg.get_log_message("MSG-10555", [chk_param_string]))
                         res_retBool = False
                 # tags skipの対応
-                elif key_string == r'--tags=' or key_string == r'-t(\s)+' or key_string == r'--skip-tags=':
+                if property_name in ['job_tags', 'skip_tags']:
                     tag_skip_value_key.append(property_arr[1].strip())
 
             elif property_type == ansc_const.DF_JobTemplateVerbosityProperty:
                 # v以外の文字列があったらエラーにする
+                if property_arr[1] and len(property_arr[1].strip()) != 0:
+                    err_msg_arr.append(g.appmsg.get_log_message("MSG-10555", [chk_param_string]))
+                    res_retBool = False
+                    continue
+
                 for ch in param_string.strip():
                     if ch != 'v':
                         err_msg_arr.append(g.appmsg.get_log_message("MSG-10555", [chk_param_string]))
                         res_retBool = False
-                else:
-                    verbose_cnt = verbose_cnt + len(param_string.strip())
+                        continue
+
+                verbose_cnt = verbose_cnt + len(param_string.strip())
+
             elif property_type == ansc_const.DF_JobTemplatebooleanTrueProperty:
-                if property_arr[1] and len(property_arr[1]).strip() != 0:
+                if property_arr[1] and len(property_arr[1].strip()) != 0:
                     err_msg_arr.append(g.appmsg.get_log_message("MSG-10555", [chk_param_string]))
                     res_retBool = False
 
             elif property_type == ansc_const.DF_JobTemplateExtraVarsProperty:
-                if not property_arr[1] or len(property_arr[1]).strip() == 0:
+                if not property_arr[1] or len(property_arr[1].strip()) == 0:
                     err_msg_arr.append(g.appmsg.get_log_message("MSG-10553", [chk_param_string]))
                     res_retBool = False
                 else:
@@ -1056,13 +1068,13 @@ def makeJobTemplateProperty(key_string, property_type, param_arr, err_msg_arr, e
 
     return res_retBool, err_msg_arr, excist_list, tag_skip_value_key, verbose_cnt
 
-
 def makeJobTemplatePropertyParameterAry(key_string, property_type, property_name, JobTemplatePropertyParameterAry, param_arr, verbose_cnt):
     retBool = True
 
     for param_string in param_arr:
         chk_param_string = '-' + param_string + ' '
-        if not re.fullmatch(r'^{}'.format(key_string), chk_param_string):
+
+        if not re.match(r'^{}'.format(key_string), chk_param_string):
             continue
 
         proper_ary = re.split(r'^{}'.format(key_string), chk_param_string)
@@ -1106,7 +1118,6 @@ def makeExtraVarsParameter(ext_var_string):
         pass
 
     return False
-
 
 def createTmpZipFile(execution_no, zip_data_source_dir, zip_type, zip_file_pfx):
     ########################################
