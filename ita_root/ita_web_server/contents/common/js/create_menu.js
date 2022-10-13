@@ -1139,7 +1139,7 @@ const columnHTML = `
                             </div>
                         </td>
                     </tr>
-                    <tr class="password" title="${textEntities(getMessage.FTE01110,1)}">
+                    <tr class="password" title="${textEntities(getMessage.FTE01150,1)}">
                         <th class="full-head"><span class="config-title">${textCode('0011') + fn.html.required()}</span></th>
                         <td class="full-body"><input class="input config-number password-max-byte" type="number" data-min="1" data-max="8192" value=""${modeDisabled}></td>
                     </tr>
