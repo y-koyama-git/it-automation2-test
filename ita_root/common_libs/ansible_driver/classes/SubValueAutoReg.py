@@ -830,7 +830,7 @@ class SubValueAutoReg():
         VariableColumnAry['T_ANSC_TEMPLATE_FILE'] = {}
         VariableColumnAry['T_ANSC_TEMPLATE_FILE']['ANS_TEMPLATE_VARS_NAME'] = 0
         VariableColumnAry['T_ANSC_CONTENTS_FILE'] = {}
-        VariableColumnAry['T_ANSC_TEMPLATE_FILE']['CONTENTS_FILE_VARS_NAME'] = 0
+        VariableColumnAry['T_ANSC_CONTENTS_FILE']['CONTENTS_FILE_VARS_NAME'] = 0
         
         # オペ+作業+ホスト+変数の組合せの代入順序 重複確認用
         lv_varsAssChkList = {}
@@ -935,7 +935,7 @@ class SubValueAutoReg():
                             
                             # TPF/CPF変数カラム判定
                             if col_data['REF_TABLE_NAME'] in VariableColumnAry:
-                                if col_data['REF_COL_NAME'] in VariableColumnArycol_data['REF_TABLE_NAME']:
+                                if col_data['REF_COL_NAME'] in VariableColumnAry[col_data['REF_TABLE_NAME']]:
                                     col_val = "'{{" + col_val + "}}'"
                             
                             # オブジェクト解放
