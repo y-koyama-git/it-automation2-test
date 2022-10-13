@@ -1,5 +1,0 @@
-dependencies:
-- name: common
-  repository: file://../common
-  version: 0.1.0
-generated: "2022-10-12T13:24:30.002089852+09:00"

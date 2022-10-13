@@ -86,23 +86,23 @@ spec:
             - name: volume-{{ template "ita-api-admin.fullname" . }}-tmp
               mountPath: {{ .Values.persistence.mountPath.tmp }}
           ports:
-            - name: http
-              containerPort: 8080
+            - name: port-http
+              containerPort: {{ .Values.extraEnv.LISTEN_PORT }}
               protocol: TCP
           livenessProbe:
             tcpSocket:
-              port: 8080
+              port: {{ .Values.extraEnv.LISTEN_PORT }}
             # httpGet:
             #   path: /
-            #   port: 8080
+            #   port: {{ .Values.extraEnv.LISTEN_PORT }}
             initialDelaySeconds: 5
             periodSeconds: 10            
           readinessProbe:
             tcpSocket:
-              port: 8080
+              port: {{ .Values.extraEnv.LISTEN_PORT }}
             # httpGet:
             #   path: /
-            #   port: 8080
+            #   port: {{ .Values.extraEnv.LISTEN_PORT }}
             initialDelaySeconds: 5
             periodSeconds: 10            
           resources:

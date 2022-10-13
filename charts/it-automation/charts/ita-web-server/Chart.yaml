@@ -12,7 +12,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-
 apiVersion: v2
 name: ita-web-server
 description: A Helm chart for Kubernetes
@@ -37,11 +36,6 @@ version: 0.1.0
 # follow Semantic Versioning. They should reflect the version the application is using.
 # It is recommended to use it with quotes.
 appVersion: "2.0.0-beta.1"
-
-dependencies:
-  - name: common
-    version: "0.1.0"
-    repository: file://../common
 
 keywords:
 - exastro

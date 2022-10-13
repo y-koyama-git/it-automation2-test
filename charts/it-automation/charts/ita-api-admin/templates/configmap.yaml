@@ -14,12 +14,11 @@
 #   limitations under the License.
 */}}
 
-{{- include "common.configmap" (list . "ita-api-admin.configmap") -}}
-{{- define "ita-api-admin.configmap" -}}
+apiVersion: v1
+kind: ConfigMap
 metadata:
-  labels:
-    {{- include "ita-api-admin.labels" . | nindent 4 }}
+  name: params-{{ template "ita-api-admin.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels: {{ include "ita-api-admin.labels" . | nindent 4 }}
 data: {{ toYaml .Values.extraEnv | nindent 2 }}
   STORAGEPATH: "{{ .Values.persistence.mountPath.storage }}/"
-{{- end -}}
-{{- include "common.configmaps" . -}}
