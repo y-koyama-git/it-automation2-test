@@ -1139,13 +1139,13 @@ const columnHTML = `
                             </div>
                         </td>
                     </tr>
-                    <tr class="password" title="${textEntities(getMessage.FTE01110,1)}">
+                    <tr class="password" title="${textEntities(getMessage.FTE01150,1)}">
                         <th class="full-head"><span class="config-title">${textCode('0011') + fn.html.required()}</span></th>
                         <td class="full-body"><input class="input config-number password-max-byte" type="number" data-min="1" data-max="8192" value=""${modeDisabled}></td>
                     </tr>
                     <tr class="file" title="${textEntities(getMessage.FTE01119,1)}">
                         <th class="full-head"><span class="config-title">${textCode('0042') + fn.html.required()}</span></th>
-                        <td class="full-body"><input class="input config-number file-max-size" data-min="1" data-max="4294967296"  type="number" value=""${modeDisabled}></td>
+                        <td class="full-body"><input class="input config-number file-max-size" data-min="1" data-max="104857600"  type="number" value=""${modeDisabled}></td>
                     </tr>
                     <tr class="type3" title="${textEntities(getMessage.FTE01120,1)}">
                         <th class="full-head"><span class="config-title">${textCode('0052') + fn.html.required()}</span></th>
