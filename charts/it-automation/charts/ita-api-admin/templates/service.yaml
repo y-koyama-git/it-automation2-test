@@ -27,6 +27,6 @@ spec:
     - name: {{ .Values.service.name }}
       protocol: TCP
       port: {{ .Values.service.port }}
-      targetPort: {{ .Values.service.targetPort }}
+      targetPort: port-http
   selector:
     {{- include "ita-api-admin.selectorLabels" . | nindent 4 }}
