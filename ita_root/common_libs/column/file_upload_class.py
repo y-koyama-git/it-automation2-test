@@ -242,8 +242,14 @@ class FileUploadColumn(Column):
                 else:
                     path = get_upload_file_path_specify(workspace_id, ret, target_uuid, file_name, target_uuid_jnl)   # noqa:F405
                 dir_path = path["file_path"]
-                # ファイルの中身を読み込んでbase64に変換してreturn　読み込めなかったらFalse
-                result = file_encode(dir_path)  # noqa: F405
+                old_file_path = path["old_file_path"]
+                if target_uuid_jnl:
+                    # target_uuid_jnl指定時
+                    # ファイルの中身を読み込んでbase64に変換してreturn　読み込めなかったらFalse
+                    result = file_encode(old_file_path)  # noqa: F405
+                else:
+                    # ファイルの中身を読み込んでbase64に変換してreturn　読み込めなかったらFalse
+                    result = file_encode(dir_path)  # noqa: F405
 
         return result
 
