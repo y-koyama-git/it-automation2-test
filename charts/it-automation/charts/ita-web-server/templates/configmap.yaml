@@ -14,11 +14,10 @@
 #   limitations under the License.
 */}}
 
-{{- include "common.configmap" (list . "ita-web-server.configmap") -}}
-{{- define "ita-web-server.configmap" -}}
+apiVersion: v1
+kind: ConfigMap
 metadata:
-  labels:
-    {{- include "ita-web-server.labels" . | nindent 4 }}
+  name: params-{{ template "ita-web-server.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels: {{ include "ita-web-server.labels" . | nindent 4 }}
 data: {{ toYaml .Values.extraEnv | nindent 2 }}
-{{- end -}}
-{{- include "common.configmaps" . -}}

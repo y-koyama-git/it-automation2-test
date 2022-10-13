@@ -14,13 +14,11 @@
 #   limitations under the License.
 */}}
 
-{{- include "common.configmap" (list . "ita-by-menu-create.configmap") -}}
-{{- define "ita-by-menu-create.configmap" -}}
+apiVersion: v1
+kind: ConfigMap
 metadata:
-  labels:
-    {{- include "ita-by-menu-create.labels" . | nindent 4 }}
+  name: params-{{ template "ita-by-menu-create.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels: {{ include "ita-by-menu-create.labels" . | nindent 4 }}
 data: {{ toYaml .Values.extraEnv | nindent 2 }}
   STORAGEPATH: "{{ .Values.persistence.mountPath.storage }}/"
-
-{{- end -}}
-{{- include "common.configmaps" . -}}
