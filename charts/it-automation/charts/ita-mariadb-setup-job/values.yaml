@@ -137,11 +137,11 @@ podSecurityContext: {}
   # fsGroup: 2000
 
 securityContext:
-  allowPrivilegeEscalation: true
-  readOnlyRootFilesystem: false
-  runAsUser: 0
-  runAsGroup: 0
-  runAsNonRoot: false
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  runAsNonRoot: true
 
 service:
   name: http
