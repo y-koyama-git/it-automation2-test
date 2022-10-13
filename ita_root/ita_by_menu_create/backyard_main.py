@@ -493,7 +493,7 @@ def _insert_t_comn_menu(objdbca, sheet_type, record_t_menu_define, menu_group_co
             "MENU_NAME_EN": menu_name_en,
             "MENU_NAME_REST": menu_name_rest,
             "DISP_SEQ": record_t_menu_define.get('DISP_SEQ'),
-            "AUTOFILTER_FLG": "0",
+            "AUTOFILTER_FLG": "1",
             "INITIAL_FILTER_FLG": "0",
             "SORT_KEY": sort_key,
             "DISUSE_FLAG": "0",
@@ -554,7 +554,7 @@ def _update_t_comn_menu(objdbca, sheet_type, record_t_menu_define, menu_group_co
                 "MENU_NAME_JA": record_t_menu_define.get('MENU_NAME_JA'),
                 "MENU_NAME_EN": record_t_menu_define.get('MENU_NAME_EN'),
                 "DISP_SEQ": record_t_menu_define.get('DISP_SEQ'),
-                "AUTOFILTER_FLG": "0",
+                "AUTOFILTER_FLG": "1",
                 "INITIAL_FILTER_FLG": "0",
                 "SORT_KEY": sort_key,
                 "DISUSE_FLAG": "0",
@@ -676,13 +676,13 @@ def _insert_t_comn_menu_table_link(objdbca, sheet_type, vertical_flag, file_uplo
                 else:
                     unique_constraint = '[["operation_name_select", "host_name"]]'
         
-        # シートタイプが「1: パラメータシート（ホスト/オペレーションあり）」かつfile_upload_only_flagがTrueの場合、シートタイプを「4: パラメータシート（ファイルアップロードあり）」とする。
-        if sheet_type == "1" and file_upload_only_flag:
-            sheet_type = "4"
-        
         # シートタイプが「1: パラメータシート（ホスト/オペレーションあり）」かつ「参照用」メニューグループの場合、シートタイプを「5: 参照用（ホスト/オペレーションあり）」とする。
         if sheet_type == "1" and menu_group_col_name == "MENU_GROUP_ID_REF":
             sheet_type = "5"
+        
+        # シートタイプが「1: パラメータシート（ホスト/オペレーションあり）」かつfile_upload_only_flagがTrueの場合、シートタイプを「4: パラメータシート（ファイルアップロードあり）」とする。
+        if sheet_type == "1" and file_upload_only_flag:
+            sheet_type = "4"
         
         # 「メニュー-テーブル紐付管理」にレコードを登録
         data_list = {
