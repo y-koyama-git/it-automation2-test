@@ -53,39 +53,28 @@ completionCount: 1
 dbSetup:
   livenessCheck: |-
     #!/bin/bash
-    sleep 100000;
+    i=1
+    str1="mysqld is alive"
+    echo "HOST: "${DB_HOST}
+    echo "USER: "${DB_USER}
+    while true; do
+      result="$(mysqladmin ping --host=${DB_HOST} --user=root --password=${DB_ROOT_PASSWORD})"
+      echo $result
+      case "$result" in 
+        "$str1" ) echo "OK"; exit 0
+          break;;
+        * ) sleep $i;i=$(( i * 2 ));echo $i":NG" 
+      esac
+    done
+    #exit 0
 
   createDBandTBL: |-
-    sleep 100000;
-    #mysql --host=${DB_HOST} --user=root --password=${DB_ROOT_PASSWORD}  < /docker-entrypoint-initdb.d/createdb.sql
+    mysql --host=${DB_HOST} --user=root --password=${DB_ROOT_PASSWORD}  < /docker-entrypoint-initdb.d/createdb.sql
 
   dbConfInfo:
     name: mysql-server-conf-config
     customCnf: |-
       [mysqld]
-
-  dbInit:
-    name: mysql-server-initdb-config
-    createdbSql: |-
-      CREATE DATABASE IF NOT EXISTS ${DB_DATADBASE}; 
-      CREATE TABLE IF NOT EXISTS `${DB_DATADBASE}`.`T_COMN_ORGANIZATION_DB_INFO`
-      (
-          PRIMARY_KEY                     VARCHAR(40),                                -- 主キー
-          ORGANIZATION_ID                 VARCHAR(255),                               -- organizationのID
-          DB_HOST                         VARCHAR(255),                               -- DBホスト
-          DB_PORT                         INT,                                        -- DBポート
-          DB_DATADBASE                    VARCHAR(255),                               -- DBDB名
-          DB_USER                         VARCHAR(255),                               -- DBユーザ
-          DB_PASSWORD                     VARCHAR(255),                               -- DBパスワード
-          DB_ROOT_PASSWORD                VARCHAR(255),                               -- DBRootパスワード
-          GITLAB_USER                     VARCHAR(255),                               -- GitLabユーザ
-          GITLAB_TOKEN                    VARCHAR(255),                               -- GitLabトークン
-          NOTE                            TEXT,                                       -- 備考
-          DISUSE_FLAG                     VARCHAR(1)  ,                               -- 廃止フラグ
-          LAST_UPDATE_TIMESTAMP           DATETIME(6),                                -- 最終更新日時
-          LAST_UPDATE_USER                VARCHAR(40),                                -- 最終更新者
-          PRIMARY KEY(PRIMARY_KEY)
-      )ENGINE = InnoDB, CHARSET = utf8mb4, COLLATE = utf8mb4_bin, ROW_FORMAT=COMPRESSED ,KEY_BLOCK_SIZE=8;
 
 initContainerImage:
   repository: busybox
