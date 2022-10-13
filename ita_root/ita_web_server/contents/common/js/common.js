@@ -1677,7 +1677,7 @@ html: {
                 + cmn.html.button( value, className, attrs )
         + `</div>`
         + `<div class="inputFileClear">`
-            + cmn.html.button( cmn.html.icon('clear'), 'itaButton inputFileClearButton', { action: 'restore'})
+            + cmn.html.button( cmn.html.icon('clear'), 'itaButton inputFileClearButton popup', { action: 'restore', title: getMessage.FTE00076 })
         + `</div>`;
             
         return `<div class="inputFileWrap">`

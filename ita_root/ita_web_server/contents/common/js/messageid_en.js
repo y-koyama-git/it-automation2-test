@@ -110,6 +110,7 @@ const getMessage = ( function() {
         'FTE00073' : "Update",
         'FTE00074' : "Discard",
         'FTE00075' : "Restore",
+        'FTE00076' : "File clear",
         
         // Create menu
         'FTE01001' : "Item",

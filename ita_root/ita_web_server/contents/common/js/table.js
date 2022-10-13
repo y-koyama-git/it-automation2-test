@@ -1452,8 +1452,7 @@ setTableEvents() {
                   id = $input.attr('data-id'),
                   key = $input.attr('data-key');
             
-            const changeFlag = tb.setInputFile( null, null, id, key, tb.data.body );
-            console.log( changeFlag );
+            const changeFlag = tb.setInputFile( null, undefined, id, key, tb.data.body );
                     
             $input.find('.inner').text('');
             if ( changeFlag ) {
@@ -3408,7 +3407,7 @@ editOk() {
                                 itemData.parameter[ columnNameRest ] = setData('parameter');
                             }
                         break;
-                        // パスワード・暗号化ファイル
+                        // パスワード
                         case 'PasswordColumn': case 'PasswordIDColumn': case 'JsonPasswordIDColumn': case 'MaskColumn':
                         case 'SensitiveSingleTextColumn': case 'SensitiveMultiTextColumn': {
                             const passwordAfterValue = item.after.parameter[ columnNameRest ];          
