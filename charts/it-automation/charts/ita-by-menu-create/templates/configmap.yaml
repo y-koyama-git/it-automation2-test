@@ -15,18 +15,10 @@
 */}}
 
 apiVersion: v1
-kind: Service
+kind: ConfigMap
 metadata:
-  name: {{ include "ita-api-admin.fullname" . }}
+  name: params-{{ template "ita-by-menu-create.fullname" . }}
   namespace: {{ .Release.Namespace }}
-  labels:
-    {{- include "ita-api-admin.labels" . | nindent 4 }}
-spec:
-  type: {{ .Values.service.type }}
-  ports:
-    - name: {{ .Values.service.name }}
-      protocol: TCP
-      port: {{ .Values.service.port }}
-      targetPort: port-http
-  selector:
-    {{- include "ita-api-admin.selectorLabels" . | nindent 4 }}
+  labels: {{ include "ita-by-menu-create.labels" . | nindent 4 }}
+data: {{ toYaml .Values.extraEnv | nindent 2 }}
+  STORAGEPATH: "{{ .Values.persistence.mountPath.storage }}/"

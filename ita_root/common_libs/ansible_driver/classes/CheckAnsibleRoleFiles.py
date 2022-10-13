@@ -26,6 +26,7 @@ from chardet import detect
 from flask import g, has_request_context
 
 from common_libs.common.dbconnect.dbconnect_ws import DBConnectWs
+from common_libs.common.exception import AppException
 from common_libs.ansible_driver.classes.AnscConstClass import AnscConst
 from common_libs.ansible_driver.classes.WrappedStringReplaceAdmin import WrappedStringReplaceAdmin
 from common_libs.ansible_driver.classes.ansible_common_libs import AnsibleCommonLibs
@@ -2553,14 +2554,14 @@ class DefaultVarsFileAnalysis():
                 if type(val1) in (dict, list):
                     if idx != 0:
                         diff_array = {}
-                        ret, diff_array = self.MultiArrayDiff(ina_parent_var_array[0], ina_parent_var_array[idx], diff_array)
+                        ret, diff_array = self.MultiArrayDiff(self.get_array_data(ina_parent_var_array, 0), self.get_array_data(ina_parent_var_array, idx), diff_array)
                         if not ret:
                             # ary[70089] = "繰返階層の変数定義が一致していません。{}"
                             in_error_code = "MSG-10303"
                             in_line = inspect.currentframe().f_lineno
                             return False, in_error_code, in_line
 
-                        ret, diff_array = self.MultiArrayDiff(ina_parent_var_array[idx], ina_parent_var_array[0], diff_array)
+                        ret, diff_array = self.MultiArrayDiff(self.get_array_data(ina_parent_var_array, idx), self.get_array_data(ina_parent_var_array, 0), diff_array)
                         if not ret:
                             # ary[70089] = "繰返階層の変数定義が一致していません。{}"
                             in_error_code = "MSG-10303"
@@ -2574,6 +2575,28 @@ class DefaultVarsFileAnalysis():
             idx = idx + 1
 
         return True, in_error_code, in_line
+
+    def get_array_data(self, php_array, idx):
+
+        """
+        処理内容
+            PHP処理の流用対応
+
+        パラメータ
+            php_array:                  なんらかの配列/連想配列
+            idx:                        取得したいインデックス
+
+        戻り値
+            配列の値
+        """
+
+        if type(php_array) is dict:
+            return php_array[str(idx)]
+
+        if type(php_array) is list:
+            return php_array[idx]
+
+        raise AppException("MSG-40004", [], [])
 
     def is_assoc(self, in_array):
 
@@ -4331,7 +4354,10 @@ class VarStructAnalysisFileAccess():
                     arryErrMsg = roleObj.getlasterror()
                     strErrMsg = arryErrMsg[0]
 
-            shutil.rmtree(outdir)
+            # zipファイルがからの場合、ディレクトリが作成されない
+            is_dir = os.path.isdir(outdir)
+            if is_dir is True:
+                shutil.rmtree(outdir)
 
             # ロール名一覧取得
             role_name_list = roleObj.getrolename()

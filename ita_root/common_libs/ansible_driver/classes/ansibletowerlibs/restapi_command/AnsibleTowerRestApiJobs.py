@@ -110,9 +110,8 @@ class AnsibleTowerRestApiJobs(AnsibleTowerRestApiBase):
             return pickup_response_array
 
         for jobTplData in pickup_response_array['responseContents']:
-
             # データ絞り込み(本体)
-            query = "?job_template=" % (jobTplData['id'])
+            query = "?job_template=%s" % (jobTplData['id'])
             pickup_response_array_2 = cls.getAll(RestApiCaller, query)
             if not pickup_response_array_2['success']:
                 return pickup_response_array_2

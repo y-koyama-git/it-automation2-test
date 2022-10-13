@@ -14,7 +14,7 @@
 
 
 from flask import g
-
+import sys
 from common_libs.common.util import get_timestamp
 from common_libs.ansible_driver.classes.AnscConstClass import AnscConst
 from common_libs.ansible_driver.classes.gitlab import GitLabAgent
@@ -25,7 +25,7 @@ from common_libs.ansible_driver.functions.ansibletowerlibs import AnsibleTowerCo
 
 
 def AnsibleTowerExecution(
-    function, ansibleTowerIfInfo, TowerHostList, toProcessRow, exec_out_dir,
+    driver_id, function, ansibleTowerIfInfo, TowerHostList, toProcessRow, exec_out_dir,
     UIExecLogPath, UIErrorLogPath, MultipleLogMark, MultipleLogFileJsonAry,
     status='', JobTemplatePropertyParameterAry=None, JobTemplatePropertyNameAry=None,
     TowerProjectsScpPath={}, TowerInstanceDirPath={}, dbAccess=None
@@ -87,7 +87,7 @@ def AnsibleTowerExecution(
         director = None
         if not process_has_error:
             g.applogger.debug("maintenance environment (exec_no: %s)" % (tgt_execution_no))
-            director = ExecuteDirector(restApiCaller, None, dbAccess, exec_out_dir, ansibleTowerIfInfo, JobTemplatePropertyParameterAry, JobTemplatePropertyNameAry, TowerProjectsScpPath, TowerInstanceDirPath)
+            director = ExecuteDirector(driver_id, restApiCaller, None, dbAccess, exec_out_dir, ansibleTowerIfInfo, JobTemplatePropertyParameterAry, JobTemplatePropertyNameAry, TowerProjectsScpPath, TowerInstanceDirPath)
             GitObj = GitLabAgent()
 
         # Tower 接続確認
@@ -103,7 +103,6 @@ def AnsibleTowerExecution(
 
         # Tower version確認
         if not process_has_error:
-            virtualenv_name_ok = True
             response_array = AnsibleTowerRestApiConfig.get(restApiCaller)
             if not response_array['success']:
                 # Tower config情報の取得
@@ -255,7 +254,7 @@ def AnsibleTowerExecution(
                 # トレースメッセージ
                 g.applogger.debug("monitoring environment (exec_no: %s)" % (tgt_execution_no))
 
-                director = ExecuteDirector(restApiCaller, None, dbAccess, "", ansibleTowerIfInfo, TowerProjectsScpPath=TowerProjectsScpPath, TowerInstanceDirPath=TowerInstanceDirPath)
+                director = ExecuteDirector(driver_id, restApiCaller, None, dbAccess, "", ansibleTowerIfInfo, TowerProjectsScpPath=TowerProjectsScpPath, TowerInstanceDirPath=TowerInstanceDirPath)
                 status = director.monitoring(toProcessRow, ansibleTowerIfInfo)
 
                 # マルチログかを取得する

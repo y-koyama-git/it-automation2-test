@@ -97,18 +97,6 @@ class AnsibleTowerRestApiProjects(AnsibleTowerRestApiBase):
                         'errorMessage' : "Need 'scm_url'."
                     }
                     return response_array
-
-                if 'credential' in param and param['credential']:
-                    content['credential'] = param['credential']
-
-                else:
-                    # 必須のためNG返す
-                    response_array['success'] = False
-                    response_array['responseContents'] = {
-                        'errorMessage' : "Need 'credential'."
-                    }
-                    return response_array
-
             else:
                 # SCM_TYPE = "" (手動) 
                 if 'execution_no' in param and param['execution_no']:

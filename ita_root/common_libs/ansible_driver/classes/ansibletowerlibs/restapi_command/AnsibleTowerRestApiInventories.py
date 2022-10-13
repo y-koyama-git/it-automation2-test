@@ -167,7 +167,7 @@ class AnsibleTowerRestApiInventories(AnsibleTowerRestApiBase):
 
         # データ絞り込み
         filteringName = cls.IDENTIFIED_NAME_PREFIX_DEL % (vg_tower_driver_name, FuncCommonLib.addPadding(execution_no)) + '_'
-        query = "?name=%s" % (filteringName)
+        query = "?name__startswith=%s" % (filteringName)
         pickup_response_array = cls.getAll(RestApiCaller, query)
         if not pickup_response_array['success']:
             return pickup_response_array

@@ -487,20 +487,22 @@ def collect_menu_column_list(objdbca, menu, menu_record):
     """
     # 変数定義
     t_common_menu_column_link = 'T_COMN_MENU_COLUMN_LINK'
+    lang = g.LANGUAGE
     
     # メニュー管理から情報取得
     menu_id = menu_record[0].get('MENU_ID')
     
     # 『メニュー-カラム紐付管理』テーブルから対象のデータを取得
-    ret = objdbca.table_select(t_common_menu_column_link, 'WHERE MENU_ID = %s ORDER BY COLUMN_DISP_SEQ ASC', [menu_id])
+    ret = objdbca.table_select(t_common_menu_column_link, 'WHERE  DISUSE_FLAG=%s AND MENU_ID = %s ORDER BY COLUMN_DISP_SEQ ASC', ['0', menu_id])
     if not ret:
         log_msg_args = [menu]
         api_msg_args = [menu]
         raise AppException("499-00004", log_msg_args, api_msg_args)  # noqa: F405
     
-    column_list = []
+    column_list = {}
     for record in ret:
-        column_list.append(record.get('COLUMN_NAME_REST'))
+        if not (record.get('INPUT_ITEM') == '2' and record.get('VIEW_ITEM') == '0'):
+            column_list[record.get('COLUMN_NAME_REST')] = record.get('COLUMN_NAME_' + lang.upper())
     
     return column_list
 
@@ -610,8 +612,8 @@ def collect_search_candidates(objdbca, menu, column, menu_record={}, menu_table_
     save_type = str(ret[0].get('SAVE_TYPE'))
     
     # パスワードカラム系の場合は499を返却
-    # 8(PasswordColumn), 15(MaskColumn), 16(SensitiveSingleTextColumn), 17(SensitiveMultiTextColumn), 20(FileUploadEncryptColumn), 25(PasswordIDColumn), 26(JsonPasswordIDColumn)
-    sensitive_column_list = ["8", "15", "16", "17", "20", "25", "26"]
+    # 8(PasswordColumn), 15(MaskColumn), 16(SensitiveSingleTextColumn), 17(SensitiveMultiTextColumn), 25(PasswordIDColumn), 26(JsonPasswordIDColumn)
+    sensitive_column_list = ["8", "15", "16", "17", "25", "26"]
     if column_class_id in sensitive_column_list:
         log_msg_args = [menu, column]
         api_msg_args = [menu, column]
