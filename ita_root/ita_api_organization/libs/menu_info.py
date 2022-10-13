@@ -203,8 +203,8 @@ def collect_menu_info(objdbca, menu, menu_record={}, menu_table_link_record={}, 
             # 初期値(initial_value)を取得
             initial_value = record.get('INITIAL_VALUE')
             
-            # カラムクラスが「7: IDColumn」かつ初期値が設定されている場合、初期値の値(ID)から表示用の値を取得する
-            if str(column_class) == "7" and initial_value:
+            # カラムクラスが「7: IDColumn」「21: JsonIDColumn」かつ初期値が設定されている場合、初期値の値(ID)から表示用の値を取得する
+            if str(column_class) == "7" or str(column_class) == "21" and initial_value:
                 objmenu = load_table.loadTable(objdbca, menu)  # noqa: F405
                 objcolumn = objmenu.get_columnclass(column_name_rest)
                 tmp_exec = objcolumn.convert_value_output(initial_value)
@@ -612,8 +612,8 @@ def collect_search_candidates(objdbca, menu, column, menu_record={}, menu_table_
     save_type = str(ret[0].get('SAVE_TYPE'))
     
     # パスワードカラム系の場合は499を返却
-    # 8(PasswordColumn), 15(MaskColumn), 16(SensitiveSingleTextColumn), 17(SensitiveMultiTextColumn), 20(FileUploadEncryptColumn), 25(PasswordIDColumn), 26(JsonPasswordIDColumn)
-    sensitive_column_list = ["8", "15", "16", "17", "20", "25", "26"]
+    # 8(PasswordColumn), 15(MaskColumn), 16(SensitiveSingleTextColumn), 17(SensitiveMultiTextColumn), 25(PasswordIDColumn), 26(JsonPasswordIDColumn)
+    sensitive_column_list = ["8", "15", "16", "17", "25", "26"]
     if column_class_id in sensitive_column_list:
         log_msg_args = [menu, column]
         api_msg_args = [menu, column]

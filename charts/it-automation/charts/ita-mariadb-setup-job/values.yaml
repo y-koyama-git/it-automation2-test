@@ -1,0 +1,200 @@
+# Default values for mariadb-setup-job.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+global:
+  itaGlobalDefinition:
+    name: ita-global
+    enabled: true
+    config:
+      DEFAULT_LANGUAGE: "ja"
+      LANGUAGE: "en"
+      CONTAINER_BASE: "kubernetes"
+      TZ: "Asia/Tokyo"
+    persistence:
+      enabled: true
+      accessMode: ReadWriteMany
+      size: 10Gi
+      volumeType: hostPath # e.g.) hostPath or AKS
+      storageClass: "-" # e.g.) azurefile or - (None)
+      # matchLabels: 
+      #   release: "stable"
+      # matchExpressions:
+      #   - {key: environment, operator: In, values: [dev]}
+  gitlabDefinition:
+    name: ita-gitlab
+    enabled: true
+    config:
+      GITLAB_PROTOCOL: "http"
+      GITLAB_HOST: "gitlab.exastro-it-automation.svc"
+      GITLAB_PORT: "80"
+    secret:
+      GITLAB_ROOT_TOKEN: "a"
+  databaseDefinition:
+    name: mariadb
+    enabled: true
+    config:
+      DB_ENGINE: "mariadb"
+      DB_HOST: "mariadb.exastro-it-automation.svc"
+      DB_PORT: "3306"
+      DB_DATADBASE: "ITA_DB"
+    secret:
+      DB_ROOT_PASSWORD: "a"
+      DB_USER: "a"
+      DB_PASSWORD: "a"
+
+extraEnv:
+  DEFAULT_LANGUAGE: ja
+  LISTEN_PORT: "8080"
+
+replicaCount: 1
+
+completionCount: 1
+
+dbSetup:
+  livenessCheck: |-
+    #!/bin/bash
+    i=1
+    str1="mysqld is alive"
+    echo "HOST:"$DB_HOST
+    echo "USER:"$MARIADB_USER
+    echo "pw:"$MARIADB_PASSWORD
+    while true; do
+      result="$(mysqladmin ping --host=$DB_HOST  --user=$MARIADB_USER --password=$MARIADB_PASSWORD)"
+      echo $result
+      case "$result" in 
+        "$str1" ) echo "OK"; exit 0
+          break;;
+        * ) sleep $i;i=$(( i * 2 ));echo $i":NG" 
+      esac
+    done
+    #exit 0
+
+  createDBandTBL: |-
+    mysql --host=$DB_HOST  --user=$MARIADB_USER --password=$MARIADB_PASSWORD  $MARIADB_DATABASE < /docker-entrypoint-initdb.d/createdb.sql
+
+  dbConfInfo:
+    name: mysql-server-conf-config
+    customCnf: |-
+      [mysqld]
+
+  dbInit:
+    name: mysql-server-initdb-config
+    createdbSql: |-
+      CREATE DATABASE IF NOT EXISTS ITA_DB; 
+      CREATE TABLE IF NOT EXISTS `ITA_DB`.`T_COMN_ORGANIZATION_DB_INFO`
+      (
+          PRIMARY_KEY                     VARCHAR(40),                                -- 主キー
+          ORGANIZATION_ID                 VARCHAR(255),                               -- organizationのID
+          DB_HOST                         VARCHAR(255),                               -- DBホスト
+          DB_PORT                         INT,                                        -- DBポート
+          DB_DATADBASE                    VARCHAR(255),                               -- DBDB名
+          DB_USER                         VARCHAR(255),                               -- DBユーザ
+          DB_PASSWORD                     VARCHAR(255),                               -- DBパスワード
+          DB_ROOT_PASSWORD                VARCHAR(255),                               -- DBRootパスワード
+          GITLAB_USER                     VARCHAR(255),                               -- GitLabユーザ
+          GITLAB_TOKEN                    VARCHAR(255),                               -- GitLabトークン
+          NOTE                            TEXT,                                       -- 備考
+          DISUSE_FLAG                     VARCHAR(1)  ,                               -- 廃止フラグ
+          LAST_UPDATE_TIMESTAMP           DATETIME(6),                                -- 最終更新日時
+          LAST_UPDATE_USER                VARCHAR(40),                                -- 最終更新者
+          PRIMARY KEY(PRIMARY_KEY)
+      )ENGINE = InnoDB, CHARSET = utf8mb4, COLLATE = utf8mb4_bin, ROW_FORMAT=COMPRESSED ,KEY_BLOCK_SIZE=8;
+
+initContainerImage:
+  repository: busybox
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+image:
+  repository: mariadb
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "10.9"
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+persistence:
+  mountPath:
+    storage: /storage
+    homeDir: /home/app_user
+    pid:
+      path: /var/run_app_user/httpd/pid
+      subPath: httpd-pid
+    socket:
+      path: /var/run_app_user/httpd/socket
+      subPath: httpd-socket
+    tmp: /tmp
+
+volumeMounts:
+  mountPath:
+    createDB: 
+      path: /docker-entrypoint-initdb.d/createdb.sql
+      subPath: createdb.sql
+    conf: 
+      path: /etc/mysql/conf.d
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  runAsNonRoot: true
+
+service:
+  name: http
+  type: NodePort
+  port: 8080
+  targetPort: 8080
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources:
+  requests:
+    memory: "64Mi"  #仮決め
+    cpu: "250m"     #仮決め
+  limits:
+    memory: "64Mi"  #仮決め
+    cpu: "250m"     #仮決め
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

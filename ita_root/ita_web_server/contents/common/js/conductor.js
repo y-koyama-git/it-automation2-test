@@ -4994,9 +4994,7 @@ movementList() {
         }
         $movementListRows.html( movementSortLost.join('') );
         $movementFilter.trigger('input');
-    };
-    
-    
+    };    
     
     const movementFilter = function( inputValue ) {
         const inputType = $movementList.attr('data-filter-setting');
@@ -6431,6 +6429,7 @@ conductorStatusUpdate() {
             outTerminalLength = outTerminals.length,
             $node = $( cd.createId( nodeID ) );
       $node.addClass('run-unused');
+      if ( $node.is('.complete') ) $node.removeClass('complete');
       cd.data[ nodeID ].endStatus = true;
       for ( let i = 0; i < outTerminalLength; i++ ) {
           nextNodeUnused( nodeData['terminal'][ outTerminals[ i ] ].edge );
@@ -6443,7 +6442,7 @@ conductorStatusUpdate() {
     let   nodeStatus = nodeInfo[ tergetNodeID ].status_id;
     
     // 終了しているかチェックする
-    if ( ['5','6','8','13','14','9999'].indexOf( nodeStatus ) !== -1 ) {
+    if ( ['5','6','7','8','12','13','14','9999'].indexOf( nodeStatus ) !== -1 ) {
       cd.data[ nodeID ].endStatus = true;
       const inTerminalID = cd.terminalInOutID( cd.data[ nodeID ].terminal, 'in'),
             outTerminals = cd.terminalInOutID( cd.data[ nodeID ].terminal, 'out'),

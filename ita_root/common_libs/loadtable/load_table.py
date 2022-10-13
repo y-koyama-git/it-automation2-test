@@ -1374,6 +1374,8 @@ class loadTable():
                 # 更新系処理時 uuid 埋め込み
                 target_uuid_key = self.get_rest_key(primary_key)
                 entry_parameter[target_uuid_key] = target_uuid
+                
+            none_file_list = {}
             # 各カラム単位の基本処理（前）、個別処理（前）を実施
             for rest_key, rest_val in list(entry_parameter.items()):
                 if rest_key in self.restkey_list:
@@ -1396,10 +1398,28 @@ class loadTable():
                         'user': self.user
                     }
                     # ファイル有無
-                    if entry_file is not None:
-                        if rest_key in entry_file:
-                            target_col_option['file_name'] = rest_val
-                            target_col_option['file_data'] = entry_file.get(rest_key)
+                    if self.get_col_class_name(rest_key) in ['FileUploadColumn', 'FileUploadEncryptColumn']:
+                        if entry_file is not None:
+                            if rest_key in entry_file:
+                                target_col_option['file_name'] = rest_val
+                                target_col_option['file_data'] = entry_file.get(rest_key)
+                                # update時 entryにファイルがNone
+                                if cmd_type == CMD_UPDATE and entry_file.get(rest_key) is None:
+                                    none_file_list.setdefault(rest_key, rest_val)
+                            else:
+                                # update時 entryにファイルがなければ
+                                if cmd_type == CMD_UPDATE and entry_file.get(rest_key) is None:
+                                    none_file_list.setdefault(rest_key, rest_val)
+                        else:
+                            # update時 entryにファイルがなければ
+                            if cmd_type == CMD_UPDATE:
+                                none_file_list.setdefault(rest_key, rest_val)
+
+                        # update時 entryにファイルがなければ、currentの値を仮設定
+                        if rest_key in list(none_file_list.keys()):
+                            if rest_val is not None:
+                                entry_file[rest_key] = current_file.get(rest_key)
+                                target_col_option['file_data'] = current_file.get(rest_key)
 
                     # カラムクラス呼び出し
                     objcolumn = self.get_columnclass(rest_key, cmd_type)
@@ -1524,8 +1544,26 @@ class loadTable():
                     }
                     self.set_message(dict_msg, g.appmsg.get_api_message("MSG-00004", []), MSG_LEVEL_ERROR)
                     return retBool, status_code, msg
+
+            tmp_entry_parameter = copy.deepcopy(entry_parameter)
+            # 更新 ファイル同一時、除外
+            if cmd_type == CMD_UPDATE:
+                for rest_key, rest_val in list(entry_parameter.items()):
+                    if rest_key in self.restkey_list:
+                        # ファイル有無
+                        if self.get_col_class_name(rest_key) in ['FileUploadColumn', 'FileUploadEncryptColumn']:
+                            # ファイル名、データ一致時、除外
+                            if rest_val == current_parametr.get(rest_key):
+                                if current_file.get(rest_key) == entry_file.get(rest_key):
+                                    del tmp_entry_parameter[rest_key]
+            # currentの値を仮設定時、除外
+            for rest_key, rest_val in none_file_list.items():
+                # ファイル名None以外ファイル名除外
+                if tmp_entry_parameter.get(rest_key) is not None:
+                    del tmp_entry_parameter[rest_key]
+
             # rest_key → カラム名に変換
-            colname_parameter = self.convert_restkey_colname(entry_parameter, current_row)
+            colname_parameter = self.convert_restkey_colname(tmp_entry_parameter, current_row)
             # 登録・更新処理
             if cmd_type == CMD_REGISTER:
                 result = self.objdbca.table_insert(self.get_table_name(), colname_parameter, primary_key, history_flg)
@@ -1591,6 +1629,21 @@ class loadTable():
                     if rest_key in entry_file:
                         target_col_option['file_name'] = rest_val
                         target_col_option['file_data'] = entry_file.get(rest_key)
+
+                # ファイル同一時、除外
+                if cmd_type == CMD_UPDATE:
+                    if rest_key in self.restkey_list:
+                        # ファイル有無
+                        if self.get_col_class_name(rest_key) in ['FileUploadColumn', 'FileUploadEncryptColumn']:
+                            # ファイル名、データ一致時、除外
+                            if rest_val == current_parametr.get(rest_key):
+                                if current_file.get(rest_key) == entry_file.get(rest_key): 
+                                    rest_val = None
+                    # currentの値を仮設定時、除外
+                    if rest_key in list(none_file_list.keys()):
+                        # ファイル名None以外ファイル名除外
+                        if tmp_target_col_option['entry_parameter'].get(rest_key) is not None:
+                            rest_val = None
 
                 # カラムクラス毎の処理:レコード操作後 ,カラム毎の個別処理:レコード操作後
                 tmp_exec = objcolumn.after_iud_action(rest_val, copy.deepcopy(target_col_option))
@@ -1840,6 +1893,12 @@ class loadTable():
                             # ファイル取得＋64変換
                             file_data = objcolumn.get_file_data(col_val, target_uuid, target_uuid_jnl)
                             rest_file.setdefault(rest_key, file_data)
+                        elif self.get_col_class_name(rest_key) == 'FileUploadEncryptColumn':
+                            if mode in ['input', 'inner']:
+                                objcolumn = self.get_columnclass(rest_key)
+                                # ファイル取得＋64変換
+                                file_data = objcolumn.get_file_data(col_val, target_uuid, target_uuid_jnl)
+                                rest_file.setdefault(rest_key, file_data)
 
         return rest_parameter, rest_file
 

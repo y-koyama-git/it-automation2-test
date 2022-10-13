@@ -1,0 +1,95 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "mariadb-setup-job.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+spec: 
+  completions: {{ .Values.completionCount }}
+  template: 
+    spec:
+      initContainers:
+      - name: check-is-db-awake
+        env:
+          - name: MARIADB_PASSWORD
+            value: {{ .Values.global.databaseDefinition.secret.DB_PASSWORD }}
+          - name: MARIADB_USER
+            value: {{ .Values.global.databaseDefinition.secret.DB_USER }}
+        envFrom:
+          - configMapRef:
+              name: params-mariadb-setup
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        command: ["sh", "-c"]
+        args:
+        - | {{ .Values.dbSetup.livenessCheck | nindent 10}}
+      restartPolicy: Never
+      containers: # we can have one or more containers
+      - name: {{ template "mariadb-setup-job.fullname" . }}
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        command: ["sh", "-c"]
+        args:
+        - | {{ .Values.dbSetup.createDBandTBL | nindent 10}}
+        ports:
+        - containerPort:  {{ .Values.global.databaseDefinition.config.DB_PORT }}
+        env:
+          - name: MARIADB_ALLOW_EMPTY_ROOT_PASSWORD
+            value: "{{ .Values.global.databaseDefinition.config.EMPTY_ROOT_PASSWORD }}" # if it is 1 and root_password is set, root_password takes precedance
+          - name: MARIADB_ROOT_PASSWORD
+            value: {{ .Values.global.databaseDefinition.secret.DB_PASSWORD }}
+          - name: MARIADB_USER
+            value: {{ .Values.global.databaseDefinition.secret.DB_USER }}
+          - name: MARIADB_PASSWORD
+            value: {{ .Values.global.databaseDefinition.secret.DB_PASSWORD }}
+          - name: MARIADB_DATABASE
+            value: {{ .Values.global.databaseDefinition.config.DB_DATADBASE }}
+        #resources:
+         # requests:
+         #   memory: "64Mi"
+         #   cpu: "250m"
+         # limits:
+         #   memory: "64Mi"
+         #   cpu: "250m"
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+        envFrom:
+          - configMapRef:
+              name: params-mariadb-setup
+        volumeMounts:
+          - name: mysql-server-initdb
+            mountPath: {{ .Values.volumeMounts.mountPath.createDB.path }}
+            subPath: {{ .Values.volumeMounts.mountPath.createDB.subPath }}
+          - name: mysql-server-conf
+            mountPath: {{ .Values.volumeMounts.mountPath.conf.path }}
+      volumes:
+      - name: mysql-server-initdb
+        configMap:
+          name: mysql-server-initdb-config-setup
+      - name: mysql-server-conf
+        configMap:
+          name: mysql-server-conf-config-setup
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: params-mariadb-setup
+  namespace: {{ .Release.Namespace }}
+data:
+  {{- toYaml .Values.global.databaseDefinition.config | nindent 2 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-server-conf-config-setup
+  namespace: {{ .Release.Namespace }}
+data:
+  custom.cnf: |
+{{ .Values.dbSetup.dbConfInfo.customCnf | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-server-initdb-config-setup
+  namespace: {{ .Release.Namespace }}
+data: 
+  createdb.sql: |
+{{ .Values.dbSetup.dbInit.createdbSql | indent 4 }}
+
