@@ -183,23 +183,19 @@ INSERT INTO T_COMN_MENU_TABLE_LINK (TABLE_DEFINITION_ID,MENU_ID,TABLE_NAME,VIEW_
 
 項目の設定値の登録方法には3種類あります。
 Value型:項目の設定値を紐付けた変数の具体値として代入値管理に登録されます。
-Key-Value型:項目の名称(Key)と設定値(Value)を紐付けた変数の具体値として代入値管理に登録されます。
 Key型:項目の名称を紐付けた変数の具体値として代入値管理に登録されます。項目の設定値が空白の場合に代入値管理に登録されません','You can perform maintenance (view/register/update/discard) of operations registered in the associated menu, and Movement and variables associated with the setting value of item for each host.
 
 There are three methods to register the setting value of item.
 Value type: Setting value of item is registered in the substitution value list as a specific value of associated variable.
-Key-Value type: Name (Key) and setting value (Value) of item are registered in the substitution value list as a specific value of associated variable.
 Key type: Item name is registered in the substitution value list as a specific value of associated variable. When the setting value of the item is blank, it is not registered in the substitution value list','0','1','0','0','1','1','1','1','0',NULL,NULL,NULL,'external_valid_menu_after',NULL,'0',_____DATE_____,1);
 INSERT INTO T_COMN_MENU_TABLE_LINK_JNL (JOURNAL_SEQ_NO,JOURNAL_REG_DATETIME,JOURNAL_ACTION_CLASS,TABLE_DEFINITION_ID,MENU_ID,TABLE_NAME,VIEW_NAME,PK_COLUMN_NAME_REST,MENU_INFO_JA,MENU_INFO_EN,SHEET_TYPE,HISTORY_TABLE_FLAG,INHERIT,VERTICAL,ROW_INSERT_FLAG,ROW_UPDATE_FLAG,ROW_DISUSE_FLAG,ROW_REUSE_FLAG,SUBSTITUTION_VALUE_LINK_FLAG,LOCK_TABLE,UNIQUE_CONSTRAINT,BEFORE_VALIDATE_REGISTER,AFTER_VALIDATE_REGISTER,NOTE,DISUSE_FLAG,LAST_UPDATE_TIMESTAMP,LAST_UPDATE_USER) VALUES(20407,_____DATE_____,'INSERT','20407','20407','T_ANSR_VALUE_AUTOREG',NULL,'item_no','紐付対象メニューに登録されているオぺーションとホスト毎の項目の設定値を紐付けるMovementと変数がメンテナンス(閲覧/登録/更新/廃止)できます。
 
 項目の設定値の登録方法には3種類あります。
 Value型:項目の設定値を紐付けた変数の具体値として代入値管理に登録されます。
-Key-Value型:項目の名称(Key)と設定値(Value)を紐付けた変数の具体値として代入値管理に登録されます。
 Key型:項目の名称を紐付けた変数の具体値として代入値管理に登録されます。項目の設定値が空白の場合に代入値管理に登録されません','You can perform maintenance (view/register/update/discard) of operations registered in the associated menu, and Movement and variables associated with the setting value of item for each host.
 
 There are three methods to register the setting value of item.
 Value type: Setting value of item is registered in the substitution value list as a specific value of associated variable.
-Key-Value type: Name (Key) and setting value (Value) of item are registered in the substitution value list as a specific value of associated variable.
 Key type: Item name is registered in the substitution value list as a specific value of associated variable. When the setting value of the item is blank, it is not registered in the substitution value list','0','1','0','0','1','1','1','1','0',NULL,NULL,NULL,'external_valid_menu_after',NULL,'0',_____DATE_____,1);
 INSERT INTO T_COMN_MENU_TABLE_LINK (TABLE_DEFINITION_ID,MENU_ID,TABLE_NAME,VIEW_NAME,PK_COLUMN_NAME_REST,MENU_INFO_JA,MENU_INFO_EN,SHEET_TYPE,HISTORY_TABLE_FLAG,INHERIT,VERTICAL,ROW_INSERT_FLAG,ROW_UPDATE_FLAG,ROW_DISUSE_FLAG,ROW_REUSE_FLAG,SUBSTITUTION_VALUE_LINK_FLAG,LOCK_TABLE,UNIQUE_CONSTRAINT,BEFORE_VALIDATE_REGISTER,AFTER_VALIDATE_REGISTER,NOTE,DISUSE_FLAG,LAST_UPDATE_TIMESTAMP,LAST_UPDATE_USER) VALUES('20408','20408','T_ANSR_TGT_HOST',NULL,'item_no','オペレーションに紐付くMovementおよびホストを閲覧できます。','You can perform view for Movement and host that are associated with operation.','0','0','0','0','0','0','0','0','0',NULL,'[["EXECUTION_NO","OPERATION_ID","MOVEMENT_ID","SYSTEM_ID"]]',NULL,NULL,NULL,'0',_____DATE_____,1);
 INSERT INTO T_COMN_MENU_TABLE_LINK_JNL (JOURNAL_SEQ_NO,JOURNAL_REG_DATETIME,JOURNAL_ACTION_CLASS,TABLE_DEFINITION_ID,MENU_ID,TABLE_NAME,VIEW_NAME,PK_COLUMN_NAME_REST,MENU_INFO_JA,MENU_INFO_EN,SHEET_TYPE,HISTORY_TABLE_FLAG,INHERIT,VERTICAL,ROW_INSERT_FLAG,ROW_UPDATE_FLAG,ROW_DISUSE_FLAG,ROW_REUSE_FLAG,SUBSTITUTION_VALUE_LINK_FLAG,LOCK_TABLE,UNIQUE_CONSTRAINT,BEFORE_VALIDATE_REGISTER,AFTER_VALIDATE_REGISTER,NOTE,DISUSE_FLAG,LAST_UPDATE_TIMESTAMP,LAST_UPDATE_USER) VALUES(20408,_____DATE_____,'INSERT','20408','20408','T_ANSR_TGT_HOST',NULL,'item_no','オペレーションに紐付くMovementおよびホストを閲覧できます。','You can perform view for Movement and host that are associated with operation.','0','0','0','0','0','0','0','0','0',NULL,'[["EXECUTION_NO","OPERATION_ID","MOVEMENT_ID","SYSTEM_ID"]]',NULL,NULL,NULL,'0',_____DATE_____,1);
