@@ -32,7 +32,7 @@ spec:
         - containerPort:  {{ .Values.global.databaseDefinition.config.DB_PORT }}
         env:
           - name: MARIADB_ALLOW_EMPTY_ROOT_PASSWORD
-            value: "0" # if it is 1 and root_password is set, root_password takes precedance
+            value: "{{ .Values.global.databaseDefinition.config.EMPTY_ROOT_PASSWORD }}" # if it is 1 and root_password is set, root_password takes precedance
           - name: MARIADB_ROOT_PASSWORD
             value: {{ .Values.global.databaseDefinition.secret.DB_PASSWORD }}
           - name: MARIADB_USER
