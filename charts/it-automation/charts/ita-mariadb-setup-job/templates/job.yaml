@@ -1,58 +1,49 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ template "mariadb-setup-job.fullname" . }}
+  name: {{ template "ita-mariadb-setup-job.fullname" . }}
   namespace: {{ .Release.Namespace }}
 spec: 
   completions: {{ .Values.completionCount }}
   template: 
     spec:
-      initContainers:
-      - name: check-is-db-awake
-        env:
-          - name: MARIADB_PASSWORD
-            value: {{ .Values.global.databaseDefinition.secret.DB_PASSWORD }}
-          - name: MARIADB_USER
-            value: {{ .Values.global.databaseDefinition.secret.DB_USER }}
-        envFrom:
-          - configMapRef:
-              name: params-mariadb-setup
-        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-        command: ["sh", "-c"]
-        args:
-        - | {{ .Values.dbSetup.livenessCheck | nindent 10}}
-      restartPolicy: Never
+      restartPolicy: "OnFailure"
       containers: # we can have one or more containers
-      - name: {{ template "mariadb-setup-job.fullname" . }}
+      - name: {{ template "ita-mariadb-setup-job.fullname" . }}
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         command: ["sh", "-c"]
         args:
-        - | {{ .Values.dbSetup.createDBandTBL | nindent 10}}
+          - | {{ .Values.dbSetup.createDBandTBL | nindent 12 }}
         ports:
-        - containerPort:  {{ .Values.global.databaseDefinition.config.DB_PORT }}
+          - containerPort: {{ .Values.global.databaseDefinition.config.DB_PORT }}
         env:
-          - name: MARIADB_ALLOW_EMPTY_ROOT_PASSWORD
-            value: "{{ .Values.global.databaseDefinition.config.EMPTY_ROOT_PASSWORD }}" # if it is 1 and root_password is set, root_password takes precedance
-          - name: MARIADB_ROOT_PASSWORD
-            value: {{ .Values.global.databaseDefinition.secret.DB_PASSWORD }}
-          - name: MARIADB_USER
-            value: {{ .Values.global.databaseDefinition.secret.DB_USER }}
-          - name: MARIADB_PASSWORD
-            value: {{ .Values.global.databaseDefinition.secret.DB_PASSWORD }}
-          - name: MARIADB_DATABASE
-            value: {{ .Values.global.databaseDefinition.config.DB_DATADBASE }}
-        #resources:
-         # requests:
-         #   memory: "64Mi"
-         #   cpu: "250m"
-         # limits:
-         #   memory: "64Mi"
-         #   cpu: "250m"
+          {{- range $define := .Values.global -}}
+          {{-   range $config, $value := $define.config }}
+          - name: {{ $config }}
+            valueFrom:
+              configMapKeyRef:
+                name: params-{{ $define.name }}
+                key: {{ $config }}
+          {{-   end -}}
+          {{-   range $secret, $value := $define.secret }}
+          - name: {{ $secret }}
+            valueFrom:
+              secretKeyRef:
+                name: secret-{{ $define.name }}
+                key: {{ $secret }}
+          {{-   end }}
+          {{- end -}}
+          {{ range $config, $value := .Values.extraEnv }}
+          - name: {{ $config }}
+            valueFrom:
+              configMapKeyRef:
+                name: params-{{ template "ita-mariadb-setup-job.fullname" $ }}
+                key: {{ $config }}
+          {{- end }}
+        resources: 
+          {{- toYaml .Values.resources | nindent 10 }}
         securityContext:
-          {{- toYaml .Values.securityContext | nindent 12 }}
-        envFrom:
-          - configMapRef:
-              name: params-mariadb-setup
+          {{- toYaml .Values.securityContext | nindent 10 }}
         volumeMounts:
           - name: mysql-server-initdb
             mountPath: {{ .Values.volumeMounts.mountPath.createDB.path }}
@@ -60,9 +51,9 @@ spec:
           - name: mysql-server-conf
             mountPath: {{ .Values.volumeMounts.mountPath.conf.path }}
       volumes:
-      - name: mysql-server-initdb
-        configMap:
-          name: mysql-server-initdb-config-setup
-      - name: mysql-server-conf
-        configMap:
-          name: mysql-server-conf-config-setup
+        - name: mysql-server-initdb
+          configMap:
+            name: mysql-server-initdb-config-setup
+        - name: mysql-server-conf
+          configMap:
+            name: mysql-server-conf-config-setup
