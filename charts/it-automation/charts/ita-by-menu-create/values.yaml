@@ -44,7 +44,7 @@ global:
       DB_PASSWORD: ""
 
 extraEnv:
-  EXECUTE_INTERVAL: "1"
+  EXECUTE_INTERVAL: "10"
 
 replicaCount: 1
 
