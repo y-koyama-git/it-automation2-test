@@ -1332,22 +1332,16 @@ setTableEvents() {
                   key = $button.attr('data-key'),
                   maxSize = $button.attr('data-upload-max-size');
             
-            fn.fileSelect().then(function( result ){
+            fn.fileSelect('base64', maxSize ).then(function( result ){
                 
-                if ( maxSize && maxSize < result.size ) {
-                    alert('');
+                const changeFlag = tb.setInputFile( result.name, result.base64, id, key, tb.data.body );
+                    
+                $button.find('.inner').text( result.name );
+                if ( changeFlag ) {
+                    $button.addClass('tableEditChange');
                 } else {
-                    const changeFlag = tb.setInputFile( result.name, result.base64, id, key, tb.data.body );
-                    
-                    $button.find('.inner').text( result.name );
-                    
-                    if ( changeFlag ) {
-                        $button.addClass('tableEditChange');
-                    } else {
-                        $button.removeClass('tableEditChange');
-                    }
-                }
-                
+                    $button.removeClass('tableEditChange');
+                }                
             }).catch(function( error ){
                 if ( error !== 'cancel') {
                     alert( error );
@@ -1445,16 +1439,35 @@ setTableEvents() {
                 flag = false;
             }
             
-            // パスワードを削除する場合は null を入れる
-            const inputValue = ( flag )? null: value;
+            // パスワードを削除する場合は false を入れる
+            const inputValue = ( flag )? false: value;
             tb.setInputData( inputValue, id, key, tb.data.body );
+        });
+        
+        // ファイル選択クリア
+        tb.$.tbody.on('click', '.inputFileClearButton', function(){
+            const $button = $( this ),
+                  $wrap = $button.closest('.inputFileWrap'),
+                  $input = $wrap.find('.inputFile'),
+                  id = $input.attr('data-id'),
+                  key = $input.attr('data-key');
+            
+            const changeFlag = tb.setInputFile( null, null, id, key, tb.data.body );
+            console.log( changeFlag );
+                    
+            $input.find('.inner').text('');
+            if ( changeFlag ) {
+                $input.addClass('tableEditChange');
+            } else {
+                $input.removeClass('tableEditChange');
+            }                
         });
         
         // select欄クリック時にselect2を適用する
         tb.$.tbody.on('click', '.tableEditInputSelectValue', function(){
             const $value = $( this ),
                   $select = $value.next('.tableEditInputSelect'),
-                  width = $value.outerWidth();
+                  width = $value.outerWidth();            
             
             $value.remove();
             
@@ -1462,6 +1475,8 @@ setTableEvents() {
                 dropdownAutoWidth: false,
                 width: width
             }).select2('open');
+            
+            $select.change();
         });
     }
     
@@ -2838,7 +2853,7 @@ editCellHtml( item, columnKey ) {
         // ファイルアップロード
         case 'FileUploadColumn': case 'FileUploadEncryptColumn':
             inputClassName.push('tableEditSelectFile');
-            return fn.html.button( value, inputClassName, attr );
+            return fn.html.fileSelect( value, inputClassName, attr );
         
         // 不明
         default:
@@ -2877,8 +2892,6 @@ editConfirmCellHtml( item, columnKey ) {
     
     const valueCheck = function( val ) {
         if ( columnName === 'discard' ) {
-        
-            
             return tb.discardMark( val );
         }
         switch ( columnType ) {            
@@ -2917,13 +2930,12 @@ editConfirmCellHtml( item, columnKey ) {
             return '';
         }
     }
-    
-    // パスワードカラムは別処理
+
+    // パスワードカラム
     const password = ['PasswordColumn', 'PasswordIDColumn', 'JsonPasswordIdColumn', 'MaskColumn'];
     if ( password.indexOf( columnType ) !== -1 ) {
-
-        if ( parameter[ columnName ] !== undefined && parameter[ columnName ] === null ) {
-            return '<span class="passwordDeleteText">' + getMessage.FTE00014 + '</span>';
+        if ( parameter[ columnName ] === false ) {
+            return '<span class="confirmDeleteText">' + getMessage.FTE00014 + '</span>';
         } else if ( value !== '' && type !== 'registration') {
             return beforeAfter(`<div class="passwordColumn">********</div>`, `<div class="passwordColumn">********</div>`);
         } else {
@@ -3371,10 +3383,23 @@ editOk() {
                 } else {
                     switch ( columnType ) {
                         // File
-                        case 'FileUploadColumn': case 'FileUploadEncryptColumn':
+                        case 'FileUploadColumn':
                             itemData.parameter[ columnNameRest ] = setData('parameter');
                             itemData.file[ columnNameRest ] = setData('file');
                         break;
+                        case 'FileUploadEncryptColumn': {
+                            const fileAfterValue = item.after.parameter[ columnNameRest ];
+                            // 変更があるか？
+                            if ( fileAfterValue !== undefined && fileAfterValue !== '') {
+                                itemData.parameter[ columnNameRest ] = setData('parameter');
+                                // nullじゃなければファイルもセット
+                                if ( fileAfterValue !== null ) {
+                                    itemData.file[ columnNameRest ] = setData('file');
+                                }
+                                // { key: null } の場合は削除とする
+                            }
+                            // 変更がなければ値をセットしない
+                        } break;
                         // 最終更新日時と最終更新者
                         case 'LastUpdateDateColumn': case 'LastUpdateUserColumn':
                             if ( itemData.type === 'Register' ) {
@@ -3383,17 +3408,19 @@ editOk() {
                                 itemData.parameter[ columnNameRest ] = setData('parameter');
                             }
                         break;
-                        // パスワード
+                        // パスワード・暗号化ファイル
                         case 'PasswordColumn': case 'PasswordIDColumn': case 'JsonPasswordIDColumn': case 'MaskColumn':
-                        case 'SensitiveSingleTextColumn': case 'SensitiveMultiTextColumn':
-                            const passwordAfterValue = item.after.parameter[ columnNameRest ];
-                            // null -> 削除 { key: null }
-                            // 空白 -> そのまま（keyをセットしない）
-                            // 値有 -> 更新 { key: value }
-                            if ( passwordAfterValue !== undefined && passwordAfterValue !== ''){
+                        case 'SensitiveSingleTextColumn': case 'SensitiveMultiTextColumn': {
+                            const passwordAfterValue = item.after.parameter[ columnNameRest ];          
+                            if ( passwordAfterValue === false ) {
+                                // false -> 削除 { key: null }
+                                itemData.parameter[ columnNameRest ] = null;
+                            } else if ( passwordAfterValue !== '' && passwordAfterValue !== null ){
+                                // 値有 -> 更新 { key: value }
                                 itemData.parameter[ columnNameRest ] = passwordAfterValue;
                             }
-                        break;
+                            // null or 空白 -> そのまま（keyをセットしない）
+                        } break;
                         // 基本
                         default:
                             itemData.parameter[ columnNameRest ] = setData('parameter');
