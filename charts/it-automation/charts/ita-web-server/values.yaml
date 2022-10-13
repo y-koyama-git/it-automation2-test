@@ -16,6 +16,10 @@ global:
       size: 10Gi
       volumeType: hostPath # e.g.) hostPath or AKS
       storageClass: "-" # e.g.) azurefile or - (None)
+      # matchLabels: 
+      #   release: "stable"
+      # matchExpressions:
+      #   - {key: environment, operator: In, values: [dev]}
   gitlabDefinition:
     name: ita-gitlab
     enabled: true
@@ -88,8 +92,7 @@ securityContext:
 service:
   name: http
   type: NodePort
-  port: 8080
-  targetPort: 8080
+  port: 8000
 
 ingress:
   enabled: false
