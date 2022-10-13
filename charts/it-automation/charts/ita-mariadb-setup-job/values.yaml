@@ -1,4 +1,4 @@
-# Default values for ita-api-admin.
+# Default values for mariadb-setup-job.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 global:
@@ -30,11 +30,11 @@ global:
     secret:
       GITLAB_ROOT_TOKEN: "a"
   databaseDefinition:
-    name: ita-mariadb
+    name: mariadb
     enabled: true
     config:
-      DB_ENGINE: mariadb
-      DB_HOST: "ita-mariadb.exastro-it-automation.svc"
+      DB_ENGINE: "mariadb"
+      DB_HOST: "mariadb.exastro-it-automation.svc"
       DB_PORT: "3306"
       DB_DATADBASE: "ITA_DB"
     secret:
@@ -48,6 +48,58 @@ extraEnv:
 
 replicaCount: 1
 
+completionCount: 1
+
+dbSetup:
+  livenessCheck: |-
+    #!/bin/bash
+    i=1
+    str1="mysqld is alive"
+    echo "HOST:"$DB_HOST
+    echo "USER:"$MARIADB_USER
+    echo "pw:"$MARIADB_PASSWORD
+    while true; do
+      result="$(mysqladmin ping --host=$DB_HOST  --user=$MARIADB_USER --password=$MARIADB_PASSWORD)"
+      echo $result
+      case "$result" in 
+        "$str1" ) echo "OK"; exit 0
+          break;;
+        * ) sleep $i;i=$(( i * 2 ));echo $i":NG" 
+      esac
+    done
+    #exit 0
+
+  createDBandTBL: |-
+    mysql --host=$DB_HOST  --user=$MARIADB_USER --password=$MARIADB_PASSWORD  $MARIADB_DATABASE < /docker-entrypoint-initdb.d/createdb.sql
+
+  dbConfInfo:
+    name: mysql-server-conf-config
+    customCnf: |-
+      [mysqld]
+
+  dbInit:
+    name: mysql-server-initdb-config
+    createdbSql: |-
+      CREATE DATABASE IF NOT EXISTS ITA_DB; 
+      CREATE TABLE IF NOT EXISTS `ITA_DB`.`T_COMN_ORGANIZATION_DB_INFO`
+      (
+          PRIMARY_KEY                     VARCHAR(40),                                -- 主キー
+          ORGANIZATION_ID                 VARCHAR(255),                               -- organizationのID
+          DB_HOST                         VARCHAR(255),                               -- DBホスト
+          DB_PORT                         INT,                                        -- DBポート
+          DB_DATADBASE                    VARCHAR(255),                               -- DBDB名
+          DB_USER                         VARCHAR(255),                               -- DBユーザ
+          DB_PASSWORD                     VARCHAR(255),                               -- DBパスワード
+          DB_ROOT_PASSWORD                VARCHAR(255),                               -- DBRootパスワード
+          GITLAB_USER                     VARCHAR(255),                               -- GitLabユーザ
+          GITLAB_TOKEN                    VARCHAR(255),                               -- GitLabトークン
+          NOTE                            TEXT,                                       -- 備考
+          DISUSE_FLAG                     VARCHAR(1)  ,                               -- 廃止フラグ
+          LAST_UPDATE_TIMESTAMP           DATETIME(6),                                -- 最終更新日時
+          LAST_UPDATE_USER                VARCHAR(40),                                -- 最終更新者
+          PRIMARY KEY(PRIMARY_KEY)
+      )ENGINE = InnoDB, CHARSET = utf8mb4, COLLATE = utf8mb4_bin, ROW_FORMAT=COMPRESSED ,KEY_BLOCK_SIZE=8;
+
 initContainerImage:
   repository: busybox
   pullPolicy: IfNotPresent
@@ -55,10 +107,10 @@ initContainerImage:
   tag: ""
 
 image:
-  repository: exastro/it-automation2-test-ita-api-admin
+  repository: mariadb
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "Integration-test.3a05f7.20221007-172805"
+  tag: "10.9"
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
@@ -83,6 +135,14 @@ persistence:
       path: /var/run_app_user/httpd/socket
       subPath: httpd-socket
     tmp: /tmp
+
+volumeMounts:
+  mountPath:
+    createDB: 
+      path: /docker-entrypoint-initdb.d/createdb.sql
+      subPath: createdb.sql
+    conf: 
+      path: /etc/mysql/conf.d
 
 podAnnotations: {}
 
