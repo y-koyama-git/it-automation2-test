@@ -1378,74 +1378,95 @@ class loadTable():
             none_file_list = {}
             # 各カラム単位の基本処理（前）、個別処理（前）を実施
             for rest_key, rest_val in list(entry_parameter.items()):
-                if rest_key in self.restkey_list:
-                    target_col_option = {
-                        'uuid': target_uuid,
-                        'uuid_jnl': '',
-                        'cmd_type': cmd_type,
-                        'rest_key_name': rest_key,
-                        'col_name': self.get_col_name(rest_key),
-                        'file_name': '',
-                        'file_data': '',
-                        'entry_parameter': {
-                            'parameter': entry_parameter,
-                            'file': entry_file,
-                        },
-                        'current_parameter': {
-                            'parameter': current_parametr,
-                            'file': current_file,
-                        },
-                        'user': self.user
-                    }
-                    # ファイル有無
-                    if self.get_col_class_name(rest_key) in ['FileUploadColumn', 'FileUploadEncryptColumn']:
-                        if entry_file is not None:
-                            if rest_key in entry_file:
-                                target_col_option['file_name'] = rest_val
-                                target_col_option['file_data'] = entry_file.get(rest_key)
-                                # update時 entryにファイルがNone
-                                if cmd_type == CMD_UPDATE and entry_file.get(rest_key) is None:
-                                    none_file_list.setdefault(rest_key, rest_val)
+                objcol = self.get_objcol(rest_key)
+                input_item = 0
+                if objcol is not None:
+                    input_item = objcol.get(COLNAME_INPUT_ITEM)
+                # INPUT_ITEMが1の場合
+                if input_item == '1':
+                    if rest_key in self.restkey_list:
+                        target_col_option = {
+                            'uuid': target_uuid,
+                            'uuid_jnl': '',
+                            'cmd_type': cmd_type,
+                            'rest_key_name': rest_key,
+                            'col_name': self.get_col_name(rest_key),
+                            'file_name': '',
+                            'file_data': '',
+                            'entry_parameter': {
+                                'parameter': entry_parameter,
+                                'file': entry_file,
+                            },
+                            'current_parameter': {
+                                'parameter': current_parametr,
+                                'file': current_file,
+                            },
+                            'user': self.user
+                        }
+                        # ファイル有無
+                        if self.get_col_class_name(rest_key) in ['FileUploadColumn', 'FileUploadEncryptColumn']:
+                            if entry_file is not None:
+                                if rest_key in entry_file:
+                                    target_col_option['file_name'] = rest_val
+                                    target_col_option['file_data'] = entry_file.get(rest_key)
+                                    # update時 entryにファイルがNone
+                                    if cmd_type == CMD_UPDATE and entry_file.get(rest_key) is None:
+                                        none_file_list.setdefault(rest_key, rest_val)
+                                else:
+                                    # update時 entryにファイルがなければ
+                                    if cmd_type == CMD_UPDATE and entry_file.get(rest_key) is None:
+                                        none_file_list.setdefault(rest_key, rest_val)
                             else:
                                 # update時 entryにファイルがなければ
-                                if cmd_type == CMD_UPDATE and entry_file.get(rest_key) is None:
+                                if cmd_type == CMD_UPDATE:
                                     none_file_list.setdefault(rest_key, rest_val)
+
+                            # update時 entryにファイルがなければ、currentの値を仮設定
+                            if rest_key in list(none_file_list.keys()):
+                                if rest_val is not None:
+                                    entry_file[rest_key] = current_file.get(rest_key)
+                                    target_col_option['file_data'] = current_file.get(rest_key)
+
+                        # カラムクラス呼び出し
+                        objcolumn = self.get_columnclass(rest_key, cmd_type)
+
+                        # カラムクラス毎の処理:レコード操作前 + カラム毎の個別処理:レコード操作前
+                        tmp_exec = objcolumn.before_iud_action(rest_val, copy.deepcopy(target_col_option))
+                        if tmp_exec[0] is not True:
+                            dict_msg = {
+                                'status_code': '',
+                                'msg_args': '',
+                                'msg': tmp_exec[1],
+                            }
+                            self.set_message(dict_msg, rest_key, MSG_LEVEL_ERROR)
                         else:
-                            # update時 entryにファイルがなければ
-                            if cmd_type == CMD_UPDATE:
-                                none_file_list.setdefault(rest_key, rest_val)
+                            tmp_target_col_option = tmp_exec[3]
+                            entry_parameter = tmp_target_col_option.get('entry_parameter').get('parameter')
+                            entry_file = tmp_target_col_option.get('entry_parameter').get('file')
+                            rest_val = entry_parameter.get(rest_key)
+                            # entry_file[rest_key] = target_col_option.get('file_data')
 
-                        # update時 entryにファイルがなければ、currentの値を仮設定
-                        if rest_key in list(none_file_list.keys()):
                             if rest_val is not None:
-                                entry_file[rest_key] = current_file.get(rest_key)
-                                target_col_option['file_data'] = current_file.get(rest_key)
+                                if self.get_col_class_name(rest_key) in ['SensitiveSingleTextColumn', 'SensitiveMultiTextColumn']:
+                                    sensitive_col_name = objcolumn.get_objcol().get(COLNAME_SENSITIVE_COL_NAME)
+                                    sensitive_settings = entry_parameter.get(sensitive_col_name)
+                                    # SENSITIVEがONの場合
+                                    if sensitive_settings == '1':
+                                        tmp_exec = objcolumn.convert_value_input(rest_val)
+                                        if tmp_exec[0] is True:
+                                            entry_parameter[rest_key] = tmp_exec[2]
+                                        else:
+                                            dict_msg = {
+                                                'status_code': '',
+                                                'msg_args': '',
+                                                'msg': tmp_exec[1],
+                                            }
+                                            self.set_message(dict_msg, rest_key, MSG_LEVEL_ERROR)
+                                    else:
+                                        entry_parameter[rest_key] = rest_val
 
-                    # カラムクラス呼び出し
-                    objcolumn = self.get_columnclass(rest_key, cmd_type)
-
-                    # カラムクラス毎の処理:レコード操作前 + カラム毎の個別処理:レコード操作前
-                    tmp_exec = objcolumn.before_iud_action(rest_val, copy.deepcopy(target_col_option))
-                    if tmp_exec[0] is not True:
-                        dict_msg = {
-                            'status_code': '',
-                            'msg_args': '',
-                            'msg': tmp_exec[1],
-                        }
-                        self.set_message(dict_msg, rest_key, MSG_LEVEL_ERROR)
-                    else:
-                        tmp_target_col_option = tmp_exec[3]
-                        entry_parameter = tmp_target_col_option.get('entry_parameter').get('parameter')
-                        entry_file = tmp_target_col_option.get('entry_parameter').get('file')
-                        rest_val = entry_parameter.get(rest_key)
-                        # entry_file[rest_key] = target_col_option.get('file_data')
-
-                        if rest_val is not None:
-                            if self.get_col_class_name(rest_key) in ['SensitiveSingleTextColumn', 'SensitiveMultiTextColumn']:
-                                sensitive_col_name = objcolumn.get_objcol().get(COLNAME_SENSITIVE_COL_NAME)
-                                sensitive_settings = entry_parameter.get(sensitive_col_name)
-                                # SENSITIVEがONの場合
-                                if sensitive_settings == '1':
+                                else:
+                                    # VALUE 変換処理不要ならVALUE変更無し
                                     tmp_exec = objcolumn.convert_value_input(rest_val)
                                     if tmp_exec[0] is True:
                                         entry_parameter[rest_key] = tmp_exec[2]
@@ -1456,21 +1477,6 @@ class loadTable():
                                             'msg': tmp_exec[1],
                                         }
                                         self.set_message(dict_msg, rest_key, MSG_LEVEL_ERROR)
-                                else:
-                                    entry_parameter[rest_key] = rest_val
-
-                            else:
-                                # VALUE 変換処理不要ならVALUE変更無し
-                                tmp_exec = objcolumn.convert_value_input(rest_val)
-                                if tmp_exec[0] is True:
-                                    entry_parameter[rest_key] = tmp_exec[2]
-                                else:
-                                    dict_msg = {
-                                        'status_code': '',
-                                        'msg_args': '',
-                                        'msg': tmp_exec[1],
-                                    }
-                                    self.set_message(dict_msg, rest_key, MSG_LEVEL_ERROR)
 
             # メニュー共通処理:レコード操作前 組み合わせ一意制約
             self.exec_unique_constraint(entry_parameter, target_uuid)
