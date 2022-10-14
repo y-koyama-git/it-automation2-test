@@ -32,8 +32,12 @@ def external_valid_menu_after(objdbca, objtable, option):
         where_str = "WHERE MVMT_MATL_LINK_ID <> %s AND MOVEMENT_ID = %s AND ROLE_PACKAGE_ID <> %s  AND DISUSE_FLAG = 0 "
         aryForBind = {}
         aryForBind['MVMT_MATL_LINK_ID'] = option["uuid"]
-        aryForBind['MOVEMENT_ID'] = option["entry_parameter"]["parameter"]["movement"]
-        aryForBind['ROLE_PACKAGE_ID'] = option["entry_parameter"]["parameter"]["role_package_name"]
+        if option["cmd_type"] == "Restore":
+            aryForBind['MOVEMENT_ID'] = option["current_parameter"]["parameter"]["movement"]
+            aryForBind['ROLE_PACKAGE_ID'] = option["current_parameter"]["parameter"]["role_package_name"]
+        else:
+            aryForBind['MOVEMENT_ID'] = option["entry_parameter"]["parameter"]["movement"]
+            aryForBind['ROLE_PACKAGE_ID'] = option["entry_parameter"]["parameter"]["role_package_name"]
         ret = objdbca.table_count(table_name, where_str, bind_value_list=[aryForBind['MVMT_MATL_LINK_ID'], aryForBind['MOVEMENT_ID'], aryForBind['ROLE_PACKAGE_ID']])
         if ret == 0:
             retBool = True

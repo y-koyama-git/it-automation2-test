@@ -1236,7 +1236,7 @@ class CreateAnsibleExecFiles():
                 # Winrm接続情報
                 if ina_hostinfolist[host_name]['LOGIN_AUTH_TYPE'] == self.AnscObj.DF_LOGIN_AUTH_TYPE_PW_WINRM:
                     # WINRM接続プロトコルよりポート番号が未設定時は、self.LC_WINRM_PORTが設定されている
-                    port = "ansible_ssh_port: " . ina_hostinfolist[host_name]['WINRM_PORT']
+                    port = "ansible_ssh_port: " + str(ina_hostinfolist[host_name]['WINRM_PORT'])
                     port += "\n" + indento_sp_param + "ansible_connection: winrm"
 
             ssh_key_file = ''
