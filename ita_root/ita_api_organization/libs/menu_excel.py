@@ -763,6 +763,7 @@ def create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_colum
     # カラム位置調整用フラグ
     column_flg = False
     dataVaridationDict = {}
+    column_class_file = ['9', '20']
     skip_cnt = 0
     for i, dict_menu_column in enumerate(retList_t_common_menu_column_link):
         column_name = dict_menu_column.get('COLUMN_NAME_' + lang.upper())
@@ -822,9 +823,9 @@ def create_column_info(lang, ws, startRow, startClm, retList_t_common_menu_colum
         # 登録
         # 更新
         tmp = '×'
-        if auto_input != '1' and input_item == '1' and required_item == '1':
+        if auto_input != '1' and input_item == '1' and required_item == '1' and column_class not in column_class_file:
             tmp = '●'
-        elif auto_input != '1' and input_item == '1' and required_item == '0':
+        elif auto_input != '1' and input_item == '1' and required_item == '0' and column_class not in column_class_file:
             tmp = '○'
         ws.cell(row=startRow, column=column_num).font = font_bl
         ws.cell(row=startRow, column=column_num).fill = fill_gr
@@ -1866,8 +1867,10 @@ def execute_excel_maintenance(objdbca, organization_id, workspace_id, menu, menu
     
     # 項目順記憶用
     column_order = []
-    # 登録時に除外する項目リスト
+    # 登録更新時に除外する項目リスト
     register_list = []
+    update_list = []
+    column_class_file = ['9', '20']
     for recode in ret:
         column_name_rest = str(recode.get('COLUMN_NAME_REST'))
         column_class_id = str(recode.get('COLUMN_CLASS'))
@@ -1875,13 +1878,14 @@ def execute_excel_maintenance(objdbca, organization_id, workspace_id, menu, menu
         input_item = str(recode.get('INPUT_ITEM'))
         view_item = str(recode.get('VIEW_ITEM'))
         
-        # 登録時に不要な項目
+        # 登録更新時に不要な項目
         if auto_input == '1' or input_item == '0':
             register_list.append(column_name_rest)
         
         # カラムクラスIDがファイルアップロードのものは除外する
-        if column_class_id == '9':
+        if column_class_id in column_class_file:
             register_list.append(column_name_rest)
+            update_list.append(column_name_rest)
         
         # Excelには表示しない項目
         if input_item == '2' and view_item == '0':
@@ -1940,6 +1944,9 @@ def execute_excel_maintenance(objdbca, organization_id, workspace_id, menu, menu
             for col_j in range(len(excel_data[0])):
                 if process_type[row_i] == msg_reg:
                     if column_order[col_j] in register_list:
+                        continue
+                elif process_type[row_i] == msg_upd:
+                    if column_order[col_j] in update_list:
                         continue
                 dict_param[column_order[col_j]] = excel_data[row_i][col_j]
             parameter[row_i]["parameter"] = dict_param
