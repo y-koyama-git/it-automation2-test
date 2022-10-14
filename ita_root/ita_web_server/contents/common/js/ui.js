@@ -1057,7 +1057,7 @@ mainMenu() {
     
     const html = `<ul class="dashboardMenuGroupList">${list.join('')}</ul>`;
     
-    ui.$.content.html( ui.commonContainer( 'DashBoard', 'ようそこIT Automationへ', html, false ) );  
+    ui.$.content.html( ui.commonContainer( 'DashBoard', getMessage.FTE00077, html, false ) );  
     
     ui.onReady();
 }

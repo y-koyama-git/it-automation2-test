@@ -111,6 +111,7 @@ const getMessage = ( function() {
         'FTE00074' : "廃止",
         'FTE00075' : "復活",
         'FTE00076' : "ファイルクリア",
+        'FTE00077' : "ようこそIT Automationへ",
         
         // メニュー定義・作成
         'FTE01001' : "項目",
