@@ -337,17 +337,15 @@ def encrypt_upload_file(file_path, text):
     Returns:
         is success:(bool)
     """
+    text = base64.b64decode(text.encode()).decode()
     text = ky_encrypt(text)
     path = os.path.dirname(file_path)
 
     if not os.path.isdir(path):
         os.makedirs(path)
 
-    if isinstance(text, str):
-        text = base64.b64decode(text.encode())
-
     try:
-        with open(file_path, "bx") as f:
+        with open(file_path, "w") as f:
             f.write(text)
     except Exception:
         return False
