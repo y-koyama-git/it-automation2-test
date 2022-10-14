@@ -202,9 +202,9 @@ def reserve_cancel(objdbca, execution_no):
     """
     
     # 該当の作業実行のステータス取得
-    where = "WHERE EXECUTION_NO = " + execution_no
+    where = "WHERE EXECUTION_NO = %s"
     objdbca.table_lock(["T_ANSR_EXEC_STS_INST"])
-    data_list = objdbca.table_select("T_ANSR_EXEC_STS_INST", where)
+    data_list = objdbca.table_select("T_ANSR_EXEC_STS_INST", where, [execution_no])
     
     # 該当する作業実行が存在しない
     if len(data_list) is None or len(data_list) == 0:

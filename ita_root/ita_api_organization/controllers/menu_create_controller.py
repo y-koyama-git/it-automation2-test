@@ -216,20 +216,24 @@ def get_pulldown_initial(organization_id, workspace_id, menu, column):  # noqa: 
     # メニューの存在確認
     check_menu_info(menu, objdbca)
 
-    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['0', '1', '2', '3', '4']
-    check_sheet_type(menu, sheet_type_list, objdbca)
+    # 権限チェックスキップ対象メニュー
+    skip_check_auth_list = ["selection_1", "selection_2"]
 
     data = {}
-    # メニューに対するロール権限をチェック
-    # 権限が無かったらdataを空で返す
-    try:
-        check_auth_menu(menu)
-    except AppException as e:  # noqa: F405
-        if e.args[0] == '401-00001':
-            return data,
-        else:
-            raise e
+    if menu not in skip_check_auth_list:
+        # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+        sheet_type_list = ['0', '1', '2', '3', '4']
+        check_sheet_type(menu, sheet_type_list, objdbca)
+
+        # メニューに対するロール権限をチェック
+        # 権限が無かったらdataを空で返す
+        try:
+            check_auth_menu(menu)
+        except AppException as e:  # noqa: F405
+            if e.args[0] == '401-00001':
+                return data,
+            else:
+                raise e
 
     data = menu_create_lib.collect_pulldown_initial_value(objdbca, menu, column)
     
@@ -271,20 +275,24 @@ def get_reference_item(organization_id, workspace_id, menu, column):  # noqa: E5
     # メニューの存在確認
     check_menu_info(menu, objdbca)
 
-    # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
-    sheet_type_list = ['0', '1', '2', '3', '4']
-    check_sheet_type(menu, sheet_type_list, objdbca)
+    # 権限チェックスキップ対象メニュー
+    skip_check_auth_list = ["selection_1", "selection_2"]
 
     data = {}
-    # メニューに対するロール権限をチェック
-    # 権限が無かったらdataを空で返す
-    try:
-        check_auth_menu(menu)
-    except AppException as e:  # noqa: F405
-        if e.args[0] == '401-00001':
-            return data,
-        else:
-            raise e
+    if menu not in skip_check_auth_list:
+        # 『メニュー-テーブル紐付管理』の取得とシートタイプのチェック
+        sheet_type_list = ['0', '1', '2', '3', '4']
+        check_sheet_type(menu, sheet_type_list, objdbca)
+        
+        # メニューに対するロール権限をチェック
+        # 権限が無かったらdataを空で返す
+        try:
+            check_auth_menu(menu)
+        except AppException as e:  # noqa: F405
+            if e.args[0] == '401-00001':
+                return data,
+            else:
+                raise e
 
     data = menu_create_lib.collect_pulldown_reference_item(objdbca, menu, column)
     

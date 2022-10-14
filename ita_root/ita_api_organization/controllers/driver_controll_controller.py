@@ -150,7 +150,7 @@ def get_driver_execute_search_candidates(organization_id, workspace_id, menu, ta
 
 
 @api_filter
-def post_driver_cancel(organization_id, workspace_id, menu, execution_no):  # noqa: E501
+def post_driver_cancel(organization_id, workspace_id, menu, execution_no, body=None):  # noqa: E501
     """post_driver_cancel
 
     Driver作業実行の予約取消 # noqa: E501
