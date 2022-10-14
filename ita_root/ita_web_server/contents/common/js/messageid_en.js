@@ -111,6 +111,12 @@ const getMessage = ( function() {
         'FTE00074' : "Discard",
         'FTE00075' : "Restore",
         'FTE00076' : "File clear",
+        'FTE00077' : "Welcome to IT Automation",
+        'FTE00078' : "Menu information",
+        'FTE00079' : "View Menu information",
+        'FTE00080' : "Check execution status",
+        'FTE00081' : "Execution log",
+        'FTE00082' : "Error log",
         
         // Create menu
         'FTE01001' : "Item",
