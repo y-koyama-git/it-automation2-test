@@ -1,5 +1,5 @@
-NAME: ita2
-LAST DEPLOYED: Fri Oct 14 11:45:39 2022
+NAME: ita-by-ansible-execute
+LAST DEPLOYED: Fri Oct 14 15:56:47 2022
 NAMESPACE: exastro-it-automation
 STATUS: pending-install
 REVISION: 1
@@ -7,81 +7,94 @@ TEST SUITE: None
 HOOKS:
 MANIFEST:
 ---
-# Source: ita-api-organization/templates/configmap.yaml
+# Source: ita-by-ansible-execute/templates/role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ita-by-ansible-execute-sa-role
+  namespace: exastro-it-automation
+rules:
+  - apiGroups: ["*"]
+    resources: ["services","pods"]
+    verbs: ["get","create","update","patch","delete"]
+---
+# Source: ita-by-ansible-execute/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ita-by-ansible-execute-sa
+  namespace: exastro-it-automation
+---
+# Source: ita-by-ansible-execute/templates/rolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ita-by-ansible-execute-sa-rolebinding
+  namespace: exastro-it-automation
+
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name:  ita-by-ansible-execute-sa-role
+
+subjects:
+  - kind: ServiceAccount
+    name: ita-by-ansible-execute-sa
+    namespace: exastro-it-automation
+---
+# Source: ita-by-ansible-execute/templates/configmap.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: params-ita2-ita-api-organization
+  name: params-ita-by-ansible-execute
   namespace: exastro-it-automation
   labels: 
-    helm.sh/chart: ita-api-organization-0.1.0
-    app.kubernetes.io/name: ita-api-organization
-    app.kubernetes.io/instance: ita2
+    helm.sh/chart: ita-by-ansible-execute-0.1.0
+    app.kubernetes.io/name: ita-by-ansible-execute
+    app.kubernetes.io/instance: ita-by-ansible-execute
     app.kubernetes.io/version: "2.0.0-beta.1"
     app.kubernetes.io/managed-by: Helm
 data: 
-  LISTEN_PORT: "8080"
-  PLATFORM_API_HOST: platform-api.exastro-platform.svc
-  PLATFORM_API_PORT: "8000"
+  ANSIBLE_AGENT_IMAGE: exastro/ita_ansible_agent
+  ANSIBLE_AGENT_IMAGE_TAG: "0.3"
+  EXECUTE_INTERVAL: "10"
 ---
-# Source: ita-api-organization/templates/service.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: ita2-ita-api-organization
-  namespace: exastro-it-automation
-  labels:
-    helm.sh/chart: ita-api-organization-0.1.0
-    app.kubernetes.io/name: ita-api-organization
-    app.kubernetes.io/instance: ita2
-    app.kubernetes.io/version: "2.0.0-beta.1"
-    app.kubernetes.io/managed-by: Helm
-spec:
-  type: NodePort
-  ports:
-    - name: http
-      protocol: TCP
-      port: 8080
-      targetPort: port-http
-  selector:
-    app.kubernetes.io/name: ita-api-organization
-    app.kubernetes.io/instance: ita2
----
-# Source: ita-api-organization/templates/deployment.yaml
+# Source: ita-by-ansible-execute/templates/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ita2-ita-api-organization
+  name: ita-by-ansible-execute
   namespace: exastro-it-automation
   labels:
-    helm.sh/chart: ita-api-organization-0.1.0
-    app.kubernetes.io/name: ita-api-organization
-    app.kubernetes.io/instance: ita2
+    helm.sh/chart: ita-by-ansible-execute-0.1.0
+    app.kubernetes.io/name: ita-by-ansible-execute
+    app.kubernetes.io/instance: ita-by-ansible-execute
     app.kubernetes.io/version: "2.0.0-beta.1"
     app.kubernetes.io/managed-by: Helm
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: ita-api-organization
-      app.kubernetes.io/instance: ita2
+      app.kubernetes.io/name: ita-by-ansible-execute
+      app.kubernetes.io/instance: ita-by-ansible-execute
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: ita-api-organization
-        app.kubernetes.io/instance: ita2
+        app.kubernetes.io/name: ita-by-ansible-execute
+        app.kubernetes.io/instance: ita-by-ansible-execute
     spec:
+      serviceAccountName: default
       securityContext:
         {}
       containers:
-        - name: ita2-ita-api-organization
+        - name: ita-by-ansible-execute
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             runAsGroup: 1000
             runAsNonRoot: true
             runAsUser: 1000
-          image: "exastro/it-automation2-test-ita-api-organization:Integration-test.13dc22.20221004-213152"
+          image: "exastro/it-automation2-test-ita-by-ansible-execute:Integration-test.13dc22.20221004-213149"
           imagePullPolicy: IfNotPresent
           env:
             - name: DB_DATADBASE
@@ -164,54 +177,44 @@ spec:
                 configMapKeyRef:
                   name: params-ita-global
                   key: TZ
-            - name: LISTEN_PORT
+            - name: ANSIBLE_AGENT_IMAGE
               valueFrom:
                 configMapKeyRef:
-                  name: params-ita2-ita-api-organization
-                  key: LISTEN_PORT
-            - name: PLATFORM_API_HOST
+                  name: params-ita-by-ansible-execute
+                  key: ANSIBLE_AGENT_IMAGE
+            - name: ANSIBLE_AGENT_IMAGE_TAG
               valueFrom:
                 configMapKeyRef:
-                  name: params-ita2-ita-api-organization
-                  key: PLATFORM_API_HOST
-            - name: PLATFORM_API_PORT
+                  name: params-ita-by-ansible-execute
+                  key: ANSIBLE_AGENT_IMAGE_TAG
+            - name: EXECUTE_INTERVAL
               valueFrom:
                 configMapKeyRef:
-                  name: params-ita2-ita-api-organization
-                  key: PLATFORM_API_PORT
+                  name: params-ita-by-ansible-execute
+                  key: EXECUTE_INTERVAL
           volumeMounts:
-            - name: volume-ita2-ita-api-organization-storage
+            - name: volume-ita-by-ansible-execute-storage
               mountPath: /storage
-            - name: volume-ita2-ita-api-organization-homedir
+            - name: volume-ita-by-ansible-execute-homedir
               mountPath: /home/app_user
-            - name: volume-ita2-ita-api-organization-pid
-              mountPath: /var/run_app_user/httpd/pid
-              subPath: httpd-pid
-            - name: volume-ita2-ita-api-organization-socket
-              mountPath: /var/run_app_user/httpd/socket
-              subPath: httpd-socket
-            - name: volume-ita2-ita-api-organization-tmp
+            - name: volume-ita-by-ansible-execute-tmp
               mountPath: /tmp
-          ports:
-            - name: port-http
-              containerPort: 8080
-              protocol: TCP
-          livenessProbe:
-            tcpSocket:
-              port: 8080
-            # httpGet:
-            #   path: /
-            #   port: 8080
-            initialDelaySeconds: 5
-            periodSeconds: 10            
-          readinessProbe:
-            tcpSocket:
-              port: 8080
-            # httpGet:
-            #   path: /
-            #   port: 8080
-            initialDelaySeconds: 5
-            periodSeconds: 10            
+          # livenessProbe:
+          #   tcpSocket:
+          #     port: 8080
+          #   # httpGet:
+          #   #   path: /
+          #   #   port: 8080
+          #   initialDelaySeconds: 5
+          #   periodSeconds: 10            
+          # readinessProbe:
+          #   tcpSocket:
+          #     port: 8080
+          #   # httpGet:
+          #   #   path: /
+          #   #   port: 8080
+          #   initialDelaySeconds: 5
+          #   periodSeconds: 10            
           resources:
             limits:
               cpu: 250m
@@ -220,15 +223,15 @@ spec:
               cpu: 250m
               memory: 64Mi
       volumes:
-        - name: volume-ita2-ita-api-organization-storage
+        - name: volume-ita-by-ansible-execute-storage
           persistentVolumeClaim:
             claimName: pvc-ita-global
-        - name: volume-ita2-ita-api-organization-homedir
+        - name: volume-ita-by-ansible-execute-homedir
           emptyDir: {}
-        - name: volume-ita2-ita-api-organization-pid
+        - name: volume-ita-by-ansible-execute-pid
           emptyDir: {}
-        - name: volume-ita2-ita-api-organization-socket
+        - name: volume-ita-by-ansible-execute-socket
           emptyDir: {}
-        - name: volume-ita2-ita-api-organization-tmp
+        - name: volume-ita-by-ansible-execute-tmp
           emptyDir: {}
 
