@@ -2541,7 +2541,7 @@ viewCellHtml( item, columnKey, journal ) {
     
     // 変更履歴
     const checkJournal = function( val ) {
-        if ( journal && journal[ columnName ] ) {
+        if ( journal && journal[ columnName ] !== undefined ) {
             val = `<span class="journalChange">${val}</span>`;
         }
         return val;
