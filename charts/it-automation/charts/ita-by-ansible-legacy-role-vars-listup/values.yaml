@@ -1,4 +1,4 @@
-# Default values for ita-by-menu-create.
+# Default values for ita_by_ansible_legacy_role_vars_listup.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 global:
