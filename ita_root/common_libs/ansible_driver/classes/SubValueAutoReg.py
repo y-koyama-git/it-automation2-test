@@ -398,7 +398,7 @@ class SubValueAutoReg():
         hostid_chk_sql += " FROM T_ANSC_DEVICE \n"
         hostid_chk_sql += " WHERE SYSTEM_ID = TBL_A.HOST_ID AND \n"
         hostid_chk_sql += " DISUSE_FLAG = '0' \n"
-        hostid_chk_sql += " ) AS " + AnscConst.DF_ITA_LOCAL_HOST_CNT + ", \n"
+        hostid_chk_sql += " ) AS %s, \n"
         
         # テーブル名+カラム名配列からテーブル名と配列名を取得
         inout_tableNameToSqlList = {}
@@ -422,7 +422,7 @@ class SubValueAutoReg():
             make_sql = "SELECT \n "
             make_sql += opeid_chk_sql + " \n "
             make_sql += hostid_chk_sql + " \n "
-            make_sql += " TBL_A." + pkey_name + " AS " + AnscConst.DF_ITA_LOCAL_PKEY + " \n "
+            make_sql += " TBL_A." + pkey_name + " AS %s   \n "
             make_sql += ", TBL_A.HOST_ID \n "
             make_sql += col_sql + " \n "
             make_sql += " FROM `" + table_name + "` TBL_A \n "
@@ -852,7 +852,7 @@ class SubValueAutoReg():
             frame = inspect.currentframe().f_back
             g.applogger.debug(os.path.basename(__file__) + str(frame.f_lineno) + traceMsg)
             
-            data_list = WS_DB.sql_execute(sql, [])
+            data_list = WS_DB.sql_execute(sql, [AnscConst.DF_ITA_LOCAL_HOST_CNT, AnscConst.DF_ITA_LOCAL_PKEY])
             
             # FETCH行数を取得
             if len(data_list) == 0:
@@ -1127,47 +1127,47 @@ class SubValueAutoReg():
         """
         
         # オペレーション名
-        sql = "SELECT OPERATION_NAME FROM T_COMN_OPERATION WHERE OPERATION_ID = '" + row['OPERATION_ID'] + "'"
+        sql = "SELECT OPERATION_NAME FROM T_COMN_OPERATION WHERE OPERATION_ID = %s"
 
-        data_list = WS_DB.sql_execute(sql, [])
+        data_list = WS_DB.sql_execute(sql, [row['OPERATION_ID']])
         for data in data_list:
             row['OPERATION_NAME'] = data['OPERATION_NAME']
         
         # Movement名
-        sql = "SELECT MOVEMENT_NAME FROM V_ANSR_MOVEMENT WHERE MOVEMENT_ID = '" + row['MOVEMENT_ID'] + "'"
+        sql = "SELECT MOVEMENT_NAME FROM V_ANSR_MOVEMENT WHERE MOVEMENT_ID = %s"
 
-        data_list = WS_DB.sql_execute(sql, [])
+        data_list = WS_DB.sql_execute(sql, [row['MOVEMENT_ID']])
         for data in data_list:
             row['MOVEMENT_NAME'] = data['MOVEMENT_NAME']
         
         # ホスト名
-        sql = "SELECT HOST_NAME FROM T_ANSC_DEVICE WHERE SYSTEM_ID = '" + row['SYSTEM_ID'] + "'"
+        sql = "SELECT HOST_NAME FROM T_ANSC_DEVICE WHERE SYSTEM_ID = %s"
 
-        data_list = WS_DB.sql_execute(sql, [])
+        data_list = WS_DB.sql_execute(sql, [row['SYSTEM_ID']])
         for data in data_list:
             row['HOST_NAME'] = data['HOST_NAME']
         
         # 代入値管理用のデータ取得
         if exe_flag == 1: 
             # 変数名
-            sql = "SELECT MOVEMENT_VARS_NAME FROM V_ANSR_VAL_VARS_LINK WHERE MVMT_VAR_LINK_ID = '" + row['MVMT_VAR_LINK_ID'] + "'"
+            sql = "SELECT MOVEMENT_VARS_NAME FROM V_ANSR_VAL_VARS_LINK WHERE MVMT_VAR_LINK_ID = %s"
 
-            data_list = WS_DB.sql_execute(sql, [])
+            data_list = WS_DB.sql_execute(sql, [row['MVMT_VAR_LINK_ID']])
             for data in data_list:
                 row['VARS_NAME'] = data['MOVEMENT_VARS_NAME']
             
             if row['COL_SEQ_COMBINATION_ID'] is not None and not row['COL_SEQ_COMBINATION_ID'] == "":
-                sql = "SELECT MOVEMENT_VARS_COL_COMBINATION_MEMBER FROM V_ANSR_VAL_COL_SEQ_COMBINATION WHERE COL_SEQ_COMBINATION_ID = '" + row['COL_SEQ_COMBINATION_ID'] + "'"
-                data_list = WS_DB.sql_execute(sql, [])
+                sql = "SELECT MOVEMENT_VARS_COL_COMBINATION_MEMBER FROM V_ANSR_VAL_COL_SEQ_COMBINATION WHERE COL_SEQ_COMBINATION_ID = %s"
+                data_list = WS_DB.sql_execute(sql, [row['COL_SEQ_COMBINATION_ID']])
                 for data in data_list:
                     row['COL_COMBINATION_MEMBER_ALIAS'] = data['MOVEMENT_VARS_COL_COMBINATION_MEMBER']
             else:
                 row['COL_COMBINATION_MEMBER_ALIAS'] = ""
             
             # Sensitive設定
-            sql = "SELECT FLAG_NAME FROM T_COMN_BOOLEAN_FLAG WHERE FLAG_ID = '" + row['SENSITIVE_FLAG'] + "'"
+            sql = "SELECT FLAG_NAME FROM T_COMN_BOOLEAN_FLAG WHERE FLAG_ID = %s"
 
-            data_list = WS_DB.sql_execute(sql, [])
+            data_list = WS_DB.sql_execute(sql, [row['SENSITIVE_FLAG']])
             for data in data_list:
                 row['FLAG_NAME'] = data['FLAG_NAME']
         
@@ -1254,10 +1254,10 @@ class SubValueAutoReg():
 
         sql = " SELECT COLUMN_CLASS_NAME "
         sql += " FROM T_COMN_COLUMN_CLASS "
-        sql += " WHERE COLUMN_CLASS_ID = '" + in_col_name + "'"
+        sql += " WHERE COLUMN_CLASS_ID = %s "
         sql += " AND DISUSE_FLAG = '0'"
         
-        data_list = WS_DB.sql_execute(sql)
+        data_list = WS_DB.sql_execute(sql, [in_col_name])
 
         for data in data_list:
             column_class = data['COLUMN_CLASS_NAME']
@@ -1284,10 +1284,10 @@ class SubValueAutoReg():
         sql += " WHERE TBL_A.MENU_NAME_JA = ( "
         sql += "  SELECT TBL_B.MENU_NAME_JA "
         sql += "  FROM T_COMN_MENU TBL_B "
-        sql += "  WHERE TBL_B.MENU_ID = '" + in_menu_id + "')"
+        sql += "  WHERE TBL_B.MENU_ID = %s)"
         sql += " AND TBL_A.MENU_GROUP_ID = '502'"
         
-        data_list = WS_DB.sql_execute(sql)
+        data_list = WS_DB.sql_execute(sql, [in_menu_id])
 
         for data in data_list:
             out_menu_id = data['MENU_ID']
@@ -1681,12 +1681,12 @@ class SubValueAutoReg():
         sql += "          (TBL_A.MVMT_VAR_LINK_ID    = TBL_E.MVMT_VAR_LINK_ID)    \n"
         sql += " WHERE                                                            \n"
         sql += "   TBL_A.DISUSE_FLAG='0'                                          \n"
-        sql += "   AND TBL_A.MOVEMENT_ID = '" + movement_id + "'                  \n"
+        sql += "   AND TBL_A.MOVEMENT_ID = %s                                     \n"
         sql += "   AND TBL_C.DISUSE_FLAG='0'                                      \n"
         sql += "   AND TBL_B.AUTOREG_HIDE_ITEM = '0'                              \n"
         sql += " ORDER BY TBL_A.COLUMN_ID                                         \n"
 
-        data_list = WS_DB.sql_execute(sql)
+        data_list = WS_DB.sql_execute(sql, [movement_id])
 
         inout_tableNameToMenuIdList = {}
         inout_tabColNameToValAssRowList = {}
