@@ -1,4 +1,4 @@
-# Default values for ita-api-admin.
+# Default values for ita-mariadb-setup-job.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 global:
@@ -29,7 +29,7 @@ global:
       GITLAB_HOST: "gitlab.exastro-platform.svc"
       GITLAB_PORT: "80"
     secret:
-      GITLAB_ROOT_TOKEN: "a"
+      GITLAB_ROOT_TOKEN: ""
   databaseDefinition:
     name: ita-mariadb
     enabled: true
@@ -39,14 +39,42 @@ global:
       DB_PORT: "3306"
       DB_DATADBASE: "ITA_DB"
     secret:
-      DB_ROOT_PASSWORD: "a"
-      DB_USER: "a"
-      DB_PASSWORD: "a"
+      DB_ROOT_PASSWORD: ""
+      DB_USER: ""
+      DB_PASSWORD: ""
 
 extraEnv:
   LISTEN_PORT: "8080"
 
 replicaCount: 1
+
+completionCount: 1
+
+dbSetup:
+  livenessCheck: |-
+    #!/bin/bash
+    i=1
+    str1="mysqld is alive"
+    echo "HOST: "${DB_HOST}
+    echo "USER: "${DB_USER}
+    while true; do
+      result="$(mysqladmin ping --host=${DB_HOST} --user=root --password=${DB_ROOT_PASSWORD})"
+      echo $result
+      case "$result" in 
+        "$str1" ) echo "OK"; exit 0
+          break;;
+        * ) sleep $i;i=$(( i * 2 ));echo $i":NG" 
+      esac
+    done
+    #exit 0
+
+  createDBandTBL: |-
+    mysql --host=${DB_HOST} --user=root --password=${DB_ROOT_PASSWORD}  < /docker-entrypoint-initdb.d/createdb.sql
+
+  dbConfInfo:
+    name: mysql-server-conf-config
+    customCnf: |-
+      [mysqld]
 
 initContainerImage:
   repository: busybox
@@ -55,10 +83,10 @@ initContainerImage:
   tag: ""
 
 image:
-  repository: exastro/it-automation2-test-ita-api-admin
+  repository: mariadb
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "Integration-test.3a05f7.20221007-172805"
+  tag: "10.9"
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
@@ -84,6 +112,14 @@ persistence:
       subPath: httpd-socket
     tmp: /tmp
 
+volumeMounts:
+  mountPath:
+    createDB: 
+      path: /docker-entrypoint-initdb.d/createdb.sql
+      subPath: createdb.sql
+    conf: 
+      path: /etc/mysql/conf.d
+
 podAnnotations: {}
 
 podSecurityContext: {}
@@ -100,6 +136,7 @@ service:
   name: http
   type: NodePort
   port: 8080
+  targetPort: 8080
 
 ingress:
   enabled: false

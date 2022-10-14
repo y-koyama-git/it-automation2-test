@@ -981,7 +981,7 @@
     "MSG-10888": "An unexpected error occurred in YAML parsing of header section. (Error details:{})",
     "MSG-10889": "Failed to create the authentication file required by sshAgent.",
     "MSG-10890": "Execute workflow terminated abnormally.",
-    "MSG-10891": "Emergency stop. Check the status (Execution No.:{}) Emergency stop. Check the status (Execution No.:{})",
+    "MSG-10891": "Accept emergency stop. Check the status (Execution No.:{}) Emergency stop. Check the status (Execution No.:{})",
     "MSG-10892": "Menu without items does not require a registration method.",
     "MSG-10893": "A Movement different to the Movement and Movement name:Variable name is selected.",
     "MSG-10894": "A Movement different to the Movement and Movement name: Variable name: Member variable.",

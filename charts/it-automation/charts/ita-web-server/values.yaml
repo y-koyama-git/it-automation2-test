@@ -10,6 +10,7 @@ global:
       LANGUAGE: "en"
       CONTAINER_BASE: "kubernetes"
       TZ: "Asia/Tokyo"
+      STORAGEPATH: "/storage/"
     persistence:
       enabled: true
       accessMode: ReadWriteMany
@@ -25,7 +26,7 @@ global:
     enabled: true
     config:
       GITLAB_PROTOCOL: "http"
-      GITLAB_HOST: "gitlab.exastro-it-automation.svc"
+      GITLAB_HOST: "gitlab.exastro-platform.svc"
       GITLAB_PORT: "80"
     secret:
       GITLAB_ROOT_TOKEN: ""
@@ -34,7 +35,7 @@ global:
     enabled: true
     config:
       DB_ENGINE: mariadb
-      DB_HOST: "ita-mariadb.exastro-it-automation.svc"
+      DB_HOST: "mariadb.exastro-platform.svc"
       DB_PORT: "3306"
       DB_DATADBASE: "ITA_DB"
     secret:

@@ -50,22 +50,31 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          envFrom:
-            - secretRef:
-                name: secret-{{ .Values.global.databaseDefinition.name }}
-            # - secretRef:
-            #     name: secret-{{ .Values.global.gitlabDefinition.name }}
-            - configMapRef:
-                name: params-{{ .Values.global.databaseDefinition.name }}
-            - configMapRef:
-                name: params-{{ .Values.global.itaGlobalDefinition.name }}
-            # - configMapRef:
-            #     name: params-{{ .Values.global.gitlabDefinition.name }}
-            - configMapRef:
-                name: params-{{ template "ita-web-server.fullname" . }}
+          env:
+            {{- range $define := .Values.global -}}
+            {{-   range $config, $value := $define.config }}
+            - name: {{ $config }}
+              valueFrom:
+                configMapKeyRef:
+                  name: params-{{ $define.name }}
+                  key: {{ $config }}
+            {{-   end -}}
+            {{-   range $secret, $value := $define.secret }}
+            - name: {{ $secret }}
+              valueFrom:
+                secretKeyRef:
+                  name: secret-{{ $define.name }}
+                  key: {{ $secret }}
+            {{-   end }}
+            {{- end -}}
+            {{ range $config, $value := .Values.extraEnv }}
+            - name: {{ $config }}
+              valueFrom:
+                configMapKeyRef:
+                  name: params-{{ template "ita-web-server.fullname" $ }}
+                  key: {{ $config }}
+            {{- end }}
           volumeMounts:
-            # - name: volume-{{ template "ita-web-server.fullname" . }}-storage
-            #   mountPath: {{ .Values.persistence.mountPath.storage }}
             - name: volume-{{ template "ita-web-server.fullname" . }}-homedir
               mountPath: {{ .Values.persistence.mountPath.homeDir }}
             - name: volume-{{ template "ita-web-server.fullname" . }}-pid

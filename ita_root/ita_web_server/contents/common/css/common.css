@@ -131,12 +131,14 @@ background-color: var(--focusBackgroundColor);
 border-color: var(--focusColor);
 }
 .inputTextWrap,
-.inputPasswordWrap {
+.inputPasswordWrap,
+.inputFileWrap {
 display: flex;
 width: 100%;
 }
 .inputTextWrap > div,
-.inputPasswordWrap > div {
+.inputPasswordWrap > div,
+.inputFileWrap > div {
 min-width: 0;
 }
 .inputTextBody {
@@ -500,11 +502,13 @@ white-space: nowrap;
 text-align: center;
 color: var(--black30);
 }
-.inputPasswordBody {
+.inputPasswordBody,
+.inputFileBody {
 flex: 1 1 auto;
 }
 .inputPasswordToggle,
-.inputPasswordDeleteToggle {
+.inputPasswordDeleteToggle,
+.inputFileClear {
 flex: 0 0 36px;
 padding-left: 4px;
 }
@@ -513,22 +517,29 @@ flex: 1 1 auto;
 display: none;
 }
 .inputPasswordToggleButton,
-.inputPasswordDeleteToggleButton {
+.inputPasswordDeleteToggleButton,
+.inputFileClearButton {
 display: block;
 width: 32px;
 }
 .inputPasswordToggleButton > .inner,
-.inputPasswordDeleteToggleButton > .inner {
+.inputPasswordDeleteToggleButton > .inner,
+.inputFileClearButton > .inner {
+padding: 0;
 text-overflow: inherit;
 text-align: center;
 font-size: 16px;
 }
 .inputPasswordToggleButton .icon,
-.inputPasswordDeleteToggleButton .icon {
+.inputPasswordDeleteToggleButton .icon,
+.inputFileClearButton .icon {
 margin: 0;
 }
 .inputPasswordDelete .inputPasswordBody,
-.inputPasswordDelete .inputPasswordToggle {
+.inputPasswordDelete .inputPasswordToggle,
+.inputFileDelete .inputFileBody,
+.inputFileDelete .inputFileClear,
+.inputFileDelete .inputFileToggle {
 display: none;
 }
 .inputPasswordDelete .inputPasswordDeleteToggleText {
@@ -546,7 +557,7 @@ padding: 0;
 .inputPasswordDeleteToggleButton {
 flex: 0 0 32px;
 }
-.passwordDeleteText,
+.confirmDeleteText,
 .inputPasswordDeleteToggleText > .inner {
 display: block;
 width: 100%;
@@ -561,7 +572,7 @@ text-align: center;
 font-size: 14px;
 color: #D00;
 }
-.passwordDeleteText {
+.confirmDeleteText {
 min-width: 120px; min-height: 24px;
 margin-bottom: 2px;
 line-height: 22px;
@@ -2355,6 +2366,7 @@ height: 32px;
 position: relative;
 display: flex;
 align-items: center;
+width: auto;
 padding-right: 20px;
 cursor: pointer;
 }
@@ -2375,6 +2387,7 @@ border-top-color: var(--black25);
 .tableEditInputSelectContainer .select2-selection {
 height: 32px;
 }
+.tableEditSelectFile.tableEditChange,
 .tableEditInputSelectContainer.tableEditChange .tableEditInputSelectValue,
 .tableEditInputSelectContainer.tableEditChange .select2-selection {
 background-color: #DFF4CF;
@@ -3185,7 +3198,7 @@ border-right: none;
 line-height: 1.4;
 white-space: normal;
 word-break: break-all;
-font-size: 12px;
+font-size: 14px;
 }
 .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
 display: block;
@@ -3210,7 +3223,9 @@ min-height: 30px;
 line-height: 1.4;
 white-space: normal;
 word-break: break-all;
-font-size: 12px;
+letter-spacing: .75px;
+font-family: "Osaka-mono", "MS Gothic", "monospace";
+font-size: 14px;
 }
 body > .select2-container .select2-search__field {
 border-radius: 4px;
@@ -3221,29 +3236,10 @@ body > .select2-container .select2-search__field:focus {
 background-color: var(--focusBackgroundColor);
 border-color: var(--focusColor);
 }
-/*
-
-
-.select2-search {
-margin-left: 0!important;
+.select2-selection__rendered {
+letter-spacing: .75px;
+font-family: "Osaka-mono", "MS Gothic", "monospace";
 }
-
-.select2-selection__choice {
-margin-left: 0!important;
-word-break: break-all;
-white-space: normal;
-}
-.select2-container {
-max-width: 640px;
-}
-
-
-.select2-search {
-max-width: 100%;
-margin: 5px 5px 0 0;
-}
-
-*/
 .select2-container--default.select2-container--focus .select2-selection--multiple {
 border-color: #0070FF;
 background-color: #E5F1FF;

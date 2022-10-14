@@ -4255,9 +4255,14 @@ const setPanelParameter = function( setData ) {
       //「編集」ボタンを削除
       $menuEditor.find('[data-type="edit"]').closest('.operationMenuItem').remove();
       
+      const buttonText = ( menuEditorMode === 'view')? getMessage.FTE01151: textCode('0046');
+      
       //「初期化」「作成(初期化)」ボタンを「作成」に名称変更
       const $initialize = $menuEditor.find('[data-type="initialize"], [data-type="update-initialize"]');
-      $initialize.attr('data-action', 'positive').find('.iconButtonBody').text(textCode('0046'))
+      $initialize.attr({
+          'data-action': 'positive',
+          'title': buttonText
+      }).find('.iconButtonBody').text( buttonText )
           .closest('.operationMenuItem').removeClass('operationMenuSeparate'); 
       $initialize.find('.icon-clear').removeClass('icon-clear').addClass('icon-plus');   
   }

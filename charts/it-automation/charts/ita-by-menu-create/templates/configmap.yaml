@@ -21,4 +21,3 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels: {{ include "ita-by-menu-create.labels" . | nindent 4 }}
 data: {{ toYaml .Values.extraEnv | nindent 2 }}
-  STORAGEPATH: "{{ .Values.persistence.mountPath.storage }}/"
