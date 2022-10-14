@@ -951,7 +951,7 @@ commonContainer( title, info, body, menuFlag = true ) {
             <h1 class="contentTitle"><span class="contentTitleInner">${title}</span></h1>
             <p class="contentMenuInfo">
                 <span class="contentMenuInfoInner">${info}</span>${( menuFlag )? `
-                <button class="contentMenuInfoButton button popup" title="メニュー情報表示">
+                <button class="contentMenuInfoButton button popup" title="${getMessage.FTE00079}">
                     <span class="inner">${fn.html.icon('ellipsis_v')}<span></button>`: ``}
             </p>
         </div>
@@ -1365,9 +1365,9 @@ operationStatusMenu() {
     const ui = this;
     
     const contentTab = [
-        { name: 'operationStatus', title: '作業状態確認', type: 'blank' },
-        { name: 'executeLog', title: '実行ログ', type: 'blank', view: false, className: 'executeLogTab'},
-        { name: 'errorLog', title: 'エラーログ', type: 'blank', view: false, className: 'errorLogTab' }
+        { name: 'operationStatus', title: getMessage.FTE00080, type: 'blank' },
+        { name: 'executeLog', title: getMessage.FTE00081, type: 'blank', view: false, className: 'executeLogTab'},
+        { name: 'errorLog', title: getMessage.FTE00082, type: 'blank', view: false, className: 'errorLogTab' }
     ];
     
     const title = fn.cv( ui.rest.info.menu_info.menu_name, '', true ),
@@ -1469,7 +1469,7 @@ setCommonEvents() {
             + `<div class="menuInfoTitle">${menuInfo.menu_name}</div>`
             + `<div class="menuInfoDescription">${fn.escape( menuInfo.menu_info, true )}</div>`;
         + `</div>`;
-        fn.alert('メニュー情報', menuInfoHTml, 'confirm', buttons ).then(function( result ){
+        fn.alert( getMessage.FTE00078, menuInfoHTml, 'confirm', buttons ).then(function( result ){
             /*
             if ( result ) {
                 const filter = encodeURIComponent( JSON.stringify( {'menu_id':{NORMAL:menuInfo.menu_id}} ) );
